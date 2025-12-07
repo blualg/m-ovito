@@ -58,7 +58,7 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
     _spinner = new SpinnerWidget();
     connect(spinner(), &SpinnerWidget::valueChanged, this, &NumericalParameterUI::updatePropertyValue);
     spinner()->setTextBox(_textBox);
-    spinner()->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
+    spinner()->enableAutomaticUndo(ui(), tr("Change parameter"));
     if(propertyField()->numericalParameterInfo() != nullptr) {
         spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
         spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
@@ -101,12 +101,13 @@ NumericalParameterUI::~NumericalParameterUI()
 ******************************************************************************/
 void NumericalParameterUI::resetUI()
 {
+    bool enable = editObject() && isEnabled() && !editor()->isReadOnly();
     if(spinner()) {
-        spinner()->setEnabled(editObject() && isEnabled());
+        spinner()->setEnabled(enable);
         if(editObject()) {
             if(spinner()->unit() == nullptr) {
                 if(parameterUnitType())
-                    spinner()->setUnit(mainWindow().unitsManager().getUnit(parameterUnitType()));
+                    spinner()->setUnit(ui().unitsManager().getUnit(parameterUnitType()));
             }
         }
         else {
@@ -116,13 +117,13 @@ void NumericalParameterUI::resetUI()
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
     }
 
     PropertyParameterUI::resetUI();
 
     if(animateButton())
-        animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
+        animateButton()->setEnabled(enable && parameterObject());
 }
 
 /******************************************************************************
@@ -171,7 +172,7 @@ QLayout* NumericalParameterUI::createFieldLayout()
         _layout = new QHBoxLayout();
         _layout->setContentsMargins(0,0,0,0);
         _layout->setSpacing(0);
-        _layout->addWidget(textBox());
+        _layout->addWidget(textBox(), 1);
         _layout->addWidget(spinner());
         // Show menu button, if any actions are defined
         if(menuToolButton()) {

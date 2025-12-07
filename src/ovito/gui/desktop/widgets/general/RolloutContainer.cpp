@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the container.
 ******************************************************************************/
-RolloutContainer::RolloutContainer(MainWindow& mainWindow, QWidget* parent) : QScrollArea(parent), _mainWindow(mainWindow)
+RolloutContainer::RolloutContainer(MainWindowUI& ui, QWidget* parent) : QScrollArea(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setFrameStyle(QFrame::Panel | QFrame::Sunken);
     setWidgetResizable(true);
@@ -348,7 +348,7 @@ void Rollout::resizeEvent(QResizeEvent* event)
 void Rollout::onHelpButton()
 {
     if(RolloutContainer* rolloutContainer = container())
-        rolloutContainer->mainWindow().actionManager()->openHelpTopic(_helpPageUrl);
+        rolloutContainer->actionManager()->openHelpTopic(_helpPageUrl);
 }
 
 /******************************************************************************

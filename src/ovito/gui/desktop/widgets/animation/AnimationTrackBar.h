@@ -34,14 +34,14 @@ namespace Ovito {
 /**
  * The track bar displays the animation keys of the selected scene node.
  */
-class AnimationTrackBar : public QFrame
+class AnimationTrackBar : public QFrame, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider* timeSlider, QWidget* parentWindow = nullptr);
+    AnimationTrackBar(MainWindowUI& ui, AnimationTimeSlider* timeSlider, QWidget* parentWindow = nullptr);
 
 protected:
 
@@ -87,11 +87,8 @@ protected:
     /// Displays the context menu.
     void showKeyContextMenu(const QPoint& pos, const QVector<AnimationKey*>& clickedKeys);
 
-    /// Returns the main window hosting this widget.
-    MainWindow& mainWindow() const { return _mainWindow; }
-
     /// Returns the animation settings that is currently active.
-    AnimationSettings* animSettings() const { return _mainWindow.datasetContainer().activeAnimationSettings(); }
+    AnimationSettings* animSettings() const { return datasetContainer().activeAnimationSettings(); }
 
 protected Q_SLOTS:
 
@@ -108,9 +105,6 @@ protected Q_SLOTS:
     void onDeleteSelectedKeys();
 
 private:
-
-    /// The main window containing this track bar widget.
-    MainWindow& _mainWindow;
 
     /// Pointer to the animation time slider widget.
     AnimationTimeSlider* _timeSlider;

@@ -119,7 +119,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         return;
 
     // Let the user select a destination file.
-    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Attributes"));
+    HistoryFileDialog dialog("export", ui().mainWindow(), tr("Export Attributes"));
     QString filterString = QStringLiteral("%1 (%2)").arg(AttributeFileExporter::OOClass().fileFilterDescription(), AttributeFileExporter::OOClass().fileFilter());
     dialog.setNameFilter(filterString);
     dialog.setOption(QFileDialog::DontUseNativeDialog);
@@ -141,7 +141,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
     settings.setValue("last_export_dir", dialog.directory().absolutePath());
 
     // Export to selected file.
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         // Create exporter service.
         OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create();
 
@@ -153,11 +153,11 @@ void GlobalAttributesInspectionApplet::exportToFile()
         exporter->setPipelineToExport(currentPipeline());
 
         // If the exporter supports it, automatically choose the data object(s) to be exported.
-        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
+        exporter->selectDefaultExportableData(dataset(), currentSceneNode()->scene());
         OVITO_ASSERT(exporter->sceneToExport());
 
         // Let the user adjust the export settings.
-        FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+        FileExporterSettingsDialog settingsDialog(ui(), *exporter->sceneToExport(), exporter, ui().mainWindow());
         if(settingsDialog.exec() != QDialog::Accepted)
             return;
 
@@ -165,7 +165,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         Future<void> future = exporter->performExport();
 
         // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
-        ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
+        ProgressDialog::showForFuture(std::move(future), ui(), tr("File export"));
     });
 }
 

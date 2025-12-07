@@ -180,13 +180,13 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
     modNode->setDelegateInputVariableNames(neighborEvaluator->inputVariableNames());
     QString variableTable = evaluator->inputVariableTable();
     variableTable.append(QStringLiteral("<p><b>Neighbor expression variables:</b><ul>"));
-    variableTable.append(QStringLiteral("<li>Cutoff (<i style=\"color: #555;\">radius</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>NumNeighbors (<i style=\"color: #555;\">of central particle</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>Distance (<i style=\"color: #555;\">from central particle</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>Delta.X (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>Delta.Y (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>Delta.Z (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    variableTable.append(QStringLiteral("<li>@... (<i style=\"color: #555;\">center particle properties</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>Cutoff <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(radius)</span></li>"));
+    variableTable.append(QStringLiteral("<li>NumNeighbors <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(of central particle)</span></li>"));
+    variableTable.append(QStringLiteral("<li>Distance <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(from central particle)</span></li>"));
+    variableTable.append(QStringLiteral("<li>Delta.X <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(neighbor vector component)</span></li>"));
+    variableTable.append(QStringLiteral("<li>Delta.Y <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(neighbor vector component)</span></li>"));
+    variableTable.append(QStringLiteral("<li>Delta.Z <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(neighbor vector component)</span></li>"));
+    variableTable.append(QStringLiteral("<li>@... <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(center particle properties)</span></li>"));
     variableTable.append(QStringLiteral("</ul></p>"));
     modNode->setInputVariableTable(std::move(variableTable));
 

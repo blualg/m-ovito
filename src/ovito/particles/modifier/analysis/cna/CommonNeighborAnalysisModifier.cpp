@@ -605,7 +605,7 @@ public:
         }
 
         // Sort edges by length to create intervals.
-        boost::sort(edges, [](GraphEdge& a, GraphEdge& b) {
+        std::ranges::sort(edges, [](GraphEdge& a, GraphEdge& b) {
             return a.length < b.length;
         });
 

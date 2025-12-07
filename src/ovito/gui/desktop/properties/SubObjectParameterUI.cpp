@@ -59,7 +59,7 @@ void SubObjectParameterUI::resetUI()
         }
         if(!parameterObject() || !isEnabled()) return;
         if(!subEditor()) {
-            _subEditor = PropertiesEditor::create(mainWindow(), parameterObject());
+            _subEditor = PropertiesEditor::create(ui(), parameterObject());
             if(subEditor()) {
                 subEditor()->initialize(editor()->container(), _rolloutParams, editor());
             }

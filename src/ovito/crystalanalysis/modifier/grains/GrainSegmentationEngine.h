@@ -111,7 +111,7 @@ public:
         Graph(size_t num_nodes, size_t num_edges) {
             edge_count = 0;
             wnode.resize(num_nodes);
-            boost::range::fill(wnode, 0);
+            std::ranges::fill(wnode, 0);
 
             header.resize(num_nodes);
             for (size_t i=0;i<num_nodes;i++) {

@@ -24,7 +24,7 @@
 #include <ovito/particles/import/lammps/LAMMPSDataImporter.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include "LAMMPSDataImporterEditor.h"
 
@@ -37,11 +37,11 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDataImporter, LAMMPSDataImporterEditor);
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-void LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile)
 {
     // Inspect the data file and try to detect the LAMMPS atom style.
     LAMMPSDataImporter* dataImporter = static_object_cast<LAMMPSDataImporter>(importer);
-    LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = ProgressDialog::blockForFuture(dataImporter->inspectFileHeader(sourceFile), mainWindow, tr("Inspecting file header"));
+    LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = ProgressDialog::blockForFuture(dataImporter->inspectFileHeader(sourceFile), ui(), tr("Inspecting file header"));
 
     // Show dialog to ask user for the right LAMMPS atom style if it could not be detected.
     if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown || (detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid && detectedAtomStyleHints.atomSubStyles.empty())) {
@@ -62,7 +62,7 @@ void LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
             }
         }
 
-        LAMMPSAtomStyleDialog dlg(mainWindow, detectedAtomStyleHints, &mainWindow);
+        LAMMPSAtomStyleDialog dlg(ui(), detectedAtomStyleHints, ui().mainWindow());
         if(dlg.exec() != QDialog::Accepted)
             this_task::cancelAndThrow();
 
@@ -104,7 +104,7 @@ void LAMMPSDataImporterEditor::createUI(const RolloutInsertionParameters& rollou
 /******************************************************************************
 * The constructor of the LAMMPSAtomStyleDialog.
 ******************************************************************************/
-LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parent) : QDialog(parent), _atomStyleHints(atomStyleHints)
+LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindowUI& ui, LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parent) : QDialog(parent), _atomStyleHints(atomStyleHints)
 {
     setWindowTitle(tr("LAMMPS Data File Import"));
 
@@ -188,8 +188,8 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(MainWindow& mainWindow, LAMMPSDataI
     _buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(_buttonBox, &QDialogButtonBox::accepted, this, &LAMMPSAtomStyleDialog::onOk);
     connect(_buttonBox, &QDialogButtonBox::rejected, this, &LAMMPSAtomStyleDialog::reject);
-    connect(_buttonBox, &QDialogButtonBox::helpRequested, this, [&mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic("manual:file_formats.input.lammps_data");
+    connect(_buttonBox, &QDialogButtonBox::helpRequested, this, [&ui]() {
+        ui.actionManager()->openHelpTopic("manual:file_formats.input.lammps_data");
     });
 
     updateColumnList();

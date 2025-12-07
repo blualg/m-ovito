@@ -62,14 +62,14 @@ void BooleanParameterUI::resetUI()
 
     if(checkBox()) {
         if(isReferenceFieldUI())
-            checkBox()->setEnabled(parameterObject() && isEnabled());
+            checkBox()->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
         else
-            checkBox()->setEnabled(editObject() && isEnabled());
+            checkBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
     }
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 

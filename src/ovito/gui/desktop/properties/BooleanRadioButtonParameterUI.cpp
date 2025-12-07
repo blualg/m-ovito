@@ -64,7 +64,7 @@ void BooleanRadioButtonParameterUI::resetUI()
 
     if(buttonGroup()) {
         for(QAbstractButton* button : buttonGroup()->buttons())
-            button->setEnabled(editObject() != NULL && isEnabled());
+            button->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
     }
 }
 

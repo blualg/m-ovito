@@ -29,18 +29,18 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         lines/LinesInspectionApplet.cpp
         lines/LinesVisEditor.cpp
         properties/PropertyInspectionApplet.cpp
-        properties/PropertyObjectEditor.cpp
+        properties/TypesInspectionApplet.cpp
         properties/ElementTypeEditor.cpp
         properties/InputColumnMappingDialog.cpp
         properties/PropertyColorMappingEditor.cpp
-        simcell/SimulationCellEditor.cpp
         simcell/SimulationCellVisEditor.cpp
+        simcell/SimulationCellInspectionApplet.cpp
         table/DataTableInspectionApplet.cpp
         vectors/VectorsInspectionApplet.cpp
         widgets/PropertyReferenceParameterUI.cpp
         widgets/PropertySelectionComboBox.cpp
         widgets/DataTablePlotWidget.cpp
-    PLUGIN_DEPENDENCIES StdObj
+    PLUGIN_DEPENDENCIES StdObj StdMod
     LIB_DEPENDENCIES Qwt
     PRECOMPILED_HEADERS StdObjGui.h
     GUI_PLUGIN

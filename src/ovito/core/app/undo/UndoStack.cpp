@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the undo manager.
 ******************************************************************************/
-UndoStack::UndoStack(UserInterface& userInterface, QObject* parent) : QObject(parent), _userInterface(userInterface)
+UndoStack::UndoStack(UserInterface& ui, QObject* parent) : QObject(parent), UserInterfaceComponent<UserInterface>(ui)
 {
 }
 
@@ -137,7 +137,7 @@ void UndoStack::undo()
         return;
 
     CompoundOperation* curOp = _operations[index()].get();
-    _userInterface.handleExceptions([&] {
+    handleExceptions([&] {
         curOp->undo();
     });
     _index--;
@@ -162,7 +162,7 @@ void UndoStack::redo()
         return;
 
     CompoundOperation* nextOp = _operations[index() + 1].get();
-    _userInterface.handleExceptions([&] {
+    handleExceptions([&] {
         nextOp->redo();
     });
     _index++;

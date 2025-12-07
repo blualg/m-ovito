@@ -29,20 +29,16 @@
 namespace Ovito {
 
 /**
- * \brief A widget that displays information from the PipelineStatus class.
+ * \brief A widget that displays a PipelineStatus structure.
  */
-class OVITO_GUI_EXPORT StatusWidget : public QScrollArea
+class OVITO_GUI_EXPORT StatusWidget : public QLabel
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the widget.
-    /// \param parent The parent widget for the new widget.
+    /// Constructor.
     explicit StatusWidget(QWidget* parent = nullptr);
-
-    /// Returns the current status displayed by the widget.
-    const PipelineStatus& status() const { return _status; }
 
     /// Sets the status to be displayed by the widget.
     void setStatus(const PipelineStatus& status);
@@ -50,27 +46,80 @@ public:
     /// Resets the widget to not display any status.
     void clearStatus() { setStatus({}); }
 
-    /// Returns the minimum size of the widget.
-    virtual QSize minimumSizeHint() const override;
+    /// Returns the color indicating the current status.
+    [[nodiscard]] QColor statusColor() const;
 
-    /// Returns the preferred size of the widget.
-    virtual QSize sizeHint() const override;
+    /// Returns the default color indicating a success status.
+    [[nodiscard]] QColor defaultColor() const;
 
 Q_SIGNALS:
 
     /// Emitted when the user clicks on a link in the status text.
     void linkActivated(const QString& link);
 
+private Q_SLOTS:
+
+    /// Shows the tooltip popup.
+    void showTooltipPopup();
+
+protected:
+    /// Returns the minimum size of the widget.
+    [[nodiscard]] virtual QSize minimumSizeHint() const override;
+
+    /// Returns the recommended size of the widget.
+    [[nodiscard]] virtual QSize sizeHint() const override;
+
+    /// Calculate the height of the widget based on the font
+    [[nodiscard]] int calculateHeight() const;
+
+    // Apply the widget height
+    void setHeight();
+
+    /// Calculate the position of the overlay label.
+    [[nodiscard]] QPoint calculateOverlayLabelPosition() const;
+
+    // Sets the visibility of the overlay label based on the status text.
+    bool toggleOverlayLabelVisibility();
+
+    /// Updates the widget's palette based on the current status type.
+    void updatePalette();
+
+    /// Paints the widget's border.
+    virtual void paintEvent(QPaintEvent* event) override;
+
+    /// Event filter to watch the internal label and the tooltip popup for
+    /// enter/leave events.
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
+    /// Open the tooltip immediately when the widget is clicked.
+    virtual void mousePressEvent(QMouseEvent* event) override;
+
+    /// Handle widget resize to reposition overlay label.
+    virtual void resizeEvent(QResizeEvent* event) override;
+
+    /// Overlay label cannot be placed in the constructor because the
+    /// the widget's size is not yet set. Deferred placement here.
+    virtual void showEvent(QShowEvent* e) override;
+
+    /// Handles widget state changes.
+    virtual void changeEvent(QEvent* event) override;
+
+    [[nodiscard]] virtual bool hasHeightForWidth() const override { return false; }
+
 private:
+    /// The current status type displayed by the widget.
+    PipelineStatus::StatusType _statusType = PipelineStatus::StatusType::Success;
 
-    /// The current status displayed by the widget.
-    PipelineStatus _status;
+    // Tooltip support
+    QTimer* _tooltipTimer = nullptr;
+    QWidget* _tooltipPopup = nullptr;
+    QLabel* _tooltipPopupLabel = nullptr;
+    static constexpr int _tooltipDelayMs = 250;  ///< hover delay in milliseconds
 
-    /// The internal text label.
-    QLabel* _textLabel;
+    // Overlay label
+    QLabel* _overlayLabel = nullptr;
 
-    /// The internal icon label.
-    QLabel* _iconLabel;
+    bool _inUpdatePalette = false;  ///< Flag to avoid recursive palette updates
 };
 
 }   // End of namespace

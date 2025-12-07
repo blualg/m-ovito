@@ -33,7 +33,7 @@ namespace Ovito {
 ******************************************************************************/
 void ActionManager::on_AnimationGotoStart_triggered()
 {
-    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+    if(AnimationSettings* anim = activeAnimationSettings())
         anim->jumpToAnimationStart();
 }
 
@@ -42,7 +42,7 @@ void ActionManager::on_AnimationGotoStart_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoEnd_triggered()
 {
-    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+    if(AnimationSettings* anim = activeAnimationSettings())
         anim->jumpToAnimationEnd();
 }
 
@@ -51,7 +51,7 @@ void ActionManager::on_AnimationGotoEnd_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 {
-    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+    if(AnimationSettings* anim = activeAnimationSettings())
         anim->jumpToPreviousFrame();
 }
 
@@ -60,7 +60,7 @@ void ActionManager::on_AnimationGotoPreviousFrame_triggered()
 ******************************************************************************/
 void ActionManager::on_AnimationGotoNextFrame_triggered()
 {
-    if(AnimationSettings* anim = userInterface().datasetContainer().activeAnimationSettings())
+    if(AnimationSettings* anim = activeAnimationSettings())
         anim->jumpToNextFrame();
 }
 

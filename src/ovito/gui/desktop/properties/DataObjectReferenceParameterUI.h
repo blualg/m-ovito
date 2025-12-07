@@ -72,18 +72,20 @@ public:
     }
 
     /// Installs an optional callback function for filtering the displayed object list.
-    template<typename F>
-    void setObjectFilter(F&& filter) {
-        _objectFilter = std::forward<F>(filter);
+    void setObjectFilter(fu2::unique_function<bool(const ConstDataObjectPath&)>&& filter) {
+        _objectFilter = std::move(filter);
         updateUI();
     }
 
     /// Installs an optional callback function for filtering the displayed object list.
-    template<typename DataObjectClass, typename F>
+    template<std::derived_from<DataObject> DataObjectClass, std::invocable<const DataObjectClass*> F>
     void setObjectFilter(F&& filter) {
         OVITO_ASSERT(_dataObjectClass->isDerivedFrom(DataObjectClass::OOClass()));
-        setObjectFilter([filter=std::forward<F>(filter)](const DataObject* obj) {
-            return std::invoke(filter, static_object_cast<DataObjectClass>(obj));
+        setObjectFilter([filter=std::forward<F>(filter)](const ConstDataObjectPath& path) {
+            if(const DataObjectClass* obj = path.lastAs<DataObjectClass>())
+                return std::invoke(filter, obj);
+            else
+                return false;
         });
     }
 
@@ -106,7 +108,7 @@ protected:
     DataObjectClassPtr _dataObjectClass;
 
     /// An optional callback function that allows clients to filter the displayed object list.
-    std::function<bool(const DataObject*)> _objectFilter;
+    fu2::unique_function<bool(const ConstDataObjectPath&)> _objectFilter;
 };
 
 }   // End of namespace

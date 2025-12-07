@@ -39,7 +39,8 @@ ColorPickerWidget::ColorPickerWidget(QWidget* parent)
 ******************************************************************************/
 void ColorPickerWidget::setColor(const Color& newVal, bool emitChangeSignal)
 {
-    if(newVal == _color) return;
+    if(newVal == _color)
+        return;
 
     // Update control.
     _color = newVal;
@@ -56,7 +57,7 @@ void ColorPickerWidget::setColor(const Color& newVal, bool emitChangeSignal)
 void ColorPickerWidget::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
-    if(isEnabled()) {
+    if(isEnabled() || isReadOnly()) {
         QBrush brush{(QColor)color()};
         qDrawShadePanel(&painter, rect(), palette(), isDown(), 1, &brush);
     }
@@ -92,6 +93,8 @@ QSize ColorPickerWidget::sizeHint() const
 ******************************************************************************/
 void ColorPickerWidget::activateColorPicker()
 {
+    if(!isEnabled() || isReadOnly())
+        return;
     QColor newColor = QColorDialog::getColor((QColor)_color, window());
     if(newColor.isValid()) {
         setColor(Color(newColor), true);

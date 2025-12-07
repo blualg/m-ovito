@@ -117,7 +117,7 @@ void NavigationMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
         _oldViewMatrix = vpwin->projectionParams().viewMatrix;
         _oldInverseViewMatrix = vpwin->projectionParams().inverseViewMatrix;
         _currentOrbitCenter = _viewport->orbitCenter();
-        _undoTransaction.begin(inputManager()->userInterface(), tr("Modify camera"));
+        _undoTransaction.begin(ui(), tr("Modify camera"));
         if(_temporaryActivation)
             _viewport->addViewportGizmo(inputManager()->pickOrbitCenterMode());
     }
@@ -160,7 +160,7 @@ void NavigationMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
         QPointF pos = getMousePosition(event);
 
         _undoTransaction.revert();
-        inputManager()->userInterface().performActions(_undoTransaction, [&] {
+        performActions(_undoTransaction, [&] {
             modifyView(vpwin, _viewport, pos - _startPoint, false);
         });
     }
@@ -418,7 +418,7 @@ bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindow* vpwin, const QPointF& 
     else {
         vp->scene()->setOrbitCenterMode(Scene::ORBIT_SELECTION_CENTER);
         vp->scene()->setUserOrbitCenter(Point3::Origin());
-        vpwin->userInterface().showStatusBarMessage(tr("No object has been picked. Resetting orbit center to default position."), 1200);
+        vpwin->ui().showStatusBarMessage(tr("No object has been picked. Resetting orbit center to default position."), 1200);
         return false;
     }
 }

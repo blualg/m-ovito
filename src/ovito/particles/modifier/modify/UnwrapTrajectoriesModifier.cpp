@@ -494,7 +494,7 @@ void UnwrapTrajectoriesModificationNode::loadFromStream(ObjectLoadStream& stream
         stream >> item.id >> item.time >> item.dimension >> item.direction;
     }
     // For backward compatibility with OVITO 3.10, which used a std::unordered_map for storing the unwrap records:
-    boost::sort(_unwrapRecords, [](const UnwrapRecord& a, const UnwrapRecord& b) { return a.time < b.time; });
+    std::ranges::sort(_unwrapRecords, [](const UnwrapRecord& a, const UnwrapRecord& b) { return a.time < b.time; });
     if(version >= 1) {
         stream.readSizeT(numItems);
         _unflipRecords.resize(numItems);

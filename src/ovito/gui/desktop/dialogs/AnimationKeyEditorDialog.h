@@ -33,14 +33,14 @@ namespace Ovito {
 /**
  * This dialog box allows to edit the animation keys of an animatable parameter.
  */
-class AnimationKeyEditorDialog : public QDialog, private UndoableTransaction
+class AnimationKeyEditorDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>, private UndoableTransaction
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow);
+    AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindowUI& ui);
 
     /// Returns the animation controller being edited.
     KeyframeController* ctrl() const { return _ctrl.target(); }
@@ -58,7 +58,6 @@ private Q_SLOTS:
 
 private:
 
-    MainWindow& _mainWindow;
     QTableView* _tableWidget;
     QAbstractTableModel* _model;
     QAction* _addKeyAction;

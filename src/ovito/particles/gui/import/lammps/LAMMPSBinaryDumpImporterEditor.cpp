@@ -24,7 +24,7 @@
 #include <ovito/particles/import/lammps/LAMMPSBinaryDumpImporter.h>
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -38,11 +38,11 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSBinaryDumpImporter, LAMMPSBinaryDumpImporterEditor
 /******************************************************************************
 * This is called by the system when the user has selected a new file to import.
 ******************************************************************************/
-void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile)
 {
     // Retrieve column information of input file.
     LAMMPSBinaryDumpImporter* lammpsImporter = static_object_cast<LAMMPSBinaryDumpImporter>(importer);
-    ParticleInputColumnMapping mapping = ProgressDialog::blockForFuture(lammpsImporter->inspectFileHeader(sourceFile), mainWindow, tr("Inspecting file header"));
+    ParticleInputColumnMapping mapping = ProgressDialog::blockForFuture(lammpsImporter->inspectFileHeader(sourceFile), ui(), tr("Inspecting file header"));
 
     // If column names were given in the binary dump file, use them rather than popping up a dialog.
     if(mapping.hasFileColumnNames())
@@ -66,7 +66,7 @@ void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
             }
         }
 
-        InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
+        InputColumnMappingDialog dialog(ui(), mapping, ui().mainWindow(), sourceFile.fileName());
         if(dialog.exec() == QDialog::Accepted) {
             lammpsImporter->setColumnMapping(dialog.mapping());
             // Remember the user-defined mapping for the next time.
@@ -165,7 +165,7 @@ void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
                 mapping = std::move(customMapping);
             }
 
-            InputColumnMappingDialog dialog(mainWindow(), std::move(mapping), parentWindow());
+            InputColumnMappingDialog dialog(ui(), std::move(mapping), parentWindow());
             if(dialog.exec() == QDialog::Accepted) {
                 performTransaction(tr("Change file column mapping"), [&]() {
                     importer->setColumnMapping(dialog.mapping());

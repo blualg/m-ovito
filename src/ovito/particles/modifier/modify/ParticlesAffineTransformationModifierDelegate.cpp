@@ -156,7 +156,7 @@ Future<PipelineFlowState> VectorParticlePropertiesAffineTransformationModifierDe
             const Property* inputProperty = objectPath.lastAs<Property>();
             if(inputProperty && isTransformableProperty(inputProperty)) {
                 // Get the parent property container.
-                const PropertyContainer* container = objectPath.lastAs<PropertyContainer>(1);
+                const PropertyContainer* container = objectPath.nextToLastAs<PropertyContainer>();
                 if(!container)
                     throw Exception(tr("Cannot transform vector property '%1' because it is not part of a property container.").arg(inputProperty->name()));
                 container->verifyIntegrity();

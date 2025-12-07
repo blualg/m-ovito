@@ -35,7 +35,7 @@ namespace Ovito {
  * The ViewportInputManager keeps a stack of ViewportInputMode objects.
  * The topmost handler is the active one and handles all mouse events for the viewports.
  */
-class OVITO_GUIBASE_EXPORT ViewportInputMode : public QObject, public RefMaker
+class OVITO_GUIBASE_EXPORT ViewportInputMode : public QObject, public RefMaker, public UserInterfaceComponent<UserInterface>
 {
     OVITO_CLASS(ViewportInputMode)
     Q_OBJECT
@@ -48,9 +48,6 @@ public:
         TemporaryMode,          ///< The mode is completely removed from the stack when another mode becomes active.
         ExclusiveMode           ///< The stack is cleared before the mode becomes active.
     };
-
-    /// \brief Constructor.
-    ViewportInputMode() = default;
 
     /// \brief Destructor.
     ~ViewportInputMode();

@@ -89,10 +89,10 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& fram
     if(pickRecord.particleId >= 0) {
         if(BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
             if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
-                auto iter = boost::find(identifierProperty, pickRecord.particleId);
+                auto iter = std::ranges::find(identifierProperty, pickRecord.particleId);
                 if(iter == identifierProperty.cend())
                     return;
-                particleIndex = (iter - identifierProperty.cbegin());
+                particleIndex = std::distance(identifierProperty.cbegin(), iter);
             }
         }
     }

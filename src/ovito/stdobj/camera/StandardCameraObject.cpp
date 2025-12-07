@@ -256,7 +256,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> CameraVis::render(const Con
         BufferFactory<Point3G> lines(0);
         // Load and parse PLY file that contains the camera icon.
         QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
-        meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
+        (void)meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
         QTextStream stream(&meshFile);
         for(int i = 0; i < 3; i++) stream.readLine();
         int numVertices = stream.readLine().section(' ', 2, 2).toInt();

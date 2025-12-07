@@ -101,7 +101,6 @@ void OpenGLRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, Us
         stream << "Shading language: " << OpenGLRenderer::openGLSLVersion() << "\n";
         stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
         stream << "Geometry shader support: " << (OpenGLRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
-        stream << "Alpha: " << (format.hasAlpha() ? "yes" : "no") << "\n";
 #if 0
         stream << "Supported extensions:\n";
         QStringList extensionList;
@@ -142,7 +141,7 @@ OORef<RenderingJob> OpenGLRenderer::createOffscreenRenderingJob()
 {
     return OORef<OffscreenOpenGLRenderingJob>::create(
         this_task::ui()->datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
-        this);
+        this, std::max(1, antialiasingLevel()));
 }
 
 /******************************************************************************

@@ -57,7 +57,8 @@ which are calculated from the three cell vectors. These values are only meaningf
 
   The **Simulation cell** panel, which is found under the **Data source** section of the pipeline editor, always displays the original cell
   shape loaded or inferred from the imported simulation file. To modify the simulation cell vectors in OVITO, use
-  the :ref:`particles.modifiers.affine_transformation` modifier in the data pipeline.
+  the :ref:`particles.modifiers.affine_transformation` modifier in the data pipeline. The final state of the cell after all applied modifications
+  is shown in the :ref:`data inspector <data_inspector.simulation_cell>`.
 
 .. seealso::
 

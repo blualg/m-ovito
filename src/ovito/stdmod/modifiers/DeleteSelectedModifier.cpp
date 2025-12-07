@@ -31,4 +31,26 @@ OVITO_CLASSINFO(DeleteSelectedModifier, "DisplayName", "Delete selected");
 OVITO_CLASSINFO(DeleteSelectedModifier, "Description", "Remove all currently selected elements.");
 OVITO_CLASSINFO(DeleteSelectedModifier, "ModifierCategory", "Modification");
 
+/******************************************************************************
+* Returns a short piece of information (typically a string or color) to be
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant DeleteSelectedModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
+{
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(scene);
+
+    // If there is exactly one enabled delegate, use its name as short info.
+    QVariant shortInfo;
+    for(const auto& delegate : delegates()) {
+        if(delegate->isEnabled()) {
+            if(!shortInfo.isNull())
+                return {};  // More than one enabled delegate -> no short info.
+            else
+                shortInfo = delegate->objectTitle();
+        }
+    }
+    return shortInfo;
+}
+
 }   // End of namespace

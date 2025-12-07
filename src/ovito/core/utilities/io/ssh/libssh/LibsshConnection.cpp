@@ -34,9 +34,6 @@ LibsshConnection::LibsshConnection(const SshConnectionParameters& serverInfo, QO
     _password = serverInfo.password;
 
     connect(this, &SshConnection::stateChanged, this, &LibsshConnection::processStateGuard, Qt::QueuedConnection);
-
-    // Load Libssh at runtime.
-    LibsshWrapper::initialize();
 }
 
 /******************************************************************************
@@ -46,7 +43,7 @@ LibsshConnection::~LibsshConnection()
 {
     disconnectFromHost();
     if(_session)
-        LibsshWrapper::ssh_free()(_session);
+        ::ssh_free(_session);
 }
 
 /******************************************************************************
@@ -75,8 +72,8 @@ void LibsshConnection::disconnectFromHost()
         destroySocketNotifiers();
 
         if(_session) {
-            LibsshWrapper::ssh_disconnect()(_session);
-            LibsshWrapper::ssh_free()(_session);
+            ::ssh_disconnect(_session);
+            ::ssh_free(_session);
             _session = nullptr;
         }
 
@@ -90,7 +87,32 @@ void LibsshConnection::disconnectFromHost()
 void LibsshConnection::setState(State state, bool emitStateChangedSignal)
 {
     if(_state != state) {
-        LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::setState()", "state=%i", state);
+        // Helper to get enum name as string
+        const char* stateName = "Unknown";
+        switch(state) {
+            case StateClosed: stateName = "Closed"; break;
+            case StateClosing: stateName = "Closing"; break;
+            case StateInit: stateName = "Init"; break;
+            case StateConnecting: stateName = "Connecting"; break;
+            case StateServerIsKnown: stateName = "ServerIsKnown"; break;
+            case StateUnknownHost: stateName = "UnknownHost"; break;
+            case StateAuthChoose: stateName = "AuthChoose"; break;
+            case StateAuthContinue: stateName = "AuthContinue"; break;
+            case StateAuthNone: stateName = "AuthNone"; break;
+            case StateAuthAutoPubkey: stateName = "AuthAutoPubkey"; break;
+            case StateAuthPassword: stateName = "AuthPassword"; break;
+            case StateAuthKbi: stateName = "AuthKbi"; break;
+            case StateAuthKbiQuestions: stateName = "AuthKbiQuestions"; break;
+            case StateAuthNeedPassword: stateName = "AuthNeedPassword"; break;
+            case StateAuthNeedPKCS11: stateName = "AuthNeedPKCS11"; break;
+            case StateAuthPKCS11: stateName = "AuthPKCS11"; break;
+            case StateAuthAllFailed: stateName = "AuthAllFailed"; break;
+            case StateError: stateName = "Error"; break;
+            case StateCanceledByUser: stateName = "CanceledByUser"; break;
+            case StateOpened: stateName = "Opened"; break;
+            default: break;
+        }
+        ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::setState()", "state=%s (%i)", stateName, state);
         if(state == StateError)
             destroySocketNotifiers();
     }
@@ -110,7 +132,7 @@ void LibsshConnection::processStateGuard()
     processState();
     _processingState = false;
 
-    if(_writeNotifier && _enableWritableNofifier) {
+    if(_writeNotifier && _enableWritableNotifier) {
         enableWritableSocketNotifier();
     }
 }
@@ -127,6 +149,7 @@ void LibsshConnection::processState()
     case StateAuthChoose:
     case StateAuthNeedPassword:
     case StateAuthKbiQuestions:
+    case StateAuthNeedPKCS11:
     case StateAuthAllFailed:
     case StateError:
     case StateCanceledByUser:
@@ -135,18 +158,18 @@ void LibsshConnection::processState()
     case StateInit:
         OVITO_ASSERT(!_session);
 
-        _session = LibsshWrapper::ssh_new()();
+        _session = ::ssh_new();
         if(!_session) {
             _errorMessages.push_back(tr("Failed to create SSH session object."));
             setState(StateError, false);
             return;
         }
-        LibsshWrapper::ssh_set_blocking()(_session, 0);
+        ::ssh_set_blocking(_session, 0);
 
         // Enable debug log output if OVITO_SSH_LOG environment variable is set.
         if(!qEnvironmentVariableIsEmpty("OVITO_SSH_LOG")) {
-            LibsshWrapper::ssh_set_log_level()(SSH_LOG_TRACE);
-            LibsshWrapper::ssh_set_log_callback()([](int priority, const char *function, const char *buffer, void *userdata) {
+            ::ssh_set_log_level(SSH_LOG_TRACE);
+            ::ssh_set_log_callback([](int priority, const char *function, const char *buffer, void *userdata) {
                 OVITO_ASSERT(buffer);
                 LibsshConnection* con = static_cast<LibsshConnection*>(userdata);
                 if(con->_lastLogMessage != buffer) {
@@ -157,7 +180,7 @@ void LibsshConnection::processState()
                     con->_lastLogMessage = buffer;
                 }
             });
-            LibsshWrapper::ssh_set_log_userdata()(this);
+            ::ssh_set_log_userdata(this);
             int verbosity = SSH_LOG_FUNCTIONS;
             setLibsshOption(SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
         }
@@ -165,21 +188,33 @@ void LibsshConnection::processState()
         // Let user override the list of authentication methods:
         if(!qEnvironmentVariableIsEmpty("OVITO_SSH_AUTHENTICATION_METHODS")) {
             bool ok;
-            _useAuths = (UseAuths)qgetenv("OVITO_SSH_AUTHENTICATION_METHODS").toInt(&ok);
-            if(!ok || _useAuths & ~(UseAuthNone | UseAuthAutoPubKey | UseAuthPassword | UseAuthKbi)) {
+            _useAuths = (UseAuths)qEnvironmentVariableIntValue("OVITO_SSH_AUTHENTICATION_METHODS", &ok);
+            if(!ok || _useAuths & ~(UseAuthNone | UseAuthAutoPubKey | UseAuthPassword | UseAuthKbi | UseAuthPKCS11)) {
                 _errorMessages.push_back(tr("Invalid value of environment variable OVITO_SSH_AUTHENTICATION_METHODS."));
                 setState(StateError, false);
                 return;
             }
-            LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
+            ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
         }
 
+#ifndef OVITO_BUILD_CONDA
+        if(qEnvironmentVariableIsEmpty("OPENSSL_MODULES")) {
+            // Set the OPENSSL_MODULES environment variable to point to the directory where the OpenSSL provider modules
+            // are installed. This is required to enable PKCS#11 support in libssh.
+            QString opensslModulesDir = QStringLiteral("%1/%2/ossl-modules")
+                .arg(QDir(Application::instance()->applicationDirPath()).absolutePath())
+                .arg(QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH));
+            qputenv("OPENSSL_MODULES", QDir::toNativeSeparators(opensslModulesDir).toUtf8());
+            ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::processState()", "setting OpenSSL modules directory: %s", qPrintable(opensslModulesDir));
+        }
+#endif
+
         // Register authentication callback.
-        memset(&_sessionCallbacks, 0, sizeof(_sessionCallbacks));
+        std::memset(&_sessionCallbacks, 0, sizeof(_sessionCallbacks));
         _sessionCallbacks.userdata = this;
         _sessionCallbacks.auth_function = &LibsshConnection::authenticationCallback;
         ssh_callbacks_init(&_sessionCallbacks);
-        LibsshWrapper::ssh_set_callbacks()(_session, &_sessionCallbacks);
+        ::ssh_set_callbacks(_session, &_sessionCallbacks);
 
         // Activate download stream compression.
         setLibsshOption(SSH_OPTIONS_COMPRESSION_S_C, "yes");
@@ -188,13 +223,13 @@ void LibsshConnection::processState()
                 && setLibsshOption(SSH_OPTIONS_HOST, qPrintable(_connectionParams.host))
                 && (_connectionParams.port == 0 || setLibsshOption(SSH_OPTIONS_PORT, &_connectionParams.port)))
         {
-            LibsshWrapper::ssh_options_parse_config()(_session, nullptr);
+            ::ssh_options_parse_config(_session, nullptr);
             setState(StateConnecting, true);
         }
         return;
 
     case StateConnecting:
-        switch(LibsshWrapper::ssh_connect()(_session)) {
+        switch(::ssh_connect(_session)) {
         case SSH_AGAIN:
             createSocketNotifiers();
             enableWritableSocketNotifier();
@@ -212,8 +247,7 @@ void LibsshConnection::processState()
         return;
 
     case StateServerIsKnown:
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
-        switch(auto knownState = LibsshWrapper::ssh_session_is_known_server()(_session)) {
+        switch(auto knownState = ::ssh_session_is_known_server(_session)) {
         case SSH_KNOWN_HOSTS_ERROR:
             setState(StateError, false);
             return;
@@ -231,26 +265,6 @@ void LibsshConnection::processState()
             tryNextAuth();
             return;
         }
-#else
-        switch(auto knownState = LibsshWrapper::ssh_is_server_known()(_session)) {
-        case SSH_SERVER_ERROR:
-            setState(StateError, false);
-            return;
-
-        case SSH_SERVER_NOT_KNOWN:
-        case SSH_SERVER_KNOWN_CHANGED:
-        case SSH_SERVER_FOUND_OTHER:
-        case SSH_SERVER_FILE_NOT_FOUND:
-            _unknownHostType = static_cast<HostState>(knownState);
-            setState(StateUnknownHost, false);
-            return;
-
-        case SSH_SERVER_KNOWN_OK:
-            _unknownHostType = HostKnown;
-            tryNextAuth();
-            return;
-        }
-#endif
         return;
 
     case StateAuthContinue:
@@ -258,15 +272,15 @@ void LibsshConnection::processState()
         return;
 
     case StateAuthNone:
-        handleAuthResponse(LibsshWrapper::ssh_userauth_none()(_session, nullptr), UseAuthNone);
+        handleAuthResponse(::ssh_userauth_none(_session, nullptr), UseAuthNone);
         return;
 
     case StateAuthAutoPubkey:
-        handleAuthResponse(LibsshWrapper::ssh_userauth_autopubkey()(_session, nullptr), UseAuthAutoPubKey);
+        handleAuthResponse(::ssh_userauth_autopubkey(_session, nullptr), UseAuthAutoPubKey);
         return;
 
     case StateAuthPassword:
-        if(LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED || LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED_ERROR) {
+        if(::ssh_get_status(_session) == SSH_CLOSED || ::ssh_get_status(_session) == SSH_CLOSED_ERROR) {
             setState(StateError, false);
         }
         else if(!_passwordSet) {
@@ -274,7 +288,7 @@ void LibsshConnection::processState()
         }
         else {
             QByteArray utf8pw = _password.toUtf8();
-            auto rc = LibsshWrapper::ssh_userauth_password()(_session, nullptr, utf8pw.constData());
+            auto rc = ::ssh_userauth_password(_session, nullptr, utf8pw.constData());
 
             if(rc != SSH_AUTH_AGAIN) {
                 _passwordSet = false;
@@ -286,12 +300,12 @@ void LibsshConnection::processState()
         return;
 
     case StateAuthKbi: {
-        auto rc = LibsshWrapper::ssh_userauth_kbdint()(_session, nullptr, nullptr);
+        auto rc = ::ssh_userauth_kbdint(_session, nullptr, nullptr);
         if(rc == SSH_AUTH_INFO) {
             // Sometimes SSH_AUTH_INFO is returned even though there are no
             // KBI questions available, in that case, continue as if
             // SSH_AUTH_AGAIN was returned.
-            if(LibsshWrapper::ssh_userauth_kbdint_getnprompts()(_session) <= 0)
+            if(::ssh_userauth_kbdint_getnprompts(_session) <= 0)
                 enableWritableSocketNotifier();
             else
                 setState(StateAuthKbiQuestions, false);
@@ -301,8 +315,88 @@ void LibsshConnection::processState()
         }
         } return;
 
+    case StateAuthPKCS11: {
+        // Use the explicitly set PKCS#11 URI
+        QString effectiveUri = _pkcs11Uri;
+
+        if(!effectiveUri.isEmpty()) {
+            // Parse module-path from PKCS#11 URI if present
+            // Format: pkcs11:...?module-path=/path/to/module.so
+            QString modulePath;
+            QString uriWithoutModulePath = effectiveUri;
+
+            int modulePathIdx = effectiveUri.indexOf("module-path=");
+            if(modulePathIdx != -1) {
+                int pathStart = modulePathIdx + 12; // length of "module-path="
+                int pathEnd = effectiveUri.indexOf('&', pathStart);
+                if(pathEnd == -1) pathEnd = effectiveUri.length();
+
+                modulePath = effectiveUri.mid(pathStart, pathEnd - pathStart);
+
+                // Remove module-path from URI (libssh doesn't understand it)
+                int removeStart = modulePathIdx;
+                if(modulePathIdx > 0 && (effectiveUri[modulePathIdx-1] == '?' || effectiveUri[modulePathIdx-1] == '&')) {
+                    removeStart--;
+                }
+                uriWithoutModulePath = effectiveUri.left(removeStart);
+                if(pathEnd < effectiveUri.length() && effectiveUri[pathEnd] == '&') {
+                    uriWithoutModulePath += effectiveUri.mid(pathEnd + 1);
+                }
+            }
+
+            // Set PKCS11_PROVIDER_MODULE environment variable if module path was specified
+            QByteArray oldProviderValue;
+            bool hadOldProvider = false;
+            if(!modulePath.isEmpty()) {
+                oldProviderValue = qgetenv("PKCS11_PROVIDER_MODULE");
+                hadOldProvider = !oldProviderValue.isNull();
+                qputenv("PKCS11_PROVIDER_MODULE", modulePath.toUtf8());
+            }
+
+            // Load the private key from PKCS#11 URI
+            ssh_key privkey = nullptr;
+            QByteArray utf8uri = uriWithoutModulePath.toUtf8();
+            QByteArray utf8pin = _pkcs11Pin.toUtf8();
+
+            int rc_import = ::ssh_pki_import_privkey_file(
+                utf8uri.constData(),
+                _pkcs11Pin.isEmpty() ? nullptr : utf8pin.constData(),
+                nullptr,  // auth callback
+                nullptr,  // auth data
+                &privkey
+            );
+
+            // Restore previous PKCS11_PROVIDER_MODULE value
+            if(!modulePath.isEmpty()) {
+                if(hadOldProvider) {
+                    qputenv("PKCS11_PROVIDER_MODULE", oldProviderValue);
+                } else {
+                    qunsetenv("PKCS11_PROVIDER_MODULE");
+                }
+            }
+
+            if(rc_import == SSH_OK && privkey) {
+                // Authenticate using the loaded PKCS#11 key
+                auto rc = ::ssh_userauth_publickey(_session, nullptr, privkey);
+                ::ssh_key_free(privkey);
+                handleAuthResponse(rc, UseAuthPKCS11);
+            }
+            else {
+                // Failed to load key - might need PIN, request it from user
+                ::_ssh_log(SSH_LOG_WARNING, "LibsshConnection::processState()",
+                    "Failed to load PKCS#11 key from URI, requesting credentials: %s", qPrintable(effectiveUri));
+                setState(StateAuthNeedPKCS11, false);
+            }
+        }
+        else {
+            // No PKCS#11 URI specified, request credentials from user
+            setState(StateAuthNeedPKCS11, false);
+        }
+        return;
+    }
+
     case StateOpened:
-        if(LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED || LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED_ERROR) {
+        if(::ssh_get_status(_session) == SSH_CLOSED || ::ssh_get_status(_session) == SSH_CLOSED_ERROR) {
             setState(StateError, false);
         }
         else {
@@ -324,7 +418,8 @@ bool LibsshConnection::setLibsshOption(enum ssh_options_e type, const void* valu
     OVITO_ASSERT(_session);
     if(_state == StateError)
         return false;
-    if(LibsshWrapper::ssh_options_set()(_session, type, value) != 0) {
+    if(::ssh_options_set(_session, type, value) != 0) {
+        qDebug() << "WARNING: Failed to set libssh option" << type;
         setState(StateError, true);
         return false;
     }
@@ -337,12 +432,12 @@ bool LibsshConnection::setLibsshOption(enum ssh_options_e type, const void* valu
 void LibsshConnection::createSocketNotifiers()
 {
     if(!_readNotifier) {
-        _readNotifier = new QSocketNotifier(LibsshWrapper::ssh_get_fd()(_session), QSocketNotifier::Read, this);
+        _readNotifier = new QSocketNotifier(::ssh_get_fd(_session), QSocketNotifier::Read, this);
         connect(_readNotifier, &QSocketNotifier::activated, this, &LibsshConnection::handleSocketReadable);
     }
 
     if(!_writeNotifier) {
-        _writeNotifier = new QSocketNotifier(LibsshWrapper::ssh_get_fd()(_session), QSocketNotifier::Write, this);
+        _writeNotifier = new QSocketNotifier(::ssh_get_fd(_session), QSocketNotifier::Write, this);
         connect(_writeNotifier, &QSocketNotifier::activated, this, &LibsshConnection::handleSocketWritable);
     }
 }
@@ -373,10 +468,10 @@ void LibsshConnection::destroySocketNotifiers()
 void LibsshConnection::enableWritableSocketNotifier()
 {
     if(_processingState) {
-        _enableWritableNofifier = true;
+        _enableWritableNotifier = true;
     }
     else if(_writeNotifier) {
-        auto status = LibsshWrapper::ssh_get_status()(_session);
+        auto status = ::ssh_get_status(_session);
         if(status == SSH_CLOSED_ERROR || status == SSH_CLOSED) {
             setState(StateError, false);
             return;
@@ -401,7 +496,7 @@ void LibsshConnection::handleSocketReadable()
 ******************************************************************************/
 void LibsshConnection::handleSocketWritable()
 {
-    _enableWritableNofifier = false;
+    _enableWritableNotifier = false;
     _writeNotifier->setEnabled(false);
     processStateGuard();
 }
@@ -411,7 +506,7 @@ void LibsshConnection::handleSocketWritable()
 ******************************************************************************/
 void LibsshConnection::tryNextAuth()
 {
-    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::tryNextAuth()", "state=%i", _state);
+    ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::tryNextAuth()", "state=%i", _state);
 
     // If authentication methods have not been chosen or all chosen authentication
     // methods have failed, switch state to StateChooseAuth or StateAuthFailed,
@@ -431,6 +526,7 @@ void LibsshConnection::tryNextAuth()
     case StateAuthContinue:
     case StateAuthNeedPassword:
     case StateAuthKbiQuestions:
+    case StateAuthNeedPKCS11:
     case StateAuthAllFailed:
     case StateOpened:
     case StateError:
@@ -443,7 +539,7 @@ void LibsshConnection::tryNextAuth()
         // Disable authentication methods that are not supported by the server.
         {
             AuthMethods supportedMethods = supportedAuthMethods();
-            LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::tryNextAuth()", "server supportedMethods=%i", (int)supportedMethods);
+            ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::tryNextAuth()", "server supportedMethods=%i", (int)supportedMethods);
             if(!supportedMethods.testFlag(AuthMethodPassword)) useAuth(UseAuthPassword, false);
             if(!supportedMethods.testFlag(AuthMethodKbi)) useAuth(UseAuthKbi, false);
             if(!supportedMethods.testFlag(AuthMethodPublicKey)) useAuth(UseAuthAutoPubKey, false);
@@ -462,6 +558,10 @@ void LibsshConnection::tryNextAuth()
     case StateAuthKbi:
         failedAuth = UseAuthKbi;
         break;
+
+    case StateAuthPKCS11:
+        failedAuth = UseAuthPKCS11;
+        break;
     }
 
     if(failedAuth != UseAuthEmpty) {
@@ -470,7 +570,7 @@ void LibsshConnection::tryNextAuth()
         Q_EMIT authFailed(failedAuth);
 
         // User might close or otherwise manipulate the SshConnection when an
-        // authentification fails, so make sure that the state has not been changed.
+        // authentication fails, so make sure that the state has not been changed.
         if(_state != oldState)
             return;
     }
@@ -498,6 +598,10 @@ void LibsshConnection::tryNextAuth()
         _useAuths &= ~UseAuthKbi;
         setState(StateAuthKbi, true);
     }
+    else if(_useAuths & UseAuthPKCS11) {
+        _useAuths &= ~UseAuthPKCS11;
+        setState(StateAuthPKCS11, true);
+    }
 }
 
 /******************************************************************************
@@ -505,7 +609,7 @@ void LibsshConnection::tryNextAuth()
 ******************************************************************************/
 void LibsshConnection::handleAuthResponse(int rc, UseAuthFlag auth)
 {
-    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::handleAuthResponse()", "rc=%i auth=%i", rc, auth);
+    ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::handleAuthResponse()", "rc=%i auth=%i", rc, auth);
 
     switch(rc) {
     case SSH_AUTH_AGAIN:
@@ -539,31 +643,24 @@ void LibsshConnection::handleAuthResponse(int rc, UseAuthFlag auth)
 QString LibsshConnection::hostPublicKeyHash()
 {
     ssh_key key;
-#if LIBSSH_VERSION_INT > SSH_VERSION_INT(0, 7, 5)
-    if(LibsshWrapper::ssh_get_server_publickey()(_session, &key) != SSH_OK) {
+    if(::ssh_get_server_publickey(_session, &key) != SSH_OK) {
         qWarning() << "Call to ssh_get_server_publickey() failed";
         return {};
     }
-#else
-    if(LibsshWrapper::ssh_get_publickey()(_session, &key) != SSH_OK) {
-        qWarning() << "Call to ssh_get_publickey() failed";
-        return {};
-    }
-#endif
 
     unsigned char* hash;
     size_t hash_len;
-    if(LibsshWrapper::ssh_get_publickey_hash()(key, SSH_PUBLICKEY_HASH_MD5, &hash, &hash_len) < 0) {
-        LibsshWrapper::ssh_key_free()(key);
+    if(::ssh_get_publickey_hash(key, SSH_PUBLICKEY_HASH_MD5, &hash, &hash_len) < 0) {
+        ::ssh_key_free(key);
         return {};
     }
 
-    char* hexa = LibsshWrapper::ssh_get_hexa()(hash, hash_len);
+    char* hexa = ::ssh_get_hexa(hash, hash_len);
     QString string(hexa);
 
-    LibsshWrapper::ssh_string_free_char()(hexa);
-    LibsshWrapper::ssh_clean_pubkey_hash()(&hash);
-    LibsshWrapper::ssh_key_free()(key);
+    ::ssh_string_free_char(hexa);
+    ::ssh_clean_pubkey_hash(&hash);
+    ::ssh_key_free(key);
 
     return string;
 }
@@ -574,11 +671,7 @@ QString LibsshConnection::hostPublicKeyHash()
 ******************************************************************************/
 bool LibsshConnection::markCurrentHostKnown()
 {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
-    switch(LibsshWrapper::ssh_session_update_known_hosts()(_session)) {
-#else
-    switch(LibsshWrapper::ssh_write_knownhost()(_session)) {
-#endif
+    switch(::ssh_session_update_known_hosts(_session)) {
     case SSH_OK:
         setState(StateServerIsKnown, true);
         return true;
@@ -599,7 +692,7 @@ QStringList LibsshConnection::errorMessages() const
     if(!_errorMessages.empty())
         return _errorMessages;
     else if(_session)
-        return {QString(LibsshWrapper::ssh_get_error()(_session))};
+        return {QString(::ssh_get_error(_session))};
     else
         return {tr("Could not initialize SSH session.")};
 }
@@ -611,9 +704,9 @@ QString LibsshConnection::username() const
 {
     QString user;
     char* s;
-    if(LibsshWrapper::ssh_options_get()(_session, SSH_OPTIONS_USER, &s) == SSH_OK) {
+    if(::ssh_options_get(_session, SSH_OPTIONS_USER, &s) == SSH_OK) {
         user = s;
-        LibsshWrapper::ssh_string_free_char()(s);
+        ::ssh_string_free_char(s);
     }
     return user;
 }
@@ -625,9 +718,9 @@ QString LibsshConnection::hostname() const
 {
     QString host;
     char* s;
-    if(LibsshWrapper::ssh_options_get()(_session, SSH_OPTIONS_HOST, &s) == SSH_OK) {
+    if(::ssh_options_get(_session, SSH_OPTIONS_HOST, &s) == SSH_OK) {
         host = s;
-        LibsshWrapper::ssh_string_free_char()(s);
+        ::ssh_string_free_char(s);
     }
     return host;
 }
@@ -642,10 +735,10 @@ int LibsshConnection::authenticationCallback(const char* prompt, char* buf, size
         return -1;
 
     connection->_keyPassphrase.clear();
-    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::authenticationCallback()", "emit signal needPassphrase");
+    ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::authenticationCallback()", "emit signal needPassphrase");
     Q_EMIT connection->needPassphrase(prompt);
     if(!connection->_keyPassphrase.isEmpty()) {
-        LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "LibsshConnection::authenticationCallback()", "received passphrase from user");
+        ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::authenticationCallback()", "received passphrase from user");
         QByteArray utf8pw = connection->_keyPassphrase.toUtf8();
         qstrncpy(buf, utf8pw.constData(), len);
         return 0;
@@ -663,16 +756,16 @@ QList<LibsshConnection::KbiQuestion> LibsshConnection::kbiQuestions()
     if(_state == StateAuthKbiQuestions) {
 
         QList<KbiQuestion> questions;
-        QString instruction = LibsshWrapper::ssh_userauth_kbdint_getinstruction()(_session);
+        QString instruction = ::ssh_userauth_kbdint_getinstruction(_session);
 
-        int len = LibsshWrapper::ssh_userauth_kbdint_getnprompts()(_session);
+        int len = ::ssh_userauth_kbdint_getnprompts(_session);
 
         for(int i = 0; i < len; i++) {
 
             char echo = 0;
             const char *prompt = 0;
 
-            prompt = LibsshWrapper::ssh_userauth_kbdint_getprompt()(_session, i, &echo);
+            prompt = ::ssh_userauth_kbdint_getprompt(_session, i, &echo);
             OVITO_ASSERT(prompt);
 
             KbiQuestion kbi_question;
@@ -702,7 +795,7 @@ void LibsshConnection::setKbiAnswers(QStringList answers)
         int i = 0;
         for(const QString& answer : answers) {
             QByteArray utf8 = answer.toUtf8();
-            LibsshWrapper::ssh_userauth_kbdint_setanswer()(_session, i, utf8.constData());
+            ::ssh_userauth_kbdint_setanswer(_session, i, utf8.constData());
         }
 
         setState(StateAuthKbi, true);
@@ -722,6 +815,35 @@ void LibsshConnection::setPassword(QString password)
 
     if(_state == StateAuthNeedPassword) {
         setState(StateAuthPassword, true);
+    }
+}
+
+/******************************************************************************
+* Sets the PKCS#11 URI for smartcard authentication.
+******************************************************************************/
+void LibsshConnection::setPKCS11Uri(const QString& uri)
+{
+    _pkcs11Uri = uri;
+}
+
+/******************************************************************************
+* Sets the PIN for PKCS#11 smartcard access.
+******************************************************************************/
+void LibsshConnection::setPKCS11Pin(const QString& pin)
+{
+    _pkcs11Pin = pin;
+}
+
+/******************************************************************************
+* Sets both PKCS#11 URI and PIN, then retries authentication.
+******************************************************************************/
+void LibsshConnection::setPKCS11Credentials(const QString& uri, const QString& pin)
+{
+    _pkcs11Uri = uri;
+    _pkcs11Pin = pin;
+
+    if(_state == StateAuthNeedPKCS11) {
+        setState(StateAuthPKCS11, true);
     }
 }
 

@@ -46,7 +46,8 @@ void GenericPropertyModifier::setDefaultSubject(const QString& pluginId, const Q
 ******************************************************************************/
 bool GenericPropertyModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input))
+        return false;
 
     // Modifier is applicable if there is at least one property container in the input data.
     // Subclasses can override this behavior.

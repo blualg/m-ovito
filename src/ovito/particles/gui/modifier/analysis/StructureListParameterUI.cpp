@@ -84,7 +84,7 @@ QLabel* StructureListParameterUI::createNotesLabel()
     label->setWordWrap(true);
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     connect(label, &QLabel::linkActivated, this, [this]() {
-        ApplicationSettingsDialog dlg(editor()->mainWindow(), &ParticleSettingsPage::OOClass());
+        ApplicationSettingsDialog dlg(ui(), &ParticleSettingsPage::OOClass());
         dlg.exec();
     });
     return label;

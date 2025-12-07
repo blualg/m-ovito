@@ -217,7 +217,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Create and fill bonds topology storage.
     setBondCount(bonds.size());
     BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(Bonds::TopologyProperty);
-    boost::copy(bonds, bondTopologyAccess.begin());
+    std::ranges::copy(bonds, bondTopologyAccess.begin());
 
     progress.nextSubStep();
     progress.setText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));

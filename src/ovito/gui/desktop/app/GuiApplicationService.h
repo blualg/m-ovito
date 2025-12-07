@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT GuiApplicationService : public ApplicationService
 public:
 
     /// Is called when a new main window is created.
-    virtual void registerActions(ActionManager& actionManager, MainWindow& mainWindow) {}
+    virtual void registerActions(MainWindowUI& ui) {}
 };
 
 }   // End of namespace

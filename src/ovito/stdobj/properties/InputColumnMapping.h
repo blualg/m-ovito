@@ -275,7 +275,7 @@ private:
         size_t count;
         int vectorComponent;
         int dataType;
-        OvitoClassPtr elementTypeClass = nullptr;
+        ElementTypeClassPtr elementTypeClass = nullptr;
         bool numericElementTypes;
         int nameOfNumericTypeColumn = -1;
         std::pair<const char*, const char*> typeName{nullptr, nullptr};

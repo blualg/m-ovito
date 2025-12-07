@@ -118,6 +118,13 @@ public:
         return *l <= ' ';
     }
 
+    /// Returns \c true if the last line read via readLine() contains a given substring.
+    bool lineContains(std::string_view s) const
+    {
+        std::string_view l(line());
+        return l.contains(s);
+    }
+
     /// Returns \c true if the last line read via readLine() ends with the given substring.
     bool lineEndsWith(const char* s, bool ignoreTrailingWhitespace = true) const {
         size_t len = qstrlen(line());

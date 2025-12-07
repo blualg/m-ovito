@@ -292,7 +292,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         BufferWriteAccess<IdentifierIntType, access_mode::discard_write> centerParticleProperty = polyhedraMesh.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Identifier"), DataBuffer::IntIdentifier);
         if(_particleIdentifiers) {
             OVITO_ASSERT(centerParticleProperty.size() == _particleIdentifiers->size());
-            boost::copy(BufferReadAccess<IdentifierIntType>(_particleIdentifiers), centerParticleProperty.begin());
+            std::ranges::copy(BufferReadAccess<IdentifierIntType>(_particleIdentifiers), centerParticleProperty.begin());
         }
         else {
             boost::algorithm::iota_n(centerParticleProperty.begin(), IdentifierIntType{1}, centerParticleProperty.size());

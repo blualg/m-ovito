@@ -20,7 +20,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
   :ref:`particles.modifiers.coordination_analysis`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
-  :ref:`particles.modifiers.difference_between_frames` |ovito-pro|  Calculates numeric differences between the current and a reference frame.
+  :ref:`particles.modifiers.difference_between_frames` |ovito-pro|  Calculates differences (delta values) between two simulation trajectory frames.
   :ref:`particles.modifiers.dislocation_analysis`                   Identifies dislocation defects in a crystal.
   :ref:`particles.modifiers.displacement_vectors`                   Calculates the displacements of particles based on an initial and a deformed configuration.
   :ref:`particles.modifiers.elastic_strain`                         Calculates the atomic-level elastic strain tensors in crystalline systems.
@@ -37,6 +37,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.voronoi_analysis`                       Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
   :ref:`particles.modifiers.wigner_seitz_analysis`                  Identifies point defects (vacancies and interstitials) in a crystal lattice.
   ================================================================= ==========================================================
+
+.. _particles.modifiers.coloring:
 
 .. table::
   :width: 100%
@@ -62,6 +64,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.combine_particle_sets`           Merges the particles and bonds from two separate input files into one dataset.
   :ref:`particles.modifiers.compute_property`                Assigns property values to particles or bonds according to a user-defined formula.
   :ref:`particles.modifiers.delete_selected_particles`       Removes the selected elements from the visualization.
+  :ref:`particles.modifiers.edit_types`                      Lets you edit the types associated with a typed property, e.g. particle types.
   :ref:`particles.modifiers.freeze_property`                 Freezes the values of a dynamic particle property at a given animation time to make them available at other times.
   :ref:`particles.modifiers.load_trajectory`                 Loads time-dependent atomic positions from a separate trajectory file.
   :ref:`particles.modifiers.python_script` |ovito-pro|       Lets you write your own modifier function in Python.
@@ -71,6 +74,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.unwrap_trajectories`             Computes unwrapped particle coordinates in order to generate continuous trajectories at periodic cell boundaries.
   :ref:`particles.modifiers.wrap_at_periodic_boundaries`     Folds particles located outside of the periodic simulation box back into the box.
   ========================================================== ==========================================================
+
+.. _particles.modifiers.selection:
 
 .. table::
   :width: 100%
@@ -161,6 +166,7 @@ combine several modifiers to accomplish more complex tasks.
   difference_between_frames
   dislocation_analysis
   displacement_vectors
+  edit_types
   elastic_strain
   find_rings
   expand_selection

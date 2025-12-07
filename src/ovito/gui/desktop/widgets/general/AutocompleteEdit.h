@@ -31,10 +31,10 @@ constexpr static char wordSplitterExpression[] = R"([0-9a-zA-Z\.@\[\]])";
 /// Get the current token from the text string.
 /// This will fail for strings with nested quotes!
 /// Returns the starting index and the length of the token from the original string.
-std::tuple<qsizetype, qsizetype> getToken(int curserPosition, const QString& expression, const QRegularExpression& splitExpression);
+OVITO_GUI_EXPORT std::tuple<qsizetype, qsizetype> getToken(int curserPosition, const QString& expression, const QRegularExpression& splitExpression);
 
 /// Calculates the new cursor position and the new string after successful insertion of completion into expression at the current position.
-std::tuple<qsizetype, QString> completeExpression(int curserPosition, const QString& expression, const QRegularExpression& splitExpression,
+OVITO_GUI_EXPORT std::tuple<qsizetype, QString> completeExpression(int curserPosition, const QString& expression, const QRegularExpression& splitExpression,
                                                   const QString& completion);
 
 }  // namespace Ovito::AutocompleteEdit

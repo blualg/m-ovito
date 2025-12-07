@@ -50,7 +50,7 @@ QRadioButton* IntegerRadioButtonParameterUI::addRadioButton(int value, const QSt
 {
     QRadioButton* button = new QRadioButton(caption);
     if(buttonGroup()) {
-        button->setEnabled(editObject() && isEnabled());
+        button->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
         buttonGroup()->addButton(button, value);
     }
     return button;
@@ -67,15 +67,15 @@ void IntegerRadioButtonParameterUI::resetUI()
     if(buttonGroup()) {
         for(QAbstractButton* button : buttonGroup()->buttons()) {
             if(isReferenceFieldUI())
-                button->setEnabled(parameterObject() && isEnabled());
+                button->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
             else
-                button->setEnabled(editObject() && isEnabled());
+                button->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
         }
     }
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 
@@ -91,7 +91,7 @@ void IntegerRadioButtonParameterUI::updateUI()
         int id = buttonGroup()->checkedId();
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                id = ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0)));
+                id = ctrl->getIntValue(currentAnimationTime());
             }
         }
         else if(isPropertyFieldUI()) {
@@ -138,7 +138,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
             performTransaction(tr("Change parameter"), [this, id]() {
                 if(isReferenceFieldUI()) {
                     if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                        ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), id);
+                        ctrl->setIntValue(currentAnimationTime(), id);
                         updateUI();
                     }
                 }

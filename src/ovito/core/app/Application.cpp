@@ -402,13 +402,16 @@ void Application::createQtApplication(bool supportGui)
 * Cancels all running tasks and closes the user interface as soon as possible
 * (without asking user to save changes).
 ******************************************************************************/
-void Application::shutdown()
+bool Application::shutdown()
 {
     // Close the user interface.
-    UserInterface::shutdown();
+    if(!UserInterface::shutdown())
+        return false;
 
     // Wait for all running tasks to stop, empty the deferred work queue, and leave all nested event loops.
     taskManager().requestShutdown();
+
+    return true;
 }
 
 #ifndef Q_OS_WASM

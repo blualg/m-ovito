@@ -28,6 +28,8 @@
 
 namespace Ovito {
 
+class OpenGLRenderBuffer; // Forward declaration
+
 /**
  * \brief Stores the result of an object picking render pass.
  */
@@ -48,7 +50,7 @@ public:
     }
 
 	/// Registers a range of unique object IDs for a rendering command.
-	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices = {});
+	std::optional<uint32_t> allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices = {});
 
 	/// Finds the picked object at the given frame buffer pixel position.
 	virtual std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
@@ -60,7 +62,7 @@ public:
     virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
 
     /// Reads out the contents of the OpenGL framebuffer.
-    void acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
+    void acquireFramebufferContents(OpenGLRenderBuffer& renderBuffer);
 
 private:
 

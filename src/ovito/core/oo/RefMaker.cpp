@@ -679,6 +679,22 @@ void RefMaker::initializeParametersToUserDefaultsRecursive()
 
 /******************************************************************************
 * Creates a snapshot of the object's parameter values that will serve as
+* reference to detect parameter changes made later by the user.
+******************************************************************************/
+void RefMaker::freezeInitialParameterValues()
+{
+    // Copy current values of all properties from the public property field to the shadow property field.
+    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+        if(field->_propertyStorageTakeSnapshotFunc) {
+            OVITO_ASSERT_MSG(!field->isReferenceField(), "RefMaker::freezeInitialParameterValues", "This function can only handle shadow property fields, not reference fields.");
+            OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::freezeInitialParameterValues", "The shadow property field has not been defined in this class or its base classes.");
+            field->_propertyStorageTakeSnapshotFunc(this, field);
+        }
+    }
+}
+
+/******************************************************************************
+* Creates a snapshot of the object's parameter values that will serve as
 * reference to detect parameter changes made by the user.
 ******************************************************************************/
 void RefMaker::freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields)

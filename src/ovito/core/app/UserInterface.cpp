@@ -28,9 +28,16 @@
 #include "UserInterface.h"
 
 #include <QOperatingSystemVersion>
-#include <QAbstractEventDispatcher>
 
 namespace Ovito {
+
+#ifndef OVITO_BUILD_MONOLITHIC
+#if defined(Q_CC_MSVC)
+// Explicit class template instantiations to be exported by the core module:
+template class UserInterfaceComponent<UserInterface>;
+template class UserInterfaceComponent<UserInterface, false>;
+#endif
+#endif
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(UserInterface);
 
@@ -74,24 +81,27 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 * Cancels all running tasks and closes the user interface as soon as possible
 * (without asking user to save changes).
 ******************************************************************************/
-void UserInterface::shutdown()
+bool UserInterface::shutdown()
 {
+    OVITO_ASSERT(this_task::isMainThread());
+
     // Close the dataset container. This should release all objects in the current dataset and stop all associated tasks.
     try {
         // Set up a local task context in case we don't have one.
         // The shutdown() method may be called from anywhere.
         MainThreadOperation operation(*this, MainThreadOperation::Kind::Isolated);
         datasetContainer().clearAllReferences();
+
+        return true;
     }
     catch(OperationCanceled) {
         qWarning() << "Warning: Shutdown cancelled unexpectedly";
-        return;
     }
     catch(const Exception& ex) {
         qWarning() << "Warning: Exception caught during shutdown";
         reportError(ex, true);
     }
-    _selfGuard.reset();  // Clear self guard to allow the object to be deleted.
+    return false;
 }
 
 /******************************************************************************
@@ -174,12 +184,6 @@ QString UserInterface::generateSystemReport()
 #endif
     stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
     stream << "Python file path: " << PluginManager::instance().pythonDir() << "\n";
-    stream << "CUDA support enabled: " <<
-#ifdef OVITO_USE_CUDA
-        "yes\n";
-#else
-        "no\n";
-#endif
     // Let the plugin classes optionally add their specific info to the system report, e.g. the OpenGL driver information.
     for(Plugin* plugin : PluginManager::instance().plugins()) {
         for(OvitoClassPtr clazz : plugin->classes()) {

@@ -169,7 +169,7 @@ public:
     }
 
     /// \brief Constructs a reference to a data object.
-    TypedDataObjectReference(const typename DataObjectType::OOMetaClass* dataClass, const QString& dataPath = QString(), const QString& dataTitle = QString()) : DataObjectReference(dataClass, dataPath, dataTitle) {}
+    TypedDataObjectReference(const typename DataObjectType::OOMetaClass* dataClass, const QString& dataPath = {}, const QString& dataTitle = {}) : DataObjectReference(dataClass, dataPath, dataTitle) {}
 
     /// \brief Constructs a reference to a data object from an existing data path.
     TypedDataObjectReference(const ConstDataObjectPath& path) : DataObjectReference(path) {
@@ -201,6 +201,13 @@ public:
     friend QDebug operator<<(QDebug debug, const TypedDataObjectReference& r) {
         return debug << static_cast<const DataObjectReference&>(r);
     }
+};
+
+// Specialization of the QVariantTypeFromPropertyType metafunction from PropertyField.h.
+// TypedDataObjectReference<DataObjectType> should be stored as a plain DataObjectReference in a QVariant.
+template<typename DataObjectType>
+struct QVariantTypeFromPropertyType<TypedDataObjectReference<DataObjectType>> {
+    using type = DataObjectReference;
 };
 
 }   // End of namespace

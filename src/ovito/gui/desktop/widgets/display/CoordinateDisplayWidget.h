@@ -32,23 +32,20 @@ namespace Ovito {
  * The coordinate display widget at the bottom of the main window,
  * which displays the current mouse coordinates and the transform of the selected object.
  */
-class OVITO_GUI_EXPORT CoordinateDisplayWidget : public QFrame
+class OVITO_GUI_EXPORT CoordinateDisplayWidget : public QFrame, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the widget.
-    CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent = nullptr);
+    /// Constructor.
+    CoordinateDisplayWidget(MainWindowUI& ui, QWidget* parent = nullptr);
 
-    /// \brief Shows the coordinate display widget.
+    /// Shows the coordinate display widget.
     void activate(const QString& undoOperationName);
 
-    /// \brief Deactivates the coordinate display widget.
+    /// Deactivates the coordinate display widget.
     void deactivate();
-
-    /// \brief Returns the main window hosting this widget.
-    MainWindow& mainWindow() const { return _mainWindow; }
 
     /// Sets the values displayed by the coordinate display widget.
     void setValues(const Vector3& xyz) {
@@ -87,7 +84,6 @@ protected Q_SLOT:
 
 private:
 
-    MainWindow& _mainWindow;
     SpinnerWidget* _spinners[3];
 };
 

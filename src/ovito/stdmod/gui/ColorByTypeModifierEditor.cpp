@@ -56,6 +56,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     });
 
     _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ColorByTypeModifier::sourceProperty));
+    _sourcePropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addSpacing(4);
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(_sourcePropertyUI->comboBox());
@@ -98,12 +99,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(new QLabel(tr("Types:"), rollout));
     layout->addWidget(_elementTypesBox);
 
-    connect(this, &PropertiesEditor::contentsChanged, this, [this,model](RefTarget* editObject) {
-        ColorByTypeModifier* modifier = static_object_cast<ColorByTypeModifier>(editObject);
-        if(modifier)
-            _sourcePropertyUI->setContainerRef(modifier->subject());
-        else
-            _sourcePropertyUI->setContainerRef({});
+    connect(this, &PropertiesEditor::contentsChanged, this, [model](RefTarget* editObject) {
         model->refresh();
     });
 

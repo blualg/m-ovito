@@ -40,7 +40,7 @@ class XYZImporterEditor : public FileImporterEditor
 public:
 
     /// This is called by the system when the user has selected a new file to import.
-    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile) override;
 
     /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
     void showEditColumnMappingDialog(XYZImporter* importer, const FileSourceImporter::Frame& frame);

@@ -53,7 +53,7 @@ OVITO_CLASSINFO(VectorsDeleteSelectedModifierDelegate, "DisplayName", "Vectors")
 QVector<DataObjectReference> VectorsDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
     if(input.containsObject<Vectors>())
-        return {DataObjectReference(&Vectors::OOClass())};
+        return { DataObjectReference(&Vectors::OOClass()) };
     return {};
 }
 

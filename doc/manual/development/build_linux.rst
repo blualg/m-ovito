@@ -13,7 +13,7 @@ as follows:
 
 .. note::
 
-  OVITO requires the Qt cross-platform framework (version 6.2 or higher). We recommend using the newest release of the Qt
+  OVITO requires the Qt cross-platform framework (version 6.3 or higher). We recommend using the newest release of the Qt
   framework, which is available as a download from https://www.qt.io/download. Alternatively,
   you can use the Qt6 development files provided by the package manager of your Linux distro.
 
@@ -69,16 +69,14 @@ Compiling OVITO
 Create a build directory and let `CMake <https://www.cmake.org/>`_ generate a Makefile::
 
   cd ovito
-  mkdir build
-  cd build
-  cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+  cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-If this step fails, you can now run :command:`ccmake .` to start up the
-`CMake <https://www.cmake.org/>`_ configuration program and adjust the build options as needed.
+If this step fails, rerun CMake using the :command:`--fresh` flag 
+to initiate a clean configuration and adjust the build options as necessary.
 
 To build OVITO run::
 
-  cmake --build . --parallel
+  cmake --build build --parallel
 
 If this step is successful, the :program:`ovito` executable can be found in the directory :file:`ovito/build/bin/`.
-The command :command:`cmake --build . --target documentation` builds the HTML pages of the user manual (requires Sphinx Python package and Sphinx RTD theme).
+The command :command:`cmake --build build --target documentation` builds the HTML pages of the user manual (requires Sphinx Python package and Sphinx RTD theme).

@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include "DataBuffer.h"
 
-#include <boost/range/adaptor/strided.hpp>
 
 namespace Ovito {
 
@@ -400,14 +399,14 @@ public:
     }
 
     /// Returns a range of iterators over the elements stored in this array.
-    inline boost::iterator_range<element_type*> range() const noexcept {
-        return boost::make_iterator_range(begin(), end());
+    inline std::ranges::subrange<element_type*> range() const noexcept {
+        return std::ranges::subrange(begin(), end());
     }
 
     /// Returns a range of iterators over the elements stored in this array.
     template<bool CanRead = (accessmode != access_mode::write && accessmode != access_mode::discard_write)>
-    inline std::enable_if_t<CanRead, boost::iterator_range<const element_type*>> crange() const noexcept {
-        return boost::make_iterator_range(cbegin(), cend());
+    inline std::enable_if_t<CanRead, std::ranges::subrange<const element_type*>> crange() const noexcept {
+        return std::ranges::subrange(cbegin(), cend());
     }
 
     /// Returns a range of iterators over the i-th vector component of all elements stored in this array.

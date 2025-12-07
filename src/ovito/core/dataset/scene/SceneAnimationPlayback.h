@@ -32,7 +32,7 @@ namespace Ovito {
 /**
  * \brief This object requests the next frames during animation playback in the interactive viewports.
  */
-class OVITO_CORE_EXPORT SceneAnimationPlayback : public QObject, public RefMaker
+class OVITO_CORE_EXPORT SceneAnimationPlayback : public QObject, public RefMaker, public UserInterfaceComponent<UserInterface, false>
 {
     OVITO_CLASS(SceneAnimationPlayback)
     Q_OBJECT
@@ -40,10 +40,7 @@ class OVITO_CORE_EXPORT SceneAnimationPlayback : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    void initializeObject(UserInterface& userInterface);
-
-    /// Returns the abstract user interface in which this object operates.
-    UserInterface& userInterface() const { return *_userInterface; }
+    void initializeObject(UserInterface& ui);
 
     /// Returns whether the animation is currently being played back in the viewports.
     bool isPlaybackActive() const { return _activePlaybackRate != 0; }
@@ -81,9 +78,6 @@ private:
 
     /// The scene being played back.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Scene>, scene, setScene);
-
-    /// The abstract user interface in which this object operates.
-    UserInterface* _userInterface;
 
     /// Indicates that the animation is currently being played back in the interactive viewports.
     FloatType _activePlaybackRate = 0;

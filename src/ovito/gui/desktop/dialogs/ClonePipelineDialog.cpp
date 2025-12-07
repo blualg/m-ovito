@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -34,8 +33,11 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, SceneNode* sceneNode, QWidget* parent) :
-    QDialog(parent), _mainWindow(mainWindow), _originalSceneNode(sceneNode), _originalPipeline(sceneNode->pipeline())
+ClonePipelineDialog::ClonePipelineDialog(MainWindowUI& ui, SceneNode* sceneNode, QWidget* parent) :
+    QDialog(parent),
+    UserInterfaceComponent<MainWindowUI>(ui),
+    _originalSceneNode(sceneNode),
+    _originalPipeline(sceneNode->pipeline())
 {
     setWindowTitle(tr("Clone pipeline"));
 
@@ -94,8 +96,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, SceneNode* scen
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ClonePipelineDialog::reject);
-    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic("manual:clone_pipeline");
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
+        actionManager()->openHelpTopic("manual:clone_pipeline");
     });
     mainLayout->addWidget(buttonBox);
 
@@ -420,12 +422,12 @@ void ClonePipelineDialog::onAccept()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-    _mainWindow.performTransaction(tr("Clone pipeline"), [this]() {
+    performTransaction(tr("Clone pipeline"), [this]() {
         if(_pipelineItems.empty())
             return;
 
         // Do not create any animation keys during cloning.
-        AnimationSuspender animSuspender(_mainWindow);
+        AnimationSuspender animSuspender(ui());
 
         // Clone the scene node.
         CloneHelper cloneHelper;

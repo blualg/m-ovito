@@ -149,6 +149,7 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
             fileManager().registerAskUserForPasswordImpl(&GuiApplication::askUserForPassword);
             fileManager().registerAskUserForKbiResponseImpl(&GuiApplication::askUserForKbiResponse);
             fileManager().registerAskUserForKeyPassphraseImpl(&GuiApplication::askUserForKeyPassphrase);
+            fileManager().registerAskUserForPKCS11CredentialsImpl(&GuiApplication::askUserForPKCS11Credentials);
             fileManager().registerDetectedUnknownSshServerImpl(&GuiApplication::detectedUnknownSshServer);
         }
 #endif
@@ -267,17 +268,16 @@ MainThreadOperation GuiApplication::startupApplication()
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
         if(Application::runMode() == Application::AppMode) {
-            // Create the main window.
-            OORef<MainWindow> mainWin = OORef<MainWindow>::create();
-            mainWin->keepAliveUntilShutdown();
+            // Create the main window widget and user interface object.
+            OORef<MainWindowUI> mainWinUI = OORef<MainWindowUI>::create();
 
             // Show the main window.
-            mainWin->setUpdatesEnabled(false);
-            mainWin->restoreMainWindowGeometry();
-            mainWin->restoreLayout();
-            mainWin->setUpdatesEnabled(true);
+            mainWinUI->mainWindow()->setUpdatesEnabled(false);
+            mainWinUI->mainWindow()->restoreMainWindowGeometry();
+            mainWinUI->mainWindow()->restoreLayout();
+            mainWinUI->mainWindow()->setUpdatesEnabled(true);
 
-            return MainThreadOperation(*mainWin, MainThreadOperation::Kind::Isolated);
+            return MainThreadOperation(*mainWinUI, MainThreadOperation::Kind::Isolated);
         }
     }
 
@@ -297,11 +297,11 @@ void GuiApplication::postStartupInitialization()
 /******************************************************************************
 * Initializes a new abstract user interface object (e.g. a MainWindow in GUI mode or this application object in console mode).
 ******************************************************************************/
-void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
+void GuiApplication::initializeUserInterface(UserInterface& ui, const QStringList& arguments)
 {
     OVITO_ASSERT(this_task::isInteractive());
 
-    DataSetContainer& datasetContainer = userInterface.datasetContainer();
+    DataSetContainer& datasetContainer = ui.datasetContainer();
 
     // Load session state file specified on the command line.
     if(!arguments.empty()) {
@@ -309,11 +309,11 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
                 OORef<DataSet> dataset = DataSet::createFromFile(startupFilename);
-                if(userInterface.checkLoadedDataset(dataset))
+                if(ui.checkLoadedDataset(dataset))
                     datasetContainer.setCurrentSet(std::move(dataset));
             }
             catch(const Exception& ex) {
-                userInterface.reportError(ex);
+                ui.reportError(ex);
             }
         }
     }
@@ -325,13 +325,13 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(!defaultsFilePath.isEmpty()) {
             try {
                 OORef<DataSet> dataset = DataSet::createFromFile(defaultsFilePath);
-                if(userInterface.checkLoadedDataset(dataset)) {
+                if(ui.checkLoadedDataset(dataset)) {
                     dataset->setFilePath({});
                     datasetContainer.setCurrentSet(std::move(dataset));
                 }
             }
             catch(Exception& ex) {
-                userInterface.reportError(ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath)));
+                ui.reportError(ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath)));
             }
         }
     }
@@ -351,12 +351,12 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             else
                 importUrls.push_back(Application::instance()->fileManager().urlFromUserInput(importFilename));
         }
-        userInterface.handleExceptions([&](){
+        ui.handleExceptions([&](){
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&userInterface))
-                    mainWindow->importFiles(std::move(importUrls));
+                if(MainWindowUI* mainWindowUI = dynamic_object_cast<MainWindowUI>(&ui))
+                    mainWindowUI->importFiles(std::move(importUrls));
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }
@@ -365,8 +365,8 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         });
 
         // Make sure we start with a clean undo stack at application startup.
-        if(userInterface.undoStack())
-            userInterface.undoStack()->clear();
+        if(ui.undoStack())
+            ui.undoStack()->clear();
     }
 }
 
@@ -387,15 +387,16 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         });
 
         if(mainWindow) {
-            mainWindow->handleExceptions([&] {
+            MainWindowUI& ui = mainWindow->ui();
+            ui.handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    mainWindow->askForSaveChanges();
+                    ui.askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(openEvent->file());
-                    if(mainWindow->checkLoadedDataset(dataset))
-                        mainWindow->datasetContainer().setCurrentSet(std::move(dataset));
+                    if(ui.checkLoadedDataset(dataset))
+                        ui.datasetContainer().setCurrentSet(std::move(dataset));
                 }
                 else {
-                    mainWindow->importFiles({openEvent->url()});
+                    ui.importFiles({openEvent->url()});
                 }
             });
         }
@@ -570,6 +571,100 @@ bool GuiApplication::askUserForKbiResponse(const QString& hostname, const QStrin
         tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
         showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
     return ok;
+}
+
+/******************************************************************************
+* Asks the user for PKCS#11 smartcard credentials.
+******************************************************************************/
+bool GuiApplication::askUserForPKCS11Credentials(const QString& hostname, const QString& username, QString& pkcs11Uri, QString& pin)
+{
+    // If URI is already set (e.g., from SSH config), only ask for PIN
+    bool uriAlreadySet = !pkcs11Uri.isEmpty();
+
+    // Create a custom dialog for collecting URI and/or PIN
+    QDialog dialog(nullptr);
+    dialog.setWindowTitle(tr("SSH PKCS#11 Smartcard Authentication"));
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Info label
+    QString infoText;
+    if(uriAlreadySet) {
+        infoText = tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH using PKCS#11 smartcard authentication.</p>"
+                     "<p>Please enter the PIN for user <b>%2</b>:</p>")
+                   .arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped());
+    } else {
+        infoText = tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p>"
+                     "<p>Please provide your PKCS#11 smartcard credentials for user <b>%2</b>:</p>")
+                   .arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped());
+    }
+    QLabel* infoLabel = new QLabel(infoText);
+    infoLabel->setWordWrap(true);
+    layout->addWidget(infoLabel);
+
+    QLineEdit* uriEdit = nullptr;
+    if(uriAlreadySet) {
+        // Show the configured URI as read-only info
+        QLabel* uriInfoLabel = new QLabel(tr("<b>PKCS#11 URI:</b> %1").arg(pkcs11Uri.toHtmlEscaped()));
+        uriInfoLabel->setWordWrap(true);
+        uriInfoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        layout->addWidget(uriInfoLabel);
+        layout->addSpacing(10);
+    } else {
+        // URI input (only if not already set)
+        QLabel* uriLabel = new QLabel(tr("PKCS#11 URI:"));
+        layout->addWidget(uriLabel);
+
+        uriEdit = new QLineEdit(&dialog);
+        uriEdit->setPlaceholderText(tr("pkcs11:token=MyToken;object=MyKey;type=private"));
+        uriEdit->setText(pkcs11Uri);
+        layout->addWidget(uriEdit);
+
+        QLabel* uriHintLabel = new QLabel(tr("<small>Example: pkcs11:token=MySmartCard;object=MyPrivateKey;type=private</small>"));
+        uriHintLabel->setWordWrap(true);
+        layout->addWidget(uriHintLabel);
+
+        layout->addSpacing(10);
+    }
+
+    // PIN input (always shown)
+    QLabel* pinLabel = new QLabel(uriAlreadySet ? tr("PIN:") : tr("PIN (optional if included in URI):"));
+    layout->addWidget(pinLabel);
+
+    QLineEdit* pinEdit = new QLineEdit(&dialog);
+    pinEdit->setEchoMode(QLineEdit::Password);
+    pinEdit->setPlaceholderText(tr("Enter PIN"));
+    pinEdit->setText(pin);
+    layout->addWidget(pinEdit);
+
+    // Buttons
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    layout->addWidget(buttonBox);
+
+    // Enable/disable OK button based on URI validity (only if URI needs to be entered)
+    QPushButton* okButton = buttonBox->button(QDialogButtonBox::Ok);
+    if(!uriAlreadySet && uriEdit) {
+        // Update OK button state when URI changes
+        auto updateOkButton = [okButton, uriEdit]() {
+            okButton->setEnabled(!uriEdit->text().trimmed().isEmpty());
+        };
+        connect(uriEdit, &QLineEdit::textChanged, updateOkButton);
+        updateOkButton(); // Set initial state
+    }
+
+    if(dialog.exec() == QDialog::Accepted) {
+        if(!uriAlreadySet && uriEdit) {
+            pkcs11Uri = uriEdit->text().trimmed();
+        }
+        // If URI was already set, keep it unchanged
+        pin = pinEdit->text();
+        return !pkcs11Uri.isEmpty();
+    }
+
+    return false;
 }
 
 /******************************************************************************

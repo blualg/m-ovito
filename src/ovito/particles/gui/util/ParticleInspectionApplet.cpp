@@ -23,7 +23,6 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
@@ -51,7 +50,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 
     _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
     _measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);
@@ -63,7 +62,6 @@ QWidget* ParticleInspectionApplet::createWidget()
     horizontalToolbar->setIconSize(QSize(18, 18));
     horizontalToolbar->addAction(pickModeAction);
     horizontalToolbar->addAction(_measuringModeAction);
-    horizontalToolbar->addAction(resetFilterAction());
     layout->addWidget(horizontalToolbar, 0, 0);
 
     QWidget* pickModeButton = horizontalToolbar->widgetForAction(pickModeAction);
@@ -80,11 +78,14 @@ QWidget* ParticleInspectionApplet::createWidget()
     });
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
+    layout->addWidget(countDisplayLabel(), 0, 2);
+    countDisplayLabel()->setToolTip(tr("Number of particles in the final pipeline state that match the filter expression."));
     QSplitter* splitter = new QSplitter();
     splitter->setChildrenCollapsible(false);
     splitter->addWidget(tableView());
-    layout->addWidget(splitter, 1, 0, 1, 2);
+    layout->addWidget(splitter, 1, 0, 1, 3);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(1, 1);
 
     _distanceTable = new CopyableTableWidget(0, 3);
     _distanceTable->hide();
@@ -289,6 +290,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
+            if(!element.sceneNode->isInScene() || !element.sceneNode->pipeline())
+                continue;
             PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
             const PipelineFlowState flowState = element.sceneNode->pipeline()->evaluatePipeline(request).blockForResult();
             if(const Particles* particles = flowState.getObject<Particles>()) {
@@ -297,9 +300,9 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
                 if(element.particleId >= 0) {
                     if(BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
                         if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != element.particleId) {
-                            auto iter = boost::find(identifierProperty, element.particleId);
+                            auto iter = std::ranges::find(identifierProperty, element.particleId);
                             if(iter == identifierProperty.cend()) continue;
-                            element.particleIndex = particleIndex = (iter - identifierProperty.cbegin());
+                            element.particleIndex = particleIndex = std::distance(identifierProperty.cbegin(), iter);
                         }
                     }
                 }

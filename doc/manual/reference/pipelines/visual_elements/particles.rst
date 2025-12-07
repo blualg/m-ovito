@@ -4,17 +4,47 @@ Particles
 ---------
 
 .. image:: /images/visual_elements/particles_panel.png
-  :width: 24%
+  :width: 35%
   :align: right
 
-This :ref:`visual element <visual_elements>` is responsible for rendering particles in the viewports.
+This :ref:`visual element <visual_elements>` is responsible for rendering the :ref:`particles <scene_objects.particles>`.
 Typically, particles are visualized as simple spheres, but you can switch to other, more complex geometric shapes
-if desired.
+if desired. The *Particles* visual element provides parameters controlling the standard visual representation of particles.
 
-The *Particles* visual element provides a set of parameters controlling the
-visual representation of the particles, which will be described in the section below.
-Additionally, the visualization is affected by certain properties of the particles themselves, listed in the following table. 
-By setting the values of these particle properties, for example using the :ref:`particles.modifiers.compute_property` modifier, 
+.. _visual_elements.particles.hierarchy:
+
+Settings hierarchy
+""""""""""""""""""
+
+OVITO uses a three-level hierarchy to determine the final appearance of each individual particle:
+
+1. **Per-particle properties** (highest priority): Properties like ``Color``, ``Radius``, and ``Transparency``
+   defined for individual particles always take precedence if present. See :ref:`visual_elements.particles.properties` below for details.
+
+2. **Per-type settings** (medium priority): Settings configured for each particle type through the
+   :ref:`particles.modifiers.edit_types` modifier. These include type-specific radius, color, and shape.
+   Per-type settings can also include :ref:`custom mesh shapes <howto.aspherical_particles.user_shapes>` for advanced visualizations.
+
+3. **Default settings** (lowest priority): The default particle shape and radius values configured in
+   this visual element serve as the final fallback.
+
+This hierarchy allows flexible control: you can set defaults that work for most particles, customize
+specific types (e.g., different radii for different atomic species), and still override individual
+particles when needed (e.g., highlighting specific atoms using :ref:`selection <particles.modifiers.selection>` and :ref:`coloring <particles.modifiers.coloring>` modifiers).
+
+To modify these settings:
+
+* **Per-particle properties**: Use the :ref:`particles.modifiers.compute_property` modifier or more specific :ref:`coloring <particles.modifiers.coloring>` modifiers
+* **Per-type settings**: Use the :ref:`particles.modifiers.edit_types` modifier
+* **Default settings**: Configure them directly in this visual element panel
+
+.. _visual_elements.particles.properties:
+
+Per-particle properties
+"""""""""""""""""""""""
+
+On the primary level, the visualization is affected by certain properties of the particles themselves, listed in the following table.
+By setting these particle properties, for example using the :ref:`particles.modifiers.compute_property` modifier,
 you can fully control the visualization on a per-particle basis.
 
 .. table::
@@ -23,87 +53,106 @@ you can fully control the visualization on a per-particle basis.
   ================================== ======================= ==============================================================================
   Particle property                  Data type               Description
   ================================== ======================= ==============================================================================
-  ``Color``                          Real (R,G,B)            Controls the display color of individual particles. Red, green and blue components must be in the range [0,1].  
-  ``Radius``                         Real                    Controls the display size on a per-particle basis.  
-  ``Particle Type``                  Integer                 Used to determine size and color if the ``Radius`` or ``Color`` particle properties are not present.  
-  ``Transparency``                   Real                    Controls the transparency of individual particles. Must be in the range [0,1].  
-  ``Aspherical Shape``               Real (X,Y,Z)            Controls the size of particles with a non-symmetric shape. The exact interpretation of this property depends on the selected :guilabel:`Standard shape`, see below.  
-  ``Orientation``                    Real (X,Y,Z,W)          Specifies the orientation of particles with non-symmetric shapes. 
-                                                             The rotation of each particle is specified in terms of a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__.
-                                                             See :ref:`this section <howto.aspherical_particles>` for further information.
+  ``Color``                          Real (R,G,B)            Display color of individual particles. Red, green and blue components must be in the range [0,1].
+  ``Radius``                         Real                    Display size on a per-particle basis.
+  ``Transparency``                   Real                    Transparency of individual particles. Must be in the range [0,1].
+  ``Aspherical Shape``               Real (X,Y,Z)            Dimensions of particles with a non-spherical shape. The exact interpretation depends on the :ref:`particle shape <howto.aspherical_particles>`.
+  ``Orientation``                    Real (X,Y,Z,W)          3D rotation of particles with non-symmetric shapes, specified as a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__.
+                                                             See :ref:`howto.aspherical_particles.orientation` for further information.
+  ``Superquadric Roundness``         Real (X,Y)              Roundness parameters for :ref:`superquadric particles <howto.aspherical_particles.superquadrics>`.
+  ``Selection``                      Integer                 Marks currently selected particles (1 = selected, 0 = unselected). Selected particles are highlighted in red (only in interactive viewports but not in rendered images).
   ================================== ======================= ==============================================================================
+
+To see the list of particle properties present in your dataset, open the :ref:`data inspector panel <data_inspector.particles>`.
 
 Parameters
 """"""""""
 
-Standard shape
-  Selects the display shape of particles for which the shape is not already specified on a per-type basis. 
-  The current program version offers the choice between the following shapes:
+Universal settings
+''''''''''''''''''
 
-  Sphere/Ellipsoid
-    Particles are visualized as 3d spheres. Unless the ``Aspherical Shape`` particle property
-    has been defined; then they are rendered as :ref:`ellipsoidal particles <howto.aspherical_particles>`.
-    In this case, the three components of the ``Aspherical Shape`` vector property control the
-    half lengths of the principal axes of each ellipsoid and the scalar ``Radius`` property is ignored.
+These settings apply globally to all particles in the system:
 
-  Circle
-    Particles are visualized as flat-shaded circles facing the viewer.
-    Note that some :ref:`rendering engines <rendering>` do not support this mode.
-
-  Cube/Box
-    Particles are visualized as cubes if the ``Aspherical Shape`` particle property
-    is not present. The ``Radius`` property controls the edge half-length of the cubes in this case.
-    If the ``Aspherical Shape`` particle property is present, particles are rendered as non-cubic boxes
-    with the given half-lengths along the three edges.
-
-  Square
-    Particles are visualized as flat-shaded squares facing the viewer.
-    Note that some :ref:`rendering engines <rendering>` do not support this mode.
-
-  Cylinder
-    Particles are visualized as cylinders.
-    The X-component of the ``Aspherical Shape`` vector property controls the cylinder radius
-    of particles in this mode, and the Z-component controls the length of the cylindrical particles.
-    By default, cylinders are aligned along the z-axis. If present, the ``Orientation``
-    particle property rotates the cylinders.
-
-  Spherocylinder
-    Particles are visualized as cylinders with round caps at each end (capsules). The behavior is the
-    same as for mode `Cylinder`.
-
-Standard radius
-  Specifies the fallback size to be used for particles for which the display size is not already specified
-  on a per-type or per-particle basis.
-  In other words, this value is only used for particles for which *none* of the following applies:
-
-    * The ``Radius`` particle property has a non-zero value.
-    * The particle's type, as specified by the ``Particle Type`` property, has a non-zero radius.
-
-Radius scaling factor
-  This global scaling factor is applied to all particles in the system at rendering time. 
-  It is applied in addition to any other factors controlling the size of particles (per-type radius, per-particle radius, standard radius). 
-  By setting it to a value below 100%, the scaling factor provides a convenient way of generating a balls-and-stick visualization of a molecular system,
-  with reduced atomic spheres that are connected by cylindrical bonds.
+Radius scaling
+  This global scaling factor (percentage) is applied to all particle radii at rendering time.
+  It is applied in addition to any other factors controlling the size of particles (per-type radius, per-particle radius, default radius).
+  By setting it to a value below 100%, you can generate a balls-and-sticks visualization of molecular systems,
+  with reduced atomic spheres connected by cylindrical bonds.
 
 Rendering quality
-  This parameter controls the method used for rendering the particles in the interactive viewports. The following modes are available and affect only the rendering of spherical particles:
+  This parameter controls the method used for rendering spherical particles in the interactive viewports using the :ref:`OpenGL renderer <rendering.opengl_renderer>`.
+  The following modes are available:
+
+  Automatic (default)
+    OVITO automatically selects the rendering quality based on particle count:
+
+    * Less than 4,000 particles: High quality
+    * Between 4,000 and 400,000 particles: Medium quality
+    * More than 400,000 particles: Low quality
+    * High quality is always used for final output images regardless of particle count
 
   Low
     Particles are rendered as texture-mapped imposters facing the viewer. Particles do not have depth in this mode,
-    and intersections between spherical particles may not be displayed correctly. This mode is the fastest.
+    and intersections between overlapping particles may not be displayed correctly. This mode offers the best performance.
 
   Medium
-    Particles are rendered as texture-mapped imposters facing the viewer. An OpenGL fragment shader is used
-    to compute depth information for each rendered pixel to produce reasonable looking sphere-sphere intersections for overlapping particles.
+    Particles are rendered as texture-mapped imposters facing the viewer. An OpenGL fragment shader computes
+    depth information for each pixel to produce reasonable sphere-sphere intersections for overlapping particles.
 
   High
-    Particles are rendered as true spheres using an OpenGL fragment shader, which computes the ray-sphere intersection for every rendered pixel.
+    Particles are rendered as true spheres using an OpenGL fragment shader that computes the ray-sphere intersection
+    for every rendered pixel. This provides the best visual quality.
 
-  Automatic
-    OVITO automatically switches between the three quality levels above depending on the number of particles to render in the interactive viewports. For
-    less than 4,000 particles, the high-quality method is used. For more than 400,000 particles, the lowest quality mode is used. Irrespective of the
-    particle number, high-quality mode is always used to produce a final output image.
+Default particle shape
+''''''''''''''''''''''
+
+These settings provide default values for particles that don't have shape or size specified via per-type settings or per-particle properties:
+
+Style
+  Selects the default display shape for particles. The shape can be overridden on a per-type basis
+  (see the note above about the :ref:`property hierarchy <visual_elements.particles.hierarchy>`). Available shapes:
+
+  Sphere/Ellipsoid
+    Particles are rendered as 3D spheres by default. This mode supports several advanced variations:
+
+    * With ``Aspherical Shape`` property: Particles become :ref:`ellipsoids <howto.aspherical_particles.ellipsoids>` where the
+      three components (X,Y,Z) control the half-lengths of the principal axes (the ``Radius`` property is ignored).
+    * With ``Superquadric Roundness`` property: Particles are rendered as :ref:`superquadrics <howto.aspherical_particles.superquadrics>` with controllable roundness.
+    * The particle's ``Orientation`` property, if present, rotates the ellipsoid or superquadric.
+
+  Circle
+    Particles are rendered as flat discs that always face the viewer.
+    Note that some :ref:`rendering engines <rendering>` may not support this mode.
+
+  Cube/Box
+    Particles are rendered as :ref:`cubes <howto.aspherical_particles.boxes>` by default, with the ``Radius`` property controlling the edge half-length.
+
+    * With ``Aspherical Shape`` property: Particles become rectangular boxes where the three components (X,Y,Z)
+      specify the half-lengths along each axis.
+    * The particle's ``Orientation`` property, if present, rotates the box.
+
+  Square
+    Particles are rendered as flat squares that always face the viewer.
+    Note that some :ref:`rendering engines <rendering>` may not support this mode.
+
+  Cylinder
+    Particles are rendered as :ref:`cylinders <howto.aspherical_particles.cylinders>` aligned along the Z-axis by default.
+
+    * The ``Aspherical Shape`` property is required: Its X-component controls the cylinder radius, its
+      Z-component controls the cylinder length.
+    * The ``Orientation`` property rotates the cylinder from its default Z-axis alignment.
+
+  Spherocylinder
+    Particles are rendered as :ref:`cylinders with hemispherical caps (capsules) <howto.aspherical_particles.capsules>`.
+    Configuration is identical to the *Cylinder* mode above.
+
+Radius
+  Specifies the default particle size (in simulation distance units) used as a fallback when the size is not
+  specified via per-particle or per-type settings. This value is only used for particles where:
+
+    * The ``Radius`` particle property is absent or zero, AND
+    * The particle's type (from ``Particle Type`` property) has no radius defined or has radius = 0
 
 .. seealso::
-  
+
   :py:class:`ovito.vis.ParticlesVis` (Python API)

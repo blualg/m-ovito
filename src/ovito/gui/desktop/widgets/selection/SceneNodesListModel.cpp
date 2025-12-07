@@ -33,15 +33,16 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the model.
 ******************************************************************************/
-SceneNodesListModel::SceneNodesListModel(MainWindow& mainWindow, QWidget* parent) : QAbstractListModel(parent),
-    _mainWindow(mainWindow),
+SceneNodesListModel::SceneNodesListModel(MainWindowUI& ui, QWidget* parent) :
+    QAbstractListModel(parent),
+    UserInterfaceComponent<MainWindowUI>(ui),
     _pipelineSceneNodeIcon(QIcon::fromTheme("edit_pipeline_icon"))
 {
     // React to the scene being replaced.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::sceneReplaced, this, &SceneNodesListModel::onSceneReplaced);
+    connect(&datasetContainer(), &DataSetContainer::sceneReplaced, this, &SceneNodesListModel::onSceneReplaced);
 
     // Listen for scene node selection changes.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
+    connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
 
     // Listen for signals from the root scene node.
     _sceneListener.connect(this, &SceneNodesListModel::onSceneNotificationEvent);
@@ -58,12 +59,21 @@ QT_WARNING_DISABLE_DEPRECATED
     connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
 QT_WARNING_POP
 
-    for(QAction* action : mainWindow.actionManager()->actions()) {
+    // Create list items for registered pipeline creation actions.
+    for(QAction* action : actionManager()->actions()) {
         if(action->objectName().startsWith("NewPipeline."))
             _pipelineActions.push_back(action);
     }
+
+    // Create list item for the "Clone Pipeline" action.
     _pipelineActions.push_back(nullptr); // Separator
-    _pipelineActions.push_back(mainWindow.actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
+    _pipelineActions.push_back(actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
+
+    // Create per-item actions for renaming and deleting individual pipelines.
+    _renameAction = new ItemAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Rename"), this);
+    _deleteAction = new ItemAction(QIcon::fromTheme("edit_delete_pipeline"), tr("Delete"), this);
+    connect(_renameAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::renameItem);
+    connect(_deleteAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::deleteItem);
 }
 
 /******************************************************************************
@@ -149,6 +159,16 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
         if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && !_pipelineActions[actionIndex])
             return QSize(0, 2); // Action separator line
     }
+    else if(role == ActionsRole) {
+        int pipelineIndex = index.row() - firstSceneNodeIndex();
+        if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+            QList<QAction*> actions;
+            actions.push_back(_deleteAction);
+            actions.push_back(_renameAction);
+            return QVariant::fromValue(actions);
+        }
+        return {};
+    }
     else {
         int pipelineIndex = index.row() - firstSceneNodeIndex();
         int actionIndex = index.row() - firstActionIndex();
@@ -194,9 +214,8 @@ void SceneNodesListModel::onSceneReplaced(Scene* newScene)
     _nodeListener.clear();
     _sceneListener.setTarget(newScene);
     if(newScene) {
-        newScene->visitChildren([&](SceneNode* node) -> bool {
+        newScene->visitChildren([&](SceneNode* node) {
             _nodeListener.push_back(node);
-            return true;
         });
     }
     endResetModel();
@@ -246,13 +265,12 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
                 }
 
                 // Add the children of the node too.
-                node->visitChildren([this](SceneNode* node) -> bool {
+                node->visitChildren([this](SceneNode* node) {
                     // Extend the list model by one entry.
                     OVITO_ASSERT(!sceneNodes().empty());
                     beginInsertRows(QModelIndex(), sceneNodes().size() + 1, sceneNodes().size() + 1);
                     _nodeListener.push_back(node);
                     endInsertRows();
-                    return true;
                 });
             }
         }
@@ -261,8 +279,8 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
     // If a node is being removed from the scene, remove it from our internal list.
     if(event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) {
         // Don't know how else to do this in a safe manner. Rebuild the entire model from scratch.
-        onSceneReplaced(_mainWindow.datasetContainer().activeScene());
-        onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
+        onSceneReplaced(datasetContainer().activeScene());
+        onSceneSelectionChanged(datasetContainer().activeSelectionSet());
     }
 
     // If a node is being renamed, let the model emit an update signal.
@@ -299,8 +317,8 @@ void SceneNodesListModel::activateItem(int index)
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(SceneNode* node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.performTransaction(tr("Select pipeline"), [&]() {
-                if(SelectionSet* selection = _mainWindow.datasetContainer().activeSelectionSet())
+            performTransaction(tr("Select pipeline"), [&]() {
+                if(SelectionSet* selection = datasetContainer().activeSelectionSet())
                     selection->setNode(node);
             });
         }
@@ -309,7 +327,7 @@ void SceneNodesListModel::activateItem(int index)
 
     // This is to reset the current item of the combobox back to the selected scene node
     // after the user has selected an action item.
-    onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
+    onSceneSelectionChanged(datasetContainer().activeSelectionSet());
 
     // Determine the selected action item and execute the action.
     int actionIndex = index - firstActionIndex();
@@ -322,13 +340,13 @@ void SceneNodesListModel::activateItem(int index)
 /******************************************************************************
 * Performs a deletion action on an item.
 ******************************************************************************/
-void SceneNodesListModel::deleteItem(int index)
+void SceneNodesListModel::deleteItem(const QModelIndex& index)
 {
     // Change scene node selection when a scene node has been selected in the combobox.
-    int pipelineIndex = index - firstSceneNodeIndex();
+    int pipelineIndex = index.row() - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(OORef<SceneNode> node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.performTransaction(tr("Delete pipeline"), [&]() {
+            performTransaction(tr("Delete pipeline"), [&]() {
                 bool wasSelected = node->isSelected();
                 node->requestObjectDeletion();
 
@@ -336,6 +354,23 @@ void SceneNodesListModel::deleteItem(int index)
                 Scene* scene = _sceneListener.target();
                 if(wasSelected && scene && scene->children().isEmpty() == false)
                     scene->selection()->setNode(scene->children().front());
+            });
+        }
+    }
+}
+
+/******************************************************************************
+* Lets the user rename a list item.
+******************************************************************************/
+void SceneNodesListModel::renameItem(const QModelIndex& index)
+{
+    if(OORef<SceneNode> sceneNode = sceneNodeFromListIndex(index.row())) {
+        QString oldName = sceneNode->objectTitle();
+        bool ok;
+        QString newName = QInputDialog::getText(ui().mainWindow(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
+        if(ok && newName != oldName) {
+            performTransaction(tr("Rename pipeline"), [&]() {
+                sceneNode->setSceneNodeName(newName);
             });
         }
     }

@@ -47,15 +47,28 @@ QWidget* VoxelGridInspectionApplet::createWidget()
 
     QHBoxLayout* rightLayout = new QHBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0,0,0,0);
-    rightLayout->setSpacing(4);
+    rightLayout->setSpacing(0);
+
+    QWidget* panel = new QWidget();
+    QGridLayout* layout = new QGridLayout(panel);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
+    filterExpressionEdit()->setPlaceholderText(tr("Filter grid cells..."));
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
+    rightLayout->addWidget(panel, 1);
 
     _gridInfoLabel = new QLabel();
     _gridInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     _gridInfoLabel->setTextFormat(Qt::RichText);
-    _gridInfoLabel->setMargin(3);
+    _gridInfoLabel->setMargin(4);
     _gridInfoLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    rightLayout->addWidget(tableView(), 1);
     rightLayout->addWidget(_gridInfoLabel);
+    rightLayout->addSpacing(4);
 
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &VoxelGridInspectionApplet::onCurrentContainerChanged);
 
@@ -69,7 +82,7 @@ void VoxelGridInspectionApplet::onCurrentContainerChanged(const DataObject* data
 {
     // Update the displayed information.
     if(const VoxelGrid* grid = static_object_cast<VoxelGrid>(dataObject)) {
-        QString text = tr("<p><b>Grid cells:</b> ");
+        QString text = tr("<p><b>Dimensions:</b> ");
         if(grid->domain() && grid->domain()->is2D() && grid->shape()[2] <= 1)
             text += tr("%1 x %2</p>").arg(grid->shape()[0]).arg(grid->shape()[1]);
         else
@@ -79,14 +92,14 @@ void VoxelGridInspectionApplet::onCurrentContainerChanged(const DataObject* data
             const Vector3& v2 = grid->domain()->cellVector2();
             const Vector3& v3 = grid->domain()->cellVector3();
             const Point3& origin = grid->domain()->cellOrigin();
-            text += tr("<p><b>Grid vector 1:</b> (%1 %2 %3)</p>").arg(v1.x()).arg(v1.y()).arg(v1.z());
-            text += tr("<p><b>Grid vector 2:</b> (%1 %2 %3)</p>").arg(v2.x()).arg(v2.y()).arg(v2.z());
+            text += tr("<p><b>Vector 1:</b> (%1 %2 %3)</p>").arg(v1.x()).arg(v1.y()).arg(v1.z());
+            text += tr("<p><b>Vector 2:</b> (%1 %2 %3)</p>").arg(v2.x()).arg(v2.y()).arg(v2.z());
             if(grid->domain()->is2D() && grid->shape()[2] <= 1)
-                text += tr("<p><b>Grid vector 3:</b> -</p>");
+                text += tr("<p><b>Vector 3:</b> -</p>");
             else
-                text += tr("<p><b>Grid vector 3:</b> (%1 %2 %3)</p>").arg(v3.x()).arg(v3.y()).arg(v3.z());
-            text += tr("<p><b>Grid origin:</b> (%1 %2 %3)</p>").arg(origin.x()).arg(origin.y()).arg(origin.z());
-            text += tr("<p><b>Grid type:</b> %1</p>").arg(grid->gridType() == VoxelGrid::GridType::PointData ? tr("point data") : tr("cell data"));
+                text += tr("<p><b>Vector 3:</b> (%1 %2 %3)</p>").arg(v3.x()).arg(v3.y()).arg(v3.z());
+            text += tr("<p><b>Origin:</b> (%1 %2 %3)</p>").arg(origin.x()).arg(origin.y()).arg(origin.z());
+            text += tr("<p><b>Type:</b> %1</p>").arg(grid->gridType() == VoxelGrid::GridType::PointData ? tr("point data") : tr("cell data"));
         }
         _gridInfoLabel->setText(text);
     }

@@ -463,6 +463,7 @@ bool GzipIODevice::seek(qint64 pos)
             if(!_device->reset())
                 return false;
         }
+        std::memset(&_zlibStream, 0, sizeof(_zlibStream));
         if(!open(mode))
             return false;
 

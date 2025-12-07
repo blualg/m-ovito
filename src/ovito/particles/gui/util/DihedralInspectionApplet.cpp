@@ -43,16 +43,11 @@ QWidget* DihedralInspectionApplet::createWidget()
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);
 
-    QToolBar* toolbar = new QToolBar();
-    toolbar->setOrientation(Qt::Horizontal);
-    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    toolbar->setIconSize(QSize(18,18));
-    toolbar->addAction(resetFilterAction());
-    layout->addWidget(toolbar, 0, 0);
-
-    layout->addWidget(filterExpressionEdit(), 0, 1);
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
     layout->addWidget(tableView(), 1, 0, 1, 2);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
 
     return panel;
 }

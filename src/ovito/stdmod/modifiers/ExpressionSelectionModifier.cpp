@@ -123,7 +123,8 @@ Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const Modif
 
     // Check if expression contains an assignment ('=' operator).
     // This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
-    if(modifier->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
+    static const QRegularExpression assignmentRegex(QStringLiteral("[^=!><]=(?!=)"));
+    if(modifier->expression().contains(assignmentRegex))
         throw Exception(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
 
     // Make the property container mutable.

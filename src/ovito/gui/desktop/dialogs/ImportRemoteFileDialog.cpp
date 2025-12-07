@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
@@ -36,7 +35,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), _mainWindow(mainWindow)
+ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindowUI& ui, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setWindowTitle(caption);
 
@@ -107,7 +106,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std
 
     QGroupBox* methodBox = new QGroupBox(tr("SSH connection method:"));
     QGridLayout* layout3 = new QGridLayout(methodBox);
-    layout3->setContentsMargins(0,0,0,0);
+    layout3->setContentsMargins(4,4,4,4);
     layout3->setSpacing(4);
     layout1->addWidget(methodBox);
 
@@ -121,11 +120,16 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std
     _libsshMethod->setEnabled(false);
 #endif
     layout3->addWidget(_libsshMethod, 0, 0, 1, 3);
+#ifndef Q_OS_WIN
 #ifdef OVITO_BUILD_PROFESSIONAL
     _opensshMethod = new QRadioButton(tr("External OpenSSH:"));
     _opensshMethod->setChecked(SshConnection::getSshImplementation() == SshConnection::Openssh);
 #else
     _opensshMethod = new QRadioButton(tr("External OpenSSH client (available in OVITO Pro)"));
+    _opensshMethod->setEnabled(false);
+#endif
+#else
+    _opensshMethod = new QRadioButton(tr("External OpenSSH client (only available in OVITO Pro for Linux/macOS and Windows WSL)"));
     _opensshMethod->setEnabled(false);
 #endif
     layout3->addWidget(_opensshMethod, 1, 0);
@@ -165,7 +169,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std
 ******************************************************************************/
 void ImportRemoteFileDialog::onHelp()
 {
-    _mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:usage.import.remote"));
+    actionManager()->openHelpTopic(QStringLiteral("manual:usage.import.remote"));
 }
 
 /******************************************************************************
@@ -182,7 +186,7 @@ void ImportRemoteFileDialog::selectFile(const QUrl& url)
 ******************************************************************************/
 void ImportRemoteFileDialog::onOk()
 {
-    try {
+    handleExceptions([&]() {
         QUrl url = QUrl::fromUserInput(_urlEdit->currentText());
         if(!url.isValid())
             throw Exception(tr("The entered URL is invalid."));
@@ -216,10 +220,7 @@ void ImportRemoteFileDialog::onOk()
 
         // Close dialog box.
         accept();
-    }
-    catch(const Exception& ex) {
-        _mainWindow.reportError(ex, this);
-    }
+    });
 }
 
 /******************************************************************************

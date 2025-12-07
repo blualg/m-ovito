@@ -180,42 +180,4 @@ void ElementType::setDefaultColor(const OwnerPropertyRef& property, const QStrin
 #endif
 }
 
-/******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
-    // have already replaced it with a mutable copy.
-    const ElementType* self = static_object_cast<ElementType>(dataPath.back());
-
-    if(self->editableProxy() && !forceProxyReplacement) {
-        const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy());
-
-        // The numeric ID of a type and some other attributes should never change.
-        OVITO_ASSERT(proxy->numericId() == self->numericId());
-
-        if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
-            // Make this data object mutable first.
-            ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
-
-            mutableSelf->setName(proxy->name());
-            mutableSelf->setColor(proxy->color());
-            mutableSelf->setEnabled(proxy->enabled());
-        }
-    }
-    else {
-        // Create and initialize a new proxy.
-        OORef<ElementType> newProxy = CloneHelper::cloneSingleObject(self, false);
-        OVITO_ASSERT(newProxy->numericId() == self->numericId());
-        OVITO_ASSERT(newProxy->enabled() == self->enabled());
-        newProxy->setEditableProxy(nullptr);
-
-        // Make this element type mutable and attach the proxy object to it.
-        state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
-    }
-
-    DataObject::updateEditableProxies(state, dataPath, forceProxyReplacement);
-}
-
 }   // End of namespace

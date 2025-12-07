@@ -33,14 +33,14 @@ class UtilityListModel; // defined in UtilityListModel.h
 /**
  * The command panel tab lets the user access utility functions.
  */
-class OVITO_GUI_EXPORT UtilityCommandPage : public QWidget
+class OVITO_GUI_EXPORT UtilityCommandPage : public QWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Initializes the command panel page.
-    UtilityCommandPage(MainWindow& mainWindow, QWidget* parent);
+    UtilityCommandPage(MainWindowUI& ui, QWidget* parent);
 
 protected Q_SLOTS:
 
@@ -51,9 +51,6 @@ private:
 
     /// Returns the selected viewport layer.
     ViewportOverlay* selectedLayer() const;
-
-    /// The main window hosting this page.
-    MainWindow& _mainWindow;
 
     /// Contains the list of available utilities.
     QComboBox* _utilitiesBox;

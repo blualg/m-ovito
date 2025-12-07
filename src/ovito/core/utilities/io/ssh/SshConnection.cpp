@@ -32,8 +32,8 @@ namespace Ovito {
 SshConnection::SshImplementation SshConnection::getSshImplementation()
 {
     // User can override selected method via environment variable since OVITO 3.10.5:
-    QString selectedSshMethod = QString::fromLocal8Bit(qgetenv("OVITO_SSH_METHOD")).toLower();
-#if defined(OVITO_BUILD_PROFESSIONAL) || defined(OVITO_BUILD_PYPI)
+    QString selectedSshMethod = qEnvironmentVariable("OVITO_SSH_METHOD").toLower();
+#if !defined(Q_OS_WIN) && (defined(OVITO_BUILD_PROFESSIONAL) || defined(OVITO_BUILD_PYPI))
     #ifdef OVITO_SSH_CLIENT
         if(selectedSshMethod.isEmpty()) {
             if(Application::guiEnabled()) {
@@ -123,6 +123,8 @@ void SshConnection::setState(State state, bool emitStateChangedSignal)
         case StateAuthNeedPassword: Q_EMIT needPassword();            break;
         case StateAuthKbi:                                            break;
         case StateAuthKbiQuestions: Q_EMIT needKbiAnswers();          break;
+        case StateAuthPKCS11:                                         break;
+        case StateAuthNeedPKCS11:   Q_EMIT needPKCS11Credentials();   break;
         case StateAuthAllFailed:    Q_EMIT allAuthsFailed();          break;
         case StateOpened:           Q_EMIT connected();               break;
         case StateError:            Q_EMIT error();                   break;

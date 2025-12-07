@@ -100,19 +100,28 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     shader.setInstanceCount(primitive.basePositions()->size());
 
     // Check size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>))) {
-        qWarning() << "WARNING: OpenGL renderer - Trying to render too many cylinders at once, exceeding device limits.";
+    const int32_t maxNumInstances = std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>));
+    if(shader.instanceCount() > maxNumInstances) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Too many cylinders to render at once (%1), exceeding device limits. Maximum number of cylinders: %2").arg(shader.instanceCount()).arg(maxNumInstances));
         return;
     }
 
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !isPickingPass() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
-    if(useBlending) shader.enableBlending();
+    if(useBlending)
+        shader.enableBlending();
 
     // Pass picking base ID to shader.
     GLint pickingBaseId;
     if(isPickingPass()) {
-        pickingBaseId = objectPickingMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size());
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size())) {
+            pickingBaseId = *pickingID;
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
         shader.setPickingBaseId(pickingBaseId);
     }
     OVITO_REPORT_OPENGL_ERRORS(this);

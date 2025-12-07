@@ -62,7 +62,7 @@ void FontParameterUI::resetUI()
 
     if(fontPicker())  {
         if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
-            fontPicker()->setEnabled(isEnabled());
+            fontPicker()->setEnabled(isEnabled() && !editor()->isReadOnly());
         }
         else {
             fontPicker()->setEnabled(false);

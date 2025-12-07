@@ -177,7 +177,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                                 tensorProperty = property;
 
                             // Create particle types if this is a typed property.
-                            OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId());
+                            ElementTypeClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId());
                             if(!elementTypeClass && property->name() == QStringLiteral("Material Type"))
                                 elementTypeClass = &ElementType::OOClass();
                             if(elementTypeClass) {

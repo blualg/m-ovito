@@ -81,7 +81,7 @@ QWidget* DataTableInspectionApplet::createWidget()
                                          : QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(),
                                                                          DataTableExporter::OOClass().fileFilter());
         // Create exporter service.
-        mainWindow().handleExceptions([&] {
+        handleExceptions([&] {
             if(_stackedWidget->currentIndex() == 0) {
                 exportDataToFile(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()),
                                  OORef<DataTablePlotExporter>::create(), filterString);
@@ -112,7 +112,20 @@ QWidget* DataTableInspectionApplet::createWidget()
 
     _plotWidget = new DataTablePlotWidget();
     _stackedWidget->addWidget(_plotWidget);
-    _stackedWidget->addWidget(tableView());
+
+    QWidget* panel = new QWidget();
+    QGridLayout* layout = new QGridLayout(panel);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
+
+    filterExpressionEdit()->setPlaceholderText(tr("Filter table rows..."));
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
+    _stackedWidget->addWidget(panel);
 
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &DataTableInspectionApplet::onCurrentContainerChanged);
 
@@ -136,7 +149,7 @@ ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const Pro
 ******************************************************************************/
 void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* dataObject)
 {
-    mainWindow().handleExceptions([&]() {
+    handleExceptions([&]() {
         // Update the displayed plot.
         plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
 
@@ -173,77 +186,5 @@ bool DataTableInspectionApplet::selectDataObject(const PipelineNode* createdByNo
 
     return result;
 }
-
-#if 0
-/******************************************************************************
-* Exports the current data table to a text file.
-******************************************************************************/
-void DataTableInspectionApplet::exportDataToFile() const
-{
-    const DataTable* table = plotWidget()->table();
-    if(!table)
-        return;
-
-    // Let the user select a destination file.
-    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data Table"));
-    QString filterString;
-    if(_stackedWidget->currentIndex() == 0)
-        filterString = QStringLiteral("%1 (%2)").arg(DataTablePlotExporter::OOClass().fileFilterDescription(), DataTablePlotExporter::OOClass().fileFilter());
-    else
-        filterString = QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(), DataTableExporter::OOClass().fileFilter());
-    dialog.setNameFilter(filterString);
-    dialog.setOption(QFileDialog::DontUseNativeDialog);
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setFileMode(QFileDialog::AnyFile);
-
-    // Go to the last directory used.
-    QSettings settings;
-    settings.beginGroup("file/export");
-    QString lastExportDirectory = settings.value("last_export_dir").toString();
-    if(!lastExportDirectory.isEmpty())
-        dialog.setDirectory(lastExportDirectory);
-
-    if(!dialog.exec() || dialog.selectedFiles().empty())
-        return;
-    QString exportFile = dialog.selectedFiles().front();
-
-    // Remember directory for the next time...
-    settings.setValue("last_export_dir", dialog.directory().absolutePath());
-
-    // Export to selected file.
-    mainWindow().handleExceptions([&] {
-        // Create exporter service.
-        OORef<FileExporter> exporter;
-        if(_stackedWidget->currentIndex() == 0)
-            exporter = OORef<DataTablePlotExporter>::create();
-        else
-            exporter = OORef<DataTableExporter>::create();
-
-        // Pass output filename to exporter.
-        exporter->setOutputFilename(exportFile);
-
-        // Set pipeline to be exported.
-        exporter->setSceneToExport(currentSceneNode()->scene());
-        exporter->setPipelineToExport(currentPipeline());
-
-        // If the exporter supports it, automatically choose the data object(s) to be exported.
-        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
-
-        // Set data table to be exported.
-        exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
-
-        // Let the user adjust the export settings.
-        FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
-        if(settingsDialog.exec() != QDialog::Accepted)
-            return;
-
-        // Let the exporter do its job.
-        Future<void> future = exporter->performExport();
-
-        // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
-        ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
-    });
-}
-#endif
 
 }   // End of namespace

@@ -32,14 +32,14 @@ namespace Ovito {
 /**
  * This dialog box lets the user adjust the camera settings of the current viewport.
  */
-class AdjustViewDialog : public QDockWidget
+class AdjustViewDialog : public QDockWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, QWidget* parentWindow);
+    AdjustViewDialog(MainWindowUI& ui, Viewport* viewport, QWidget* parentWindow);
 
 private Q_SLOTS:
 
@@ -54,7 +54,6 @@ private Q_SLOTS:
 
 private:
 
-    MainWindow& _mainWindow;
     bool _isUpdatingGUI = false;
 
     QRadioButton* _camPerspective;

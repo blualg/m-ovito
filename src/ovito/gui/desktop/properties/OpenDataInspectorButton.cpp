@@ -39,7 +39,7 @@ OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const
             QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }
-        else if(!this->editor()->mainWindow().openDataInspector(this->editor()->modificationNode(), _objectNameHint, _modeHint)) {
+        else if(!this->editor()->ui().mainWindow()->openDataInspector(this->editor()->modificationNode(), _objectNameHint, _modeHint)) {
             QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }

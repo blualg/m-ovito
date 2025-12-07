@@ -49,14 +49,6 @@ void BaseViewportWindow::aboutToBeDeleted()
 }
 
 /******************************************************************************
-* Returns the input manager handling mouse events of the viewport (if any).
-******************************************************************************/
-ViewportInputManager* BaseViewportWindow::inputManager() const
-{
-    return userInterface().viewportInputManager();
-}
-
-/******************************************************************************
 * Returns the list of gizmos to render in the viewport.
 ******************************************************************************/
 std::vector<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
@@ -64,7 +56,7 @@ std::vector<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
     std::vector<ViewportGizmo*> gizmoList;
 
     // Global viewport gizmos, which are shown in all viewports.
-    if(ViewportInputManager* man = inputManager())
+    if(ViewportInputManager* man = viewportInputManager())
         gizmoList.insert(gizmoList.end(), man->viewportGizmos().begin(), man->viewportGizmos().end());
 
     // Specific viewport gizmos, which are only shown in this viewport.
@@ -106,9 +98,9 @@ void BaseViewportWindow::hideEvent(QHideEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 mode->mouseDoubleClickEvent(this, event);
             });
         }
@@ -120,26 +112,24 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 {
-    if(!inputManager())
+    if(!viewportInputManager())
         return;
 
     // Make this viewport the active one.
-    if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
-        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-            userInterface().handleExceptions<true>([&] {
-                viewportConfig->setActiveViewport(viewport());
-            });
-        }
+    if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
+        handleExceptions<true>([&] {
+            viewportConfig->setActiveViewport(viewport());
+        });
     }
 
     // Intercept mouse clicks on the viewport caption.
     if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
-        inputManager()->requestContextMenu(this, event->pos());
+        viewportInputManager()->requestContextMenu(this, event->pos());
         return;
     }
 
-    if(ViewportInputMode* mode = inputManager()->activeMode()) {
-        userInterface().handleExceptions<true>([&] {
+    if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+        handleExceptions<true>([&] {
             mode->mousePressEvent(this, event);
         });
     }
@@ -150,9 +140,9 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 mode->mouseReleaseEvent(this, event);
             });
         }
@@ -171,9 +161,9 @@ void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
         setCursorInContextMenuArea(false);
     }
 
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 mode->mouseMoveEvent(this, event);
             });
         }
@@ -185,9 +175,9 @@ void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 {
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 mode->wheelEvent(this, event);
             });
         }
@@ -200,7 +190,7 @@ void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 void BaseViewportWindow::leaveEvent(QEvent* event)
 {
     setCursorInContextMenuArea(false);
-    userInterface().clearStatusBarMessage();
+    ui().clearStatusBarMessage();
 }
 
 /******************************************************************************
@@ -208,9 +198,9 @@ void BaseViewportWindow::leaveEvent(QEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 {
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 mode->focusOutEvent(this, event);
             });
         }
@@ -230,9 +220,9 @@ void BaseViewportWindow::resizeEvent(QResizeEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
 {
-    if(inputManager()) {
-        if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions<true>([&] {
+    if(viewportInputManager()) {
+        if(ViewportInputMode* mode = viewportInputManager()->activeMode()) {
+            handleExceptions<true>([&] {
                 if(mode->keyPressEvent(this, event))
                     return; // Do not propagate handled key events to base class.
             });

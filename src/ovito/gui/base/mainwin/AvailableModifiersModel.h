@@ -68,14 +68,14 @@ private:
 /**
  * A Qt list model that list all available modifier types that are applicable to the current data pipeline.
  */
-class OVITO_GUIBASE_EXPORT AvailableModifiersModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT AvailableModifiersModel : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AvailableModifiersModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel);
+    AvailableModifiersModel(QObject* parent, UserInterface& ui, PipelineListModel* pipelineListModel);
 
     /// Destructor.
     virtual ~AvailableModifiersModel() { _allModels.removeOne(this); }
@@ -157,9 +157,6 @@ private:
 
     /// The display strings as shown by the model.
     std::vector<QString> _modelStrings;
-
-    /// The abstract user interface.
-    UserInterface& _userInterface;
 
     /// Model representing the current data pipeline.
     PipelineListModel* _pipelineListModel;

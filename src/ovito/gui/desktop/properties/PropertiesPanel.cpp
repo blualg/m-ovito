@@ -22,7 +22,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
@@ -30,8 +29,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertiesPanel::PropertiesPanel(MainWindow& mainWindow, QWidget* parent) :
-    RolloutContainer(mainWindow, parent), _mainWindow(mainWindow)
+PropertiesPanel::PropertiesPanel(MainWindowUI& ui, QWidget* parent) :
+    RolloutContainer(ui, parent)
 {
 }
 
@@ -71,8 +70,8 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 
     if(newEditObject) {
         // Open new properties editor.
-        if(!mainWindow().handleExceptions<true>([&]() {
-            _editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(mainWindow(), newEditObject);
+        if(!handleExceptions<true>([&]() {
+            _editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(ui(), newEditObject);
             if(editor()) {
                 if(!editor()->container())
                     editor()->initialize(this, RolloutInsertionParameters(), nullptr);

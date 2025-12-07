@@ -197,7 +197,7 @@ public:
     //////////////////////////// Specific methods ////////////////////////////////
 
     /// This method indicates whether a wildcard pattern should be automatically generated
-    /// when the user picks a new input filename. The default implementation returns if isMultiTimestepFile is set to false.
+    /// when the user picks a new input filename. The default implementation returns true if isMultiTimestepFile is set to false.
     /// Subclasses can override this method to disable generation of wildcard patterns.
     virtual bool autoGenerateWildcardPattern() { return !isMultiTimestepFile(); }
 
@@ -297,10 +297,6 @@ private:
     /// Instead, a MultiTimestepFileChanged notification event is generated whenever this field changes.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isMultiTimestepFile, setMultiTimestepFile, PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
-
-/// \brief Writes an animation frame information record to a binary output stream.
-/// \relates FileSourceImporter::Frame
-OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& frame);
 
 /// \brief Reads an animation frame information record from a binary input stream.
 /// \relates FileSourceImporter::Frame

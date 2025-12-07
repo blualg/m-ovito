@@ -22,7 +22,7 @@
 
 # Find the required Qt modules.
 SET(OVITO_GUI_REQUIRED_QT_COMPONENTS Widgets Network)
-IF(UNIX AND NOT APPLE)
+IF(LINUX)
     # On Linux, the DBus component is needed to access dark/light desktop theme settings.
     LIST(APPEND OVITO_GUI_REQUIRED_QT_COMPONENTS DBus)
 ENDIF()
@@ -32,6 +32,7 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${OVITO_GUI_REQ
 OVITO_STANDARD_PLUGIN(Gui
     SOURCES
         mainwin/MainWindow.cpp
+        mainwin/MainWindowUI.cpp
         mainwin/ViewportsPanel.cpp
         mainwin/TaskDisplayWidget.cpp
         mainwin/cmdpanel/CommandPanel.cpp
@@ -92,6 +93,8 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/CopyableTableView.cpp
         widgets/general/StableComboBox.cpp
         widgets/general/EnterLineEdit.cpp
+        widgets/general/ActionsItemDelegate.cpp
+        widgets/general/InfoItemDelegate.cpp
         widgets/animation/AnimationTimeSpinner.cpp
         widgets/animation/AnimationTimeSlider.cpp
         widgets/animation/AnimationTrackBar.cpp
@@ -153,7 +156,7 @@ OVITO_STANDARD_PLUGIN(Gui
     PRECOMPILED_HEADERS
         GUI.h
 )
-IF(UNIX AND NOT APPLE)
+IF(LINUX)
     TARGET_LINK_LIBRARIES(Gui PRIVATE Qt6::DBus)
 ENDIF()
 

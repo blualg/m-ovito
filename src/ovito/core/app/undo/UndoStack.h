@@ -34,14 +34,14 @@ namespace Ovito {
  * The UndoStack records all user operations. Operations can be undone or reversed
  * one by one.
  */
-class OVITO_CORE_EXPORT UndoStack : public QObject
+class OVITO_CORE_EXPORT UndoStack : public QObject, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit UndoStack(UserInterface& userInterface, QObject* parent = nullptr);
+    explicit UndoStack(UserInterface& ui, QObject* parent = nullptr);
 
     /// \brief Records an operation.
     /// \param operation The operation to put on the stack.
@@ -134,9 +134,6 @@ Q_SIGNALS:
     void cleanChanged(bool clean);
 
 private:
-
-    /// The user interface this stack belongs to.
-    UserInterface& _userInterface;
 
     /// The stack with records of undoable operations.
     std::deque<std::unique_ptr<CompoundOperation>> _operations;

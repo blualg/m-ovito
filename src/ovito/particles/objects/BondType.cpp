@@ -34,23 +34,32 @@ SET_PROPERTY_FIELD_LABEL(BondType, radius, "Radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+* Returns a list of column names to be displayed in the data inspector for
+* element types of this class.
 ******************************************************************************/
-void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
+QStringList BondType::OOMetaClass::dataInspectorColumns() const
 {
-    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
+    QStringList columns = ElementTypeClass::dataInspectorColumns();
+    columns << QStringLiteral("Radius");
+    return columns;
+}
 
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const BondType* self = static_object_cast<BondType>(dataPath.back());
-
-    if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
-        if(proxy->radius() != self->radius()) {
-            // Make this data object mutable first.
-            BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
-            mutableSelf->setRadius(proxy->radius());
+/******************************************************************************
+* Returns the Qt table model data for the given element type to be displayed in the data inspector.
+******************************************************************************/
+QVariant BondType::OOMetaClass::dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(const BondType* btype = dynamic_object_cast<BondType>(elementType)) {
+            if(columnName == QStringLiteral("Radius")) {
+                if(btype->radius() != 0)
+                    return btype->radius();
+                else
+                    return {};
+            }
         }
     }
+    return ElementTypeClass::dataInspectorModelData(columnIndex, columnName, elementType, role);
 }
 
 }   // End of namespace

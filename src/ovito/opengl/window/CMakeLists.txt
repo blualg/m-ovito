@@ -27,7 +27,6 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets R
 OVITO_STANDARD_PLUGIN(OpenGLRendererWindow
     SOURCES
         OpenGLViewportWindow.cpp
-        PickingOpenGLRenderingJob.cpp
         WidgetOpenGLRenderingJob.cpp
     PLUGIN_DEPENDENCIES
         OpenGLRenderer

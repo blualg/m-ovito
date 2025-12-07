@@ -76,7 +76,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     _colorGradientList->setIconSize(QSize(48,16));
     connect(_colorGradientList, qOverload<int>(&QComboBox::activated), this, &ColorCodingModifierEditor::onColorGradientSelected);
     std::vector<OvitoClassPtr> sortedColorMapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
-    boost::sort(sortedColorMapClassList,
+    std::ranges::sort(sortedColorMapClassList,
                 [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
     for(OvitoClassPtr clazz : sortedColorMapClassList) {
         if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
@@ -399,7 +399,7 @@ void ColorCodingModifierEditor::onAdjustRange()
     OVITO_CHECK_OBJECT_POINTER(mod);
 
     performTransaction(tr("Adjust range"), [&]() {
-        ProgressDialog::showForCurrentTask(mainWindow(), container(), tr("Determining property value range"));
+        ProgressDialog::showForCurrentTask(ui(), container(), tr("Determining property value range"));
         mod->adjustRange(currentAnimationTime());
     });
 }
@@ -412,9 +412,9 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
     OVITO_CHECK_OBJECT_POINTER(mod);
 
-    if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+    if(AnimationSettings* anim = datasetContainer().activeAnimationSettings()) {
         performTransaction(tr("Adjust range"), [this, mod, firstFrame=anim->firstFrame(), lastFrame=anim->lastFrame()]() {
-            ProgressDialog::showForCurrentTask(mainWindow(), container(), tr("Determining property value range"));
+            ProgressDialog::showForCurrentTask(ui(), container(), tr("Determining property value range"));
             mod->adjustRangeGlobal(firstFrame, lastFrame);
         });
     }
@@ -452,7 +452,7 @@ void ColorCodingModifierEditor::onExportColorScale()
         QImage image = ColorMap::generateImage<legendWidth>(mod->colorGradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-            mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
+            ui().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
         }
     }
 }

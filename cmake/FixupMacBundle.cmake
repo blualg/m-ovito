@@ -78,6 +78,7 @@ INSTALL(CODE "
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/platforms\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/iconengines\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/networkinformation\"
+        \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/styles\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/tls\"
         /opt/local/lib)
 
@@ -117,7 +118,9 @@ INSTALL(CODE "
         \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/MacOS/*.dylib\")
     FILE(GLOB OTHER_FRAMEWORK_DYNLIBS
         \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/*.dylib\")
-    FOREACH(lib \${QTPLUGINS} \${OVITO_PLUGINS} \${PYTHON_DYNLIBS} \${OTHER_DYNLIBS} \${OTHER_FRAMEWORK_DYNLIBS})
+    FILE(GLOB OSSL_MODULES_DYNLIBS
+        \"\${CMAKE_INSTALL_PREFIX}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/*.dylib\")
+    FOREACH(lib \${QTPLUGINS} \${OVITO_PLUGINS} \${PYTHON_DYNLIBS} \${OTHER_DYNLIBS} \${OTHER_FRAMEWORK_DYNLIBS} \${OSSL_MODULES_DYNLIBS})
         IF(NOT IS_SYMLINK \${lib})
             LIST(APPEND BUNDLE_LIBS \${lib})
         ENDIF()
@@ -149,11 +152,12 @@ INSTALL(CODE "
     # Extend rpath information of the PySide/Shiboken libraries, such that they will be found an runtime.
     SET(QT_LIB_INSTALL_PATH \"${_qt_source_dir}/lib\")
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
-        MESSAGE(\"-- Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
+        MESSAGE(\"-- Extending rpaths of \${lib}\")
+        # Before we can do a -add_rpath, we need to remove any existing rpath entries. Otherwise, install_name_tool may fail with an error due to duplicate rpaths.
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ECHO STDERR)
+        EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ECHO STDERR)
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"\${QT_LIB_INSTALL_PATH}\" \"\${lib}\" COMMAND_ECHO STDERR)
-        MESSAGE(\"-- Adding rpath to \${lib}\")
-        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR)
+        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" -add_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR)
     ENDFOREACH()
 
 ")
@@ -179,7 +183,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
         EXECUTE_PROCESS(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink \"../../../Resources\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/Resources\")
         EXECUTE_PROCESS(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink \"../../../Frameworks\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/Frameworks\")
         EXECUTE_PROCESS(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink \"../../../PlugIns\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/PlugIns\")
-        CONFIGURE_FILE(\"${Ovito_SOURCE_DIR}/src/ovito_exe/resources/Info.plist\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/Info.plist\")
+        CONFIGURE_FILE(\"${Ovito_SOURCE_DIR}/src/main/resources/Info.plist\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/Info.plist\")
         EXECUTE_PROCESS(COMMAND defaults write \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/Info\" LSUIElement 1)
         FILE(GLOB DylibsToSymlink \"\${BundlePath}/Contents/MacOS/*.dylib\")
         FOREACH(FILE_ENTRY \${DylibsToSymlink})

@@ -243,7 +243,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     IF(APPLE)
         # This is required to avoid error by install_name_tool.
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES LINK_FLAGS "-headerpad_max_install_names")
-    ELSEIF(UNIX)
+    ELSEIF(LINUX)
         # Tell linker to detect missing references already at link time (and not at runtime).
         # This check must NOT be performed when building Python extension modules, because they deliberately do not
         # link to the Python library at build time, only at runtime. That's because the Python library is assumed to be already
@@ -266,7 +266,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
             ENDIF()
             # The build tree target should have rpath of install tree target.
             SET_TARGET_PROPERTIES(${target_name} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-        ELSEIF(UNIX)
+        ELSEIF(LINUX)
             # Look for other shared libraries in the parent directory ("lib/ovito/") and in the plugins directory ("lib/ovito/plugins/")
             SET_TARGET_PROPERTIES(${target_name} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/..")
         ENDIF()
@@ -274,7 +274,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         IF(APPLE)
             # Use @loader_path on macOS when building the Python package.
             SET_TARGET_PROPERTIES(${target_name} PROPERTIES INSTALL_RPATH "@loader_path/")
-        ELSEIF(UNIX)
+        ELSEIF(LINUX)
             # Look for other shared libraries in the same directory.
             SET_TARGET_PROPERTIES(${target_name} PROPERTIES INSTALL_RPATH "$ORIGIN")
         ENDIF()

@@ -64,7 +64,7 @@ void ModifierDelegateParameterUI::resetUI()
     ParameterUI::resetUI();
 
     if(comboBox())
-        comboBox()->setEnabled(editObject() && isEnabled());
+        comboBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
 }
 
 /******************************************************************************

@@ -40,6 +40,8 @@ namespace Ovito
     class OwnerPropertyRef;
     class PropertyReference;
     class ElementType;
+    class ElementTypeClass;
+    using ElementTypeClassPtr = const ElementTypeClass*;
     class InputColumnMapping;
     template<class PropertyContainerType> class TypedInputColumnMapping;
     class InputColumnReader;

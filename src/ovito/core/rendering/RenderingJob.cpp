@@ -21,42 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/FrameBuffer.h>
 #include "RenderingJob.h"
 
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(RenderingJob);
-IMPLEMENT_ABSTRACT_OVITO_CLASS(AbstractRenderingFrameBuffer);
-
-/******************************************************************************
- * Renders the 2d graphics of a frame graph render layer into the frame buffer.
- ******************************************************************************/
-void RenderingJob::render2DPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer)
-{
-    if(!frameBuffer.outputFrameBuffer())
-        return;
-
-    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph.commandGroups()) {
-        if(commandGroup.layerType() != layerType)
-            continue;
-
-        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
-            if(command.skipInVisualPass())
-                continue;
-
-            if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-                frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-            }
-            else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
-                frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-            }
-            else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                frameBuffer.outputFrameBuffer()->renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-            }
-        }
-    }
-}
 
 #ifdef OVITO_BUILD_BASIC
 /******************************************************************************

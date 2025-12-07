@@ -59,7 +59,7 @@ void SelectionMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
         // Select object under mouse cursor.
         if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(_clickPoint)) {
             if(_viewport->scene() && pickResult->sceneNode()->scene() == _viewport->scene()) {
-                inputManager()->userInterface().performTransaction(tr("Select"), [&] {
+                performTransaction(tr("Select"), [&] {
                     _viewport->scene()->selection()->setNode(pickResult->sceneNode());
                 });
             }
@@ -75,7 +75,7 @@ void SelectionMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 ******************************************************************************/
 void SelectionMode::deactivated(bool temporary)
 {
-    inputManager()->userInterface().clearStatusBarMessage();
+    ui().clearStatusBarMessage();
     _viewport = nullptr;
     ViewportInputMode::deactivated(temporary);
 }
@@ -88,7 +88,7 @@ void SelectionMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
     // Perform object picking under the mouse cursor.
     // Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
     std::optional<ViewportWindow::PickResult> pickResult;
-    if(!vpwin->userInterface().datasetContainer().isPlaybackActive())
+    if(!datasetContainer().isPlaybackActive())
         pickResult = vpwin->pick(getMousePosition(event));
 
     // Change mouse cursor while hovering over an object.
@@ -97,10 +97,10 @@ void SelectionMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
     // Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
     if(pickResult && pickResult->pickInfo()) {
         QString infoText = pickResult->pickInfo()->infoString(pickResult->sceneNode()->pipeline(), pickResult->subobjectId());
-        inputManager()->userInterface().showStatusBarMessage(infoText);
+        ui().showStatusBarMessage(infoText);
     }
     else {
-        inputManager()->userInterface().clearStatusBarMessage();
+        ui().clearStatusBarMessage();
     }
 
     ViewportInputMode::mouseMoveEvent(vpwin, event);

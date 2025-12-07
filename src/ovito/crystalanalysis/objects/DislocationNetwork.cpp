@@ -129,58 +129,6 @@ void DislocationNetwork::referenceReplaced(const PropertyFieldDescriptor* field,
 }
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void DislocationNetwork::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    PeriodicDomainObject::updateEditableProxies(state, dataPath, forceProxyReplacement);
-
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const DislocationNetwork* self = static_object_cast<DislocationNetwork>(dataPath.back());
-
-    if(self->editableProxy() && !forceProxyReplacement) {
-        DislocationNetwork* proxy = static_object_cast<DislocationNetwork>(self->editableProxy());
-        // Synchronize the actual data object with the editable proxy object.
-
-        // Add the proxies of newly created microstructure phases to the proxy object.
-        for(const MicrostructurePhase* phase : self->crystalStructures()) {
-            MicrostructurePhase* proxyPhase = static_object_cast<MicrostructurePhase>(phase->editableProxy());
-            OVITO_ASSERT(proxyPhase != nullptr);
-            if(!proxy->crystalStructures().contains(proxyPhase))
-                proxy->addCrystalStructure(proxyPhase);
-        }
-
-        // Add microstructure phases that are non-existing in the actual data object.
-        // Note: Currently this should never happen, because file parser never
-        // remove element types.
-#ifdef OVITO_DEBUG
-        for(const MicrostructurePhase* proxyPhase : proxy->crystalStructures()) {
-            OVITO_ASSERT(std::any_of(self->crystalStructures().begin(), self->crystalStructures().end(), [proxyPhase](const MicrostructurePhase* phase) { return phase->editableProxy() == proxyPhase; }));
-        }
-#endif
-    }
-    else {
-        // Create and initialize a new proxy object.
-        // Note: We avoid copying the actual dislocation data here by constructing the proxy DislocationNetwork from scratch instead of cloning the original data object.
-        OORef<DislocationNetwork> newProxy = OORef<DislocationNetwork>::create(ObjectInitializationFlag::DontCreateVisElement);
-        newProxy->setTitle(self->title());
-        while(!newProxy->crystalStructures().empty())
-            newProxy->removeCrystalStructure(0);
-
-        // Adopt the proxy objects for the microstructure phase types, which have already been created by
-        // the recursive method.
-        for(const MicrostructurePhase* phase : self->crystalStructures()) {
-            OVITO_ASSERT(phase->editableProxy() != nullptr);
-            newProxy->addCrystalStructure(static_object_cast<MicrostructurePhase>(phase->editableProxy()));
-        }
-
-        // Make this data object mutable and attach the proxy object to it.
-        state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
-    }
-}
-
-/******************************************************************************
 * Allocates a new dislocation segment terminated by two nodes.
 ******************************************************************************/
 DislocationSegment* DislocationNetwork::createSegment(const ClusterVector& burgersVector)

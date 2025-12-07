@@ -103,6 +103,7 @@ bool WidgetViewportWindow::eventFilter(QObject* obj, QEvent* event)
         break;
     case QEvent::Resize:
         resizeEvent(static_cast<QResizeEvent*>(event));
+        layoutIssueIndicators();
         break;
     case QEvent::KeyPress:
         if(widget()->isEnabled())
@@ -113,6 +114,59 @@ bool WidgetViewportWindow::eventFilter(QObject* obj, QEvent* event)
         break;
     }
     return false;
+}
+
+/******************************************************************************
+* Displays rendering issues (warnings) to the user using a visual indicator in the viewport window.
+******************************************************************************/
+void WidgetViewportWindow::displayRenderingIssues(const QString& rendererName, const QStringList& warningMessages)
+{
+    if(!warningMessages.empty()) {
+        QLabel*& indicator = _issueIndicators[rendererName];
+        if(!indicator) {
+            indicator = new QLabel(widget());
+            indicator->setPixmap(QPixmap(":/guibase/mainwin/status/status_error@2x.png"));
+            indicator->setMargin(4);
+            indicator->show();
+            OVITO_ASSERT(!indicator->isHidden());
+            layoutIssueIndicators();
+        }
+        else if(indicator->isHidden()) {
+            indicator->show();
+            OVITO_ASSERT(!indicator->isHidden());
+            layoutIssueIndicators();
+        }
+        indicator->setToolTip(tr("%1 issue:\n%2").arg(rendererName).arg(warningMessages.join(QStringLiteral("\n"))));
+    }
+    else if(auto indicator = _issueIndicators.find(rendererName); indicator != _issueIndicators.end() && indicator->second) {
+        indicator->second->hide();
+        OVITO_ASSERT(indicator->second->isHidden());
+        layoutIssueIndicators();
+    }
+}
+
+/******************************************************************************
+* Places the issue indicator labels in the viewport window.
+******************************************************************************/
+void WidgetViewportWindow::layoutIssueIndicators()
+{
+    if(!widget())
+        return;
+    if(_issueIndicators.empty())
+        return;
+
+    // Place the indicators in the top-right corner of the viewport window.
+    int margin = 5;
+    int x = widget()->width() - margin;
+    int y = margin;
+    for(const auto& [name, indicator] : _issueIndicators) {
+        if(indicator && !indicator->isHidden()) {
+            QSize size = indicator->sizeHint();
+            x -= size.width();
+            indicator->setGeometry(x, y, size.width(), size.height());
+            x -= margin;
+        }
+    }
 }
 
 }   // End of namespace

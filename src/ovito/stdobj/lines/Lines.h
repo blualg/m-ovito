@@ -72,6 +72,10 @@ public:
     VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                            const RendererResourceCache::ResourceFrame& visCache) const override;
 
+    /// Throws an exception if appending is not supported by this container type.
+    /// This is used in the PropertyContainer.append() Python method.
+    virtual void checkAppendability() const override { throw Exception(tr("Lines property containers cannot be appended to. You should use the Lines.create_line() method instead.")); }
+
 private:
 
     /// Tests whether the given spatial point is culled by the cutting planes set for this object.

@@ -137,24 +137,19 @@ public:
 
     /// Creates and returns a new numeric element type with the given numeric ID and, optionally, a human-readable name.
     /// If an element type with the given numeric ID already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name = {}, OvitoClassPtr elementTypeClass = {});
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const StringType& name, ElementTypeClassPtr elementTypeClass = {});
 
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const StringType& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
         OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
-        return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
-    }
-
-    /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
-    /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        if(const ElementType* existingType = elementType(name))
-            return existingType;
-        return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
+        return addNumericType(containerClass, generateUniqueElementTypeId(startNumericIdAt), name, elementTypeClass);
     }
 
     /// Returns the element type with the given ID, or NULL if no such type exists.
@@ -167,17 +162,9 @@ public:
     }
 
     /// Returns the element type with the given human-readable name, or NULL if no such type exists.
-    const ElementType* elementType(const QString& name) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(!name.isEmpty());
-        for(const ElementType* type : elementTypes())
-            if(type->name() == name)
-                return type;
-        return nullptr;
-    }
-
-    /// Returns the element type with the given human-readable name, or NULL if no such type exists.
-    const ElementType* elementType(const QLatin1String& name) const {
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* elementType(const StringType& name) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(name.size() != 0);
         for(const ElementType* type : elementTypes())
@@ -230,20 +217,6 @@ public:
     /// and a copy of the property array in which the original type ID values have
     /// been remapped to the output IDs.
     std::tuple<std::map<int,int>, ConstPropertyPtr> generateContiguousTypeIdMapping(int baseId = 1) const;
-
-    /// Indicates whether this data object wants to be shown in the pipeline editor under the data source section.
-    /// The property is shown only if it is a typed property, i.e. if the 'elementTypes' list contains
-    /// some elements. In this case we want the property to appear in the pipeline editor so that the user can
-    /// edit the individual types.
-    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const override {
-        if(elementTypes().empty())
-            return PipelineEditorObjectListMode::HideIncludingSubObjects;
-        else
-            return PipelineEditorObjectListMode::Show;
-    }
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;

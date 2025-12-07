@@ -75,10 +75,5 @@ FOREACH(file ${GLUSourceFiles})
     SET_SOURCE_FILES_PROPERTIES(${file} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 ENDFOREACH()
 
-# Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(gui)
-ENDIF()
-
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

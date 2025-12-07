@@ -30,14 +30,14 @@ namespace Ovito {
 /**
  * This dialog box lets the user configure the settings of the interactive viewport rendering backend.
  */
-class ConfigureViewportGraphicsDialog : public QDockWidget
+class ConfigureViewportGraphicsDialog : public QDockWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit ConfigureViewportGraphicsDialog(MainWindow& mainWindow, QWidget* parentWindow);
+    explicit ConfigureViewportGraphicsDialog(MainWindowUI& ui, QWidget* parentWindow);
 
 private Q_SLOTS:
 
@@ -60,7 +60,6 @@ private:
 
 private:
 
-    MainWindow& _mainWindow; /// The main application window.
     QButtonGroup* _backendSelectionGroup; /// Group of radio buttons for selecting the rendering backend.
     QStackedWidget* _backendSettingsStack; /// Hosts the settings widgets for the different rendering backends.
     std::map<QString, int> _backendSettingsMap; /// Maps backend identifiers to the stack index of the corresponding settings widget.

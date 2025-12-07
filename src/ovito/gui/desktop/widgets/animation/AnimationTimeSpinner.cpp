@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include "AnimationTimeSpinner.h"
 
 namespace Ovito {
@@ -32,12 +32,12 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent) : SpinnerWidget(parent), _mainWindow(mainWindow)
+AnimationTimeSpinner::AnimationTimeSpinner(MainWindowUI& ui, QWidget* parent) : SpinnerWidget(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
-    setUnit(new AnimationTimeSpinnerUnit(this, mainWindow));
+    setUnit(new AnimationTimeSpinnerUnit(this, ui));
     connect(this, &SpinnerWidget::valueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
+    connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
+    connect(&datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
 }
 
 /******************************************************************************
@@ -65,8 +65,8 @@ void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 void AnimationTimeSpinner::onSpinnerValueChanged()
 {
     // Set a new animation time.
-    if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings()) {
-        _mainWindow.handleExceptions([&]() {
+    if(AnimationSettings* anim = activeAnimationSettings()) {
+        handleExceptions([&]() {
             anim->setCurrentFrame(intValue());
         });
     }
@@ -75,10 +75,10 @@ void AnimationTimeSpinner::onSpinnerValueChanged()
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnimationTimeSpinnerUnit::AnimationTimeSpinnerUnit(QObject* parent, MainWindow& mainWindow) : IntegerParameterUnit(parent), _mainWindow(mainWindow)
+AnimationTimeSpinnerUnit::AnimationTimeSpinnerUnit(QObject* parent, MainWindowUI& ui) : IntegerParameterUnit(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::timeFormatChanged, this, &AnimationTimeSpinnerUnit::formatChanged);
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinnerUnit::formatChanged);
+    connect(&datasetContainer(), &DataSetContainer::timeFormatChanged, this, &AnimationTimeSpinnerUnit::formatChanged);
+    connect(&datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinnerUnit::formatChanged);
 }
 
 /******************************************************************************
@@ -88,7 +88,7 @@ QString AnimationTimeSpinnerUnit::formatValue(FloatType value)
 {
     int frame = static_cast<int>(value);
 
-    if(const AnimationSettings* settings = _mainWindow.datasetContainer().activeAnimationSettings()) {
+    if(const AnimationSettings* settings = activeAnimationSettings()) {
         if(settings->preferSimulationTimeDisplay()) {
             const auto& frameLabels = settings->frameLabels();
             auto iter = frameLabels.upperBound(frame);
@@ -117,7 +117,7 @@ QString AnimationTimeSpinnerUnit::formatValue(FloatType value)
 ******************************************************************************/
 FloatType AnimationTimeSpinnerUnit::parseString(const QString& valueString)
 {
-    const AnimationSettings* settings = _mainWindow.datasetContainer().activeAnimationSettings();
+    const AnimationSettings* settings = activeAnimationSettings();
     // Try reverse lookup from frame name to frame number.
     if(settings && settings->preferSimulationTimeDisplay()) {
         const auto& frameLabels = settings->frameLabels();

@@ -151,8 +151,8 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
                                               const RendererResourceCache::ResourceFrame& visCache) const
 {
     // Get lines object
-    if(const Lines* lines = path.lastAs<Lines>(1)) {
-        OVITO_ASSERT(path.lastAs<Lines>(1) == this);
+    if(const Lines* lines = path.nextToLastAs<Lines>()) {
+        OVITO_ASSERT(lines == this);
         lines->verifyIntegrity();
 
         // Get the simulation cell if needed. This depends on the settings made in the visualization element.

@@ -86,9 +86,14 @@ void PropertyParameterUI::resetUI()
 
         // Bind this parameter UI to the parameter object of the new edited object.
         setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
+        if(menuToolButton())
+            menuToolButton()->setEnabled(!editor()->isReadOnly());
     }
     else {
         setParameterObject(nullptr);
+        if(menuToolButton()) {
+            menuToolButton()->setEnabled(editObject() && !editor()->isReadOnly());
+        }
     }
 
     ParameterUI::resetUI();
@@ -109,7 +114,7 @@ void PropertyParameterUI::memorizeDefaultParameterValue()
     }
     else if(isReferenceFieldUI() && !propertyField()->isVector()) {
         if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-            if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+            if(AnimationSettings* anim = activeAnimationSettings()) {
                 QSettings settings;
                 settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
                 settings.beginGroup(editObject()->getOOClass().name());
@@ -138,7 +143,7 @@ void PropertyParameterUI::openAnimationKeyEditor()
     KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(parameterObject());
     if(!ctrl) return;
 
-    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), editor()->mainWindow());
+    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), ui());
     dlg.exec();
 }
 
@@ -151,6 +156,7 @@ MenuToolButton* PropertyParameterUI::createMenuToolButton(QWidget* parent)
     if(!_menuToolButton) {
         _menuToolButton = new MenuToolButton(parent);
         _menuToolButton->setToolTip(tr("Presets"));
+        _menuToolButton->setEnabled(editObject() && !editor()->isReadOnly());
     }
     return _menuToolButton;
 }

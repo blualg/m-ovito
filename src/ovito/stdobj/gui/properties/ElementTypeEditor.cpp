@@ -100,7 +100,7 @@ void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor* field, 
             lineEdit->setPlaceholderText(etype ? QStringLiteral("<%1>").arg(ElementType::generateDefaultTypeName(etype->numericId())) : QString());
 
         // Enable/disable the button.
-        _setAsDefaultBtn->setEnabled(etype != nullptr && etype->ownerProperty());
+        _setAsDefaultBtn->setEnabled(etype != nullptr && etype->ownerProperty() && !isReadOnly());
     }
 }
 
@@ -114,7 +114,7 @@ void ElementTypeEditor::onSaveAsDefault()
 
     ElementType::setDefaultColor(etype->ownerProperty(), etype->nameOrNumericId(), etype->color());
 
-    mainWindow().showStatusBarMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
+    ui().showStatusBarMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
 }
 
 }   // End of namespace

@@ -32,14 +32,14 @@ namespace Ovito {
 /**
  * This dialog box lets the user manage the animation settings.
  */
-class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, private UndoableTransaction
+class OVITO_GUI_EXPORT AnimationSettingsDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>, private UndoableTransaction
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
+    AnimationSettingsDialog(MainWindowUI& ui, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -63,7 +63,6 @@ private:
     /// The animation settings being edited.
     OORef<AnimationSettings> _animSettings;
 
-    MainWindow& _mainWindow;
     QComboBox* fpsBox;
     SpinnerWidget* animStartSpinner;
     SpinnerWidget* animEndSpinner;

@@ -61,6 +61,9 @@ public:
     /// This is called when the applet is no longer visible.
     virtual void deactivate() override;
 
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.dislocations"); }
+
 private:
 
     /// A table model for displaying the dislocation list.

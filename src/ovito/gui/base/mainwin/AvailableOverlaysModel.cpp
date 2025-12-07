@@ -84,9 +84,9 @@ OverlayAction* OverlayAction::createForTemplate(const QString& templateName)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _userInterface(userInterface), _overlayListModel(overlayListModel)
+AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& ui, OverlayListModel* overlayListModel) : QAbstractListModel(parent), UserInterfaceComponent<UserInterface>(ui), _overlayListModel(overlayListModel)
 {
-    OVITO_ASSERT(userInterface.actionManager());
+    OVITO_ASSERT(actionManager());
 
     // Initialize UI colors.
     updateColorPalette(QGuiApplication::palette());
@@ -108,8 +108,8 @@ QT_WARNING_POP
         _actions.push_back(action);
 
         // Register it with the global ActionManager.
-        userInterface.actionManager()->addAction(action);
-        OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == actionManager());
 
         // Handle the insertion action.
         connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
@@ -142,8 +142,8 @@ QT_WARNING_POP
         _actionsPerCategory.back().push_back(action);
 
         // Register it with the global ActionManager.
-        userInterface.actionManager()->addAction(action);
-        OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == actionManager());
 
         // Handle the action.
         connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
@@ -308,7 +308,7 @@ void AvailableOverlaysModel::refreshTemplates()
             auto iter = std::find(_actions.begin(), _actions.end(), action);
             OVITO_ASSERT(iter != _actions.end());
             _actions.erase(iter);
-            _userInterface.actionManager()->deleteAction(action);
+            actionManager()->deleteAction(action);
         }
         templateActions.clear();
     }
@@ -322,8 +322,8 @@ void AvailableOverlaysModel::refreshTemplates()
             templateActions.push_back(action);
 
             // Register it with the ActionManager.
-            _userInterface.actionManager()->addAction(action);
-            OVITO_ASSERT(action->parent() == _userInterface.actionManager());
+            actionManager()->addAction(action);
+            OVITO_ASSERT(action->parent() == actionManager());
 
             // Handle the action.
             connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
@@ -354,7 +354,7 @@ void AvailableOverlaysModel::insertViewportLayer()
     if(!vp) return;
 
     // Instantiate the new layer and add it to the active viewport.
-    _userInterface.performTransaction(tr("Insert viewport layer"), [&]() {
+    performTransaction(tr("Insert viewport layer"), [&]() {
         int overlayIndex = -1;
         int underlayIndex = -1;
         if(OverlayListItem* item = _overlayListModel->selectedItem()) {
@@ -393,7 +393,7 @@ void AvailableOverlaysModel::insertViewportLayer()
         vp->setRenderPreviewMode(true);
 
         // Show the overlays tab of the command panel.
-        _userInterface.actionManager()->getAction(ACTION_COMMAND_PANEL_OVERLAYS)->trigger();
+        actionManager()->getAction(ACTION_COMMAND_PANEL_OVERLAYS)->trigger();
     });
 }
 
@@ -416,7 +416,7 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     OverlayAction* action = OverlayAction::createForClass(clazz);
 
     // Register it with the global ActionManager.
-    _userInterface.actionManager()->addAction(action);
+    actionManager()->addAction(action);
 
     // Handle the insertion action.
     connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
@@ -427,7 +427,7 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     _actions.insert(iter, action);
 
     // Insert action into the right category. Or create a new category if necessary.
-    auto categoryIter = boost::find(_categoryNames, action->category());
+    auto categoryIter = std::ranges::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
     if(categoryIter == _categoryNames.end()) {
         _categoryNames.push_back(action->category());

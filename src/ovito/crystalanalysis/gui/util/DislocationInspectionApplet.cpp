@@ -56,7 +56,7 @@ QWidget* DislocationInspectionApplet::createWidget()
 
     _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
     QToolBar* toolbar = new QToolBar();
@@ -89,6 +89,9 @@ QWidget* DislocationInspectionApplet::createWidget()
     _tableView->horizontalHeader()->resizeSection(4, 60);
     _tableView->horizontalHeader()->resizeSection(6, 200);
     _tableView->horizontalHeader()->resizeSection(7, 200);
+#ifdef Q_OS_WIN
+    _tableView->horizontalHeader()->setStretchLastSection(true); // To avoid empty space to the right of the last columns on Windows, where the table has a different background color.
+#endif
     _tableView->verticalHeader()->hide();
     layout->addWidget(_tableView, 1, 0);
     layout->setRowStretch(1, 1);

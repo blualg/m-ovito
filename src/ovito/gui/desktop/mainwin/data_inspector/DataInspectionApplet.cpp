@@ -33,11 +33,13 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
-* Returns the main window this applet is embedded in.
+* Sets the panel hosting this applet.
 ******************************************************************************/
-MainWindow& DataInspectionApplet::mainWindow() const
+void DataInspectionApplet::setInspectorPanel(DataInspectorPanel* inspectorPanel)
 {
-    return inspectorPanel()->mainWindow();
+    OVITO_ASSERT(!_inspectorPanel);
+    setUserInterface(inspectorPanel->ui());
+    _inspectorPanel = inspectorPanel;
 }
 
 /******************************************************************************
@@ -195,17 +197,11 @@ void DataInspectionApplet::updateDataObjectList()
         for(const ConstDataObjectPath& path : objectPaths) {
             const DataObject* dataObj = path.back();
             QListWidgetItem* item;
-            QString itemTitle = dataObj->objectTitle();
-            if(_objectSelectionWidget->count() <= numItems) {
-                item = new QListWidgetItem(itemTitle, _objectSelectionWidget);
-            }
-            else {
+            if(_objectSelectionWidget->count() <= numItems)
+                item = new QListWidgetItem(_objectSelectionWidget);
+            else
                 item = _objectSelectionWidget->item(numItems);
-                item->setText(itemTitle);
-            }
-            item->setToolTip(tr("Python identifier: \"%1\"").arg(dataObj->identifier()));
-            auto createdByNode = dataObj->createdByNode().lock();
-            item->setStatusTip(createdByNode ? createdByNode->objectTitle() : QString{});
+            configureDataObjectListItem(item, path);
             item->setData(Qt::UserRole, QVariant::fromValue(path));
 
             // Select again the previously selected data object.
@@ -245,6 +241,18 @@ void DataInspectionApplet::updateDataObjectList()
     if(prevSelectedDataObjectPathString != _selectedDataObjectPathString) {
         Q_EMIT currentObjectPathChanged(_selectedDataObjectPathString);
     }
+}
+
+/******************************************************************************
+* Initializes a list item representing the given data object path.
+******************************************************************************/
+void DataInspectionApplet::configureDataObjectListItem(QListWidgetItem* item, const ConstDataObjectPath& objectPath)
+{
+    const DataObject* dataObj = objectPath.back();
+    item->setText(dataObj->objectTitle());
+    item->setToolTip(tr("Python identifier: \"%1\"").arg(dataObj->identifier()));
+    auto createdByNode = dataObj->createdByNode().lock();
+    item->setStatusTip(createdByNode ? createdByNode->objectTitle() : QString{});
 }
 
 /******************************************************************************

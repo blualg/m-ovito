@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
-#include <ovito/core/utilities/MoveOnlyAny.h>
 
 namespace Ovito {
 
@@ -171,10 +170,11 @@ public:
     virtual void close(bool exportCompleted = true);
 
     /// Produces the data to be exported for a trajectory frame.
-    [[nodiscard]] virtual SCFuture<any_moveonly> getExportableFrameData(int frameNumber, TaskProgress& progress);
+    [[nodiscard]] virtual SCFuture<boost::anys::unique_any> getExportableFrameData(int frameNumber, TaskProgress& progress);
 
     /// Writes the exportable data of a single trajectory frame to the output file.
-    [[nodiscard]] virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) = 0;
+    [[nodiscard]] virtual SCFuture<void> exportFrameData(boost::anys::unique_any frameData, int frameNumber, const QString& filePath,
+                                                         TaskProgress& progress) = 0;
 
     /// Returns a pointer to the exporter to which this worker belongs.
     const FileExporter* exporter() const { return _exporter; }

@@ -448,9 +448,11 @@ size_t Bonds::OOMetaClass::remapElementIndex(const ConstDataObjectPath& source, 
                             }
 
                             // Determine the indices of the two particles connected by the bond.
-                            size_t index2_a = boost::find(destIdentifiers, id_a) - destIdentifiers.cbegin();
-                            size_t index2_b = boost::find(destIdentifiers, id_b) - destIdentifiers.cbegin();
-                            if(index2_a < destIdentifiers.size() && index2_b < destIdentifiers.size()) {
+                            auto it_a = std::ranges::find(destIdentifiers, id_a);
+                            auto it_b = std::ranges::find(destIdentifiers, id_b);
+                            if(it_a != destIdentifiers.cend() && it_b != destIdentifiers.cend()) {
+                                size_t index2_a = std::distance(destIdentifiers.cbegin(), it_a);
+                                size_t index2_b = std::distance(destIdentifiers.cbegin(), it_b);
                                 // Go through the whole bonds list to see if there is a bond connecting the particles with
                                 // the same IDs.
                                 for(const auto& bond : destTopology) {
@@ -485,9 +487,11 @@ size_t Bonds::OOMetaClass::remapElementIndex(const ConstDataObjectPath& source, 
                             // Find matching bond by means of particle positions.
                             const Point3& pos_a = sourcePos[index_a];
                             const Point3& pos_b = sourcePos[index_b];
-                            size_t index2_a = boost::find(destPos, pos_a) - destPos.cbegin();
-                            size_t index2_b = boost::find(destPos, pos_b) - destPos.cbegin();
-                            if(index2_a < destPos.size() && index2_b < destPos.size()) {
+                            auto it_a = std::ranges::find(destPos, pos_a);
+                            auto it_b = std::ranges::find(destPos, pos_b);
+                            if(it_a != destPos.cend() && it_b != destPos.cend()) {
+                                size_t index2_a = std::distance(destPos.cbegin(), it_a);
+                                size_t index2_b = std::distance(destPos.cbegin(), it_b);
                                 // Go through the whole bonds list to see if there is a bond connecting the particles with
                                 // the same positions.
                                 for(const auto& bond : destTopology) {
@@ -578,10 +582,10 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
 VectorVis::VectorData Bonds::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                               const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<Bonds>(1) == this);
+    OVITO_ASSERT(path.nextToLastAs<Bonds>() == this);
     verifyIntegrity();
 
-    if(const Particles* particles = path.lastAs<Particles>(2)) {
+    if(const Particles* particles = path.nextToNextToLastAs<Particles>()) { // Data object path is: Particles -> Bonds -> Property
         const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
         const Property* bondTopologyProperty = getProperty(Bonds::TopologyProperty);
         const Property* bondPeriodicImageProperty = getProperty(Bonds::PeriodicImageProperty);

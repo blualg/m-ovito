@@ -74,7 +74,7 @@ public:
         family->setColor(color);
         family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
         addBurgersVectorFamily(family);
-        return family;
+        return family.get();
     }
 
     /// Removes a family from this lattice pattern's list of Burgers vector families.
@@ -89,9 +89,6 @@ public:
 
     /// Returns the display color to be used for a given Burgers vector.
     static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Cluster::VecType& b);
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
 private:
 

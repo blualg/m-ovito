@@ -31,14 +31,14 @@ namespace Ovito {
 /**
  * This dialog lets the user select a remote file to be imported.
  */
-class OVITO_GUI_EXPORT ImportRemoteFileDialog : public QDialog
+class OVITO_GUI_EXPORT ImportRemoteFileDialog : public QDialog,  public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    ImportRemoteFileDialog(MainWindow& mainWindow, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
+    ImportRemoteFileDialog(MainWindowUI& ui, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
 
     /// Sets the current URL in the dialog.
     void selectFile(const QUrl& url);
@@ -64,7 +64,6 @@ protected Q_SLOTS:
 
 private:
 
-    MainWindow& _mainWindow;
     std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
     QComboBox* _urlEdit;
     QComboBox* _formatSelector;

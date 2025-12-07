@@ -55,11 +55,11 @@ It can be accessed by clicking or dragging the tab bar, shown in the screenshot 
 
 This panel provides:
 
-  - Multiple tabs displaying the different data elements in the current dataset (e.g., the list of particles and their properties).
+  - Multiple tabs displaying the different pieces of the current dataset (list of particles, bonds, data tables, etc.).
   - A :ref:`measurement tool for determining distances and angles <data_inspector.particles>` between particles.
   - :ref:`2D data plots <data_inspector.data_tables>` computed by OVITO.
 
-The data inspector displays the final *output* of the current data pipeline, i.e., the data as it appears after
+Like the 3D viewports, the data inspector always displays the final state of the current data pipeline, i.e., it shows the dataset after
 all modifiers have been applied.
 
 .. _usage.viewport_layers:

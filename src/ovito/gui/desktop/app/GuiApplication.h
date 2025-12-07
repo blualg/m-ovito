@@ -89,6 +89,10 @@ protected:
     /// \return True on success, false if user has canceled the operation.
     static bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
 
+    /// \brief Asks the user for PKCS#11 smartcard credentials.
+    /// \return True on success, false if user has canceled the operation.
+    static bool askUserForPKCS11Credentials(const QString& hostname, const QString& username, QString& pkcs11Uri, QString& pin);
+
     /// \brief Informs the user about an unknown SSH host.
     static bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
 #endif

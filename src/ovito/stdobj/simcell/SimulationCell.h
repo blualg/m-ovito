@@ -278,17 +278,6 @@ public:
         return (k < 0) ? k+n : k;
     }
 
-    /// Indicates whether this data object wants to be shown in the pipeline editor under the data source section.
-    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const override {
-        return PipelineEditorObjectListMode::ShowIncludingSubObjects;
-    }
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("Simulation cell"); }
-
 protected:
 
     /// Is called when the value of a non-animatable field of this object changes.
@@ -518,8 +507,9 @@ public:
         return false;
     }
 
-    /// Wraps the input coordinates at the periodic boundaries of the cell.
-    /// The wrapped coordinates are returned as a new DataBuffer object.
+    /// Wraps the input coordinates at the periodic boundaries of the simulation cell.
+    /// The wrapped coordinates are returned as a new property array that has the same
+    /// memory layout and visual elements as the input property.
     ConstPropertyPtr wrapPoints(const Property* inputPositions) const;
 
 private:

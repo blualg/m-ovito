@@ -81,7 +81,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
     sublayout->addWidget(animSettingsBtn, 5, 2);
     connect(animSettingsBtn, &QPushButton::clicked, this, [this]() {
         if(editObject()) {
-            AnimationSettingsDialog(mainWindow(), container()->window()).exec();
+            AnimationSettingsDialog(ui(), container()->window()).exec();
             updateInformation();
         }
     });
@@ -145,7 +145,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
     });
 
     // Update the information display when animation interval changes.
-    connect(&mainWindow().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
+    connect(&datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 
     connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 }
@@ -169,7 +169,7 @@ bool FileSourcePlaybackRateEditor::referenceEvent(RefTarget* source, const Refer
 void FileSourcePlaybackRateEditor::updateInformation()
 {
     FileSource* fileSource = static_object_cast<FileSource>(editObject());
-    AnimationSettings* animationSettings = mainWindow().datasetContainer().activeAnimationSettings();
+    AnimationSettings* animationSettings = activeAnimationSettings();
     if(!fileSource || !animationSettings) return;
 
     _numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));

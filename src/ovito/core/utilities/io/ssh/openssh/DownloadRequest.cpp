@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/io/FileImporter.h>
 #include "DownloadRequest.h"
 #include "OpensshConnection.h"
 
@@ -46,6 +47,11 @@ void DownloadRequest::start(QIODevice* device)
     }
     _localFile->close();
 
+    // Note from OpenSSH docs:
+    // Termination on error can be suppressed on a command by command basis by prefixing the command with a ‘-’ character
+    // (for example, -rm /tmp/blah*). Echo of the command may be suppressed by prefixing the command with a ‘@’ character.
+    // These two prefixes may be combined in any order, for example -@ls /bsd.
+
     // Query file size from server.
     device->write("-@ls -n -1 -a -l ");
     device->write(quoteAgument(_path));
@@ -59,7 +65,7 @@ void DownloadRequest::start(QIODevice* device)
     device->write("\n");
 
     // Signal end of download.
-    device->write("@!echo \"<<<END>>>\"\n");
+    device->write("@!echo \"<<<OVITO_FILE_END>>>\"\n");
 }
 
 /******************************************************************************
@@ -70,7 +76,7 @@ void DownloadRequest::handleSftpResponse(QIODevice* device, const QByteArray& li
     if(_timer.isActive()) {
         _isInterruptable = false;
         _timer.stop();
-        if(line.startsWith("<<<END>>>")) {
+        if(line.contains("<<<OVITO_FILE_END>>>")) {
             Q_EMIT receivedFileComplete(&_localFile);
             _localFile.reset();
         }
@@ -82,8 +88,7 @@ void DownloadRequest::handleSftpResponse(QIODevice* device, const QByteArray& li
 
     QString response = QString::fromUtf8(line);
 
-    static const QRegularExpression ws_re(QStringLiteral("\\s+"));
-    QStringList tokens = response.split(ws_re, Qt::SkipEmptyParts);
+    QStringList tokens = FileImporter::splitString(response);
 
     if(tokens.size() > 5 && tokens[0].size() >= 10) {
         bool ok;

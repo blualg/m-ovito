@@ -217,23 +217,20 @@ private:
 /******************************************************************************
 * This container manages multiple rollouts.
 ******************************************************************************/
-class OVITO_GUI_EXPORT RolloutContainer : public QScrollArea
+class OVITO_GUI_EXPORT RolloutContainer : public QScrollArea, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructs the rollout container.
-    RolloutContainer(MainWindow& mainWindow, QWidget* parent = nullptr);
+    RolloutContainer(MainWindowUI& ui, QWidget* parent = nullptr);
 
     /// Adds a new rollout to the container.
     Rollout* addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& param = RolloutInsertionParameters(), const QString& helpPageUrl = {});
 
     /// Returns the Rollout that hosts the given widget.
     Rollout* findRolloutFromWidget(QWidget* content) const;
-
-    /// The main window that provides the context for this UI element.
-    MainWindow& mainWindow() const { return _mainWindow; }
 
     virtual QSize minimumSizeHint() const override;
     virtual QSize sizeHint() const override;
@@ -264,9 +261,6 @@ public Q_SLOTS:
     void updateRolloutsLater();
 
 private:
-
-    /// The main window that provides the context for this UI element.
-    MainWindow& _mainWindow;
 
     QBasicTimer _updateGeometryTimer;
 };

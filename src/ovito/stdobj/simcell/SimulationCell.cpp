@@ -95,46 +95,9 @@ void SimulationCell::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    OVITO_ASSERT(this == dataPath.back());
-
-    if(editableProxy() && !forceProxyReplacement) {
-        SimulationCell* proxy = static_object_cast<SimulationCell>(editableProxy());
-
-        // Synchronize the actual data object with the editable proxy object.
-
-        // Box size changes of the actual simulation cell are adopted by the proxy cell object.
-        proxy->setCellMatrix(cellMatrix());
-
-        // Changes made by the user to the PBC flags or dimensionality setting of the proxy cell object are adopted by the actual simulation cell object.
-        if(pbcFlags() != proxy->pbcFlags() || is2D() != proxy->is2D()) {
-            // Make this data object mutable first.
-            SimulationCell* self = static_object_cast<SimulationCell>(state.makeMutableInplace(dataPath));
-
-            self->setPbcFlags(proxy->pbcFlags());
-            self->setIs2D(proxy->is2D());
-        }
-    }
-    else {
-        // Create and initialize a new proxy.
-        OORef<SimulationCell> newProxy = OORef<SimulationCell>::create(ObjectInitializationFlag::DontCreateVisElement);
-        newProxy->setPbcFlags(pbcFlags());
-        newProxy->setIs2D(is2D());
-        newProxy->setCellMatrix(cellMatrix());
-
-        // Make this data object mutable and attach the proxy object to it.
-        state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
-    }
-
-    DataObject::updateEditableProxies(state, dataPath, forceProxyReplacement);
-}
-
-/******************************************************************************
-* Wraps the input coordinates at the periodic boundaries of the cell.
-* The wrapped coordinates are returned as a new DataBuffer object.
+* Wraps the input coordinates at the periodic boundaries of the simulation cell.
+* The wrapped coordinates are returned as a new property array that has the same
+* memory layout and visual elements as the input property.
 ******************************************************************************/
 ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) const
 {
@@ -175,7 +138,7 @@ ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) 
 #else
     BufferReadAccess<Point3> inputPosAcc{inputPositions};
     BufferWriteAccess<Point3, access_mode::discard_write> outputPosAcc{outputPositions};
-    boost::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
+    std::ranges::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
         const Point3 rp = reciprocalCellMatrix * p;
         const Vector3 rv(
             pbcFlags[0] * std::floor(rp.x()),

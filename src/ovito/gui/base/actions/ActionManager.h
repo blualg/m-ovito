@@ -188,7 +188,7 @@ namespace Ovito {
 /**
  * \brief Manages all available user interface actions.
  */
-class OVITO_GUIBASE_EXPORT ActionManager : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT ActionManager : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -202,10 +202,7 @@ public:
     };
 
     /// Constructor.
-    ActionManager(QObject* parent, UserInterface& userInterface);
-
-    /// Returns the user interface this action manager belongs to.
-    UserInterface& userInterface() const { return _userInterface; }
+    ActionManager(QObject* parent, UserInterface& ui);
 
     /// Returns dataset currently being edited in the main window.
     DataSet* dataset() const;
@@ -307,9 +304,6 @@ protected:
     void updateActionStates();
 
 private:
-
-    /// The UI that owns this action manager.
-    UserInterface& _userInterface;
 
     /// The list of registered actions.
     QVector<QAction*> _actions;

@@ -33,23 +33,17 @@ namespace Ovito {
 /**
  * \brief Manages a stack of viewport input handlers.
  */
-class OVITO_GUIBASE_EXPORT ViewportInputManager : public QObject
+class OVITO_GUIBASE_EXPORT ViewportInputManager : public QObject, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructor.
-    ViewportInputManager(QObject* parent, UserInterface& userInterface);
+    /// Constructor.
+    ViewportInputManager(QObject* parent, UserInterface& ui);
 
     /// Destructor.
     virtual ~ViewportInputManager();
-
-    /// Returns the dataset container this input manager is associated with,
-    DataSetContainer& datasetContainer() { return _datasetContainer; }
-
-    /// Returns the abstract user interface this input manager belongs to.
-    UserInterface& userInterface() const { return _userInterface; }
 
     /// \brief Returns the currently active ViewportInputMode that handles the mouse events in viewports.
     /// \return The mode that is responsible for mouse event handling. Can be \c NULL when the stack is empty.
@@ -115,16 +109,10 @@ Q_SIGNALS:
     /// \param newMode The new input handler that is now active (can be \c NULL).
     void inputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
 
-    /// \brief This signal is emiited when the viewport context menu should be displayed by the UI.
+    /// \brief This signal is emitted when the viewport context menu should be displayed by the UI.
     void contextMenuRequested(ViewportWindow* viewportWindow, const QPoint& pos);
 
 private:
-
-    /// The dataset container this input manager is associated with,
-    DataSetContainer& _datasetContainer;
-
-    /// The abstract user interface this input manager belongs to.
-    UserInterface& _userInterface;
 
     /// Stack of input modes. The topmost entry is the active one.
     std::vector<ViewportInputMode*> _inputModeStack;

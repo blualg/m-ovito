@@ -35,7 +35,7 @@ namespace Ovito {
 /**
  * \brief Manages the DataSet being edited.
  */
-class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker
+class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker, private UserInterfaceComponent<UserInterface, false>
 {
     OVITO_CLASS(DataSetContainer)
     Q_OBJECT
@@ -43,15 +43,12 @@ class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    void initializeObject(UserInterface& userInterface);
+    void initializeObject(UserInterface& ui);
 
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~DataSetContainer();
 #endif
-
-    /// Returns the abstract user interface this container is part of.
-    UserInterface& userInterface() { return *_userInterface; }
 
     /// Returns the current time of the active animation settings object.
     AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
@@ -135,6 +132,9 @@ Q_SIGNALS:
     /// \brief This signal is emitted whenever the length of the active animation interval changes.
     void animationIntervalChanged(int firstFrame, int lastFrame);
 
+    /// \brief This signal is emitted whenever the frames per second setting changes.
+    void framesPerSecondChanged(FloatType newFramesPerSecond);
+
     /// \brief This signal is emitted when the time to string conversion format has changed.
     void timeFormatChanged();
 
@@ -177,9 +177,6 @@ private:
 
     /// The active animation settings object.
     DECLARE_REFERENCE_FIELD(OORef<AnimationSettings>, activeAnimationSettings);
-
-    /// The abstract user interface this container is part of.
-    UserInterface* _userInterface;
 
     /// Helper object responsible for playing back the frames of the animation in the interactive viewports.
     OORef<SceneAnimationPlayback> _animationPlayback;

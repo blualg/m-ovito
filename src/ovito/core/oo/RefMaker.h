@@ -277,8 +277,11 @@ public:
     /// \brief Initializes a new instance and all its children as part of two-phase object initialization.
     void initializeParametersToUserDefaultsRecursive();
 
-    /// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
+    /// Creates a snapshot of the current values of certain parameters that will serve as reference to detect parameter changes made later by the user.
     void freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields);
+
+    /// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made later by the user.
+    void freezeInitialParameterValues();
 
     /// Copies the stored reference values of this object's parameters over to the given object (which must be of the same type).
     void copyInitialParametersToObject(RefMaker* obj) const;

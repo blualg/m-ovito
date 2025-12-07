@@ -16,7 +16,7 @@ Step 1: Load simulation trajectory
 """"""""""""""""""""""""""""""""""
 
 Start by downloading the simulation trajectory file
-`shear.dump <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.dump>`__ to your computer. This file was generated the ``shear`` simulation script found in the `LAMMPS examples folder <https://docs.lammps.org/Examples.html>`__. Use the :menuselection:`File --> Load File` function
+`shear.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/blob/master/tutorial/shear.dump>`__ to your computer. This file was generated the ``shear`` simulation script found in the `LAMMPS examples folder <https://docs.lammps.org/Examples.html>`__. Use the :menuselection:`File --> Load File` function
 to open the file :file:`shear.dump` in OVITO.
 
 Step 2: Adjust animation speed
@@ -167,7 +167,7 @@ Finally, press the button :guilabel:`Render active viewport` to start the render
 Download the tutorial solution
 """"""""""""""""""""""""""""""
 
-If you'd like to skip ahead or verify your solution, download the preconfigured OVITO session state file: `shear.ovito <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.ovito>`__
+If you'd like to skip ahead or verify your solution, download the preconfigured OVITO session state file: `shear.ovito <https://gitlab.com/ovito-org/ovito-sample-data/-/blob/master/tutorial/shear.ovito>`__
 
 Save it in the same folder as the trajectory file :file:`shear.dump`. Open it using :menuselection:`File --> Load Session State`.
 

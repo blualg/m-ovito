@@ -57,7 +57,7 @@ void VariantComboBoxParameterUI::resetUI()
     PropertyParameterUI::resetUI();
 
     if(comboBox())
-        comboBox()->setEnabled(editObject() != NULL && isEnabled());
+        comboBox()->setEnabled(editObject() != NULL && isEnabled() && !editor()->isReadOnly());
 }
 
 /******************************************************************************

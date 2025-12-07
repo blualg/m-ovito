@@ -363,7 +363,7 @@ ModificationNode* Pipeline::applyModifier(AnimationTime time, bool interactiveMo
     node->setInput(head());
     modifier->initializeModifier(ModifierInitializationRequest(time, false, interactiveMode, node));
     setHead(node);
-    return node;
+    return node.get();
 }
 
 /******************************************************************************
@@ -489,6 +489,7 @@ void Pipeline::requestObjectDeletion()
 
     // Discard transient references to visual elements.
     _visElements.clear(this, PROPERTY_FIELD(visElements));
+    _visElementDataObjectTitles.clear();
 
     RefTarget::requestObjectDeletion();
 }

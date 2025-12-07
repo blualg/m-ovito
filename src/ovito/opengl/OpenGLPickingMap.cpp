@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include "OpenGLRenderer.h"
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLPickingMap.h"
 
 namespace Ovito {
@@ -30,12 +30,15 @@ namespace Ovito {
 /******************************************************************************
 * Registers a range of unique object IDs for a rendering command.
 ******************************************************************************/
-uint32_t OpenGLPickingMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices)
+std::optional<uint32_t> OpenGLPickingMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices)
 {
     OVITO_ASSERT(!command.skipInPickingPass());
     OVITO_ASSERT(objectCount != 0);
 
     auto baseObjectID = _nextAvailablePickingID;
+    if(baseObjectID + objectCount <= baseObjectID)
+        return std::nullopt; // Overflow.
+
     _pickingRecords.emplace(baseObjectID, PickingRecord(command, std::move(indices)));
     _nextAvailablePickingID += objectCount;
     return baseObjectID;
@@ -63,20 +66,19 @@ std::optional<ViewportWindow::PickResult> OpenGLPickingMap::pickAt(const QPoint&
 /******************************************************************************
 * Reads out the contents of the OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer)
+void OpenGLPickingMap::acquireFramebufferContents(OpenGLRenderBuffer& renderBuffer)
 {
-    OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(frameBuffer);
-    OVITO_ASSERT(glFrameBuffer->framebufferObject());
-    const QSize& size = glFrameBuffer->framebufferSize();
+    OVITO_ASSERT(renderBuffer.framebufferObject());
+    const QSize size = renderBuffer.size();
 
     // The following requires an active GL context.
-    OpenGLContextRestore contextRestore = glFrameBuffer->renderingJob()->activateContext();
+    OpenGLContextRestore contextRestore = renderBuffer.renderingJob()->activateContext();
     QOpenGLContext* glcontext = QOpenGLContext::currentContext();
     QOpenGLFunctions* glfuncs = glcontext->functions();
 
-    if(!glFrameBuffer->framebufferObject()->isValid())
+    if(!renderBuffer.framebufferObject()->isValid())
         throw RendererException(QStringLiteral("OpenGL framebuffer object became invalid."));
-    if(!glFrameBuffer->framebufferObject()->bind())
+    if(!renderBuffer.framebufferObject()->bind())
         throw RendererException(QStringLiteral("Failed to bind OpenGL framebuffer object."));
 
     // Read out the color buffer.
@@ -115,7 +117,7 @@ void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingF
         _numDepthBufferBits = 0;
     }
 
-    if(!glFrameBuffer->framebufferObject()->release()) {
+    if(!renderBuffer.framebufferObject()->release()) {
         throw RendererException(QStringLiteral("Failed to release OpenGL framebuffer object."));
     }
 }

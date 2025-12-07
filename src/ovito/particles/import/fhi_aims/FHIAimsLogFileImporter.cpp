@@ -64,9 +64,6 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
     progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
     progress.setMaximum(stream.underlyingSize());
 
-    // Regular expression for whitespace characters.
-    QRegularExpression ws_re(QStringLiteral("\\s+"));
-
     Frame frame(fileHandle);
     int frameNumber = 0;
 
@@ -143,7 +140,7 @@ void FHIAimsLogFileImporter::FrameLoader::loadFile()
                         throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     pos = cell * pos;
                 }
-                typeAccess[i] = addNamedType(Particles::OOClass(), typeProperty, atomTypeName)->numericId();
+                typeAccess[i] = addNamedType(Particles::OOClass(), typeProperty, QLatin1String(atomTypeName))->numericId();
                 break;
             }
         }

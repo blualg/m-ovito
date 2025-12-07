@@ -171,7 +171,7 @@ void FrameBufferWindow::showRenderingProgress(SharedFuture<void> renderingFuture
     onTaskProgressUpdate();
 
     // Start watching the rendering task. Re-enable the window after rendering is done.
-    _renderingFuture.finally(ObjectExecutor(&_mainWindow), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
+    _renderingFuture.finally(ObjectExecutor(&_mainWindow.ui()), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
         if(!self.isNull())
             self->onRenderingFinished(std::move(self->_renderingFuture));
     });
@@ -203,7 +203,7 @@ void FrameBufferWindow::onRenderingFinished(SharedFuture<void> future)
     // Check for exceptions thrown during rendering and display them to the user.
     if(future && future.isFinished() && !future.isCanceled()) {
         try { future.task()->throwPossibleException(); }
-        catch(const Exception& ex) { _mainWindow.reportError(ex); }
+        catch(const Exception& ex) { _mainWindow.ui().reportError(ex); }
     }
 }
 
@@ -291,7 +291,7 @@ void FrameBufferWindow::onTaskProgressUpdate()
 {
     size_t index = 0;
 
-    _mainWindow.visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
+    _mainWindow.ui().visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
         if(text.isEmpty())
             return;
         QLabel* statusLabel;

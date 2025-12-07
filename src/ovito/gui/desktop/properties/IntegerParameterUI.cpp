@@ -47,7 +47,7 @@ void IntegerParameterUI::updatePropertyValue()
     if(editObject() && spinner()) {
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
-                ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->intValue());
+                ctrl->setIntValue(currentAnimationTime(), spinner()->intValue());
         }
         else if(isPropertyFieldUI()) {
             editObject()->setPropertyFieldValue(propertyField(), spinner()->intValue());
@@ -65,7 +65,7 @@ void IntegerParameterUI::updateUI()
         handleExceptions<true>([&] {
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                    spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0))));
+                    spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime()));
                 }
             }
             else {

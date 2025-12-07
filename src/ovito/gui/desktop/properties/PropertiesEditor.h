@@ -39,7 +39,7 @@ namespace Ovito {
  *
  * A properties editor for a RefTarget derived object can be created using the PropertiesEditor::create() function.
  */
-class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker
+class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(PropertiesEditor)
     Q_OBJECT
@@ -73,7 +73,7 @@ public:
     ///         Returns NULL if no editor component is registered for the RefTarget type.
     ///
     /// The returned editor object is not initialized yet. Call initialize() once to do so.
-    static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
+    static OORef<PropertiesEditor> create(MainWindowUI& ui, RefTarget* obj);
 
     /// \brief This will bind the editor to the given container.
     /// \param container The properties panel that's the host of the editor.
@@ -91,17 +91,17 @@ public:
     /// \brief Returns the rollout container widget this editor is placed in.
     PropertiesPanel* container() const { return _container; }
 
-    /// \brief Returns the main window that hosts the editor.
-    MainWindow& mainWindow() const {
-        OVITO_ASSERT(_mainWindow != nullptr);
-        return *_mainWindow;
-    }
-
     /// \brief Returns the top-level window hosting this editor panel.
     QWidget* parentWindow() const;
 
     /// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
     PropertiesEditor* parentEditor() const { return _parentEditor; }
+
+    /// \brief Indicates whether access to the editable object is read-only.
+    bool isReadOnly() const { return _isReadOnly; }
+
+    /// \brief Set whether access to the editable object should be read-only.
+    void setReadOnly(bool readOnly);
 
     /// \brief Creates a new rollout in the rollout container and returns
     ///        the empty widget that can then be filled with UI controls.
@@ -153,12 +153,6 @@ public:
     /// For an editor of a DataVis element, returns the data collection paths to the DataObjects which the DataVis element is attached to.
     std::vector<ConstDataObjectRefPath> getVisDataObjectPaths() const;
 
-    /// Returns the current animation time of the scene the object being edited belongs to.
-    AnimationTime currentAnimationTime() const;
-
-    /// Returns the viewport that is currently selected.
-    Viewport* activeViewport() const;
-
     /// Creates a ParameterUI component and registers it with the editor instance.
     /// The component will be freed when the editor is destroyed.
     template<typename T, typename... Args>
@@ -167,49 +161,26 @@ public:
         return static_object_cast<T>(_parameterUIs.back().get());
     }
 
-    /// Executes a functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-    template<bool Isolated = false, typename Function>
-    bool handleExceptions(Function&& func) const {
-        return mainWindow().handleExceptions<Isolated>(std::forward<Function>(func));
-    }
-
-    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed
-    /// to the user, and this function returns false.
-    template<typename Function>
-    bool performActions(UndoableTransaction& transaction, Function&& func) {
-        return mainWindow().performActions(transaction, std::forward<Function>(func));
-    }
-
-    /// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, all data changes performed by the functor
-    /// so far will be undone and an error message is shown to the user.
-    template<typename Function>
-    bool performTransaction(const QString& undoOperationName, Function&& func) {
-        return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
-    }
-
     /// \brief Recursively visits all pipeline scene nodes in the current scene
     ///        and invokes the given visitor function for every scene node with a pipeline.
     ///
-    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value.
+    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value or void.
     /// \return true if all pipelines have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
-    /// The visitor function must return a boolean value to indicate whether
+    /// The visitor function may return a boolean value to indicate whether
     /// it wants to continue visit more scene nodes. A return value of false
     /// leads to early termination and no further nodes are visited.
     template<typename Function>
     bool visitScenePipelines(Function&& fn) const {
-        if(Scene* scene = mainWindow().datasetContainer().activeScene())
+        if(Scene* scene = datasetContainer().activeScene())
             return scene->visitPipelines(std::forward<Function>(fn));
         return true;
     }
 
     /// Returns the scene node that is currently selected in the scene.
     SceneNode* selectedSceneNode() const {
-        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet())
+        if(SelectionSet* selection = datasetContainer().activeSelectionSet())
             return selection->firstNode();
         return nullptr;
     }
@@ -229,10 +200,10 @@ public:
     void scheduleOperationAfter(FutureType&& future, Function&& function) {
         if(!editObject())
             return;
-        ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, mainWindow(), parentWindow());
+        ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, ui(), parentWindow());
         progressDialog->whenDone([self=QPointer<PropertiesEditor>(this), editObject=OOWeakRef<RefTarget>(editObject()), future=std::move(future), function=std::forward<Function>(function)]() mutable noexcept {
             if(!self.isNull() && self->editObject() == editObject.lock().get()) {
-                self->mainWindow().handleExceptions([&]() {
+                self->handleExceptions([&]() {
                     std::invoke(std::move(function), std::move(future).result());
                 });
             }
@@ -246,7 +217,7 @@ public Q_SLOTS:
     ///                  as the previous object.
     ///
     /// This method generates a contentsReplaced() and a contentsChanged() signal.
-    void setEditObject(RefTarget* newObject);
+    void setEditObject(RefTarget* newObject, bool readOnly = false);
 
 Q_SIGNALS:
 
@@ -288,9 +259,6 @@ private:
     /// The container widget the editor is shown in.
     PropertiesPanel* _container = nullptr;
 
-    /// The main window that hosts the editor.
-    MainWindow* _mainWindow = nullptr;
-
     /// Pointer to the parent editor which opened this editor for a sub-component.
     PropertiesEditor* _parentEditor = nullptr;
 
@@ -300,6 +268,9 @@ private:
     /// The list of rollout widgets that have been created by editor.
     /// The cleanup handler is used to delete them when the editor is being deleted.
     QObjectCleanupHandler _rollouts;
+
+    /// Indicates whether access to the editable object is read-only.
+    bool _isReadOnly = false;
 
     /// For emitting the pipelineInputChanged() signal with a short delay.
     DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;

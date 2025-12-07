@@ -34,7 +34,7 @@ namespace Ovito {
  * \brief Base class for UI components that allow the user to edit a parameter
  *        of a RefTarget derived object in the PropertiesEditor.
  */
-class OVITO_GUI_EXPORT ParameterUI : public QObject, public RefMaker
+class OVITO_GUI_EXPORT ParameterUI : public QObject, public RefMaker, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(ParameterUI)
     Q_OBJECT
@@ -50,40 +50,11 @@ public:
     /// Returns the properties editor hosting this component.
     PropertiesEditor* editor() const { return _editor; }
 
-    /// Returns the main window that is hosting this parameter UI.
-    MainWindow& mainWindow() const { return editor()->mainWindow(); }
-
-    /// Returns the current animation time.
-    std::optional<AnimationTime> currentAnimationTime() const { return editor()->currentAnimationTime(); }
-
     /// Returns the enabled state of the component.
     bool isEnabled() const { return _enabled; }
 
     /// Returns the disabled state of the component. This is simply the inverse of the enabled state.
     bool isDisabled() const { return !isEnabled(); }
-
-    /// Executes a functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-    template<bool Isolated = false, typename Function>
-    bool handleExceptions(Function&& func) const {
-        return editor()->handleExceptions<Isolated>(std::forward<Function>(func));
-    }
-
-    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed
-    /// to the user, and this function returns false.
-    template<typename Function>
-    bool performActions(UndoableTransaction& transaction, Function&& func) {
-        return editor()->performActions(transaction, std::forward<Function>(func));
-    }
-
-    /// Executes the passed functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, all data changes performed by the functor
-    /// so far will be undone and an error message is shown to the user.
-    template<typename Function>
-    bool performTransaction(const QString& undoOperationName, Function&& func) const {
-        return editor()->performTransaction(undoOperationName, std::forward<Function>(func));
-    }
 
 public:
 

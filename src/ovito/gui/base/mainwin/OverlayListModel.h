@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * A Qt model class used to populate the QListView widget on the viewport layer tab of the command panel.
  */
-class OVITO_GUIBASE_EXPORT OverlayListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT OverlayListModel : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -45,7 +45,7 @@ public:
     };
 
     /// Constructor.
-    OverlayListModel(QObject* parent, UserInterface& userInterface);
+    OverlayListModel(QObject* parent, UserInterface& ui);
 
     /// Returns the number of list items.
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return _items.size(); }
@@ -130,9 +130,6 @@ private Q_SLOTS:
     void updateColorPalette(const QPalette& palette);
 
 private:
-
-    /// The abstract user interface this model belongs to.
-    UserInterface& _userInterface;
 
     /// List of visible items in the model.
     QList<OORef<OverlayListItem>> _items;

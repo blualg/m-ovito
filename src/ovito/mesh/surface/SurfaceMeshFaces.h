@@ -84,6 +84,10 @@ public:
         OVITO_ASSERT(false);
         throw Exception(tr("Deleting faces from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_faces() on the parent object instead."));
     }
+
+    /// Throws an exception if appending is not supported by this container type.
+    /// This is used in the PropertyContainer.append() Python method.
+    virtual void checkAppendability() const override { throw Exception(tr("Mesh face containers cannot be appended to. You should use the SurfaceMesh.create_face() method instead.")); }
 };
 
 }   // End of namespace

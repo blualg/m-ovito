@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief Abstract base class for applets shown in the data inspector.
  */
-class OVITO_GUI_EXPORT DataInspectionApplet : public QObject, public OvitoObject
+class OVITO_GUI_EXPORT DataInspectionApplet : public QObject, public OvitoObject, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(DataInspectionApplet)
     Q_OBJECT
@@ -51,9 +51,6 @@ public:
         return currentState().getObjectsRecursive(*_dataObjectClass);
     }
 
-    /// Returns the main window this applet is embedded in.
-    MainWindow& mainWindow() const;
-
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() = 0;
 
@@ -68,6 +65,11 @@ public:
 
     /// Selects a specific data object in this applet.
     virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
+
+    /// Returns the help topic ID for the documentation page of this applet.
+    /// An empty string means that no help page is available for this applet.
+    /// Then, the main help page of the data inspector is opened instead.
+    virtual QString helpTopicId() const { return {}; }
 
     /// Returns the currently selected data pipeline.
     Pipeline* currentPipeline() const;
@@ -88,7 +90,7 @@ public:
     DataInspectorPanel* inspectorPanel() const { OVITO_ASSERT(_inspectorPanel); return _inspectorPanel; }
 
     /// Sets the panel hosting this applet.
-    void setInspectorPanel(DataInspectorPanel* inspectorPanel) { _inspectorPanel = inspectorPanel; }
+    void setInspectorPanel(DataInspectorPanel* inspectorPanel);
 
 protected:
 
@@ -100,6 +102,9 @@ protected:
 
     /// Updates the list of data objects displayed in the inspector.
     void updateDataObjectList();
+
+    /// Initializes a list item representing the given data object path.
+    virtual void configureDataObjectListItem(QListWidgetItem* item, const ConstDataObjectPath& objectPath);
 
 Q_SIGNALS:
 

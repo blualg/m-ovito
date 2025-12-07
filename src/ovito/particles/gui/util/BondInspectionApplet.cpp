@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include "BondInspectionApplet.h"
 
@@ -48,7 +47,7 @@ QWidget* BondInspectionApplet::createWidget()
 
     _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
     QToolBar* toolbar = new QToolBar();
@@ -56,12 +55,14 @@ QWidget* BondInspectionApplet::createWidget()
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar->setIconSize(QSize(18,18));
     toolbar->addAction(pickModeAction);
-    toolbar->addAction(resetFilterAction());
     layout->addWidget(toolbar, 0, 0);
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
-    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->addWidget(countDisplayLabel(), 0, 2);
+    countDisplayLabel()->setToolTip(tr("Number of bonds in the final pipeline state that match the filter expression."));
+    layout->addWidget(tableView(), 1, 0, 1, 3);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(1, 1);
 
     QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
     connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {

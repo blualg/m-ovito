@@ -38,13 +38,18 @@ FileListingRequest::FileListingRequest(OpensshConnection* connection, const QStr
 ******************************************************************************/
 void FileListingRequest::start(QIODevice* device)
 {
+    // Note from OpenSSH docs:
+    // Termination on error can be suppressed on a command by command basis by prefixing the command with a ‘-’ character
+    // (for example, -rm /tmp/blah*). Echo of the command may be suppressed by prefixing the command with a ‘@’ character.
+    // These two prefixes may be combined in any order, for example -@ls /bsd.
+
     // Request directory listing from server.
     device->write("-@ls -1 -n -f -a -l ");
     device->write(quoteAgument(_path));
     device->write("\n");
 
     // Signal end of listing.
-    device->write("@!echo \"<<<END>>>\"\n");
+    device->write("@!echo \"<<<OVITO_FILELIST_END>>>\"\n");
 
     Q_EMIT receivingDirectory();
 }
@@ -54,7 +59,7 @@ void FileListingRequest::start(QIODevice* device)
 ******************************************************************************/
 void FileListingRequest::handleSftpResponse(QIODevice* device, const QByteArray& line)
 {
-    if(line.startsWith("<<<END>>>")) {
+    if(line.contains("<<<OVITO_FILELIST_END>>>")) {
         Q_EMIT receivedDirectoryComplete(_listing);
         return;
     }
@@ -62,14 +67,16 @@ void FileListingRequest::handleSftpResponse(QIODevice* device, const QByteArray&
     if(line.size() > 10) {
         int charCount;
         qlonglong fileSize;
-        if(sscanf(line.constData(), "%*s %*s %*d %*d %lli %*s %*s %*s%n", &fileSize, &charCount) == 1 && charCount+2 < line.size()) {
-            if(line[9] == 'x')
+        // Expected output format of 'ls -1 -n -f -a -l' command:
+        // <file_mode> <num_links> <user_id> <group_id> <file_size> <file_date> <file_time> <file_name>
+        if(std::sscanf(line.constData(), "%*s %*s %*s %*s %lli %*s %*s %*s%n", &fileSize, &charCount) == 1 && charCount+2 < line.size()) {
+            if(line[0] == 'd' || line[9] == 'x')
                 return; // Skip directories.
 
             QByteArrayView path = QByteArrayView(line).sliced(charCount+1).chopped(1);
             auto index = path.lastIndexOf('/');
             if(index >= 0) {
-                QString filename = QString::fromUtf8(path.sliced(index+1));
+                QString filename = QString::fromUtf8(path.sliced(index+1)).trimmed();
                 if(filename != QStringLiteral(".") && filename != QStringLiteral("..")) {
                     _listing.push_back(std::move(filename));
                 }

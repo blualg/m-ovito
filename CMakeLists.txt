@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.19.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25.0 FATAL_ERROR)
 CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
@@ -57,53 +57,23 @@ INCLUDE(cmake/SYCL.cmake)
 INCLUDE(cmake/Cuda.cmake)
 
 # Define build options.
-OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
-OPTION(OVITO_BUILD_APP "Build the OVITO desktop application." "ON")
+OPTION(OVITO_BUILD_APP "Build the OVITO desktop application with a GUI." "ON")
 OPTION(OVITO_BUILD_MONOLITHIC "Build the application as a monolithic executable, statically linking in all plugins." "OFF")
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
-OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
+OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for an app store. This option disables integrated software update checks." "OFF")
 OPTION(OVITO_RUN_CLANG_TIDY "Run the clang-tidy tool to check code." "OFF")
 OPTION(OVITO_USE_ADDRESS_SANITIZER "Builds the code with AddressSanitizer support to detect memory errors (only in debug builds)." "OFF")
 OPTION(OVITO_USE_THREAD_SANITIZER "Builds the code with ThreadSanitizer support to detect race condition errors (only in debug builds)." "OFF")
 OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up build." "ON")
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
+OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
-OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)
-OPTION(OVITO_USE_CUDA "Build with native Cuda support" "OFF")
-
-# Ovito needs Qt>=6.3.
-SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.3)
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
-
-# Look for DPC++ SYCL implementation.
-IF(OVITO_USE_SYCL STREQUAL DPC++)
-    if(CMAKE_HOST_WIN32)
-        # need CMake 3.25.0+ for IntelLLVM support of target link properties on Windows
-        CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
-    ELSE()
-        # CMake 3.23.5 is the minimum recommended for IntelLLVM on Linux
-        CMAKE_MINIMUM_REQUIRED(VERSION 3.23.5)
-    ENDIF()
-    # This imports the heterogeneous compilation configuration package (IntelSYCLConfig.cmake), which is shipped with the compiler.
-    # The package directory is found in the parent directory of the icx bin directory.
-    IF(NOT WIN32)
-        FIND_PACKAGE(IntelSYCL REQUIRED)
-    ENDIF()
-ENDIF()
-
-# Enable CUDA support (optional)
-IF(OVITO_USE_CUDA)
-    ENABLE_LANGUAGE(CUDA)
-    FIND_PACKAGE(CUDAToolkit REQUIRED)
-    SET(CMAKE_CUDA_STANDARD 20)
-    SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    SET(CMAKE_CUDA_SEPARABLE_COMPILATION TRUE)
-ENDIF()
+OPTION(OVITO_USE_CUDA "Build with native CUDA support" "OFF")
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")
@@ -122,11 +92,24 @@ OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
 # It will get populated by the OVITO_PLUGIN function.
 SET(OVITO_PLUGINS_LIST "")
 
+# Ovito needs Qt 6.3+.
+SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.3)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+
+# Enable CUDA support (optional)
+IF(OVITO_USE_CUDA)
+    ENABLE_LANGUAGE(CUDA)
+    FIND_PACKAGE(CUDAToolkit REQUIRED)
+    SET(CMAKE_CUDA_STANDARD 20)
+    SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    SET(CMAKE_CUDA_SEPARABLE_COMPILATION TRUE)
+ENDIF()
+
 # Enable software testing framework.
 ENABLE_TESTING()
 
-# Activate C++20 language standard.
-SET(CMAKE_CXX_STANDARD 20)
+# Activate C++23 language standard.
+SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set visibility of symbols in libraries to hidden by default, except those exported in the source code.
@@ -146,18 +129,13 @@ IF(WIN32 OR APPLE) # On Linux, LTO currently breaks the executable due to missin
         ENDIF()
     ENDIF()
 ENDIF()
-# Disable link-time optimization (LTO) on Windows when using SYCL.
-# Handles "lld-link: error: ... unknown file type"
-IF(WIN32 AND OVITO_USE_SYCL)
-    SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
-ENDIF()
 
 # Set the name of the macOS application bundle to generate.
 SET(MACOSX_BUNDLE_NAME "Ovito")
 SET(MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_NAME}")
 
 IF(NOT OVITO_BUILD_PYPI)
-    IF(UNIX AND NOT APPLE)
+    IF(LINUX)
         # The directory where the main executable goes to.
         SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
         # The directory where the main libraries go to.
@@ -306,6 +284,11 @@ ELSE()
     ENDIF()
 ENDIF()
 
+# Disable link-time optimization (LTO) on Windows when using SYCL.
+# Handles "lld-link: error: ... unknown file type"
+IF(OVITO_USE_SYCL AND WIN32)
+    SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+ENDIF()
 IF(OVITO_USE_SYCL STREQUAL AdaptiveCpp AND NOT ADAPTIVECPP_DEBUG_LEVEL)
     IF(CMAKE_BUILD_TYPE MATCHES "Debug")
         SET(ADAPTIVECPP_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)

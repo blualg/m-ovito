@@ -31,8 +31,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OverlayListModel::OverlayListModel(QObject* parent, UserInterface& userInterface) : QAbstractListModel(parent),
-    _userInterface(userInterface),
+OverlayListModel::OverlayListModel(QObject* parent, UserInterface& ui) :
+    QAbstractListModel(parent),
+    UserInterfaceComponent<UserInterface>(ui),
     _statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
     _statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
     _statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
@@ -205,7 +206,7 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
     else if(role == StatusInfoRole) {
         if(selectedViewport()) {
             QVariant v;
-            if(_userInterface.handleExceptions([&] {
+            if(handleExceptions([&] {
                 v = item->shortInfo(selectedViewport());
             })) return v;
         }
@@ -267,7 +268,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
     if(role == Qt::CheckStateRole) {
         OverlayListItem* item = this->item(index.row());
         if(ViewportOverlay* overlay = item->overlay()) {
-            _userInterface.performTransaction((value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
+            performTransaction((value == Qt::Checked) ? tr("Show layer") : tr("Hide layer"), [overlay, &value]() {
                 overlay->setEnabled(value == Qt::Checked);
             });
         }
@@ -277,7 +278,7 @@ bool OverlayListModel::setData(const QModelIndex& index, const QVariant& value, 
         if(ViewportOverlay* overlay = item->overlay()) {
             QString newName = value.toString();
             if(overlay->objectTitle() != newName) {
-                _userInterface.performTransaction(tr("Rename layer"), [overlay, &newName]() {
+                performTransaction(tr("Rename layer"), [overlay, &newName]() {
                     overlay->setObjectTitle(newName);
                 });
             }

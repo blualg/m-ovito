@@ -26,6 +26,8 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
 #include "FrameGraph.h"
+#include "FrameBuffer.h"
+#include "RenderBuffer.h"
 
 namespace Ovito {
 
@@ -41,40 +43,6 @@ public:
 };
 
 /**
- * Abstract target frame buffer a RenderingJob renders into (e.g. an OpenGL frame buffer or an ANARI frame object).
- */
-class OVITO_CORE_EXPORT AbstractRenderingFrameBuffer : public RefTarget
-{
-	OVITO_CLASS(AbstractRenderingFrameBuffer)
-
-public:
-
-    /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, const QRect& outputViewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer) {
-		RefTarget::initializeObject(flags);
-		_outputViewportRect = outputViewportRect;
-		_outputFrameBuffer = std::move(outputFrameBuffer);
-	}
-
-	/// Returns the target area in the output FrameBuffer.
-	const QRect& outputViewportRect() const { return _outputViewportRect; }
-
-	/// Returns the target area in the internal rendering framebuffer (e.g. OpenGL framebuffer).
-	virtual QRect renderingViewportRect() const { return _outputViewportRect; }
-
-	/// Returns the output FrameBuffer where the rendered pixels will be copied to (may be null).
-	const std::shared_ptr<FrameBuffer>& outputFrameBuffer() const { return _outputFrameBuffer; }
-
-private:
-
-	/// The target area in the output FrameBuffer.
-	QRect _outputViewportRect;
-
-	/// The output FrameBuffer where the rendered pixels will be copied to (may be null).
-	std::shared_ptr<FrameBuffer> _outputFrameBuffer;
-};
-
-/**
  * Abstract base class for scene rendering implementations, which produce a picture of the three-dimensional scene.
  */
 class OVITO_CORE_EXPORT RenderingJob : public RefTarget
@@ -83,14 +51,18 @@ class OVITO_CORE_EXPORT RenderingJob : public RefTarget
 
 public:
 
-	/// Creates a new abstract target frame buffer to render into.
-	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) = 0;
+	/// A callback function that can decide which commands from the frame graph should be executed by the renderer.
+	/// The function is called for each rendering command in the frame graph along with its command group.
+	/// A return value of true means that the command should be skipped during rendering.
+	/// The filter function allows a parent renderer to control which commands should be handled by a sub-renderer.
+    using RenderingCommandFilter = fu2::unique_function<bool(RenderingJob&, const FrameGraph::RenderingCommandGroup&, const FrameGraph::RenderingCommand&)>;
 
-	/// Returns the device pixel ratio to be used when building the frame graph for offscreen rendering.
-	virtual int multisamplingLevel() const { return 1; }
+	/// Creates a new abstract target buffer to render into.
+	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QSize& deviceIndependentSize) = 0;
 
-	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress) = 0;
+	/// Renders an image of the given frame graph. The image is first rendered into the given device-specific render buffer,
+	/// and then optionally copied into the given output frame buffer (may be null).
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, TaskProgress& progress) = 0;
 
     /// Perform post-processing of a newly generated frame graph, which is to be rendered by this rendering job.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) {}
@@ -98,15 +70,24 @@ public:
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const { return QImage::Format_ARGB32_Premultiplied; }
 
-protected:
+	/// Queries the optional filter function that decides which commands from the frame graph should be executed by this renderer.
+	/// If not set, it returns false and all commands are executed.
+	bool renderingCommandFilter(const FrameGraph::RenderingCommandGroup& group, const FrameGraph::RenderingCommand& command) { return _renderingCommandFilter && _renderingCommandFilter(*this, group, command); }
 
-	/// Renders the 2d graphics of a frame graph render layer into the frame buffer.
-	static void render2DPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer);
+	/// Sets an optional filter function that decides which commands from the frame graph should be executed by this renderer.
+	/// If not set, all commands are executed.
+	void setRenderingCommandFilter(RenderingCommandFilter filter) { _renderingCommandFilter = std::move(filter); }
 
 #ifdef OVITO_BUILD_BASIC
 	/// Creates an image serving as watermark for demo versions of scene renderers.
     static QImage createWatermark(const QSize& size);
 #endif
+
+private:
+
+	/// Optional filter function that decides which commands from the frame graph should be executed by this renderer.
+	/// If not set, all commands are executed.
+	RenderingCommandFilter _renderingCommandFilter;
 };
 
 }	// End of namespace

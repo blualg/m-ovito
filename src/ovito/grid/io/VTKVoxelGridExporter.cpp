@@ -38,9 +38,12 @@ OORef<FileExportJob> VTKVoxelGridExporter::createExportJob(const QString& filePa
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
+        virtual SCFuture<void> exportFrameData(boost::anys::unique_any frameData, int frameNumber, const QString& filePath,
+                                               TaskProgress& progress) override
+        {
             // The exportable frame data.
-            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
+            OVITO_ASSERT(frameData.has_value());
+            const auto state = boost::anys::any_cast<PipelineFlowState>(frameData);
 
             // Perform the following in a worker thread.
             co_await ExecutorAwaiter(ThreadPoolExecutor());

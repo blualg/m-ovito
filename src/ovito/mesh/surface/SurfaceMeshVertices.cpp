@@ -140,8 +140,8 @@ void SurfaceMeshVertices::initializeObject(ObjectInitializationFlags flags)
 VectorVis::VectorData SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                                             const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
-    if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+    OVITO_ASSERT(path.nextToLastAs<SurfaceMeshVertices>() == this);
+    if(const SurfaceMesh* mesh = path.nextToNextToLastAs<SurfaceMesh>()) { // Data object path is: SurfaceMesh -> SurfaceMeshVertices -> Property
         mesh->verifyMeshIntegrity();
 
         ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();

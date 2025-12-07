@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the command panel page.
 ******************************************************************************/
-UtilityCommandPage::UtilityCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent), _mainWindow(mainWindow)
+UtilityCommandPage::UtilityCommandPage(MainWindowUI& ui, QWidget* parent) : QWidget(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(2,2,2,2);
@@ -42,14 +42,14 @@ UtilityCommandPage::UtilityCommandPage(MainWindow& mainWindow, QWidget* parent) 
     // Create the dropdown box.
     _utilitiesBox = new QComboBox(this);
     layout->addWidget(_utilitiesBox);
-    _utilityListModel = new UtilityListModel(this, mainWindow);
+    _utilityListModel = new UtilityListModel(this, ui);
     _utilitiesBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     _utilitiesBox->setModel(_utilityListModel);
     _utilitiesBox->setMaxVisibleItems(0xFFFF);
     connect(_utilitiesBox, qOverload<int>(&QComboBox::activated), this, &UtilityCommandPage::onOpenUtility);
 
     // Create the properties panel.
-    _propertiesPanel = new PropertiesPanel(mainWindow);
+    _propertiesPanel = new PropertiesPanel(ui);
     _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
     layout->addWidget(_propertiesPanel, 1);
 
@@ -59,11 +59,11 @@ UtilityCommandPage::UtilityCommandPage(MainWindow& mainWindow, QWidget* parent) 
     });
 
     // Shut down the tab when the main window is closed.
-    connect(&mainWindow, &MainWindow::closingWindow, _propertiesPanel, &PropertiesPanel::close);
+    connect(ui.mainWindow(), &MainWindow::closingWindow, _propertiesPanel, &PropertiesPanel::close);
 
     // If a state file has been loaded, close currently open utility, because it might have been replaced
     // with a deserialized version of the same utility class.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, [this]() {
+    connect(&datasetContainer(), &DataSetContainer::dataSetChanged, this, [this]() {
         onOpenUtility(0);
     });
 }
@@ -77,7 +77,7 @@ void UtilityCommandPage::onOpenUtility(int index)
         _propertiesPanel->close();
     }
     else if(index == _utilityListModel->getMoreExtensionsItemIndex()) {
-        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_UTILITIES))
+        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_UTILITIES))
             action->trigger();
         else
             QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));

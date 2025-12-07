@@ -26,9 +26,9 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/vpwidget/WidgetViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
-#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include <ovito/opengl/OpenGLRenderBuffer.h>
 #include <ovito/opengl/OpenGLPickingMap.h>
-#include "PickingOpenGLRenderingJob.h"
+#include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
 
 #include <QOpenGLWidget>
 
@@ -50,14 +50,14 @@ public:
     /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
 
-    /// Releases the renderer resources held by the viewport's surface and picking renderers.
+    /// Releases the resources held by the viewport window's renderer(s).
     virtual void releaseResources() override;
 
     /// Returns the current frame graph being rendered by OpenGL.
     const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
 
     /// Returns the rendering job that renders the object picking offscreen pass.
-    const OORef<PickingOpenGLRenderingJob>& pickingRenderingJob() const { return _pickingRenderingJob; }
+    const OORef<OffscreenOpenGLRenderingJob>& pickingRenderingJob() const { return _pickingRenderingJob; }
 
 protected:
 
@@ -67,31 +67,37 @@ protected:
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
 
+    /// Creates the rendering job that renders the object picking offscreen pass.
+    virtual OORef<OffscreenOpenGLRenderingJob> createPickingRenderingJob() {
+        // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
+        return OORef<OffscreenOpenGLRenderingJob>::create(ui().datasetContainer().visCache(), nullptr);
+    }
+
     /// Renders the window contents after the frame graph has been regenerated.
     virtual Future<void> renderFrameGraph(OORef<FrameGraph> frameGraph) override;
 
     /// Returns the QOpenGLWidget that is associated with this viewport window.
     QOpenGLWidget* glwin() const { return static_cast<QOpenGLWidget*>(widget()); }
 
-    /// Is called by Qt whenever the widget needs to be painted.
-    void paint();
+    /// Is called by Qt whenever the OpenGL widget needs to be painted.
+    virtual void paint();
 
 private:
 
     /// The frame graph to be rendered by OpenGL.
     OORef<FrameGraph> _frameGraph;
 
-    /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
-    OORef<OpenGLRenderingFrameBuffer> _visualFrameBuffer;
+    /// The render buffer for on-screen rendering into the QOpenGLWidget.
+    OORef<OpenGLRenderBuffer> _visualRenderBuffer;
 
-    /// The abstract frame buffer for off-screen rendering into the object picking buffer.
-    OORef<OpenGLRenderingFrameBuffer> _pickingFrameBuffer;
+    /// The render buffer for off-screen rendering into the object picking buffer.
+    OORef<OpenGLRenderBuffer> _pickingRenderBuffer;
 
     /// Manages the information obtained from an object picking render pass.
     std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();
 
     /// The rendering job that renders the object picking offscreen pass.
-    OORef<PickingOpenGLRenderingJob> _pickingRenderingJob;
+    OORef<OffscreenOpenGLRenderingJob> _pickingRenderingJob;
 };
 
 }   // End of namespace

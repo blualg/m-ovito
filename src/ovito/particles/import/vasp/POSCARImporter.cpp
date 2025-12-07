@@ -60,9 +60,6 @@ bool POSCARImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
             return false;
     }
 
-    // Regular expression for whitespace characters.
-    QRegularExpression ws_re(QStringLiteral("\\s+"));
-
     // Parse number of atoms per type.
     int nAtomTypes = 0;
     for(int i = 0; i < 2; i++) {
@@ -228,7 +225,6 @@ void POSCARImporter::FrameLoader::loadFile()
     if(atomTypeNames.empty() && atomCounts.size() >= 1) {
         // The file might be in VASP 4.x format, which is the format written by ASE's write_vasp() function.
         // Files of this format contain the chemical element names in the comment line (very first line of the file).
-        QRegularExpression ws_re(QStringLiteral("\\s+"));
         QStringList tokens = FileImporter::splitString(trimmedComment);
         // Number of tokens must match the number of atom types.
         if(tokens.size() == atomCounts.size()) {
@@ -267,7 +263,7 @@ void POSCARImporter::FrameLoader::loadFile()
         if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
             typeId = addNamedType(Particles::OOClass(), typeProperty, atomTypeNames[atype-1])->numericId();
         else
-            addNumericType(Particles::OOClass(), typeProperty, atype, {});
+            addNumericType(Particles::OOClass(), typeProperty, atype, QString{});
         for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
             *a = typeId;
             if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -468,9 +464,9 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
         BufferWriteAccess<FloatType*, access_mode::discard_write> vectorMagnetization = voxelGrid->createProperty(QStringLiteral("Magnetization Density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
     }
 
     voxelGrid->verifyIntegrity();

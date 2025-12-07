@@ -35,7 +35,6 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include "ParticleTypeEditor.h"
-#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 
 namespace Ovito {
 
@@ -58,6 +57,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     QGridLayout* gridLayout = new QGridLayout(nameBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(nameBox);
 
     // Numeric ID.
@@ -90,6 +90,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     gridLayout = new QGridLayout(appearanceBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(appearanceBox);
 
     // Display color parameter.
@@ -115,10 +116,10 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_mesh.png"), tr("Mesh/User-defined"), QVariant::fromValue((int)ParticlesVis::Mesh));
     gridLayout->addWidget(new QLabel(tr("Shape:")), 2, 0);
-    gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1, 1, 2);
+    gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1);
 
     // Color presets menu.
-    QToolButton* colorPresetsMenuButton = createPresetsMenuButton(tr("color"),
+    _colorPresetsMenuButton = createPresetsMenuButton(tr("color"),
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); },
         // Saves the current parameter value as new default preset.
@@ -126,10 +127,10 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); }
     );
-    gridLayout->addWidget(colorPresetsMenuButton, 0, 2);
+    gridLayout->addWidget(_colorPresetsMenuButton, 0, 2);
 
     // Display radius presets menu.
-    QToolButton* displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
+    _displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().typeId()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
         // Saves the current parameter value as new default preset.
@@ -137,19 +138,19 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().typeId()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
     );
-    gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
+    gridLayout->addWidget(_displayRadiusPresetsMenuButton, 1, 2);
 
     QGroupBox* shapeGroupBox = new QGroupBox(tr("User-defined shape"), rollout);
     gridLayout = new QGridLayout(shapeGroupBox);
     gridLayout->setContentsMargins(4,4,4,4);
-    gridLayout->setSpacing(2);
+    gridLayout->setSpacing(4);
     layout1->addWidget(shapeGroupBox);
     shapeGroupBox->setVisible(false);
 
     // User-defined shape.
-    QPushButton* loadShapeBtn = new QPushButton(tr("Load geometry file..."));
-    loadShapeBtn->setToolTip(tr("Loads a mesh file to be used as shape for this particle type."));
-    gridLayout->addWidget(loadShapeBtn, 0, 0, 1, 2);
+    _loadShapeBtn = new QPushButton(tr("Load geometry file..."));
+    _loadShapeBtn->setToolTip(tr("Loads a mesh file to be used as shape for this particle type."));
+    gridLayout->addWidget(_loadShapeBtn, 0, 0, 1, 2);
     BooleanParameterUI* highlightEdgesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleType::highlightShapeEdges));
     gridLayout->addWidget(highlightEdgesUI->checkBox(), 1, 0, 1, 2);
     BooleanParameterUI* shapeBackfaceCullingUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled));
@@ -167,29 +168,30 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     });
 
     // Update the shape buttons whenever the particle type is being modified.
-    connect(this, &PropertiesEditor::contentsChanged, this, [=](RefTarget* editObject) {
+    connect(this, &PropertiesEditor::contentsChanged, this, [this, displayRadiusPUI](RefTarget* editObject) {
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject)) {
             if(ptype->shapeMesh()) {
-                loadShapeBtn->setText(tr("%1 faces / %2 vertices").arg(ptype->shapeMesh()->faceCount()).arg(ptype->shapeMesh()->vertexCount()));
-                if(loadShapeBtn->icon().isNull())
-                    loadShapeBtn->setIcon(QIcon(":/particles/icons/particle_shape_mesh.png"));
+                _loadShapeBtn->setText(tr("%1 faces / %2 vertices").arg(ptype->shapeMesh()->faceCount()).arg(ptype->shapeMesh()->vertexCount()));
+                if(_loadShapeBtn->icon().isNull())
+                    _loadShapeBtn->setIcon(QIcon(":/particles/icons/particle_shape_mesh.png"));
             }
             else {
-                loadShapeBtn->setText(tr("Load geometry file..."));
-                loadShapeBtn->setIcon({});
+                _loadShapeBtn->setText(tr("Load geometry file..."));
+                _loadShapeBtn->setIcon({});
             }
             displayRadiusPUI->setEnabled(!ptype->radiusIsPrescribed());
         }
     });
 
     // Shape load button.
-    connect(loadShapeBtn, &QPushButton::clicked, this, &ParticleTypeEditor::onLoadParticleShape);
+    connect(_loadShapeBtn, &QPushButton::clicked, this, &ParticleTypeEditor::onLoadParticleShape);
 
     // Physical properties group.
     QGroupBox* physicalBox = new QGroupBox(tr("Physical properties"), rollout);
     gridLayout = new QGridLayout(physicalBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(physicalBox);
 
     // Mass parameter.
@@ -199,11 +201,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Reset mass parameter - can't use createPresetsMenuButton because we only
     // offer reset but not the other options
     // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
-    MenuToolButton* presetsMenuButton = new MenuToolButton();
+    _massPresetsMenuButton = new MenuToolButton();
     {
         const QString& parameterName = PROPERTY_FIELD(ParticleType::mass)->displayName();
         QAction* loadPresetAction =
-            presetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
+            _massPresetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
         loadPresetAction->setStatusTip(
             tr("Reset current %1 back to the hard-coded default value for this particle type.").arg(parameterName));
         connect(loadPresetAction, &QAction::triggered, this, [this, parameterName]() {
@@ -211,13 +213,13 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                 performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
                     ptype->setMass(ParticleType::getDefaultParticleMass(static_cast<Particles::Type>(ptype->ownerProperty().typeId()),
                                                                         ptype->nameOrNumericId(), ptype->numericId(), false));
-                    mainWindow().showStatusBarMessage(
+                    ui().showStatusBarMessage(
                         tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
                 });
             }
         });
     }
-    gridLayout->addWidget(presetsMenuButton, 0, 2);
+    gridLayout->addWidget(_massPresetsMenuButton, 0, 2);
 
     massPUI->spinner()->setStandardValue(0.0);
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
@@ -230,7 +232,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     vdwRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
     // VDW radius presets menu.
-    QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
+    _vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().typeId()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
         // Saves the current parameter value as new default preset.
@@ -238,7 +240,10 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().typeId()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
     );
-    gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
+    gridLayout->addWidget(_vdwRadiusPresetsMenuButton, 1, 2);
+
+    // Update widgets when the edited particle type changes.
+    connect(this, &PropertiesEditor::contentsReplaced, this, &ParticleTypeEditor::onContentsReplaced);
 }
 
 /******************************************************************************
@@ -254,7 +259,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
             performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
                 resetFunc(ptype);
-                mainWindow().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+                ui().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
             });
         }
     });
@@ -265,13 +270,13 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
             setDefaultFunc(ptype);
             Q_EMIT contentsChanged(editObject());
-            mainWindow().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+            ui().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
         }
     });
     presetsMenuButton->createMenuSeparator();
     QAction* editPresetAction = presetsMenuButton->createAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
     connect(editPresetAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
+        ApplicationSettingsDialog dlg(ui(), &ParticleSettingsPage::OOClass());
         dlg.exec();
         Q_EMIT contentsChanged(editObject());
     });
@@ -294,6 +299,20 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 }
 
 /******************************************************************************
+* Called when the contents of the editor have been replaced with a new object.
+******************************************************************************/
+void ParticleTypeEditor::onContentsReplaced()
+{
+    // Update the enabled state of the presets menu buttons.
+    bool enable = (editObject() && !isReadOnly());
+    _colorPresetsMenuButton->setEnabled(enable);
+    _displayRadiusPresetsMenuButton->setEnabled(enable);
+    _massPresetsMenuButton->setEnabled(enable);
+    _vdwRadiusPresetsMenuButton->setEnabled(enable);
+    _loadShapeBtn->setEnabled(enable);
+}
+
+/******************************************************************************
 * Called when the user wants to pick and load a mesh-based particle shape from disk.
 ******************************************************************************/
 void ParticleTypeEditor::onLoadParticleShape()
@@ -311,7 +330,7 @@ void ParticleTypeEditor::onLoadParticleShape()
         }
 
         // Let the user select a geometry file to import.
-        ImportFileDialog fileDialog(meshImporters, &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
+        ImportFileDialog fileDialog(meshImporters, ui().mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
         if(fileDialog.exec() != QDialog::Accepted)
             return;
 
@@ -334,7 +353,7 @@ void ParticleTypeEditor::onLoadParticleShape()
         });
 
         // Show a progress dialog while performing the whole operation. The dialog will self-destruct afterwards.
-        ProgressDialog::showForFuture(std::move(future), mainWindow(), parentWindow(), tr("Loading geometry file"));
+        ProgressDialog::showForFuture(std::move(future), ui(), parentWindow(), tr("Loading geometry file"));
     });
 }
 

@@ -70,6 +70,9 @@ private Q_SLOTS:
     /// Is called when the user toggles the preview mode checkbox.
     void onViewportPreviewModeToggled(bool checked);
 
+    /// Updates the displayed video length based on the current render settings.
+    void updateVideoLengthDisplay();
+
 private:
 
     /// Reference to the currently active viewport.
@@ -77,6 +80,7 @@ private:
 
     QComboBox* _sizePresetsBox;
     QCheckBox* _viewportPreviewModeBox;
+    QLabel* _videoLengthLabel;
 };
 
 }   // End of namespace

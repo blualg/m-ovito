@@ -30,14 +30,14 @@ namespace Ovito {
 /**
  * This dialog box lets the user make a copy of a pipeline scene node.
  */
-class CopyPipelineItemDialog : public QDialog
+class CopyPipelineItemDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes);
+    CopyPipelineItemDialog(MainWindowUI& ui, QWidget* parentWindow, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes);
 
 private Q_SLOTS:
 
@@ -45,9 +45,6 @@ private Q_SLOTS:
     void onAccept();
 
 private:
-
-    /// The parent window.
-    MainWindow& _mainWindow;
 
     /// The source pipeline.
     OORef<Pipeline> _sourcePipeline;

@@ -37,8 +37,6 @@
 #include "FileSourceImporter.h"
 #include "FileSource.h"
 
-#include <QStringBuilder>
-
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FileSourceImporter);
@@ -460,8 +458,12 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
         // Only do this if the file is being newly imported by the user.
         if(frameLoader->additionalFramesDetected() && frameLoader->loadRequest().isNewlyImportedFile && !self->isMultiTimestepFile()) {
             // Note: Changing a parameter of the file importer must be done in the main thread.
-            launchDetached(ObjectExecutor(self), [self]() {
+            launchDetached(ObjectExecutor(self), [self, fileSource=dynamic_object_cast<FileSource>(frameLoader->pipelineNode().lock())]() {
                 self->setMultiTimestepFile(true);
+                // Also remove wildcard pattern if there is one. Typically, the user just wants to load
+                // a single file if they selected a file containing multiple trajectory frames.
+                if(fileSource)
+                    const_cast<FileSource*>(fileSource.get())->setAutoGenerateFilePattern(false);
             });
         }
 
@@ -602,21 +604,13 @@ std::optional<QStringView> FileSourceImporter::matchesWildcardPattern(const QStr
 }
 
 /******************************************************************************
-* Writes an animation frame information record to a binary output stream.
-******************************************************************************/
-SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& frame)
-{
-    stream.beginChunk(0x03);
-    stream << frame.sourceFile << frame.byteOffset << frame.lineNumber << frame.lastModificationTime << frame.label << frame.parserData;
-    stream.endChunk();
-    return stream;
-}
-
-/******************************************************************************
 * Reads an animation frame information record from a binary input stream.
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 {
+    // Note: This deseralization function is for backward compatibility with OVITO 3.14 and older.
+    // Newer versions of OVITO use a more efficient serialization format in FileSource::saveToStream() to store a list of Frame structures.
+
     stream.expectChunk(0x03);
 
     stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime;

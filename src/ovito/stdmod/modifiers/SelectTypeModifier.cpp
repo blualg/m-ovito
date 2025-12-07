@@ -188,7 +188,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
         BufferReadAccess<int32_t> typeAcc{typePropertyObject};
 
-        boost::transform(typeAcc, selectionAcc.begin(), [&](int32_t type) {
+        std::ranges::transform(typeAcc, selectionAcc.begin(), [&](int32_t type) {
             if(idsToSelect.contains(type)) {
                 nSelected++;
                 return 1;
@@ -229,7 +229,7 @@ QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, Modificati
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
             if(const Property* inputProperty = sourceProperty().findInContainer(container)) {
                 auto sortedIds = selectedTypeIDs().values();
-                boost::sort(sortedIds);
+                std::ranges::sort(sortedIds);
                 for(int id : sortedIds) {
                     if(!shortInfo.isEmpty())
                         shortInfo += QStringLiteral(", ");

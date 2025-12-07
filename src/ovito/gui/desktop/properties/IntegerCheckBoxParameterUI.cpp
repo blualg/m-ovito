@@ -67,14 +67,14 @@ void IntegerCheckBoxParameterUI::resetUI()
 
     if(checkBox()) {
         if(isReferenceFieldUI())
-            checkBox()->setEnabled(parameterObject() && isEnabled());
+            checkBox()->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
         else
-            checkBox()->setEnabled(editObject() && isEnabled());
+            checkBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
     }
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerCheckBoxParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerCheckBoxParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 
@@ -90,7 +90,7 @@ void IntegerCheckBoxParameterUI::updateUI()
         int value = _uncheckedValue;
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                value = ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0)));
+                value = ctrl->getIntValue(currentAnimationTime());
             }
         }
         else if(isPropertyFieldUI()) {
@@ -128,7 +128,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
             int value = checkBox()->isChecked() ? _checkedValue : _uncheckedValue;
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                    ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), value);
+                    ctrl->setIntValue(currentAnimationTime(), value);
                     updateUI();
                 }
             }

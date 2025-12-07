@@ -86,45 +86,6 @@ void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUse
 }
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
-
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
-
-    if(ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
-
-        // This allows the GSD file importer to update the generated shape mesh - as long as the user didn't replace the mesh with a custom one.
-        if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
-            proxy->setShapeMesh(self->shapeMesh());
-        }
-        if(self->radiusIsPrescribed() && self->radius() != proxy->radius()) {
-            proxy->setRadius(self->radius());
-        }
-
-        // Copy properties changed by the user over to the data object.
-        if(proxy->radius() != self->radius() || proxy->vdwRadius() != self->vdwRadius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges()
-                || proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
-            // Make this data object mutable first.
-            ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
-            if(!mutableSelf->radiusIsPrescribed())
-                mutableSelf->setRadius(proxy->radius());
-            mutableSelf->setVdwRadius(proxy->vdwRadius());
-            mutableSelf->setMass(proxy->mass());
-            mutableSelf->setShape(proxy->shape());
-            mutableSelf->setShapeMesh(proxy->shapeMesh());
-            mutableSelf->setHighlightShapeEdges(proxy->highlightShapeEdges());
-            mutableSelf->setShapeBackfaceCullingEnabled(proxy->shapeBackfaceCullingEnabled());
-            mutableSelf->setShapeUseMeshColor(proxy->shapeUseMeshColor());
-        }
-    }
-}
-
-/******************************************************************************
 * Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
 ******************************************************************************/
 Future<DataOORef<TriangleMesh>> ParticleType::loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat) const
@@ -432,6 +393,54 @@ QString ParticleType::guessTypeNameFromMass(FloatType mass)
     }
 
     return {};
+}
+
+/******************************************************************************
+* Returns a list of column names to be displayed in the data inspector for
+* element types of this class.
+******************************************************************************/
+QStringList ParticleType::OOMetaClass::dataInspectorColumns() const
+{
+    QStringList columns = ElementTypeClass::dataInspectorColumns();
+    columns << QStringLiteral("Radius") << QStringLiteral("Mass") << QStringLiteral("VdW Radius") << QStringLiteral("Shape");
+    return columns;
+}
+
+/******************************************************************************
+* Returns the Qt table model data for the given element type to be displayed in the data inspector.
+******************************************************************************/
+QVariant ParticleType::OOMetaClass::dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(elementType)) {
+            if(columnName == QStringLiteral("Radius")) {
+                if(ptype->radius() != 0)
+                    return ptype->radius();
+            }
+            else if(columnName == QStringLiteral("Mass")) {
+                if(ptype->mass() != 0)
+                    return ptype->mass();
+            }
+            else if(columnName == QStringLiteral("VdW Radius")) {
+                if(ptype->vdwRadius() != 0)
+                    return ptype->vdwRadius();
+            }
+            else if(columnName == QStringLiteral("Shape")) {
+                switch(ptype->shape()) {
+                    case ParticlesVis::ParticleShape::Default: return {};
+                    case ParticlesVis::ParticleShape::Sphere: return QStringLiteral("Sphere/Ellipsoid");
+                    case ParticlesVis::ParticleShape::Circle: return QStringLiteral("Circle");
+                    case ParticlesVis::ParticleShape::Box: return QStringLiteral("Cube/Box");
+                    case ParticlesVis::ParticleShape::Square: return QStringLiteral("Square");
+                    case ParticlesVis::ParticleShape::Cylinder: return QStringLiteral("Cylinder");
+                    case ParticlesVis::ParticleShape::Spherocylinder: return QStringLiteral("Spherocylinder");
+                    case ParticlesVis::ParticleShape::Mesh: return QStringLiteral("Mesh");
+                    default:;  // Ignore
+                }
+            }
+        }
+    }
+    return ElementTypeClass::dataInspectorModelData(columnIndex, columnName, elementType, role);
 }
 
 }   // End of namespace

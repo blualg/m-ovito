@@ -113,15 +113,37 @@ public:
         return this->empty() ? DataObjectPathTemplate{} : DataObjectPathTemplate{this->begin(), std::prev(this->end())};
     }
 
-    /// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
-    auto last(size_type n = 0) const {
-        return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]);
+    /// Returns the last data object in the path - or null if the path is empty.
+    auto last() const {
+        return this->empty() ? nullptr : to_address(this->back());
     }
 
-    /// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
-    template<class DataObjectType>
-    auto lastAs(size_type n = 0) const {
-        return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1]));
+    /// Returns the next to last data object in the path - or null if the path contains fewer than two objects.
+    auto nextToLast() const {
+        return this->size() < 2 ? nullptr : to_address((*this)[this->size() - 2]);
+    }
+
+    /// Returns the third data object from the end of the path - or null if the path contains fewer than three objects.
+    auto nextToNextToLast() const {
+        return this->size() < 3 ? nullptr : to_address((*this)[this->size() - 3]);
+    }
+
+    /// Returns the last data object in the path only if it's a specific kind of object.
+    template<std::derived_from<DataObject> DataObjectType>
+    auto lastAs() const {
+        return this->empty() ? nullptr : dynamic_object_cast<DataObjectType>(to_address(this->back()));
+    }
+
+    /// Returns the next to last data object in the path only if it's a specific kind of object.
+    template<std::derived_from<DataObject> DataObjectType>
+    auto nextToLastAs() const {
+        return this->size() < 2 ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - 2]));
+    }
+
+    /// Returns the third data object from the end of the path only if it's a specific kind of object.
+    template<std::derived_from<DataObject> DataObjectType>
+    auto nextToNextToLastAs() const {
+        return this->size() < 3 ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - 3]));
     }
 
 private:

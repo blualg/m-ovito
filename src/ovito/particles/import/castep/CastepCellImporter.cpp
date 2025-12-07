@@ -173,10 +173,10 @@ void CastepCellImporter::FrameLoader::loadFile()
 
             setParticleCount(coords.size());
             BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
-            boost::copy(coords, posProperty.begin());
+            std::ranges::copy(coords, posProperty.begin());
 
             Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
-            boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
+            std::ranges::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
                 return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
             });
             typeProperty->sortElementTypesByName();
@@ -197,7 +197,7 @@ void CastepCellImporter::FrameLoader::loadFile()
             BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(Particles::VelocityProperty);
             if(velocities.size() != velocityProperty.size())
                 throw Exception(tr("Invalid number of velocity vectors in CASTEP file."));
-            boost::copy(velocities, velocityProperty.begin());
+            std::ranges::copy(velocities, velocityProperty.begin());
         }
     }
 

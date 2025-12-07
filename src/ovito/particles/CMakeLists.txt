@@ -72,6 +72,7 @@ SET(SourceFiles
     import/parcas/ParcasFileImporter.cpp
     import/cfg/CFGImporter.cpp
     import/pdb/PDBImporter.cpp
+    import/sdf/SDFImporter.cpp
     import/fhi_aims/FHIAimsImporter.cpp
     import/fhi_aims/FHIAimsLogFileImporter.cpp
     import/gsd/GSDImporter.cpp
@@ -133,7 +134,7 @@ ENDIF()
 OVITO_STANDARD_PLUGIN(Particles
     SOURCES ${SourceFiles}
     PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay OpenGLRenderer
-    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gsd
+    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gemmi gsd
     OPTIONAL_PLUGIN_DEPENDENCIES StdMod
     PRECOMPILED_HEADERS Particles.h
     LIB_DEPENDENCIES Qt6::Xml
@@ -141,11 +142,6 @@ OVITO_STANDARD_PLUGIN(Particles
 
 # Let the code know that we are building the plugin.
 TARGET_COMPILE_DEFINITIONS(Particles PUBLIC OVITO_BUILD_PLUGIN_PARTICLES)
-
-# Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(gui)
-ENDIF()
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

@@ -42,7 +42,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the WidgetActionManager.
 ******************************************************************************/
-WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow) : ActionManager(parent, mainWindow)
+WidgetActionManager::WidgetActionManager(QObject* parent, MainWindowUI& ui) : ActionManager(parent, ui)
 {
     createViewportModeAction(ACTION_XFORM_MOVE_MODE, OORef<MoveMode>::create(), tr("Move"), "edit_mode_move", tr("Move objects."));
     createViewportModeAction(ACTION_XFORM_ROTATE_MODE, OORef<RotateMode>::create(), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
@@ -76,10 +76,10 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
 ******************************************************************************/
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
-    if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
+    if(SelectionSet* selection = datasetContainer().activeSelectionSet()) {
         if(SceneNode* sceneNode = selection->firstNode()) {
             if(Pipeline* pipeline = sceneNode->pipeline()) {
-                ClonePipelineDialog dialog(mainWindow(), sceneNode, &mainWindow());
+                ClonePipelineDialog dialog(ui(), sceneNode, mainWindow());
                 dialog.exec();
             }
         }
@@ -91,13 +91,13 @@ void WidgetActionManager::on_ClonePipeline_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_RenamePipeline_triggered()
 {
-    if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
+    if(SelectionSet* selection = datasetContainer().activeSelectionSet()) {
         if(SceneNode* sceneNode = selection->firstNode()) {
             QString oldNodeName = sceneNode->objectTitle();
             bool ok;
-            QString newName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldNodeName, &ok).trimmed();
+            QString newName = QInputDialog::getText(mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldNodeName, &ok).trimmed();
             if(ok && newName != oldNodeName) {
-                mainWindow().performTransaction(tr("Rename pipeline"), [&]() {
+                performTransaction(tr("Rename pipeline"), [&]() {
                     sceneNode->setSceneNodeName(newName);
                 });
             }
@@ -110,9 +110,9 @@ void WidgetActionManager::on_RenamePipeline_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_NewPipelineFileSource_triggered()
 {
-    mainWindow().performTransaction(tr("Create pipeline"), [&]() {
+    performTransaction(tr("Create pipeline"), [&]() {
 
-        if(Scene* scene = userInterface().datasetContainer().activeScene()) {
+        if(Scene* scene = datasetContainer().activeScene()) {
 
 #ifndef OVITO_BUILD_PROFESSIONAL
             if(!scene->children().empty())
@@ -120,7 +120,7 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 #endif
 
             // Do not create any animation keys.
-            AnimationSuspender animSuspender(mainWindow());
+            AnimationSuspender animSuspender(ui());
 
             // Create the FileSource.
             OORef<FileSource> fileSource = OORef<FileSource>::create();
@@ -147,8 +147,8 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_AnimationSettings_triggered()
 {
-    if(mainWindow().datasetContainer().activeAnimationSettings())
-        AnimationSettingsDialog(mainWindow(), &mainWindow()).exec();
+    if(activeAnimationSettings())
+        AnimationSettingsDialog(ui(), mainWindow()).exec();
 }
 
 }   // End of namespace

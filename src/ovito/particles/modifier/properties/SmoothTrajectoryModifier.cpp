@@ -363,7 +363,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
     // Create a modifiable copy of the particle coordinates array.
     Particles* outputParticles = state1.makeMutable(particles1);
     BufferWriteAccess<Point3, access_mode::discard_read_write> outputPositions = outputParticles->createProperty(Particles::PositionProperty);
-    boost::fill(outputPositions, Point3::Origin());
+    std::ranges::fill(outputPositions, Point3::Origin());
 
     // Create output orientations array if smoothing particle orientations.
     BufferWriteAccess<QuaternionG, access_mode::read_write> outputOrientations = particles1->getProperty(Particles::OrientationProperty)

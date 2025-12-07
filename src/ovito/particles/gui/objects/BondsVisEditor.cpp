@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
+#include <ovito/particles/gui/util/BondInspectionApplet.h>
 #include "BondsVisEditor.h"
 
 namespace Ovito {
@@ -42,38 +43,62 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
     QWidget* rollout = createRollout(tr("Bonds display"), rolloutParams, "manual:visual_elements.bonds");
+    QVBoxLayout* mainLayout = new QVBoxLayout(rollout);
+    mainLayout->setContentsMargins(4,4,4,4);
 
-    // Create the rollout contents.
-    QGridLayout* layout = new QGridLayout(rollout);
+    // Appearance box
+    QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"));
+    QGridLayout* layout = new QGridLayout(appearanceBox);
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
-    layout->setColumnStretch(2, 1);
-    layout->setColumnMinimumWidth(0, 24);
+    layout->setColumnStretch(1, 1);
+    mainLayout->addWidget(appearanceBox);
 
     // Bond width.
     FloatParameterUI* bondWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(BondsVis::bondWidth));
-    layout->addWidget(bondWidthUI->label(), 0, 0, 1, 2);
-    layout->addLayout(bondWidthUI->createFieldLayout(), 0, 2);
+    layout->addWidget(bondWidthUI->label(), 0, 0);
+    layout->addLayout(bondWidthUI->createFieldLayout(), 0, 1);
 
     // Shading mode.
     IntegerCheckBoxParameterUI* shadingModeUI = createParamUI<IntegerCheckBoxParameterUI>(PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
     shadingModeUI->checkBox()->setText(tr("Flat shading"));
-    layout->addWidget(shadingModeUI->checkBox(), 1, 2);
+    layout->addWidget(shadingModeUI->checkBox(), 1, 1);
+
+    // Coloring box
+    QGroupBox* coloringBox = new QGroupBox(tr("Coloring"));
+    layout = new QGridLayout(coloringBox);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setHorizontalSpacing(4);
+    layout->setVerticalSpacing(5);
+    layout->setColumnStretch(1, 1);
+    layout->setRowMinimumHeight(3, 1); // Extra space below the last option to better align the uniform color picker.
+    mainLayout->addWidget(coloringBox);
 
     // Coloring mode.
-    layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
     _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(BondsVis::coloringMode));
-    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
+
+    // By-type coloring mode.
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ByTypeColoring, tr("By bond type")), 0, 0);
+    QLabel* showTypesLabel = new QLabel(tr("<a href=\"show_types\">(see inspector)</a>"));
+    showTypesLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    connect(showTypesLabel, &QLabel::linkActivated, this, [&]() {
+        if(ui().mainWindow()->openDataInspector(BondInspectionApplet::OOClass()) == false)
+            QToolTip::showText(QCursor::pos(), tr("Could not open the 'Bonds' page of the data inspector, because there are no bonds found in the current pipeline."), nullptr, QRect(), 3000);
+    });
+    layout->addWidget(showTypesLabel, 0, 1);
+
+    // By-particle coloring mode.
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ParticleBasedColoring, tr("By particle")), 1, 0);
 
     // Uniform color.
+    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform color:")), 2, 0);
     _bondColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(BondsVis::bondColor));
-    layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
-
-    // By bond type coloring mode.
-    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ByTypeColoring, tr("Bond types")), 4, 1, 1, 2);
-
-    // By particle coloring mode.
-    layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ParticleBasedColoring, tr("Use particle colors")), 5, 1, 1, 2);
+    QVBoxLayout* sublayout = new QVBoxLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->setSpacing(0);
+    sublayout->addStretch(1);
+    sublayout->addWidget(_bondColorUI->colorPicker());
+    layout->addLayout(sublayout, 1, 1, -1, -1);
 
     // Whenever the pipeline input of the vis element changes, update the list of available coloring options.
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateColoringOptions);

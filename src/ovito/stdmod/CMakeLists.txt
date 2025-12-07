@@ -31,6 +31,8 @@ OVITO_STANDARD_PLUGIN(StdMod
         modifiers/AssignColorModifier.cpp
         modifiers/DeleteSelectedModifier.cpp
         modifiers/SelectTypeModifier.cpp
+        modifiers/EditTypesModifier.cpp
+        modifiers/EditSimulationCellModifier.cpp
         modifiers/HistogramModifier.cpp
         modifiers/ScatterPlotModifier.cpp
         modifiers/ReplicateModifier.cpp
@@ -52,11 +54,6 @@ OVITO_STANDARD_PLUGIN(StdMod
 
 # Let the code know that we are building the plugin.
 TARGET_COMPILE_DEFINITIONS(StdMod PUBLIC OVITO_BUILD_PLUGIN_STDMOD)
-
-# Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(gui)
-ENDIF()
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

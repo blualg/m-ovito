@@ -47,7 +47,7 @@ void MoveOverlayInputMode::initializeObject(PropertiesEditor* editor)
 void MoveOverlayInputMode::activated(bool temporary)
 {
     ViewportInputMode::activated(temporary);
-    inputManager()->userInterface().showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
+    ui().showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
 }
 
 /******************************************************************************
@@ -61,7 +61,7 @@ void MoveOverlayInputMode::deactivated(bool temporary)
         _undoTransaction.cancel();
         _viewport = nullptr;
     }
-    inputManager()->userInterface().clearStatusBarMessage();
+    ui().clearStatusBarMessage();
     ViewportInputMode::deactivated(temporary);
 }
 
@@ -76,7 +76,7 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* e
             if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
                 _viewport = vpwin->viewport();
                 _startPoint = getMousePosition(event);
-                _undoTransaction.begin(inputManager()->userInterface(), tr("Move overlay"));
+                _undoTransaction.begin(ui(), tr("Move overlay"));
             }
         }
         return;
@@ -111,10 +111,10 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* ev
             // Reset the layer's position first before moving it again below.
             _undoTransaction.revert();
 
-            if(!inputManager()->userInterface().performActions(_undoTransaction, [&] {
+            if(!performActions(_undoTransaction, [&] {
                 // Compute the displacement based on the new mouse position.
                 QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
-                QRect previewFrameRect = vpwin->previewFrameGeometry(inputManager()->datasetContainer().currentSet(), vpSize);
+                QRect previewFrameRect = vpwin->previewFrameGeometry(dataset(), vpSize);
                 if(!previewFrameRect.isNull()) {
                     Vector2 delta;
                     delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / previewFrameRect.width();

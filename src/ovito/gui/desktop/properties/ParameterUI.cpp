@@ -38,6 +38,7 @@ void ParameterUI::initializeObject(PropertiesEditor* editor)
 
     OVITO_ASSERT(editor);
     _editor = editor;
+    setUserInterface(editor->ui());
 
     // Connect to the contentsReplaced() signal of the editor to synchronize the
     // parameter UI's edit object with the editor's edit object.

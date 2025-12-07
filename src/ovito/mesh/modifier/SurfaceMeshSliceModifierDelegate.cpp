@@ -79,7 +79,7 @@ Future<PipelineFlowState> SurfaceMeshSliceModifierDelegate::apply(const Modifier
                         BufferReadAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
                         BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
                         size_t numSelectedVertices = 0;
-                        boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+                        std::ranges::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
                             bool selectionState =
                                 (sliceWidth <= 0) ?
                                     (plane.pointDistance(pos) > 0) :

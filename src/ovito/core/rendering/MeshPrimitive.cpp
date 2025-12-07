@@ -58,7 +58,7 @@ bool MeshPrimitive::isFullyOpaque() const
 /******************************************************************************
 * Generates a list of renderable triangles. Each triangle consists of three vertices.
 ******************************************************************************/
-void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const
+void MeshPrimitive::generateRenderableVertices(std::span<RenderVertex> renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const
 {
     if(!mesh())
         return;
@@ -70,7 +70,8 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
     const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constData() : nullptr;
     ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
 
-    auto rv = renderableVertices;
+    OVITO_ASSERT(renderableVertices.size() == 3 * faceCount());
+    auto rv = renderableVertices.begin();
 
     if(!mesh()->hasNormals()) {
         quint32 allMask = 0;
@@ -140,7 +141,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
             if(facePseudoColors)
                 ++facePseudoColors;
         }
-        OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
+        OVITO_ASSERT(rv == renderableVertices.end());
 
         if(allMask) {
             std::vector<Vector3F> groupVertexNormals(vertexCount());
@@ -165,7 +166,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                 }
 
                 // Transfer vertex normals from original vertices to render vertices.
-                rv = renderableVertices;
+                rv = renderableVertices.begin();
                 for(const auto& face : mesh()->faces()) {
                     if(face.smoothingGroups() & groupMask) {
                         for(size_t fv = 0; fv < 3; fv++, ++rv)
@@ -225,7 +226,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
                 ++facePseudoColors;
         }
     }
-    OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
+    OVITO_ASSERT(rv == renderableVertices.end());
 }
 
 /******************************************************************************

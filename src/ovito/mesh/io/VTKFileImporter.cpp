@@ -82,7 +82,7 @@ void VTKFileImporter::FrameLoader::loadFile()
     if(!stream.lineStartsWithToken("ASCII"))
         throw Exception(tr("Can read only text-based VTK files (ASCII format)."));
 
-    // Read data set type.
+    // Read VTK dataset type. We support only UNSTRUCTURED_GRID and POLYDATA datasets.
     stream.readNonEmptyLine();
     bool isPolyData;
     if(stream.lineStartsWithToken("DATASET UNSTRUCTURED_GRID"))
@@ -94,8 +94,8 @@ void VTKFileImporter::FrameLoader::loadFile()
 
     // Read point count.
     expectKeyword(stream, "POINTS");
-    int pointCount;
-    if(sscanf(stream.line() + 6, "%i", &pointCount) != 1 || pointCount < 0)
+    qlonglong pointCount;
+    if(sscanf(stream.line() + 6, "%lld", &pointCount) != 1 || pointCount < 0 || pointCount > (qlonglong)std::numeric_limits<int32_t>::max())
         throw Exception(tr("Invalid number of points in VTK file (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
     // Add mesh to the data collection.
@@ -110,7 +110,7 @@ void VTKFileImporter::FrameLoader::loadFile()
     mesh->setVertexCount(pointCount);
     auto v = mesh->vertices().begin();
     size_t component = 0;
-    for(int i = 0; i < pointCount; ) {
+    for(qlonglong i = 0; i < pointCount; ) {
         if(stream.eof())
             throw Exception(tr("Unexpected end of VTK file in line %1.").arg(stream.lineNumber()));
         const char* s = stream.readLine();
@@ -127,22 +127,22 @@ void VTKFileImporter::FrameLoader::loadFile()
     }
     mesh->invalidateVertices();
 
-    int polygonCount;
+    qlonglong polygonCount;
     if(!isPolyData) {
         // Parse number of cells.
         expectKeyword(stream, "CELLS");
-        if(sscanf(stream.line() + 5, "%i", &polygonCount) != 1 || polygonCount < 0)
+        if(sscanf(stream.line() + 5, "%lld", &polygonCount) != 1 || polygonCount < 0)
             throw Exception(tr("Invalid number of cells in VTK file (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
     }
     else {
         // Parse number of polygons.
         expectKeyword(stream, "POLYGONS");
-        if(sscanf(stream.line() + 8, "%i", &polygonCount) != 1 || polygonCount < 0)
+        if(sscanf(stream.line() + 8, "%lld", &polygonCount) != 1 || polygonCount < 0)
             throw Exception(tr("Invalid number of polygons in VTK file (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
     }
 
     // Parse polygons.
-    for(int i = 0; i < polygonCount; i++) {
+    for(qlonglong i = 0; i < polygonCount; i++) {
         int vcount, s;
         const char* line = stream.readLine();
         if(sscanf(line, "%i%n", &vcount, &s) != 1 || vcount <= 2)

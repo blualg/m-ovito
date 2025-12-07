@@ -31,14 +31,14 @@ namespace Ovito {
 /**
  * \brief Dialog box that lets the user edit an InputColumnMapping.
  */
-class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog
+class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName = {});
+    InputColumnMappingDialog(MainWindowUI& ui, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName = {});
 
     /// Fills the editor with the given mapping.
     void setMapping(const InputColumnMapping& mapping);
@@ -67,8 +67,6 @@ protected Q_SLOTS:
     void toggleSelected();
 
 protected:
-
-    MainWindow& _mainWindow;
 
     /// The property container type.
     PropertyContainerClassPtr _containerClass = nullptr;

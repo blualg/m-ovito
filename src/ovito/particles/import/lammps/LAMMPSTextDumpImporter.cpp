@@ -440,13 +440,14 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
     }
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
-    if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
-    }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
-    })) {
-        simulationCell()->setIs2D(true);
-    }
+    simulationCell()->setIs2D(
+        std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+            return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
+        }) &&
+        std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+            return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
+        })
+    );
 
     // Sort particles by ID.
     if(_sortParticles)

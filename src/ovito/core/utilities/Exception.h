@@ -103,6 +103,9 @@ public:
     ///                      the most general error description first, followed by the more detailed information.
     explicit Exception(QStringList errorMessages);
 
+    /// Copy constructor.
+    Exception(const Exception& other) = default;
+
     // Default destructor.
     virtual ~Exception() = default;
 

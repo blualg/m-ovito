@@ -63,7 +63,7 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     _colorGradientList->setIconSize(QSize(48,16));
     connect(_colorGradientList, qOverload<int>(&QComboBox::activated), this, &PropertyColorMappingEditor::onColorGradientSelected);
     std::vector<OvitoClassPtr> sortedColorMapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
-    boost::sort(sortedColorMapClassList,
+    std::ranges::sort(sortedColorMapClassList,
                 [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
     for(OvitoClassPtr clazz : sortedColorMapClassList) {
         if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
@@ -351,7 +351,7 @@ void PropertyColorMappingEditor::onExportColorScale()
         QImage image = ColorMap::generateImage<legendWidth>(mapping->pseudoColorMapping().gradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-            mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
+            ui().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
         }
     }
 }

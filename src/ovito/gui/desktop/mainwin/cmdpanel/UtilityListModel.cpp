@@ -59,9 +59,9 @@ UtilityAction* UtilityAction::createForClass(const UtilityObject::OOMetaClass* c
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-UtilityListModel::UtilityListModel(QObject* parent, MainWindow& mainWindow) : QAbstractListModel(parent), _mainWindow(mainWindow)
+UtilityListModel::UtilityListModel(QObject* parent, MainWindowUI& ui) : QAbstractListModel(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
-    OVITO_ASSERT(mainWindow.actionManager());
+    OVITO_ASSERT(actionManager());
 
     // Initialize UI colors.
     updateColorPalette(QGuiApplication::palette());
@@ -83,8 +83,8 @@ QT_WARNING_POP
         _actions.push_back(action);
 
         // Register it with the global ActionManager.
-        mainWindow.actionManager()->addAction(action);
-        OVITO_ASSERT(action->parent() == mainWindow.actionManager());
+        actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == actionManager());
 
         // Handle the action.
         connect(action, &QAction::triggered, this, &UtilityListModel::activateUtility);
@@ -129,10 +129,10 @@ QT_WARNING_POP
     updateModelLists();
 
     // Adopt deserialized utility objects if a state file has been loaded.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &UtilityListModel::datasetReplaced);
+    connect(&datasetContainer(), &DataSetContainer::dataSetChanged, this, &UtilityListModel::datasetReplaced);
 
     // Shut down the model when the main window is closed.
-    connect(&mainWindow, &MainWindow::closingWindow, this, [this]() {
+    connect(ui.mainWindow(), &MainWindow::closingWindow, this, [this]() {
         _utilityObjects.clear();
     });
 }
@@ -270,9 +270,9 @@ void UtilityListModel::activateUtility()
     OVITO_ASSERT(action);
 
     // Show the utilities tab of the command panel.
-    _mainWindow.actionManager()->getAction(ACTION_COMMAND_PANEL_UTILITIES)->trigger();
+    actionManager()->getAction(ACTION_COMMAND_PANEL_UTILITIES)->trigger();
 
-    _mainWindow.handleExceptions([&]() {
+    handleExceptions([&]() {
 
         // Check if a utility object of the selected class has already been instantiated before.
         auto utilityClass = action->utilityClass();
@@ -296,8 +296,8 @@ void UtilityListModel::activateUtility()
             OVITO_ASSERT(utility);
 
             // Add utility objects to the current dataset so that its state gets serialized into a state file.
-            if(_mainWindow.datasetContainer().currentSet())
-                _mainWindow.datasetContainer().currentSet()->addGlobalObject(utility);
+            if(dataset())
+                dataset()->addGlobalObject(utility);
         }
 
         // Show the utility in the command panel tab.
@@ -333,8 +333,7 @@ void UtilityListModel::datasetReplaced(DataSet* dataset)
     for(const auto& obj : dataset->globalObjects()) {
         if(UtilityObject* utility = dynamic_object_cast<UtilityObject>(obj.get())) {
             // Replace any existing utility of the same class.
-            auto iter = boost::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); });
-            if(iter != _utilityObjects.end())
+            if(auto iter = std::ranges::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); }); iter != _utilityObjects.end())
                 *iter = utility;
             else
                 _utilityObjects.push_back(utility);
@@ -366,7 +365,7 @@ void UtilityListModel::extensionClassAdded(OvitoClassPtr cls)
     UtilityAction* action = UtilityAction::createForClass(clazz);
 
     // Register it with the global ActionManager.
-    _mainWindow.actionManager()->addAction(action);
+    actionManager()->addAction(action);
 
     // Handle the action.
     connect(action, &QAction::triggered, this, &UtilityListModel::activateUtility);
@@ -377,7 +376,7 @@ void UtilityListModel::extensionClassAdded(OvitoClassPtr cls)
     _actions.insert(iter, action);
 
     // Insert action into the right category. Or create a new category if necessary.
-    auto categoryIter = boost::find(_categoryNames, action->category());
+    auto categoryIter = std::ranges::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
     if(categoryIter == _categoryNames.end()) {
         _categoryNames.push_back(action->category());

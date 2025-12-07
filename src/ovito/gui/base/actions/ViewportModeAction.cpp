@@ -30,10 +30,13 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the action object.
 ******************************************************************************/
-ViewportModeAction::ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, OORef<ViewportInputMode> inputMode, const QColor& highlightColor)
-    : QAction(text, parent), _inputMode(std::move(inputMode)), _highlightColor(highlightColor), _viewportInputManager(*userInterface.viewportInputManager())
+ViewportModeAction::ViewportModeAction(UserInterface& ui, const QString& text, QObject* parent, OORef<ViewportInputMode> inputMode, const QColor& highlightColor) :
+    QAction(text, parent),
+    UserInterfaceComponent<UserInterface>(ui),
+    _inputMode(std::move(inputMode)),
+    _highlightColor(highlightColor)
 {
-    OVITO_CHECK_POINTER(userInterface.viewportInputManager());
+    OVITO_CHECK_POINTER(ui.viewportInputManager());
 
     setCheckable(true);
     setChecked(_inputMode->isActive());
@@ -48,16 +51,18 @@ ViewportModeAction::ViewportModeAction(UserInterface& userInterface, const QStri
 ******************************************************************************/
 void ViewportModeAction::onActionToggled(bool checked)
 {
-    // Activate/deactivate the input mode.
-    if(checked && !_inputMode->isActive()) {
-        _viewportInputManager.pushInputMode(_inputMode);
-        // Give viewport windows the input focus.
-        _viewportInputManager.userInterface().setViewportInputFocus();
-    }
-    else if(!checked) {
-        if(_viewportInputManager.activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {
-            // Make sure that an exclusive input mode cannot be deactivated by the user.
-            setChecked(true);
+    if(ViewportInputManager* inputManager = ui().viewportInputManager()) {
+        // Activate/deactivate the input mode.
+        if(checked && !_inputMode->isActive()) {
+            inputManager->pushInputMode(_inputMode);
+            // Give viewport windows the input focus.
+            ui().setViewportInputFocus();
+        }
+        else if(!checked) {
+            if(inputManager->activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {
+                // Make sure that an exclusive input mode cannot be deactivated by the user.
+                setChecked(true);
+            }
         }
     }
 }
@@ -67,9 +72,11 @@ void ViewportModeAction::onActionToggled(bool checked)
 ******************************************************************************/
 void ViewportModeAction::onActionTriggered(bool checked)
 {
-    if(!checked) {
-        if(_inputMode->modeType() != ViewportInputMode::ExclusiveMode) {
-            _viewportInputManager.removeInputMode(_inputMode);
+    if(ViewportInputManager* inputManager = ui().viewportInputManager()) {
+        if(!checked) {
+            if(_inputMode->modeType() != ViewportInputMode::ExclusiveMode) {
+                inputManager->removeInputMode(_inputMode);
+            }
         }
     }
 }

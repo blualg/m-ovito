@@ -25,6 +25,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/SyclFlatSet.h>
@@ -49,10 +50,12 @@ DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, computePartialRDF);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, onlySelected);
+DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, typeProperty);
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, computePartialRDF, "Compute partial RDFs");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, onlySelected, "Use only selected particles");
+SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, typeProperty, "Type property");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, cutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, numberOfBins, IntegerParameterUnit, 4);
 
@@ -62,6 +65,17 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, numberOfBins,
 bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
     return input.containsObject<Particles>();
+}
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+void CoordinationAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
+{
+    Modifier::initializeObject(flags);
+
+    // Default to using the standard Particle Type property for backward compatibility
+    setTypeProperty(PropertyReference{&Particles::OOClass(), Particles::TypeProperty});
 }
 
 /******************************************************************************
@@ -117,21 +131,30 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
     const Property* particleTypes = nullptr;
     boost::container::flat_map<int, QString> uniqueTypes;
     if(computePartialRDF()) {
-        particleTypes = particles->getProperty(Particles::TypeProperty);
-        if(!particleTypes)
-            throw Exception(tr("Calculation of partial RDFs requires the '%1' particle property, which is not present in the input particle system.").arg(Particles::OOClass().standardPropertyName(Particles::TypeProperty)));
+        if(!typeProperty())
+            throw Exception(tr("Calculation of partial RDFs requires a type property to be selected."));
 
-        // Build the set of unique particle type IDs.
+        particleTypes = typeProperty().findInContainer(particles);
+        if(!particleTypes)
+            throw Exception(tr("Calculation of partial RDFs requires the '%1' particle property, which is not present in the input particle system.").arg(typeProperty().nameWithComponent()));
+
+        if(!particleTypes->isTypedProperty())
+            throw Exception(tr("The selected property '%1' is not a typed property. Partial RDF calculation requires a typed property with defined element types.").arg(typeProperty().nameWithComponent()));
+
+        // Build the set of unique particle type IDs, but only include enabled types.
         for(const ElementType* pt : particleTypes->elementTypes()) {
+            // Only include enabled types in the partial RDF calculation
+            if(pt->enabled()) {
 #if BOOST_VERSION >= 106200
-            uniqueTypes.insert_or_assign(pt->numericId(), pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name());
+                uniqueTypes.insert_or_assign(pt->numericId(), pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name());
 #else
-            // For backward compatibility with older Boost versions, which do not know insert_or_assign():
-            uniqueTypes[pt->numericId()] = pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name();
+                // For backward compatibility with older Boost versions, which do not know insert_or_assign():
+                uniqueTypes[pt->numericId()] = pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name();
 #endif
+            }
         }
         if(uniqueTypes.empty())
-            throw Exception(tr("No particle types have been defined."));
+            throw Exception(tr("No enabled particle types have been defined."));
         if(uniqueTypes.size() > 20)
             throw Exception(tr("Calculation of partial RDFs is currently limited to 20 particle types for performance reasons. Your system contains %1 types.").arg(uniqueTypes.size()));
     }

@@ -97,13 +97,13 @@ public:
     auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
 
     /// Returns an iterator range over all vertices of the mesh topology.
-    auto verticesRange() const { return boost::counting_range<size_type>(0, vertexCount()); }
+    auto verticesRange() const { return std::views::iota(size_type{0}, vertexCount()); }
 
     /// Returns an iterator range over all faces of the mesh topology.
-    auto facesRange() const { return boost::counting_range<size_type>(0, faceCount()); }
+    auto facesRange() const { return std::views::iota(size_type{0}, faceCount()); }
 
     /// Returns an iterator range over all half-edges of the mesh topology.
-    auto edgesRange() const { return boost::counting_range<size_type>(0, edgeCount()); }
+    auto edgesRange() const { return std::views::iota(size_type{0}, edgeCount()); }
 
     /// Adds several new vertices to the mesh.
     /// Returns the index of the first newly-created vertex.

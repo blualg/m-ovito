@@ -238,6 +238,11 @@ OVITO can read the following file formats:
     - :ref:`particles <scene_objects.particles>`
     -
 
+  * - MOL/SDF
+    - Chemical table file - created by MDL Information Systems (`specification <https://discover.3ds.com/sites/default/files/2020-08/biovia_ctfileformats_2020.pdf>`__). Only the V2000 version is supported.
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
+    -
+
 :ref:`OVITO Pro <credits.ovito_pro>` provides the option for you to write a :ref:`custom file reader in Python <writing_custom_file_readers>`
 to import a format not listed above.
 

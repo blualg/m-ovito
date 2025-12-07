@@ -48,11 +48,10 @@ DEFINE_REFERENCE_FIELD(DataSetContainer, activeAnimationSettings);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-void DataSetContainer::initializeObject(UserInterface& userInterface)
+void DataSetContainer::initializeObject(UserInterface& ui)
 {
     RefMaker::initializeObject();
-
-    _userInterface = &userInterface;
+    setUserInterface(ui);
 }
 
 #ifdef OVITO_DEBUG
@@ -129,6 +128,9 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::preferSimulationTimeDisplay)) {
                 Q_EMIT timeFormatChanged();
             }
+            else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::framesPerSecond)) {
+                Q_EMIT framesPerSecondChanged(activeAnimationSettings()->framesPerSecond());
+            }
         }
     }
     else if(source == activeSelectionSet()) {
@@ -180,9 +182,11 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
             _animationPlayback->stopAnimationPlayback();
             _animationPlayback->setScene(activeScene());
         }
-        Q_EMIT sceneReplaced(activeScene());
+        // Note: It's important to first update the animation settings object (which store the current animation frame)
+        // before signaling a scene change. This ensures that the UI immediately shows the correct current frame after the scene has changed.
         _activeAnimationSettings.set(this, PROPERTY_FIELD(activeAnimationSettings), activeScene() ? activeScene()->animationSettings() : nullptr);
         _activeSelectionSet.set(this, PROPERTY_FIELD(activeSelectionSet), activeScene() ? activeScene()->selection() : nullptr);
+        Q_EMIT sceneReplaced(activeScene());
     }
     else if(field == PROPERTY_FIELD(activeSelectionSet)) {
         Q_EMIT selectionSetReplaced(activeSelectionSet());
@@ -195,10 +199,12 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
             Q_EMIT animationIntervalChanged(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame());
             Q_EMIT currentFrameChanged(activeAnimationSettings()->currentFrame());
             Q_EMIT timeFormatChanged();
+            Q_EMIT framesPerSecondChanged(activeAnimationSettings()->framesPerSecond());
         }
         else {
             Q_EMIT animationIntervalChanged(0, 0);
             Q_EMIT currentFrameChanged(0);
+            Q_EMIT framesPerSecondChanged(0);
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -222,7 +228,7 @@ void DataSetContainer::timerEvent(QTimerEvent* event)
 SceneAnimationPlayback* DataSetContainer::createAnimationPlayback()
 {
     if(!_animationPlayback) {
-        _animationPlayback = OORef<SceneAnimationPlayback>::create(userInterface());
+        _animationPlayback = OORef<SceneAnimationPlayback>::create(ui());
         connect(_animationPlayback.get(), &SceneAnimationPlayback::playbackChanged, this, &DataSetContainer::playbackChanged);
     }
     return _animationPlayback;

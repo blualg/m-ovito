@@ -48,7 +48,7 @@ void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primiti
 
     // Transform rectangle to normalized device coordinates.
     Box2 b = primitive.windowRect();
-    int aaLevel = multisamplingLevel();
+    int aaLevel = supersamplingLevel();
     if(aaLevel > 1) {
         b.minc.x() = (int)(b.minc.x() / aaLevel) * aaLevel;
         b.minc.y() = (int)(b.minc.y() / aaLevel) * aaLevel;

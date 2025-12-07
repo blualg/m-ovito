@@ -43,6 +43,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT OvitoObject : public std::enable_shared_from_this<OvitoObject>
 {
     Q_GADGET
+    Q_DISABLE_COPY_MOVE(OvitoObject)
 
 private:
 
@@ -72,6 +73,9 @@ public:
 
     /// Mimic Qt's string localization function tr() for string literals.
     static inline QString tr(const char* sourceText) { return QString::fromUtf8(sourceText); }
+
+    /// Default constructor.
+    OvitoObject() = default;
 
 #ifdef OVITO_DEBUG
     /// Note: No need to make the base class destructor virtual, because we use std::shared_ptr to manage an object's lifetime.
@@ -229,6 +233,8 @@ OVITO_CORE_EXPORT QDebug operator<<(QDebug dbg, const OvitoObject* o);
 /// \relates OvitoObject
 template<class T, class U>
 inline T* dynamic_object_cast(U* obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
     return dynamic_cast<T*>(obj);
 }
 
@@ -240,6 +246,8 @@ inline T* dynamic_object_cast(U* obj) noexcept {
 /// \relates OvitoObject
 template<class T, class U>
 inline const T* dynamic_object_cast(const U* obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
     return dynamic_cast<const T*>(obj);
 }
 
@@ -252,6 +260,8 @@ inline const T* dynamic_object_cast(const U* obj) noexcept {
 /// \relates OvitoObject
 template<class T, class U>
 inline T* static_object_cast(U* obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_cast<T*>(obj);
@@ -266,6 +276,8 @@ inline T* static_object_cast(U* obj) noexcept {
 /// \relates OvitoObject
 template<class T, class U>
 inline const T* static_object_cast(const U* obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_cast<const T*>(obj);
@@ -285,6 +297,8 @@ T* const_pointer_cast(const T* p) noexcept {
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
     return dynamic_pointer_cast<T, U>(obj);
 }
 
@@ -296,6 +310,8 @@ inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<const T> dynamic_object_cast(const Pointer<const U>& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
     return dynamic_pointer_cast<const T, const U>(obj);
 }
 
@@ -307,6 +323,8 @@ inline Pointer<const T> dynamic_object_cast(const Pointer<const U>& obj) noexcep
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "dynamic_object_cast can only be used with OvitoObject-derived classes.");
     return dynamic_pointer_cast<T, U>(std::move(obj));
 }
 
@@ -329,6 +347,8 @@ inline Pointer<const T> dynamic_object_cast(Pointer<const U>&& obj) noexcept {
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_pointer_cast<T, U>(obj);
@@ -342,6 +362,8 @@ inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<const T> static_object_cast(const Pointer<const U>& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_pointer_cast<const T, const U>(obj);
@@ -355,6 +377,8 @@ inline Pointer<const T> static_object_cast(const Pointer<const U>& obj) noexcept
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_pointer_cast<T, U>(std::move(obj));
@@ -368,6 +392,8 @@ inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<const T> static_object_cast(Pointer<const U>&& obj) noexcept {
+    static_assert(std::is_base_of_v<OvitoObject, T>, "static_object_cast can only be used with OvitoObject-derived classes.");
+    static_assert(std::is_base_of_v<OvitoObject, U>, "static_object_cast can only be used with OvitoObject-derived classes.");
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_pointer_cast<const T, const U>(std::move(obj));

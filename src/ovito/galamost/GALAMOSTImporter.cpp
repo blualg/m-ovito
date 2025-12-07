@@ -148,10 +148,9 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                         if(!ok)
                             throw Exception(tr("GALAMOST file parsing error. Invalid 'lz' attribute value in <%1> element: %2").arg(xml.name()).arg(lzStr));
                     }
-                    if(dimensions == 2)
-                        simulationCell()->setIs2D(true);
                     cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
                     simulationCell()->setCellMatrix(cellMatrix);
+                    simulationCell()->setIs2D(dimensions == 2);
                     xml.skipCurrentElement();
                 }
                 else if(xml.name().compare(QStringLiteral("position")) == 0) {

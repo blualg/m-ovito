@@ -105,6 +105,8 @@
 	<file>icons/ovito-light/actions/inspector_view_mesh_faces.svg</file>
 	<file>icons/ovito-light/actions/inspector_view_mesh_vertices.svg</file>
 	<file>icons/ovito-light/actions/inspector_view_mesh_regions.svg</file>
+	<file>icons/ovito-light/actions/expand_up.svg</file>
+	<file>icons/ovito-light/actions/collapse_down.svg</file>
 
 	<file>icons/ovito-light/actions/command_panel_tab_modify.svg</file>
 	<file>icons/ovito-light/actions/command_panel_tab_render.svg</file>
@@ -116,6 +118,8 @@
 	<file>icons/ovito-light/actions/particles_settings_restore.svg</file>
 	<file>icons/ovito-light/actions/particles_highlight_selection_on.svg</file>
 	<file>icons/ovito-light/actions/particles_highlight_selection_off.svg</file>
+
+	<file>icons/ovito-light/actions/restore_object.svg</file>
 
 </qresource>
 
@@ -224,6 +228,8 @@
 	<file>icons/ovito-dark/actions/inspector_view_mesh_faces.svg</file>
 	<file>icons/ovito-dark/actions/inspector_view_mesh_vertices.svg</file>
 	<file>icons/ovito-dark/actions/inspector_view_mesh_regions.svg</file>
+	<file>icons/ovito-dark/actions/expand_up.svg</file>
+	<file>icons/ovito-dark/actions/collapse_down.svg</file>
 
 	<file>icons/ovito-dark/actions/command_panel_tab_modify.svg</file>
 	<file>icons/ovito-dark/actions/command_panel_tab_render.svg</file>
@@ -235,6 +241,8 @@
 	<file>icons/ovito-dark/actions/particles_settings_restore.svg</file>
 	<file>icons/ovito-dark/actions/particles_highlight_selection_on.svg</file>
 	<file>icons/ovito-dark/actions/particles_highlight_selection_off.svg</file>
+
+	<file>icons/ovito-dark/actions/restore_object.svg</file>
 </qresource>
 
 <qresource prefix="/guibase">

@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "DataInspectorPanel.h"
@@ -32,10 +33,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
-    _mainWindow(mainWindow),
-    _waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif"),
-    _scenePreparation(OORef<ScenePreparation>::create(mainWindow))
+DataInspectorPanel::DataInspectorPanel(MainWindowUI& ui) :
+    UserInterfaceComponent<MainWindowUI>(ui),
+    _scenePreparation(OORef<ScenePreparation>::create(ui))
 {
     // Create data inspection applets.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
@@ -70,14 +70,24 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
     QSize indicatorSize = _waitingForSceneAnim.currentImage().size();
     layout->setRowMinimumHeight(0, indicatorSize.height());
     layout->setColumnMinimumWidth(2, indicatorSize.width());
-    _expandCollapseButton = new QPushButton();
-    _expandCollapseButton->setFlat(true);
-    _expandCollapseButton->setFocusPolicy(Qt::NoFocus);
-    _expandCollapseButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
-    _expandCollapseButton->setStyleSheet("QPushButton { padding: 1px; }");
-    _expandCollapseButton->setIcon(_expandIcon);
-    _expandCollapseButton->setToolTip(tr("Expand"));
-    layout->addWidget(_expandCollapseButton, 0, 4);
+
+    QToolBar* horizontalToolbar = new QToolBar();
+    horizontalToolbar->setOrientation(Qt::Horizontal);
+    horizontalToolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    horizontalToolbar->setIconSize(QSize(16, 16));
+    horizontalToolbar->setStyleSheet("QToolButton { padding: 0px; }");
+
+    QAction* helpAction = new QAction(QStringLiteral("?"), this);
+    helpAction->setToolTip(tr("Open help page for the current data inspector tab"));
+    connect(helpAction, &QAction::triggered, this, &DataInspectorPanel::onHelp);
+    horizontalToolbar->addAction(helpAction);
+
+    _expandCollapseAction = new QAction(this);
+    _expandCollapseAction->setIcon(_expandIcon);
+    _expandCollapseAction->setToolTip(tr("Expand"));
+    horizontalToolbar->addAction(_expandCollapseAction);
+
+    layout->addWidget(horizontalToolbar, 0, 4);
 
     _appletContainer = new QStackedWidget();
     _appletContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
@@ -90,7 +100,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
         _appletContainer->insertWidget(_appletContainer->count() - 1, applet->createWidget());
     layout->addWidget(_appletContainer, 1, 0, 1, -1);
 
-    connect(_expandCollapseButton, &QAbstractButton::clicked, this, &DataInspectorPanel::toggle);
+    connect(_expandCollapseAction, &QAction::triggered, this, &DataInspectorPanel::toggle);
     connect(_tabBar, &QTabBar::tabBarClicked, this, &DataInspectorPanel::onTabBarClicked);
     connect(_tabBar, &QTabBar::currentChanged, this, &DataInspectorPanel::onCurrentTabChanged);
     connect(_appletContainer, &QStackedWidget::currentChanged, this, &DataInspectorPanel::onCurrentPageChanged);
@@ -231,8 +241,8 @@ void DataInspectorPanel::resizeEvent(QResizeEvent* event)
     bool isPanelOpen = (_appletContainer->height() > 0);
     if(!_inspectorActive && isPanelOpen) {
         _inspectorActive = true;
-        _expandCollapseButton->setIcon(_collapseIcon);
-        _expandCollapseButton->setToolTip(tr("Collapse"));
+        _expandCollapseAction->setIcon(_collapseIcon);
+        _expandCollapseAction->setToolTip(tr("Collapse"));
         if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
             _applets[_activeAppletIndex]->updateDisplay();
         }
@@ -240,8 +250,8 @@ void DataInspectorPanel::resizeEvent(QResizeEvent* event)
     }
     else if(_inspectorActive && !isPanelOpen) {
         _inspectorActive = false;
-        _expandCollapseButton->setIcon(_expandIcon);
-        _expandCollapseButton->setToolTip(tr("Expand"));
+        _expandCollapseAction->setIcon(_expandIcon);
+        _expandCollapseAction->setToolTip(tr("Expand"));
         if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
             _applets[_activeAppletIndex]->deactivate();
         }
@@ -331,7 +341,7 @@ bool DataInspectorPanel::updatePipelineOutput()
 {
     _pipelineOutput.reset();
     if(selectedPipeline()) {
-        if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+        if(AnimationSettings* anim = activeAnimationSettings()) {
             _pipelineOutput = selectedPipeline()->getCachedPipelineOutput(anim->currentTime(), false);
         }
     }
@@ -374,7 +384,8 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
-        if(_appletsToTabs[appletIndex] == -1) continue;
+        if(_appletsToTabs[appletIndex] == -1)
+            continue;
         DataInspectionApplet* applet = _applets[appletIndex];
 
         // Update content of the tab.
@@ -388,6 +399,42 @@ bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, con
         }
     }
     return false;
+}
+
+/******************************************************************************
+* Selects a specific tab page in the data inspector.
+******************************************************************************/
+bool DataInspectorPanel::selectTabPage(const OvitoClass& appletClass)
+{
+    for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
+        if(_appletsToTabs[appletIndex] == -1)
+            continue;
+        DataInspectionApplet* applet = _applets[appletIndex];
+        if(applet->getOOClass() == appletClass) {
+            // Update content of the tab.
+            applet->updateDisplay();
+            // Switch to the tab.
+            _tabBar->setCurrentIndex(_appletsToTabs[appletIndex]);
+            return true;
+        }
+    }
+    return false;
+}
+
+/******************************************************************************
+* This is called when the user has pressed the help button of the data inspector panel.
+******************************************************************************/
+void DataInspectorPanel::onHelp()
+{
+    if(_inspectorActive && _activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
+        QString helpTopicId = _applets[_activeAppletIndex]->helpTopicId();
+        if(!helpTopicId.isEmpty()) {
+            actionManager()->openHelpTopic(helpTopicId);
+            return;
+        }
+    }
+
+    actionManager()->openHelpTopic(QStringLiteral("manual:data_inspector"));
 }
 
 }   // End of namespace

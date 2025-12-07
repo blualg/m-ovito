@@ -32,13 +32,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the viewport input manager.
 ******************************************************************************/
-ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userInterface) :
-    QObject(parent),
-    _datasetContainer(userInterface.datasetContainer()),
-    _userInterface(userInterface)
+ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& ui) : QObject(parent), UserInterfaceComponent<UserInterface>(ui)
 {
-    OVITO_ASSERT(_userInterface.viewportInputManager() == nullptr || _userInterface.viewportInputManager() == this);
-    _userInterface.setViewportInputManager(this);
+    OVITO_ASSERT(ui.viewportInputManager() == nullptr || ui.viewportInputManager() == this);
+    ui.setViewportInputManager(this);
 
     _zoomMode = OORef<ZoomMode>::create();
     _panMode = OORef<PanMode>::create();
@@ -51,7 +48,7 @@ ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userI
     _defaultMode = _selectionMode;
 
     // Reset the viewport input manager when a new scene has been loaded.
-    connect(&_datasetContainer, &DataSetContainer::dataSetChanged, this, &ViewportInputManager::reset);
+    connect(&datasetContainer(), &DataSetContainer::dataSetChanged, this, &ViewportInputManager::reset);
 }
 
 /******************************************************************************
@@ -120,6 +117,7 @@ void ViewportInputManager::pushInputMode(ViewportInputMode* newMode, bool tempor
     // Put new handler on the stack.
     OVITO_ASSERT(newMode->_manager == nullptr);
     newMode->_manager = this;
+    newMode->setUserInterface(ui());
     _inputModeStack.push_back(newMode);
 
     if(oldMode) {
@@ -176,7 +174,7 @@ void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
         _viewportGizmos.push_back(gizmo);
 
         // Update viewports to show gizmo overlay.
-        userInterface().updateViewports();
+        ui().updateViewports();
     }
 }
 
@@ -191,7 +189,7 @@ void ViewportInputManager::removeViewportGizmo(ViewportGizmo* gizmo)
         _viewportGizmos.erase(iter);
 
         // Update viewports to hide gizmo.
-        userInterface().updateViewports();
+        ui().updateViewports();
     }
 }
 

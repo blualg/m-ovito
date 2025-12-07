@@ -26,8 +26,8 @@ OVITO provides built-in support for various particle shapes beyond the default s
  - :ref:`Circles and squares (billboards that follow the view direction) <howto.aspherical_particles.circles_and_squares>`
  - :ref:`User-defined polygonal meshes <howto.aspherical_particles.user_shapes>`
 
-You can specify the display shape of particles for the entire system in the :ref:`Particles <visual_elements.particles>` visual element
-or specify it per particle type in the :ref:`Particle types <scene_objects.particle_types>` panel.
+You can set the particle display shape for the entire system in the settings of the :ref:`Particles <visual_elements.particles>` visual element
+or on a per-type basis using the :ref:`particles.modifiers.edit_types` modifier.
 
 .. _howto.aspherical_particles.orientation:
 

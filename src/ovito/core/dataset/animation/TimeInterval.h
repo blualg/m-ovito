@@ -142,6 +142,9 @@ public:
     /// \param time The time where the interval starts and ends.
     constexpr TimeInterval(AnimationTime time) noexcept : _start(time), _end(time) {}
 
+    /// \brief Copy constructor.
+    constexpr TimeInterval(const TimeInterval& other) noexcept = default;
+
     /// \brief Returns the start time of the interval.
     /// \return The beginning of the time interval.
     constexpr AnimationTime start() const noexcept { return _start; }
@@ -218,11 +221,7 @@ public:
     /// \brief Assignment operator.
     /// \param other The interval to copy.
     /// \return This interval instance.
-    TimeInterval& operator=(const TimeInterval& other) noexcept {
-        setStart(other.start());
-        setEnd(other.end());
-        return *this;
-    }
+    TimeInterval& operator=(const TimeInterval& other) noexcept = default;
 
     /// \brief Returns whether a time lies between start and end time of this interval.
     /// \param time The time to check.

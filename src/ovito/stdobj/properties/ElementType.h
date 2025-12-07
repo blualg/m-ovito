@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/core/dataset/data/DataObject.h>
+#include "ElementTypeClass.h"
 
 namespace Ovito {
 
@@ -35,7 +36,7 @@ namespace Ovito {
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
-    OVITO_CLASS(ElementType)
+    OVITO_CLASS_META(ElementType, ElementTypeClass)
 
 public:
 
@@ -44,9 +45,6 @@ public:
 
     /// Initializes the element type to default parameter values.
     virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive());
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
     /// Returns the name of this type, or a dynamically generated string representing the
     /// numeric ID if the type has no assigned name.

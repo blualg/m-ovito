@@ -79,7 +79,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> TargetVis::render(const Con
                 {-1, -1,  1}, {-1, 1, 1}
             };
             BufferFactory<Point3G> vertices(std::size(linePoints));
-            boost::copy(linePoints, vertices.begin());
+            std::ranges::copy(linePoints, vertices.begin());
             vertexPositions = vertices.take();
         });
 

@@ -34,7 +34,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include "ParticleImporter.h"
 
-#include <boost/range/numeric.hpp>
 
 namespace Ovito {
 
@@ -294,7 +293,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
     BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = bonds()->createProperty(Bonds::PeriodicImageProperty);
 
     if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
-        boost::fill(bondPeriodicImageProperty, Vector3I::Zero());
+        std::ranges::fill(bondPeriodicImageProperty, Vector3I::Zero());
     }
     else {
         const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
@@ -383,13 +382,13 @@ void ParticleImporter::FrameLoader::generateBonds(TaskProgress& progress)
     });
 
     // Create bonds.
-    setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
+    setBondCount(std::ranges::fold_left(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
     BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = this->bonds()->createProperty(Bonds::TopologyProperty);
     Property* bondTypeProperty = this->bonds()->createProperty(Bonds::TypeProperty);
     BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = this->bonds()->createProperty(Bonds::PeriodicImageProperty);
 
     // Create bond type.
-    addNumericType(Bonds::OOClass(), bondTypeProperty, 1, {});
+    addNumericType(Bonds::OOClass(), bondTypeProperty, 1, QString{});
     bondTypeProperty->fill<int32_t>(1);
 
     // Transfer bonds lists to Bonds.

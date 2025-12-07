@@ -36,10 +36,9 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
     // Create computed variables for reduced particle coordinates.
     if(simCell) {
         // Look for the 'Position' particle property in the inputs.
-        auto iter = boost::find_if(inputProperties, [](const ConstPropertyPtr& property) {
+        if(auto iter = std::ranges::find_if(inputProperties, [](const ConstPropertyPtr& property) {
             return property->typeId() == Particles::PositionProperty;
-        });
-        if(iter != inputProperties.end()) {
+        }); iter != inputProperties.end()) {
             BufferReadAccessAndRef<Point3> posProperty = *iter;
             registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCell>(simCell)](size_t particleIndex) -> double {
                 return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
@@ -127,8 +126,8 @@ QString BondExpressionEvaluator::inputVariableTable() const
 {
     QString table = PropertyExpressionEvaluator::inputVariableTable();
     table.append(QStringLiteral("<p><b>Particle properties:</b><ul>"));
-    table.append(QStringLiteral("<li>@1... (<i style=\"color: #555;\">property of first particle</i>)</li>"));
-    table.append(QStringLiteral("<li>@2... (<i style=\"color: #555;\">property of second particle</i>)</li>"));
+    table.append(QStringLiteral("<li>@1... <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(property of first particle)</span></li>"));
+    table.append(QStringLiteral("<li>@2... <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(property of second particle)</span></li>"));
     table.append(QStringLiteral("</ul></p>"));
     return table;
 }

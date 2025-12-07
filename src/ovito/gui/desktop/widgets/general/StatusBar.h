@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 Alexander Stukowski
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,8 +41,7 @@ class StatusBar : public QLabel
 
 public:
 
-    /// \brief Constructs a status bar widget.
-    /// \param parent The parent widget for the new widget.
+    /// Constructor.
     StatusBar(QWidget* parent = nullptr);
 
     QLabel* overflowWidget() { return _overflowLabel; }

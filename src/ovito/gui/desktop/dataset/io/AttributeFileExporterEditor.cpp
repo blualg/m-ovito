@@ -117,7 +117,7 @@ void AttributeFileExporterEditor::updateAttributesList()
         return;
 
     try {
-        ProgressDialog::showForCurrentTask(mainWindow(), container());
+        ProgressDialog::showForCurrentTask(ui(), container());
         QVariantMap attrMap = exporter->getAttributesMap(exporter->sceneToExport()->animationSettings()->currentFrame()).blockForResult();
         for(const QString& attrName : attrMap.keys())
             insertAttributeItem(attrName, exporter->attributesToExport());

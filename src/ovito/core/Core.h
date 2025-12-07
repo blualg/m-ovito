@@ -50,6 +50,8 @@
 #include <optional>
 #include <queue>
 #include <random>
+#include <ranges>
+#include <string_view>
 #include <set>
 #include <span>
 #include <stack>
@@ -85,7 +87,7 @@
 #include <QMatrix4x4>
 #include <QMetaClassInfo>
 #include <QMutex>
-#include <QMutex>
+#include <QStringBuilder>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPair>
@@ -133,6 +135,7 @@
 #include <boost/algorithm/cxx11/iota.hpp>
 #include <boost/algorithm/cxx11/none_of.hpp>
 #include <boost/algorithm/cxx11/one_of.hpp>
+#include <boost/any/unique_any.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/dynamic_bitset.hpp>
@@ -140,9 +143,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
-#include <boost/range/algorithm_ext/is_sorted.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/range/counting_range.hpp>
+#include <boost/range/adaptor/strided.hpp>
 #include <boost/range/irange.hpp>
 
 /******************************************************************************

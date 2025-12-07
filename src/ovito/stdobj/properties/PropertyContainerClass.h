@@ -144,7 +144,7 @@ public:
     }
 
     /// Returns the ElementType class that is used by the given typed property.
-    OvitoClassPtr typedPropertyElementClass(int typeId) const {
+    ElementTypeClassPtr typedPropertyElementClass(int typeId) const {
         if(auto iter = _standardPropertyElementTypes.find(typeId); iter != _standardPropertyElementTypes.end())
             return iter->second;
         else
@@ -157,7 +157,7 @@ protected:
     virtual void initialize() override;
 
     /// Registers a new standard property with this property meta class.
-    void registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, OvitoClassPtr typedPropertyElementClass = {}, QString title = QString());
+    void registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, ElementTypeClassPtr typedPropertyElementClass = {}, QString title = QString());
 
     /// Sets the human-readable name used for the property class in the user interface.
     void setPropertyClassDisplayName(const QString& name) { _propertyClassDisplayName = name; }
@@ -196,7 +196,7 @@ private:
     boost::container::flat_map<int, int> _standardPropertyDataTypes;
 
     /// Stores the IDs of all typed standard properties and the corresponding ElementType class.
-    boost::container::flat_map<int, OvitoClassPtr> _standardPropertyElementTypes;
+    boost::container::flat_map<int, ElementTypeClassPtr> _standardPropertyElementTypes;
 };
 
 /**

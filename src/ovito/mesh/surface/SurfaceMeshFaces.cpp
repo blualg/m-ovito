@@ -78,7 +78,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
                 BufferReadAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, BufferWriteAccess<ColorG, access_mode::discard_write>(property).begin(),
+                    std::ranges::transform(faceRegionProperty, BufferWriteAccess<ColorG, access_mode::discard_write>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }
@@ -142,8 +142,8 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 VectorVis::VectorData SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                                          const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
-    if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+    OVITO_ASSERT(path.nextToLastAs<SurfaceMeshFaces>() == this);
+    if(const SurfaceMesh* mesh = path.nextToNextToLastAs<SurfaceMesh>()) { // Data object path is: SurfaceMesh -> SurfaceMeshFaces -> Property
         mesh->verifyMeshIntegrity();
         // Look up the face centroids in the cache.
         const auto& [basePositions, vectorProperty] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(

@@ -75,7 +75,8 @@ void ViewportInputMode::deactivated(bool temporary)
 ******************************************************************************/
 bool ViewportInputMode::isActive() const
 {
-    if(!_manager) return false;
+    if(!_manager)
+        return false;
     return _manager->activeMode() == this;
 }
 
@@ -166,7 +167,7 @@ void ViewportInputMode::wheelEvent(ViewportWindow* vpwin, QWheelEvent* event)
 
     FloatType delta = event->angleDelta().y();
     if(event->inverted()) delta = -delta;
-    inputManager()->zoomMode()->zoom(vpwin->viewport(), delta, inputManager()->userInterface());
+    inputManager()->zoomMode()->zoom(vpwin->viewport(), delta, ui());
     event->accept();
 }
 
@@ -197,7 +198,7 @@ void ViewportInputMode::focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event)
 void ViewportInputMode::requestViewportUpdate()
 {
     if(isActive()) {
-        inputManager()->userInterface().updateViewports();
+        ui().updateViewports();
     }
 }
 

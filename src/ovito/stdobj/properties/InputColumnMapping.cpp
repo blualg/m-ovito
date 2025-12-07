@@ -228,6 +228,9 @@ void InputColumnMapping::validate(const QString& fileFormatName) const
 InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties, bool validateMapping)
     : _frameLoader(frameLoader), _mapping(mapping), _container(container)
 {
+    // Target container type must match to the container type the input column mapping was specified for.
+    OVITO_ASSERT(mapping.containerClass()->isMember(container));
+
     if(validateMapping) {
         OORef<const PipelineNode> pipelineNode = frameLoader.pipelineNode().lock();
         mapping.validate(pipelineNode ? pipelineNode->objectTitle() : QString{});

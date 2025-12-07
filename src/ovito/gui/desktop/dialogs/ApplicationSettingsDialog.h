@@ -33,7 +33,7 @@ class ApplicationSettingsDialog;        // defined below.
 /**
  * \brief Abstract base class for tab providers for the application's settings dialog.
  */
-class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public QObject, public OvitoObject
+class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public QObject, public OvitoObject, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(ApplicationSettingsDialogPage)
     Q_OBJECT
@@ -65,9 +65,6 @@ public:
     /// Returns the parent dialog hosting this settings page.
     ApplicationSettingsDialog* settingsDialog() const { OVITO_ASSERT(_settingsDialog); return _settingsDialog; }
 
-    /// Returns the main window hosting this settings page.
-    MainWindow& mainWindow() const;
-
 private:
 
     ApplicationSettingsDialog* _settingsDialog = nullptr;
@@ -81,20 +78,14 @@ private:
  * Plugins can add additional pages to this dialog by deriving new classes from
  * the ApplicationSettingsDialogPage class.
  */
-class OVITO_GUI_EXPORT ApplicationSettingsDialog : public QDialog
+class OVITO_GUI_EXPORT ApplicationSettingsDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the dialog window.
-    /// \param mainWindow The parent window of the settings dialog.
-    /// \param startPage An optional pointer to the ApplicationSettingsDialogPage derived class whose
-    ///                  settings page should be activated initially.
-    ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage = nullptr);
-
-    /// Returns the main window the application settings dialog was opened from.
-    MainWindow& mainWindow() const { return _mainWindow; }
+    /// Constructs the dialog window.
+    ApplicationSettingsDialog(MainWindowUI& ui, OvitoClassPtr startPage = nullptr);
 
 public Q_SLOTS:
 
@@ -110,7 +101,6 @@ public Q_SLOTS:
 
 private:
 
-    MainWindow& _mainWindow;
     QVector<OORef<ApplicationSettingsDialogPage>> _pages;
     QTabWidget* _tabWidget;
 };

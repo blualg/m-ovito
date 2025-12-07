@@ -51,8 +51,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 ******************************************************************************/
 Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    const Bonds* bonds = path.lastAs<Bonds>(0);
-    const Particles* particles = path.lastAs<Particles>(1);
+    const Bonds* bonds = path.lastAs<Bonds>();
+    const Particles* particles = path.nextToLastAs<Particles>();
     if(!bonds || !particles)
         return {};
     particles->verifyIntegrity();
@@ -114,8 +114,8 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 ******************************************************************************/
 std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
-    const Bonds* bonds = path.lastAs<Bonds>(0);
-    const Particles* particles = path.lastAs<Particles>(1);
+    const Bonds* bonds = path.lastAs<Bonds>();
+    const Particles* particles = path.nextToLastAs<Particles>();
     if(!bonds || !particles)
         return {};
     particles->verifyIntegrity();
@@ -429,7 +429,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
         }
         else {
             // Assign a uniform color to all bonds.
-            boost::fill(output, defaultColor);
+            std::ranges::fill(output, defaultColor);
         }
     }
 
@@ -525,11 +525,11 @@ ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
     if(output) {
         // Check if the width array contains any zero entries.
         BufferReadAccess<GraphicsFloatType> widthArray(output);
-        if(boost::find(widthArray, GraphicsFloatType(0)) != widthArray.end()) {
+        if(std::ranges::contains(widthArray, GraphicsFloatType(0))) {
             widthArray.reset();
 
             // Replace zero entries in the "Width" array with the uniform default width.
-            boost::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
+            std::ranges::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
         }
     }
     else {

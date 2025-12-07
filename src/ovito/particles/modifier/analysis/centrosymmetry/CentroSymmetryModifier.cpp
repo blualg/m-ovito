@@ -132,7 +132,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
 
         // Determine histogram bin size based on maximum CSP value.
         const size_t numHistogramBins = 100;
-        FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
+        FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *std::ranges::max_element(cspArray) / numHistogramBins) : 0;
         if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 
         // Perform binning of CSP values.

@@ -147,7 +147,7 @@ Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const Modifi
             // Use the per-type masses only if there is at least one type having a positive mass.
             if(!massMap.empty() && boost::algorithm::any_of(massMap, [](const auto& i) { return i.second > 0; })) {
                 PropertyPtr massProperty = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::MassProperty);
-                boost::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(massProperty).begin(), [&](int32_t t) {
+                std::ranges::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(massProperty).begin(), [&](int32_t t) {
                     auto iter = massMap.find(t);
                     if(iter != massMap.end()) return iter->second;
                     return FloatType(0);
@@ -341,20 +341,22 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
     }
     this_task::throwIfCanceled();
 
-    // Create custer ID property.
+    // Create cluster ID property.
     _clusterIds->resize(numClusters(), true);
-    boost::algorithm::iota_n(BufferWriteAccess<int64_t, access_mode::discard_write>(_clusterIds).begin(), int64_t(1), _clusterIds->size());
+    BufferWriteAccess<int64_t, access_mode::discard_write> clusterIdsArray(_clusterIds);
+    std::iota(clusterIdsArray.begin(), clusterIdsArray.end(), int64_t(1));
+    clusterIdsArray.reset();
 
     // Sort clusters by size.
     if(_sortBySize && numClusters() != 0) {
 
         // Determine new cluster ordering.
         std::vector<size_t> mapping(clusterSizeArray.size());
-        boost::algorithm::iota(mapping, size_t(0));
-        boost::sort(mapping, [&](auto a, auto b) {
+        std::iota(mapping.begin(), mapping.end(), size_t(0));
+        std::ranges::sort(mapping, [&](auto a, auto b) {
             return clusterSizeArray[a] > clusterSizeArray[b];
         });
-        boost::sort(clusterSizeArray, std::greater<>());
+        std::ranges::sort(clusterSizeArray, std::greater<>());
         setLargestClusterSize(clusterSizeArray[0]);
 
         // Reorder centers of mass.
@@ -565,13 +567,13 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(PipelineFlowSt
         std::vector<ColorG> clusterColors(numClusters() + 1);
         std::default_random_engine rng(1);
         boost::random::uniform_real_distribution<FloatType> uniform_dist(0, 1);
-        boost::generate(clusterColors, [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.4f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.3f); });
+        std::ranges::generate(clusterColors, [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.4f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.3f); });
         // Special color for particles not part of any cluster:
         clusterColors[0] = ColorG(0.8f, 0.8f, 0.8f);
 
         // Assign colors to particles according to the clusters they belong to.
         BufferWriteAccess<ColorG, access_mode::discard_write> colorsArray = particles->createProperty(Particles::ColorProperty);
-        boost::transform(BufferReadAccess<int64_t>(particleClusters()), colorsArray.begin(), [&](int64_t cluster) {
+        std::ranges::transform(BufferReadAccess<int64_t>(particleClusters()), colorsArray.begin(), [&](int64_t cluster) {
             OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
             return clusterColors[cluster];
         });

@@ -33,7 +33,7 @@ namespace Ovito {
 ******************************************************************************/
 void ActionManager::on_ViewportMaximize_triggered()
 {
-    userInterface().handleExceptions([&] {
+    handleExceptions([&] {
         ViewportConfiguration* vpconf = dataset()->viewportConfig();
         if(vpconf->maximizedViewport()) {
             vpconf->setMaximizedViewport(nullptr);
@@ -55,7 +55,7 @@ void ActionManager::on_ViewportZoomSceneExtents_triggered()
 {
     ViewportConfiguration* vpconf = dataset()->viewportConfig();
 
-    userInterface().handleExceptions([&] {
+    handleExceptions([&] {
         if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
             vpconf->activeViewport()->notifyDependents(Viewport::ZoomToSceneExtentsRequested);
         }
@@ -71,7 +71,7 @@ void ActionManager::on_ViewportZoomSceneExtents_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 {
-    userInterface().handleExceptions([&] {
+    handleExceptions([&] {
         for(Viewport* vp : dataset()->viewportConfig()->viewports())
             vp->notifyDependents(Viewport::ZoomToSceneExtentsRequested);
     });
@@ -82,7 +82,7 @@ void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 {
-    userInterface().handleExceptions([&] {
+    handleExceptions([&] {
         ViewportConfiguration* vpconf = dataset()->viewportConfig();
         if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
             vpconf->activeViewport()->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
@@ -98,7 +98,7 @@ void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 ******************************************************************************/
 void ActionManager::on_ViewportZoomSelectionExtentsAll_triggered()
 {
-    userInterface().handleExceptions([&] {
+    handleExceptions([&] {
         for(Viewport* vp : dataset()->viewportConfig()->viewports())
             vp->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
     });

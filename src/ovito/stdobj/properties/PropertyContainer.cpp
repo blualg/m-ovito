@@ -370,7 +370,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
         // Create a new property object.
         PropertyPtr newProperty = getOOMetaClass().createStandardProperty(init, elementCount(), typeId, containerPath);
         addProperty(newProperty);
-        return newProperty;
+        return newProperty.get();
     }
 }
 
@@ -398,7 +398,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
         // Create a new property object.
         PropertyPtr newProperty = getOOMetaClass().createUserProperty(init, elementCount(), dataType, componentCount, name, 0, std::move(componentNames));
         addProperty(newProperty);
-        return newProperty;
+        return newProperty.get();
     }
 }
 
@@ -531,8 +531,8 @@ std::vector<size_t> PropertyContainer::sortById()
 
     // Determine new permutation of data elements which sorts them by ascending ID.
     std::vector<size_t> permutation(ids.size());
-    boost::algorithm::iota(permutation, (size_t)0);
-    boost::sort(permutation, [&](size_t a, size_t b) { return ids[a] < ids[b]; });
+    std::iota(permutation.begin(), permutation.end(), size_t(0));
+    std::ranges::sort(permutation, [&](size_t a, size_t b) { return ids[a] < ids[b]; });
     std::vector<size_t> invertedPermutation(ids.size());
     bool isAlreadySorted = true;
     for(size_t i = 0; i < permutation.size(); i++) {
@@ -545,12 +545,11 @@ std::vector<size_t> PropertyContainer::sortById()
         return {};
 
     // Re-order all values in the property arrays.
-    makePropertiesMutableInternal();
-    for(const Property* prop : properties()) {
-        const_cast<Property*>(prop)->reorderElements(permutation);
+    for(Property* prop :  makePropertiesMutable()) {
+        prop->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(Property::GenericIdentifierProperty)).range()));
+    OVITO_ASSERT(std::ranges::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(Property::GenericIdentifierProperty)).range()));
 
     return invertedPermutation;
 }
@@ -705,10 +704,6 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
             for(const ElementType* type : property->elementTypes()) {
                 if(!type->ownerProperty()) {
                     const_cast<ElementType*>(type)->_ownerProperty.set(const_cast<ElementType*>(type), PROPERTY_FIELD(ElementType::ownerProperty), OwnerPropertyRef(&OOClass(), property));
-                }
-                if(ElementType* proxyType = dynamic_object_cast<ElementType>(type->editableProxy())) {
-                    if(!proxyType->ownerProperty())
-                        proxyType->_ownerProperty.set(proxyType, PROPERTY_FIELD(ElementType::ownerProperty), type->ownerProperty());
                 }
             }
         }

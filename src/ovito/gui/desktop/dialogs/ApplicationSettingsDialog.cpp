@@ -33,7 +33,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ApplicationSettingsDialogPage);
 /******************************************************************************
 * The constructor of the settings dialog class.
 ******************************************************************************/
-ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage) : QDialog(&mainWindow), _mainWindow(mainWindow)
+ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindowUI& ui, OvitoClassPtr startPage) : QDialog(ui.mainWindow()), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setWindowTitle(tr("Application Settings"));
 
@@ -47,11 +47,12 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationSettingsDialogPage::OOClass())) {
         try {
             OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance());
+            page->setUserInterface(ui);
             page->_settingsDialog = this;
             _pages.push_back(std::move(page));
         }
         catch(const Exception& ex) {
-            mainWindow.reportError(ex);
+            ui.reportError(ex);
         }
     }
 
@@ -63,7 +64,7 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
     for(const auto& page : _pages) {
         if(startPage && startPage->isMember(page))
             defaultPage = _tabWidget->count();
-        mainWindow.handleExceptions([&]() {
+        handleExceptions([&]() {
             page->insertSettingsDialogPage(_tabWidget);
         });
     }
@@ -93,7 +94,7 @@ void ApplicationSettingsDialog::onOk()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-    mainWindow().handleExceptions([&]() {
+    handleExceptions([&]() {
 
         // Let all pages validate the changes the user made to the settings.
         for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
@@ -119,7 +120,7 @@ void ApplicationSettingsDialog::onCancel()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-    mainWindow().handleExceptions([&]() {
+    handleExceptions([&]() {
         // Let all pages restore their settings to the old values.
         for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
             page->restoreValues(_tabWidget);
@@ -131,15 +132,7 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-    mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
-}
-
-/******************************************************************************
-* Returns the main window hosting this settings page.
-******************************************************************************/
-MainWindow& ApplicationSettingsDialogPage::mainWindow() const
-{
-    return settingsDialog()->mainWindow();
+    actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 
 }   // End of namespace

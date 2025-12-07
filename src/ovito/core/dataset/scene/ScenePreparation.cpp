@@ -39,18 +39,19 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-void ScenePreparation::initializeObject(UserInterface& userInterface, Scene* scene)
+void ScenePreparation::initializeObject(UserInterface& ui, Scene* scene)
 {
     RefMaker::initializeObject();
 
-    _userInterface = &userInterface;
+    // Associate this object with the user interface.
+    setUserInterface(ui);
 
     // Activate the initial scene provided to the constructor.
     setScene(scene);
 
     // Get notified when a different rendering settings object becomes active.
-    connect(&userInterface.datasetContainer(), &DataSetContainer::renderSettingsReplaced, this, &ScenePreparation::renderSettingsReplaced);
-    renderSettingsReplaced(userInterface.datasetContainer().currentSet() ? userInterface.datasetContainer().currentSet()->renderSettings() : nullptr);
+    connect(&datasetContainer(), &DataSetContainer::renderSettingsReplaced, this, &ScenePreparation::renderSettingsReplaced);
+    renderSettingsReplaced(dataset() ? dataset()->renderSettings() : nullptr);
 }
 
 /******************************************************************************
@@ -113,7 +114,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
     // We use an isolated execution context to avoid interference with other ongoing tasks.
-    MainThreadOperation operation(userInterface(), MainThreadOperation::Kind::Isolated);
+    MainThreadOperation operation(ui(), MainThreadOperation::Kind::Isolated);
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
@@ -222,7 +223,7 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
     else if(event.type() == ReferenceEvent::InteractiveStateAvailable && source == scene()) {
         // Update viewport window when a new interactive state from one of the data pipelines in the scene
         // becomes available (unless we are playing an animation).
-        if(!userInterface().arePreliminaryViewportUpdatesSuspended()) {
+        if(!ui().arePreliminaryViewportUpdatesSuspended()) {
             Q_EMIT viewportUpdateRequest(true);
         }
     }

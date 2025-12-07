@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "GrainSegmentationModifierEditor.h"
@@ -109,7 +109,7 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
     QPushButton* btn = new QPushButton(tr("Show list of grains"));
     connect(btn, &QPushButton::clicked, this, [this]() {
         if(modificationNode())
-            mainWindow().openDataInspector(modificationNode(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
+            ui().mainWindow()->openDataInspector(modificationNode(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
     });
     layout->addWidget(btn);
 

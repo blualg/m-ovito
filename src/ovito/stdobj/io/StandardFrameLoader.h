@@ -52,18 +52,27 @@ public:
     bool isSimulationCellNewlyCreated() const { return _isSimulationCellNewlyCreated; }
 
     /// Registers a new numeric element type with the given ID and an optional name string.
-    const ElementType* addNumericType(const PropertyContainerClass& containerClass, Property* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, Property* typedProperty, int id, const StringType& name, ElementTypeClassPtr elementTypeClass = {}) {
         return typedProperty->addNumericType(containerClass, id, name, elementTypeClass);
     }
 
-    /// Registers a new named element type and automatically gives it a unique numeric ID.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
-        return typedProperty->addNamedType(containerClass, name, elementTypeClass);
+    /// Registers a new numeric element type with the given ID and an optional name string.
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, Property* typedProperty, int id, const std::string& name, ElementTypeClassPtr elementTypeClass = {}) {
+        return addNumericType(containerClass, typedProperty, id, QLatin1String(name.c_str(), name.size()), elementTypeClass);
     }
 
     /// Registers a new named element type and automatically gives it a unique numeric ID.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
-        return typedProperty->addNamedType(containerClass, name, elementTypeClass);
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const StringType& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
+        return typedProperty->addNamedType(containerClass, name, elementTypeClass, startNumericIdAt);
+    }
+
+    /// Registers a new named element type and automatically gives it a unique numeric ID.
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const std::string& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
+        return addNamedType(containerClass, typedProperty, QLatin1String(name.c_str(), name.size()), elementTypeClass, startNumericIdAt);
     }
 
 protected:

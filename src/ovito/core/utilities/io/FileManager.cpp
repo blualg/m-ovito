@@ -239,6 +239,7 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
         connect(connection, &LibsshConnection::unknownHost, this, &FileManager::unknownSshServer);
         connect(connection, &LibsshConnection::needPassword, this, &FileManager::needSshPassword);
         connect(connection, &LibsshConnection::needKbiAnswers, this, &FileManager::needKbiAnswers);
+        connect(connection, &LibsshConnection::needPKCS11Credentials, this, &FileManager::needPKCS11Credentials);
         connect(connection, &LibsshConnection::authFailed, this, &FileManager::sshAuthenticationFailed);
         connect(connection, &LibsshConnection::needPassphrase, this, &FileManager::needSshPassphrase);
         _acquiredConnections.append(connection);
@@ -387,6 +388,26 @@ void FileManager::needKbiAnswers()
 }
 
 /******************************************************************************
+* Is called whenever a SSH connection requires PKCS#11 smartcard credentials.
+******************************************************************************/
+void FileManager::needPKCS11Credentials()
+{
+    LibsshConnection* connection = qobject_cast<LibsshConnection*>(sender());
+    if(!connection)
+        return;
+
+    // Get existing URI if already configured (e.g., from SSH config)
+    QString pkcs11Uri = connection->pkcs11Uri();
+    QString pin;
+    if(askUserForPKCS11Credentials(connection->hostname(), connection->username(), pkcs11Uri, pin)) {
+        connection->setPKCS11Credentials(pkcs11Uri, pin);
+    }
+    else {
+        connection->cancel();
+    }
+}
+
+/******************************************************************************
 * Asks the user for the login password for a SSH server.
 ******************************************************************************/
 bool FileManager::askUserForPassword(const QString& hostname, const QString& username, QString& password)
@@ -420,6 +441,27 @@ bool FileManager::askUserForKbiResponse(const QString& hostname, const QString& 
         std::string pw;
         std::cin >> pw;
         answer = QString::fromStdString(pw);
+        return true;
+    }
+}
+
+/******************************************************************************
+* Asks the user for PKCS#11 smartcard credentials.
+******************************************************************************/
+bool FileManager::askUserForPKCS11Credentials(const QString& hostname, const QString& username, QString& pkcs11Uri, QString& pin)
+{
+    if(_askUserForPKCS11CredentialsImpl) {
+        return _askUserForPKCS11CredentialsImpl(hostname, username, pkcs11Uri, pin);
+    }
+    else {
+        std::string uriStr, pinStr;
+        std::cout << "Please enter PKCS#11 URI for user '" << qPrintable(username) << "' ";
+        std::cout << "on SSH remote host '" << qPrintable(hostname) << "': " << std::flush;
+        std::getline(std::cin, uriStr);
+        std::cout << "Please enter PIN (set echo off beforehand!): " << std::flush;
+        std::cin >> pinStr;
+        pkcs11Uri = QString::fromStdString(uriStr);
+        pin = QString::fromStdString(pinStr);
         return true;
     }
 }
