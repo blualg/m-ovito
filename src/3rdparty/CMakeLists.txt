@@ -20,6 +20,30 @@
 #
 #######################################################################################
 
+# CMake configuration for 3rdparty libraries used by OVITO.
+
+# Build zstd compression library from source for static linking.
+IF(NOT OVITO_BUILD_CONDA)
+    # Configure and build zstd using FetchContent.
+    # This provides cleaner integration without polluting the CMake namespace with zstd options.
+    INCLUDE(FetchContent)
+    SET(ZSTD_LEGACY_SUPPORT OFF)
+    SET(ZSTD_BUILD_PROGRAMS OFF)
+    SET(ZSTD_BUILD_TESTS OFF)
+    SET(ZSTD_BUILD_CONTRIB OFF)
+    SET(ZSTD_BUILD_STATIC ON)
+    SET(ZSTD_BUILD_SHARED OFF)
+
+    # Declare zstd using the local git submodule. Set EXCLUDE_FROM_ALL to avoid installation of zstd build artifacts together with the main OVITO build.
+    FetchContent_Declare(zstd SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake EXCLUDE_FROM_ALL)
+
+    # Populate zstd (this processes its CMakeLists.txt with the options set above)
+    FetchContent_MakeAvailable(zstd)
+
+    # Create an alias for compatibility with existing code in core/CMakeLists.txt that references zstd::libzstd_static.
+    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
+ENDIF()
+
 ADD_SUBDIRECTORY(function2)
 IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(qwt)
