@@ -181,29 +181,27 @@ IF(ZLIB_FOUND)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
     TARGET_LINK_LIBRARIES(Core PRIVATE ZLIB::ZLIB)
 
-    # Also integrate zstd compression support if available.
-    FIND_PACKAGE(zstd)
-    IF(zstd_FOUND)
-        TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
-        # Use static library version of zstd for building the release packages of OVITO to avoid an extra deployment step. The static lib must have been built with the -fPIC option.
-        # Otherwise, use the shared library version or what's available.
-        IF(NOT OVITO_BUILD_CONDA AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
-            TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
-        ELSE()
-            TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd)
-        ENDIF()
-        # Build the zstd zlib-wrapper source files.
-        TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
-        TARGET_SOURCES(Core PRIVATE
-            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
-            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"
-            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzlib.c"
-            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzread.c"
-            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzwrite.c"
-        )
+    # Also activate support for zstd compressed files.
+    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
+    IF(OVITO_BUILD_CONDA)
+        # In Conda builds, we expect zstd to be available via the Conda environment. We link the dynamic library there.
+        FIND_PACKAGE(zstd REQUIRED)
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd)
     ELSE()
-        MESSAGE(WARNING "zstd library not found. OVITO will be built without I/O support for zstandard compressed files.")
+        # In non-Conda builds, we use the statically built zstd library from our 3rdparty/ directory.
+        # We use the static library version to avoid an extra deployment step when building the release packages of OVITO.
+        # Note: The static lib must have been built with the -fPIC option.
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
     ENDIF()
+    # Additionally, build zstd's zlib-wrapper source files, because the OVITO code uses zstd through this compatibility layer.
+    TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
+    TARGET_SOURCES(Core PRIVATE
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzlib.c"
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzread.c"
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzwrite.c"
+    )
 ELSE()
     MESSAGE(WARNING "zlib library not found. OVITO will be built without I/O support for gzip compressed files.")
 ENDIF()
