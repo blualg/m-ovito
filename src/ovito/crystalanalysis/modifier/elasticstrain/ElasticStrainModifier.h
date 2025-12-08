@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
-#include <ovito/crystalanalysis/modifier/dxa/StructureAnalysis.h>
+#include <ovito/crystalanalysis/modifier/structureanalysis/StructureAnalysis.h>
 
 namespace Ovito {
 

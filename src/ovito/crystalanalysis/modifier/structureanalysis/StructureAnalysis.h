@@ -32,7 +32,7 @@ namespace Ovito {
 /*
  * Determines the local structure of each atom.
  */
-class StructureAnalysis
+class OVITO_CRYSTALANALYSIS_EXPORT StructureAnalysis
 {
 public:
 

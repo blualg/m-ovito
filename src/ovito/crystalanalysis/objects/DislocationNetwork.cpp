@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include "DislocationNetwork.h"
 #include "DislocationVis.h"
 
@@ -348,6 +349,129 @@ void DislocationNetwork::smoothDislocationLine(int smoothingLevel, std::deque<Po
             }
         }
     }
+}
+
+/******************************************************************************
+ * Computes statistical information on the identified dislocation lines and
+ * outputs it to the pipeline as data tables and global attributes.
+ ******************************************************************************/
+FloatType DislocationNetwork::generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, bool replaceDataObjects, const MicrostructurePhase* defaultStructure) const
+{
+    std::map<const BurgersVectorFamily*, FloatType> dislocationLengths;
+    std::map<const BurgersVectorFamily*, int> segmentCounts;
+    std::map<const BurgersVectorFamily*, const MicrostructurePhase*> dislocationCrystalStructures;
+
+    const BurgersVectorFamily* defaultFamily = nullptr;
+    if(defaultStructure) {
+        defaultFamily = defaultStructure->defaultBurgersVectorFamily();
+        for(const BurgersVectorFamily* family : defaultStructure->burgersVectorFamilies()) {
+            dislocationLengths[family] = 0;
+            segmentCounts[family] = 0;
+            dislocationCrystalStructures[family] = defaultStructure;
+        }
+    }
+
+    // Classify, count and measure length of dislocation segments.
+    FloatType totalLineLength = 0;
+    for(const DislocationSegment* segment : segments()) {
+        FloatType len = segment->calculateLength();
+        totalLineLength += len;
+
+        Cluster* cluster = segment->burgersVector.cluster();
+        OVITO_ASSERT(cluster != nullptr);
+        const MicrostructurePhase* structure = structureById(cluster->structure);
+        if(structure == nullptr) continue;
+        const BurgersVectorFamily* family = defaultFamily;
+        if(structure == defaultStructure) {
+            family = structure->defaultBurgersVectorFamily();
+            for(const BurgersVectorFamily* f : structure->burgersVectorFamilies()) {
+                if(f->isMember(segment->burgersVector.localVec(), structure)) {
+                    family = f;
+                    break;
+                }
+            }
+        }
+        if(family) {
+            segmentCounts[family]++;
+            dislocationLengths[family] += len;
+            dislocationCrystalStructures[family] = structure;
+        }
+    }
+
+    // Output a data table with the dislocation line lengths.
+    int maxId = 0;
+    for(const auto& entry : dislocationLengths) maxId = std::max(maxId, entry.first->numericId());
+    PropertyPtr dislocationLengthsProperty = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized, maxId + 1, DataBuffer::FloatDefault, 1, tr("Total line length"));
+    BufferWriteAccess<FloatType, access_mode::write> dislocationLengthsAccess(dislocationLengthsProperty);
+    for(const auto& entry : dislocationLengths) dislocationLengthsAccess[entry.first->numericId()] = entry.second;
+    dislocationLengthsAccess.reset();
+    PropertyPtr dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId + 1, DataBuffer::Int32, 1,
+                                                                             tr("Dislocation type"));
+    boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(dislocationTypeIds).begin(), 0,
+                             dislocationTypeIds->size());
+
+    for(const auto& entry : dislocationLengths) dislocationTypeIds->addElementType(entry.first);
+
+    DataTable* lengthTableObj =
+        replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
+    if(!lengthTableObj) {
+        lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), pipelineNode, DataTable::BarChart,
+                                                       tr("Dislocation lengths"),
+                                                       std::move(dislocationLengthsProperty), std::move(dislocationTypeIds));
+        lengthTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
+    }
+    else {
+        ConstPropertyPtr x = std::move(dislocationTypeIds);
+        ConstPropertyPtr y = std::move(dislocationLengthsProperty);
+        lengthTableObj->setContent(maxId + 1, DataRefVector<Property>{{y, x}});
+        lengthTableObj->setX(std::move(x));
+        lengthTableObj->setY(std::move(y));
+    }
+
+    // Output a data table with the dislocation segment counts.
+    PropertyPtr dislocationCountsProperty = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized, maxId + 1, DataBuffer::Int32, 1, tr("Dislocation count"));
+    BufferWriteAccessAndRef<int32_t, access_mode::write> dislocationCountsAccess(dislocationCountsProperty);
+    for(const auto& entry : segmentCounts) dislocationCountsAccess[entry.first->numericId()] = entry.second;
+    dislocationCountsAccess.reset();
+
+    DataTable* countTableObj =
+        replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
+    if(!countTableObj) {
+        countTableObj =
+            state.createObject<DataTable>(QStringLiteral("disloc-counts"), pipelineNode, DataTable::BarChart,
+                                          tr("Dislocation counts"), std::move(dislocationCountsProperty));
+        countTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
+    }
+    else
+        countTableObj->setContent(maxId + 1, DataRefVector<Property>{{std::move(dislocationCountsProperty)}});
+    countTableObj->insertProperty(0, lengthTableObj->x());
+    countTableObj->setX(lengthTableObj->x());
+
+    if(replaceDataObjects)
+        state.setAttribute(QStringLiteral("DislocationAnalysis.total_line_length"), QVariant::fromValue(totalLineLength), pipelineNode);
+    else
+        state.addAttribute(QStringLiteral("DislocationAnalysis.total_line_length"), QVariant::fromValue(totalLineLength), pipelineNode);
+
+    for(const auto& dlen : dislocationLengths) {
+        const MicrostructurePhase* structure = dislocationCrystalStructures[dlen.first];
+        QString bstr;
+        if(dlen.first->burgersVector() != Vector3::Zero()) {
+            bstr = DislocationVis::formatBurgersVector(dlen.first->burgersVector(), structure);
+            bstr.remove(QChar(' '));
+            bstr.replace(QChar('['), QChar('<'));
+            bstr.replace(QChar(']'), QChar('>'));
+        }
+        else
+            bstr = "other";
+        if(replaceDataObjects)
+            state.setAttribute(QStringLiteral("DislocationAnalysis.length.%1").arg(bstr), QVariant::fromValue(dlen.second), pipelineNode);
+        else
+            state.addAttribute(QStringLiteral("DislocationAnalysis.length.%1").arg(bstr), QVariant::fromValue(dlen.second), pipelineNode);
+    }
+
+    return totalLineLength;
 }
 
 }   // End of namespace

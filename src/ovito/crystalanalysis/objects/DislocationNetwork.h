@@ -80,6 +80,9 @@ public:
         return nullptr;
     }
 
+    /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
+    FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, bool replaceDataObjects, const MicrostructurePhase* defaultStructure) const;
+
 protected:
 
     /// Creates a copy of this object.

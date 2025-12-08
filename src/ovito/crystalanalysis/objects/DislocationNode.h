@@ -25,11 +25,11 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/crystalanalysis/modifier/dxa/InterfaceMesh.h>
-#include <ovito/crystalanalysis/modifier/dxa/BurgersCircuit.h>
 #include "ClusterVector.h"
 
 namespace Ovito {
+
+struct BurgersCircuit;          // defined in BurgersCircuit.h
 
 /**
  * Every dislocation segment is delimited by two dislocation nodes.

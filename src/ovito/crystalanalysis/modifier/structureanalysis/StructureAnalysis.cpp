@@ -26,7 +26,6 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "StructureAnalysis.h"
-#include "DislocationAnalysisModifier.h"
 
 namespace Ovito {
 
@@ -90,7 +89,7 @@ StructureAnalysis::StructureAnalysis(
     }
 
     if(_positions->size() > std::numeric_limits<int>::max())
-        throw Exception(DislocationAnalysisModifier::tr("This function is limited to a maximum of %1 input particles in the current program version.").arg(std::numeric_limits<int>::max()));
+        throw Exception(QStringLiteral("This function is limited to a maximum of %1 input particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
     // Allocate memory for neighbor lists.
     _neighborListsSize = latticeStructure(inputCrystalType).maxNeighbors;
@@ -106,7 +105,7 @@ StructureAnalysis::StructureAnalysis(
 void StructureAnalysis::generateCellTooSmallError(int dimension)
 {
     static const QString axes[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
-    throw Exception(DislocationAnalysisModifier::tr("Simulation box is too short along cell vector %1 (%2) to perform analysis. "
+    throw Exception(QStringLiteral("Simulation box is too short along cell vector %1 (%2) to perform analysis. "
             "Please extend it first using the 'Replicate' modifier.").arg(dimension+1).arg(axes[dimension]));
 }
 

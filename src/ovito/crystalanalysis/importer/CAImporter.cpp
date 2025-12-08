@@ -24,9 +24,9 @@
 #include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/crystalanalysis/objects/ClusterGraph.h>
-#include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisEngine.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CAImporter.h"
@@ -574,7 +574,7 @@ void CAImporter::FrameLoader::loadFile()
         }
 
         // Compute dislocation line statistics.
-        DislocationAnalysisEngine::generateDislocationStatistics(pipelineNode(), state(), dislocations, true, mainStructure);
+        dislocations->generateDislocationStatistics(pipelineNode(), state(), true, mainStructure);
     }
 
     state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
