@@ -297,6 +297,7 @@ PropertyPtr Bonds::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
         componentCount = 1;
         break;
     case TypeProperty:
+    case FunctionalGroupProperty:
         dataType = Property::Int32;
         componentCount = 1;
         break;
@@ -368,6 +369,8 @@ void Bonds::OOMetaClass::initialize()
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Bond colors"));
     registerStandardProperty(LengthProperty, tr("Length"), Property::FloatDefault, emptyList, nullptr, tr("Lengths"));
     registerStandardProperty(OrderProperty, tr("Bond Order"), Property::FloatGraphics, emptyList, nullptr, tr("Bond orders"));
+    registerStandardProperty(
+        FunctionalGroupProperty, tr("Functional Group"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Functional Group"));
     registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abList);
     registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), Property::Int32, xyzList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);

@@ -129,6 +129,7 @@ public:
         ParticleIdentifiersProperty,
         WidthProperty,
         OrderProperty,
+        FunctionalGroupProperty
     };
 
     /// Constructor.

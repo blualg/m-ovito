@@ -695,6 +695,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
         componentCount = 1;
         break;
     case TypeProperty:
+    case FunctionalGroupProperty:
     case StructureTypeProperty:
     case CoordinationProperty:
     case MoleculeTypeProperty:
@@ -947,6 +948,8 @@ void Particles::OOMetaClass::initialize()
     registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), Property::FloatDefault, xyzList);
     registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), Property::FloatGraphics, QStringList() << "Phi" << "Theta");
     registerStandardProperty(VectorTransparencyProperty, tr("Vector Transparency"), Property::FloatGraphics, emptyList);
+    registerStandardProperty(
+        FunctionalGroupProperty, tr("Functional Group"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Functional Group"));
 }
 
 /******************************************************************************

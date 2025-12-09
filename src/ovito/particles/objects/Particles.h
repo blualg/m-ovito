@@ -128,7 +128,8 @@ public:
         NucleotideAxisProperty,
         NucleotideNormalProperty,
         SuperquadricRoundnessProperty,
-        VectorTransparencyProperty
+        VectorTransparencyProperty,
+        FunctionalGroupProperty
     };
 
     /// Constructor.
