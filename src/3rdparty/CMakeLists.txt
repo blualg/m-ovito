@@ -20,20 +20,28 @@
 #
 #######################################################################################
 
+# CMake configuration for 3rdparty libraries used by OVITO.
 
-IF(OVITO_BUILD_CONDA)
-    # In case of using shared library version, we rely on the system-installed zstd package.
-    FIND_PACKAGE(ZSTD REQUIRED)
-ELSE()
-    # Configure and build zstd from source for static linking.
-    SET(ZSTD_LEGACY_SUPPORT OFF CACHE BOOL "Disable legacy support in zstd")
-    SET(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "Disable building zstd programs")
-    SET(ZSTD_BUILD_TESTS OFF CACHE BOOL "Disable building zstd tests")
-    SET(ZSTD_BUILD_CONTRIB OFF CACHE BOOL "Disable building zstd contrib")
-    SET(ZSTD_BUILD_STATIC ON CACHE BOOL "Enable building zstd static library")
-    SET(ZSTD_BUILD_SHARED OFF CACHE BOOL "Disable building zstd shared library")
-    ADD_SUBDIRECTORY(zstd/build/cmake zstd EXCLUDE_FROM_ALL)
-    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static) # Target zstd::libzstd_static is consumed by OVITO's Core module.
+# Build zstd compression library from source for static linking.
+IF(NOT OVITO_BUILD_CONDA)
+    # Configure and build zstd using FetchContent.
+    # This provides cleaner integration without polluting the CMake namespace with zstd options.
+    INCLUDE(FetchContent)
+    SET(ZSTD_LEGACY_SUPPORT OFF)
+    SET(ZSTD_BUILD_PROGRAMS OFF)
+    SET(ZSTD_BUILD_TESTS OFF)
+    SET(ZSTD_BUILD_CONTRIB OFF)
+    SET(ZSTD_BUILD_STATIC ON)
+    SET(ZSTD_BUILD_SHARED OFF)
+
+    # Declare zstd using the local git submodule. Set EXCLUDE_FROM_ALL to avoid installation of zstd build artifacts together with the main OVITO build.
+    FetchContent_Declare(zstd SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake EXCLUDE_FROM_ALL)
+
+    # Populate zstd (this processes its CMakeLists.txt with the options set above)
+    FetchContent_MakeAvailable(zstd)
+
+    # Create an alias for compatibility with existing code in core/CMakeLists.txt that references zstd::libzstd_static.
+    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
 ENDIF()
 
 ADD_SUBDIRECTORY(function2)
@@ -49,11 +57,26 @@ IF(OVITO_BUILD_PLUGIN_PARTICLES)
     ADD_SUBDIRECTORY(mwm_csp)
     ADD_SUBDIRECTORY(xdrfile)
     ADD_SUBDIRECTORY(gsd)
-    # Disable tests for gemmi
-    SET(_build_testing_backup ${BUILD_TESTING})
-    SET(BUILD_TESTING OFF)
-    ADD_SUBDIRECTORY(gemmi EXCLUDE_FROM_ALL)
-    SET(BUILD_TESTING ${_build_testing_backup})
+
+    # Build gemmi from source.
+    ADD_LIBRARY(gemmi STATIC
+                gemmi/src/align.cpp gemmi/src/assembly.cpp gemmi/src/calculate.cpp gemmi/src/ccp4.cpp
+                gemmi/src/crd.cpp gemmi/src/ddl.cpp gemmi/src/eig3.cpp gemmi/src/fprime.cpp # gemmi/src/gz.cpp
+                gemmi/src/intensit.cpp gemmi/src/json.cpp gemmi/src/mmcif.cpp # gemmi/src/mmread_gz.cpp
+                gemmi/src/monlib.cpp gemmi/src/mtz.cpp gemmi/src/mtz2cif.cpp
+                gemmi/src/pdb.cpp gemmi/src/polyheur.cpp gemmi/src/read_cif.cpp
+                gemmi/src/resinfo.cpp gemmi/src/riding_h.cpp
+                gemmi/src/select.cpp gemmi/src/sprintf.cpp gemmi/src/dssp.cpp gemmi/src/symmetry.cpp
+                gemmi/src/to_json.cpp gemmi/src/to_mmcif.cpp gemmi/src/to_pdb.cpp gemmi/src/topo.cpp
+                gemmi/src/xds_ascii.cpp)
+    SET_PROPERTY(TARGET gemmi PROPERTY POSITION_INDEPENDENT_CODE ON)
+    TARGET_COMPILE_DEFINITIONS(gemmi PRIVATE GEMMI_BUILD)
+    TARGET_INCLUDE_DIRECTORIES(gemmi PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gemmi/include")
+    TARGET_INCLUDE_DIRECTORIES(gemmi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gemmi/third_party")
+    IF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        TARGET_COMPILE_OPTIONS(gemmi PRIVATE /wd4267) # conversion from 'size_t' to 'unsigned int', possible loss of data
+        TARGET_COMPILE_DEFINITIONS(gemmi PRIVATE _CRT_SECURE_NO_WARNINGS)
+    ENDIF()
 ENDIF()
 IF(OVITO_BUILD_PLUGIN_PARTICLES)
     ADD_SUBDIRECTORY(geogram)

@@ -134,10 +134,10 @@ ENDIF()
 OVITO_STANDARD_PLUGIN(Particles
     SOURCES ${SourceFiles}
     PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay OpenGLRenderer
-    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gsd
+    PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gemmi gsd
     OPTIONAL_PLUGIN_DEPENDENCIES StdMod
     PRECOMPILED_HEADERS Particles.h
-    LIB_DEPENDENCIES Qt6::Xml gemmi::gemmi_cpp
+    LIB_DEPENDENCIES Qt6::Xml
 )
 
 # Let the code know that we are building the plugin.

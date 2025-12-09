@@ -38,8 +38,8 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(CIFImporter);
 OVITO_CLASSINFO(CIFImporter, "DisplayName", "CIF");
 
 /******************************************************************************
-* Checks if the given file has format that can be read by this importer.
-******************************************************************************/
+ * Checks if the given file has format that can be read by this importer.
+ ******************************************************************************/
 bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
     // Open input file.
@@ -71,15 +71,13 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
     }
 
     // Make sure it is a CIF file.
-    if(!foundBlockHeader || !foundItem)
-        return false;
+    if(!foundBlockHeader || !foundItem) return false;
 
     // Continue reading the entire file until at least one "_atom_site_XXX" entry is found.
     // These entries are specific to the CIF format and do not occur in mmCIF files (macromolecular files).
     for(;;) {
         if(stream.lineStartsWith("_atom_site_", true) && !stream.lineContains(".")) return true;
-        if(stream.eof())
-            return false;
+        if(stream.eof()) return false;
         stream.readLine();
     }
 
@@ -87,8 +85,8 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 }
 
 /******************************************************************************
-* Parses the given input file.
-******************************************************************************/
+ * Parses the given input file.
+ ******************************************************************************/
 void CIFImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
@@ -114,8 +112,7 @@ void CIFImporter::FrameLoader::loadFile()
         cif::Document doc = cif::read_memory(buffer_start, buffer_end - buffer_start, qPrintable(frame().sourceFile.path()));
 
         // Unmap the input file from memory.
-        if(fileContents.isEmpty())
-            stream.munmap();
+        if(fileContents.isEmpty()) stream.munmap();
         this_task::throwIfCanceled();
 
         // Parse the CIF data into an atomic structure representation.
@@ -140,13 +137,15 @@ void CIFImporter::FrameLoader::loadFile()
         for(const gemmi::SmallStructure::Site& site : sites) {
             gemmi::Position pos = structure.cell.orthogonalize(site.fract.wrap_to_unit());
             posAcc[siteIndex] = Point3(static_cast<FloatType>(pos.x), static_cast<FloatType>(pos.y), static_cast<FloatType>(pos.z));
-            typeAcc[siteIndex] = addNumericType(Particles::OOClass(), typeProperty, site.element.ordinal(), site.element.name())->numericId();
+            typeAcc[siteIndex] =
+                addNumericType(Particles::OOClass(), typeProperty, site.element.ordinal(), site.element.name())->numericId();
             chargeAcc[siteIndex] = static_cast<FloatType>(site.charge);
-            if(site.charge != 0)
-                hasNonzeroCharges = true;
-            labelAcc[siteIndex] = addNamedType(Particles::OOClass(), labelProperty, site.label)->numericId();;
-            if(site.occ != 1)
-                partialSiteIndices.push_back(siteIndex);
+            if(site.charge != 0) hasNonzeroCharges = true;
+            labelAcc[siteIndex] = addNamedType(Particles::OOClass(), labelProperty, site.label)->numericId();
+            ;
+            if(site.occ != 1) partialSiteIndices.push_back(siteIndex);
+            ++siteIndex;
+            partialSiteIndices.push_back(siteIndex);
             ++siteIndex;
         }
         this_task::throwIfCanceled();
@@ -172,10 +171,8 @@ void CIFImporter::FrameLoader::loadFile()
             std::sort(partialSiteIndices.begin(), partialSiteIndices.end(), [&](int a, int b) {
                 const gemmi::SmallStructure::Site& siteA = sites[a];
                 const gemmi::SmallStructure::Site& siteB = sites[b];
-                if(siteA.fract.x != siteB.fract.x)
-                    return siteA.fract.x < siteB.fract.x;
-                if(siteA.fract.y != siteB.fract.y)
-                    return siteA.fract.y < siteB.fract.y;
+                if(siteA.fract.x != siteB.fract.x) return siteA.fract.x < siteB.fract.x;
+                if(siteA.fract.y != siteB.fract.y) return siteA.fract.y < siteB.fract.y;
                 return siteA.fract.z < siteB.fract.z;
             });
 
@@ -199,38 +196,38 @@ void CIFImporter::FrameLoader::loadFile()
 #endif
         }
         else {
-            if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy")))
-                particles()->removeProperty(occProp);
+            if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy"))) particles()->removeProperty(occProp);
         }
-
 
         // Parse unit cell.
         if(structure.cell.is_crystal()) {
             // Process periodic unit cell definition.
             AffineTransformation cell = AffineTransformation::Identity();
             if(structure.cell.alpha == 90 && structure.cell.beta == 90 && structure.cell.gamma == 90) {
-                cell(0,0) = structure.cell.a;
-                cell(1,1) = structure.cell.b;
-                cell(2,2) = structure.cell.c;
+                cell(0, 0) = structure.cell.a;
+                cell(1, 1) = structure.cell.b;
+                cell(2, 2) = structure.cell.c;
             }
             else if(structure.cell.alpha == 90 && structure.cell.beta == 90) {
                 FloatType gamma = qDegreesToRadians(structure.cell.gamma);
-                cell(0,0) = structure.cell.a;
-                cell(0,1) = structure.cell.b * std::cos(gamma);
-                cell(1,1) = structure.cell.b * std::sin(gamma);
-                cell(2,2) = structure.cell.c;
+                cell(0, 0) = structure.cell.a;
+                cell(0, 1) = structure.cell.b * std::cos(gamma);
+                cell(1, 1) = structure.cell.b * std::sin(gamma);
+                cell(2, 2) = structure.cell.c;
             }
             else {
                 FloatType alpha = qDegreesToRadians(structure.cell.alpha);
                 FloatType beta = qDegreesToRadians(structure.cell.beta);
                 FloatType gamma = qDegreesToRadians(structure.cell.gamma);
-                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c * sqrt(1.0 - std::cos(alpha)*std::cos(alpha) - std::cos(beta)*std::cos(beta) - std::cos(gamma)*std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
-                cell(0,0) = structure.cell.a;
-                cell(0,1) = structure.cell.b * std::cos(gamma);
-                cell(1,1) = structure.cell.b * std::sin(gamma);
-                cell(0,2) = structure.cell.c * std::cos(beta);
-                cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
-                cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
+                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c *
+                              sqrt(1.0 - std::cos(alpha) * std::cos(alpha) - std::cos(beta) * std::cos(beta) -
+                                   std::cos(gamma) * std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
+                cell(0, 0) = structure.cell.a;
+                cell(0, 1) = structure.cell.b * std::cos(gamma);
+                cell(1, 1) = structure.cell.b * std::sin(gamma);
+                cell(0, 2) = structure.cell.c * std::cos(beta);
+                cell(1, 2) = structure.cell.c * (std::cos(alpha) - std::cos(beta) * std::cos(gamma)) / std::sin(gamma);
+                cell(2, 2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
             }
             simulationCell()->setCellMatrix(cell);
         }
@@ -252,4 +249,4 @@ void CIFImporter::FrameLoader::loadFile()
     ParticleImporter::FrameLoader::loadFile();
 }
 
-}   // End of namespace
+}  // namespace Ovito

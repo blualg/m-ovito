@@ -10,6 +10,7 @@ Version 3.15.0 (dd-mm-2025)
 
 - Add MOL/SDF file importer
 - Update gemmi to 0.7.3
+- CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
 - Simulation cell and particle types can no longer be edited directly
 - New modifier: Edit Types
 - New modifier Edit Simulation Cell
@@ -21,6 +22,7 @@ Version 3.15.0 (dd-mm-2025)
 - Reduce OVITO session state file sizes for long trajectories
 - Warn if user tries to export an empty scene to a glTF file via export_file()
 - ANARI progress refinement rendering in interactive Viewports
+- VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
 
 .. sidebar::

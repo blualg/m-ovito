@@ -175,22 +175,26 @@ IF(NOT EMSCRIPTEN)
     TARGET_LINK_LIBRARIES(Core PUBLIC Qt6::Network)
 ENDIF()
 
-# Use zlib library if available.
+# Use zlib library if available to support loading/saving gzip compressed files.
 IF(ZLIB_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
-    TARGET_LINK_LIBRARIES(Core PUBLIC ZLIB::ZLIB)
+    TARGET_LINK_LIBRARIES(Core PRIVATE ZLIB::ZLIB)
 
+    # Also activate support for zstd compressed files.
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
-    # Use the shared library version of zstd only when building the Conda package.
-    # For redistributable packages or other builds, zstd will be linked statically.
     IF(OVITO_BUILD_CONDA)
-        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_shared)
+        # In Conda builds, we expect zstd to be available via the Conda environment. We link the dynamic library there.
+        FIND_PACKAGE(zstd REQUIRED)
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd)
     ELSE()
-        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
+        # In non-Conda builds, we use the statically built zstd library from our 3rdparty/ directory.
+        # We use the static library version to avoid an extra deployment step when building the release packages of OVITO.
+        # Note: The static lib must have been built with the -fPIC option.
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
     ENDIF()
-    # Build the zstd zlib-wrapper source files.
-    TARGET_INCLUDE_DIRECTORIES(Core PUBLIC "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
+    # Additionally, build zstd's zlib-wrapper source files, because the OVITO code uses zstd through this compatibility layer.
+    TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
     TARGET_SOURCES(Core PRIVATE
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"
