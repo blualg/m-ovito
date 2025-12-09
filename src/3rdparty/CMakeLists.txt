@@ -52,7 +52,7 @@ IF(OVITO_BUILD_PLUGIN_PARTICLES)
     # Disable tests for gemmi
     SET(_build_testing_backup ${BUILD_TESTING})
     SET(BUILD_TESTING OFF)
-    ADD_SUBDIRECTORY(gemmi)
+    ADD_SUBDIRECTORY(gemmi EXCLUDE_FROM_ALL)
     SET(BUILD_TESTING ${_build_testing_backup})
 ENDIF()
 IF(OVITO_BUILD_PLUGIN_PARTICLES)
