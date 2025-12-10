@@ -122,30 +122,137 @@ void CIFImporter::FrameLoader::loadFile()
 
         // Parse list of atomic sites.
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
-        setParticleCount(sites.size());
-        BufferWriteAccess<Point3, access_mode::discard_write> posAcc = particles()->createProperty(Particles::PositionProperty);
-        Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
-        BufferWriteAccess<int32_t, access_mode::discard_write> typeAcc(typeProperty);
-        Property* labelProperty = particles()->createProperty(QStringLiteral("Label"), Property::Int32);
-        BufferWriteAccess<int32_t, access_mode::discard_write> labelAcc(labelProperty);
-        bool hadExistingCharges = (particles()->getProperty(Particles::ChargeProperty) != nullptr);
-        Property* chargeProperty = particles()->createProperty(Particles::ChargeProperty);
-        BufferWriteAccess<FloatType, access_mode::discard_write> chargeAcc(chargeProperty);
-        bool hasNonzeroCharges = false;
         std::vector<int> partialSiteIndices;
         int siteIndex = 0;
+        bool hasNonzeroCharges = false;
+        Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         for(const gemmi::SmallStructure::Site& site : sites) {
-            gemmi::Position pos = structure.cell.orthogonalize(site.fract.wrap_to_unit());
-            posAcc[siteIndex] = Point3(static_cast<FloatType>(pos.x), static_cast<FloatType>(pos.y), static_cast<FloatType>(pos.z));
-            typeAcc[siteIndex] =
-                addNumericType(Particles::OOClass(), typeProperty, site.element.ordinal(), site.element.name())->numericId();
-            chargeAcc[siteIndex] = static_cast<FloatType>(site.charge);
+            addNumericType(Particles::OOClass(), typeProperty, site.element.ordinal(), site.element.name());
             if(site.charge != 0) hasNonzeroCharges = true;
-            labelAcc[siteIndex] = addNamedType(Particles::OOClass(), labelProperty, site.label)->numericId();
-            ;
             if(site.occ != 1) partialSiteIndices.push_back(siteIndex);
             ++siteIndex;
-            partialSiteIndices.push_back(siteIndex);
+        }
+        this_task::throwIfCanceled();
+
+        // Since we've created particle types on the go while reading the particles, the type ordering
+        // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+        // why we sort them now.
+        typeProperty->sortElementTypesById();
+
+        // Always remove any preexisting "Occupancy" property, because we will recreate it below.
+        // This is necessary in case the number of vector components changes.
+        if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy"))) particles()->removeProperty(occProp);
+        Property* occupancyProperty = nullptr;
+
+        // Parse the optional site occupancy information.
+        std::vector<int> siteToParticleMapping;
+        std::vector<int32_t> multiSiteTypes;
+        if(!partialSiteIndices.empty() && !typeProperty->elementTypes().empty()) {
+            // Sort sites by coordinates to group identical positions together.
+            // Identify sites with partial occupancy that share the same coordinates.
+            // Secondary sorting criterion: element type to ensure a well-defined order when generating multi-element particle types below.
+            std::sort(partialSiteIndices.begin(), partialSiteIndices.end(), [&](int a, int b) {
+                const gemmi::SmallStructure::Site& siteA = sites[a];
+                const gemmi::SmallStructure::Site& siteB = sites[b];
+                if(siteA.fract.x != siteB.fract.x) return siteA.fract.x < siteB.fract.x;
+                if(siteA.fract.y != siteB.fract.y) return siteA.fract.y < siteB.fract.y;
+                if(siteA.fract.z != siteB.fract.z) return siteA.fract.z < siteB.fract.z;
+                return siteA.element.ordinal() < siteB.element.ordinal();
+            });
+            this_task::throwIfCanceled();
+
+            // Create mapping from site index to particle index.
+            siteToParticleMapping.resize(sites.size(), -1);
+
+            // First, identify strides of sites with identical positions and map them to the same particle.
+            int particleIndex = 0;
+            for(auto partialIter = partialSiteIndices.begin(); partialIter != partialSiteIndices.end();) {
+                int firstSiteIndex = *partialIter;
+                siteToParticleMapping[firstSiteIndex] = particleIndex;
+                const gemmi::SmallStructure::Site& siteA = sites[firstSiteIndex];
+                QString multiElementName = QStringLiteral("%1%2").arg(siteA.element.name()).arg(static_cast<int>(siteA.occ * 100));
+                auto nextIter = std::next(partialIter);
+                while(nextIter != partialSiteIndices.end()) {
+                    int nextSiteIndex = *nextIter;
+                    const gemmi::SmallStructure::Site& siteB = sites[nextSiteIndex];
+                    if(siteA.fract.x == siteB.fract.x && siteA.fract.y == siteB.fract.y && siteA.fract.z == siteB.fract.z) {
+                        siteToParticleMapping[nextSiteIndex] = particleIndex;
+                        multiElementName += QStringLiteral("%1%2").arg(siteB.element.name()).arg(static_cast<int>(siteB.occ * 100));
+                        ++nextIter;
+                    }
+                    else
+                        break;
+                }
+                multiSiteTypes.push_back(addNamedType(Particles::OOClass(), typeProperty, multiElementName, {}, 1000)->numericId());
+                particleIndex++;
+                partialIter = nextIter;
+            }
+            this_task::throwIfCanceled();
+
+            // Then map the remaining sites (with full occupancy) to new particles.
+            for(int& idx : siteToParticleMapping) {
+                if(idx == -1) idx = particleIndex++;
+            }
+            setParticleCount(particleIndex);
+
+            // Create "Occupancy" property with one component per particle type.
+            QStringList componentsNames;
+            for(const ElementType* type : typeProperty->elementTypes()) {
+                if(type->numericId() < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES)
+                    componentsNames.append(type->name());
+            }
+            size_t numTypes = componentsNames.size();
+            occupancyProperty = particles()->createProperty(DataBuffer::BufferInitialization::Initialized,
+                                                            QStringLiteral("Occupancy"),
+                                                            Property::FloatDefault,
+                                                            numTypes,
+                                                            std::move(componentsNames));
+        }
+        else {
+            setParticleCount(sites.size());
+        }
+
+        // Create particle properties and fill them with data.
+        typeProperty = particles()->expectMutableProperty(Particles::TypeProperty);
+        BufferWriteAccess<Point3, access_mode::discard_write> posAcc = particles()->createProperty(Particles::PositionProperty);
+        Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
+        atomNameProperty->setTitle(tr("Atom names"));  // Give this property a new title, which is displayed in the GUI.
+        Property* chargeProperty = hasNonzeroCharges ? particles()->createProperty(Particles::ChargeProperty)
+                                                     : const_cast<Property*>(particles()->getProperty(Particles::ChargeProperty));
+        if(!hasNonzeroCharges && chargeProperty) {
+            // Remove charge property if all charges are zero and no previous charge property existed.
+            particles()->removeProperty(chargeProperty);
+            chargeProperty = nullptr;
+        }
+
+        BufferWriteAccess<int32_t, access_mode::discard_write> typeAcc(typeProperty);
+        BufferWriteAccess<int32_t, access_mode::discard_write> atomNameAcc(atomNameProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> chargeAcc(chargeProperty);
+        BufferWriteAccess<FloatType*, access_mode::discard_write> occupancyAcc(occupancyProperty);
+
+        siteIndex = 0;
+        for(const gemmi::SmallStructure::Site& site : sites) {
+            gemmi::Position pos = structure.cell.orthogonalize(site.fract.wrap_to_unit());
+            int particleIndex = siteToParticleMapping.empty() ? siteIndex : siteToParticleMapping[siteIndex];
+            posAcc[particleIndex] = Point3(static_cast<FloatType>(pos.x), static_cast<FloatType>(pos.y), static_cast<FloatType>(pos.z));
+            if(particleIndex >= multiSiteTypes.size()) {
+                typeAcc[particleIndex] = site.element.ordinal();
+                atomNameAcc[particleIndex] = addNamedType(Particles::OOClass(), atomNameProperty, site.label)->numericId();
+            }
+            else {
+                typeAcc[particleIndex] = multiSiteTypes[particleIndex];
+                atomNameAcc[particleIndex] = addNamedType(Particles::OOClass(), atomNameProperty, QStringLiteral("Multi"))->numericId();
+            }
+            if(chargeAcc) chargeAcc[particleIndex] = static_cast<FloatType>(site.charge);
+            if(occupancyAcc) {
+                for(int elementTypeIndex = 0; elementTypeIndex < static_cast<int>(typeProperty->elementTypes().size());
+                    elementTypeIndex++) {
+                    if(site.element.ordinal() == typeProperty->elementTypes()[elementTypeIndex]->numericId()) {
+                        occupancyAcc.set(particleIndex, elementTypeIndex, static_cast<FloatType>(site.occ));
+                        break;
+                    }
+                }
+            }
             ++siteIndex;
         }
         this_task::throwIfCanceled();
@@ -153,51 +260,13 @@ void CIFImporter::FrameLoader::loadFile()
         posAcc.reset();
         typeAcc.reset();
         chargeAcc.reset();
-        labelAcc.reset();
-
-        if(!hasNonzeroCharges && !hadExistingCharges) {
-            // Remove charge property if all charges are zero and no previous charge property existed.
-            particles()->removeProperty(chargeProperty);
-        }
+        atomNameAcc.reset();
+        occupancyAcc.reset();
 
         // Since we've created particle types on the go while reading the particles, the type ordering
         // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
         // why we sort them now.
-        typeProperty->sortElementTypesByName();
-
-        // Parse the optional site occupancy information.
-        if(!partialSiteIndices.empty() && !typeProperty->elementTypes().empty()) {
-            // Identify sites with partial occupancy that share the same coordinates.
-            std::sort(partialSiteIndices.begin(), partialSiteIndices.end(), [&](int a, int b) {
-                const gemmi::SmallStructure::Site& siteA = sites[a];
-                const gemmi::SmallStructure::Site& siteB = sites[b];
-                if(siteA.fract.x != siteB.fract.x) return siteA.fract.x < siteB.fract.x;
-                if(siteA.fract.y != siteB.fract.y) return siteA.fract.y < siteB.fract.y;
-                return siteA.fract.z < siteB.fract.z;
-            });
-
-            // Create "Occupancy" property with one component per element type.
-            QStringList componentsNames;
-            for(const ElementType* type : typeProperty->elementTypes()) {
-                componentsNames.append(type->name());
-            }
-#if 0
-            BufferWriteAccess<FloatType*, access_mode::discard_write> occupancyProperty = particles()->createProperty(
-                DataBuffer::BufferInitialization::Uninitialized,
-                QStringLiteral("Occupancy"),
-                Property::FloatDefault,
-                componentsNames.size(),
-                std::move(componentsNames));
-
-            //FloatType* occupancyIter = occupancyProperty.begin();
-            //for(const gemmi::SmallStructure::Site& site : sites) {
-            //    *occupancyIter++ = site.occ;
-            //}
-#endif
-        }
-        else {
-            if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy"))) particles()->removeProperty(occProp);
-        }
+        atomNameProperty->sortElementTypesByName();
 
         // Parse unit cell.
         if(structure.cell.is_crystal()) {
