@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets REQUIRED)
 
 # Define the interactive viewport widget component of the OpenGLRenderer plugin.
 OVITO_STANDARD_PLUGIN(OpenGLRendererWindow

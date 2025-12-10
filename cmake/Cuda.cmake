@@ -23,7 +23,7 @@
 # Enables CUDA support for a CMake target.
 MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
     IF(OVITO_USE_CUDA)
-        FIND_PACKAGE(CUDAToolkit REQUIRED)
+        OVITO_FIND_PACKAGE(CUDAToolkit REQUIRED)
 
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC OVITO_USE_CUDA)
         TARGET_LINK_LIBRARIES(${target_name} PUBLIC CUDA::cudart)

@@ -43,7 +43,7 @@ ENDIF()
 OVITO_ADD_STANDARD_COMPILE_OPTIONS(geogram)
 
 # Locate the Boost library.
-FIND_PACKAGE(Boost REQUIRED)
+OVITO_FIND_PACKAGE(Boost REQUIRED)
 # Use Boost in the Geogram library (cross-platform random number generation functions)
 TARGET_LINK_LIBRARIES(geogram PRIVATE Boost::boost)
 
@@ -74,8 +74,8 @@ ENDIF()
 
 # Geogram requires pthread lib on Linux platform.
 SET(THREADS_PREFER_PTHREAD_FLAG ON)
-FIND_PACKAGE(Threads REQUIRED)
-FIND_PACKAGE(Boost REQUIRED)
+OVITO_FIND_PACKAGE(Threads REQUIRED)
+OVITO_FIND_PACKAGE(Boost REQUIRED)
 TARGET_LINK_LIBRARIES(geogram PUBLIC Threads::Threads Boost::boost)
 
 IF(EMSCRIPTEN)

@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets REQUIRED)
 
 # Builds the main executable of the application.
 ADD_EXECUTABLE(ssh_askpass Main.cpp)
@@ -33,7 +33,7 @@ TARGET_LINK_LIBRARIES(ssh_askpass PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
-    FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
+    OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
     TARGET_LINK_LIBRARIES(ssh_askpass PRIVATE Qt6::DBus)
 ENDIF()
 

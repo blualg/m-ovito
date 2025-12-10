@@ -179,7 +179,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     IF(${ARG_GUI_PLUGIN})
         IF(OVITO_BUILD_APP)
             TARGET_LINK_LIBRARIES(${target_name} PUBLIC Gui)
-            FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
+            OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
             TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt6::Widgets)
         ELSE()
             MESSAGE(FATAL_ERROR "Cannot build plugin ${target_name} marked as GUI_PLUGIN if building the GUI has been completely disabled.")
@@ -187,7 +187,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     ENDIF()
 
     # Link to Qt framework.
-    FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
+    OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
     TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt6::Core Qt6::Gui)
 
     # Link to other third-party libraries needed by this specific plugin.

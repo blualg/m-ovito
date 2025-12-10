@@ -45,6 +45,40 @@ PROJECT(Ovito)
 # It is ignored outside of Visual Studio Code/CMake tools.
 INCLUDE(CMakeToolsHelpers OPTIONAL)
 
+# Builds a global list of third-party packages and version for SBOM generation.
+MACRO(OVITO_REGISTER_PACKAGE_FOR_SBOM package_name package_version)
+    # Get the current lists of package names and package versions.
+    GET_PROPERTY(_package_names GLOBAL PROPERTY OVITO_PACKAGE_NAME_LIST_FOR_SBOM)
+    GET_PROPERTY(_package_versions GLOBAL PROPERTY OVITO_PACKAGE_VERSION_LIST_FOR_SBOM)
+
+    # Add the new package if not already in the list
+    IF(NOT "${package_name}" IN_LIST _package_names)
+        LIST(APPEND _package_names "${package_name}")
+        LIST(APPEND _package_versions "${package_version}")
+        SET_PROPERTY(GLOBAL PROPERTY OVITO_PACKAGE_NAME_LIST_FOR_SBOM "${_package_names}")
+        SET_PROPERTY(GLOBAL PROPERTY OVITO_PACKAGE_VERSION_LIST_FOR_SBOM "${_package_versions}")
+    ENDIF()
+ENDMACRO()
+
+# Wrapper for CMake's find_package() that tracks found packages
+# and builds a list of them for SBOM generation.
+MACRO(OVITO_FIND_PACKAGE)
+    # Call the original find_package with all arguments
+    FIND_PACKAGE(${ARGV})
+
+    # If the package was found, add it to our tracking list
+    IF(${ARGV0}_FOUND)
+        # Try to get the version variable for the package
+        # and add the new package if not already in the list
+        SET(_version_var "${ARGV0}_VERSION")
+        IF(DEFINED ${_version_var})
+            OVITO_REGISTER_PACKAGE_FOR_SBOM("${ARGV0}" "${${_version_var}}")
+        ELSE()
+            OVITO_REGISTER_PACKAGE_FOR_SBOM("${ARGV0}" "unknown")
+        ENDIF()
+    ENDIF()
+ENDMACRO()
+
 IF(EMSCRIPTEN)
     INCLUDE(cmake/wasm.cmake)
 ENDIF()
@@ -94,12 +128,12 @@ SET(OVITO_PLUGINS_LIST "")
 
 # Ovito needs Qt 6.3+.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.3)
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Enable CUDA support (optional)
 IF(OVITO_USE_CUDA)
     ENABLE_LANGUAGE(CUDA)
-    FIND_PACKAGE(CUDAToolkit REQUIRED)
+    OVITO_FIND_PACKAGE(CUDAToolkit REQUIRED)
     SET(CMAKE_CUDA_STANDARD 20)
     SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     SET(CMAKE_CUDA_SEPARABLE_COMPILATION TRUE)

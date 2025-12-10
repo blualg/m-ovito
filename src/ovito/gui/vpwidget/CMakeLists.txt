@@ -20,7 +20,7 @@
 #
 #######################################################################################
 
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(ViewportWidget

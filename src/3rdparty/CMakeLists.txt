@@ -42,6 +42,13 @@ IF(NOT OVITO_BUILD_CONDA)
 
     # Create an alias for compatibility with existing code in core/CMakeLists.txt that references zstd::libzstd_static.
     ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
+
+    # Get the full version from the zstd sub-project.
+    LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake/CMakeModules")
+    INCLUDE(GetZstdLibraryVersion)
+    GetZstdLibraryVersion("zstd/lib/zstd.h" zstd_VERSION_MAJOR zstd_VERSION_MINOR zstd_VERSION_PATCH)
+    # Register zstd package in SBOM.
+    OVITO_REGISTER_PACKAGE_FOR_SBOM("zstd" "${zstd_VERSION_MAJOR}.${zstd_VERSION_MINOR}.${zstd_VERSION_PATCH}")
 ENDIF()
 
 ADD_SUBDIRECTORY(function2)

@@ -41,7 +41,7 @@ TARGET_INCLUDE_DIRECTORIES(muParser PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively
 # use the Qt framework. In particular, Qt 6 requires UNICODE strings on Windows platform.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 TARGET_LINK_LIBRARIES(muParser PUBLIC Qt6::Core)
 
 # Add standard compile and link options to the CMake target.
