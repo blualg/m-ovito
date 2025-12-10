@@ -148,7 +148,7 @@ void CastepCellImporter::FrameLoader::loadFile()
                 int atomicNumber;
                 if(sscanf(line, "%u " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &atomicNumber, &pos.x(), &pos.y(), &pos.z()) == 4) {
                     coords.push_back(pos);
-                    if(atomicNumber < 0 || atomicNumber >= ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES)
+                    if(atomicNumber < 0 || atomicNumber >= (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES)
                         atomicNumber = 0;
                     types.push_back(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(atomicNumber)));
                 }

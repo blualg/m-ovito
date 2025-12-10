@@ -138,7 +138,8 @@ void XSFImporter::FrameLoader::loadFile()
                 if(nfields != 4 && nfields != 7) break;
                 coords.push_back(pos);
                 int atomTypeId;
-                if(sscanf(atomTypeName, "%i", &atomTypeId) == 1 && atomTypeId >= 0 && atomTypeId < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES) {
+                if(sscanf(atomTypeName, "%i", &atomTypeId) == 1 && atomTypeId >= 0 &&
+                   atomTypeId < (decltype(atomTypeId))ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES) {
                     types.emplace_back(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(atomTypeId)));
                 }
                 else {
@@ -267,7 +268,8 @@ void XSFImporter::FrameLoader::loadFile()
                 for(int i = 0; i < typeProperty->elementTypes().size(); i++) {
                     const ElementType* type = typeProperty->elementTypes()[i];
                     int typeId = type->numericId();
-                    if(type->name().isEmpty() && typeId >= 0 && typeId < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES) {
+                    if(type->name().isEmpty() && typeId >= 0 &&
+                       typeId < (decltype(typeId))ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES) {
                         ElementType* mutableType = typeProperty->makeMutable(type);
                         mutableType->initializeType([&]() {
                             mutableType->setName(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(typeId)));

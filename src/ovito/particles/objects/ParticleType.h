@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
         using ElementTypeClass::ElementTypeClass;
 
         /// Returns a list of column names to be displayed in the data inspector for element types of this class.
-        virtual QStringList dataInspectorColumns() const override;
+        [[nodiscard]] virtual QStringList dataInspectorColumns() const override;
 
         /// Returns the Qt table model data for the given element type to be displayed in the data inspector.
         virtual QVariant dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const override;
@@ -52,38 +52,147 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
     OVITO_CLASS_META(ParticleType, ParticleTypeClass);
 
 public:
-
-    enum ChemicalElement {
-        X , H , He, Li, Be, B , C , N , O , F , Ne, // "X" is placeholder for unspecified type
-        Na, Mg, Al, Si, P , S , Cl, Ar, K , Ca, Sc,
-        Ti, V , Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge,
-        As, Se, Br, Kr, Rb, Sr, Y , Zr, Nb, Mo, Tc,
-        Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I , Xe,
-        Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb,
-        Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W , Re, Os,
-        Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr,
-        Ra, Ac, Th, Pa, U , Np, Pu, Am, Cm, Bk, Cf,
-        Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt,
-        Ds, Rg, Cn, Nh, Fl, Mc, Lv, Ts, Og,
-        D, // Deuterium is given a special index to separate it from Hydrogen
+    enum class ChemicalElement
+    {
+        X,
+        H,
+        He,
+        Li,
+        Be,
+        B,
+        C,
+        N,
+        O,
+        F,
+        Ne,  // "X" is placeholder for unspecified type
+        Na,
+        Mg,
+        Al,
+        Si,
+        P,
+        S,
+        Cl,
+        Ar,
+        K,
+        Ca,
+        Sc,
+        Ti,
+        V,
+        Cr,
+        Mn,
+        Fe,
+        Co,
+        Ni,
+        Cu,
+        Zn,
+        Ga,
+        Ge,
+        As,
+        Se,
+        Br,
+        Kr,
+        Rb,
+        Sr,
+        Y,
+        Zr,
+        Nb,
+        Mo,
+        Tc,
+        Ru,
+        Rh,
+        Pd,
+        Ag,
+        Cd,
+        In,
+        Sn,
+        Sb,
+        Te,
+        I,
+        Xe,
+        Cs,
+        Ba,
+        La,
+        Ce,
+        Pr,
+        Nd,
+        Pm,
+        Sm,
+        Eu,
+        Gd,
+        Tb,
+        Dy,
+        Ho,
+        Er,
+        Tm,
+        Yb,
+        Lu,
+        Hf,
+        Ta,
+        W,
+        Re,
+        Os,
+        Ir,
+        Pt,
+        Au,
+        Hg,
+        Tl,
+        Pb,
+        Bi,
+        Po,
+        At,
+        Rn,
+        Fr,
+        Ra,
+        Ac,
+        Th,
+        Pa,
+        U,
+        Np,
+        Pu,
+        Am,
+        Cm,
+        Bk,
+        Cf,
+        Es,
+        Fm,
+        Md,
+        No,
+        Lr,
+        Rf,
+        Db,
+        Sg,
+        Bh,
+        Hs,
+        Mt,
+        Ds,
+        Rg,
+        Cn,
+        Nh,
+        Fl,
+        Mc,
+        Lv,
+        Ts,
+        Og,
+        D,  // Deuterium is given a special index to separate it from Hydrogen
 
         NUMBER_OF_PREDEFINED_CHEMICAL_TYPES
     };
 
-    enum PredefinedStructureType {
-        OTHER = 0,                  //< Unidentified structure
-        FCC,                        //< Face-centered cubic
-        HCP,                        //< Hexagonal close-packed
-        BCC,                        //< Body-centered cubic
-        ICO,                        //< Icosahedral structure
-        CUBIC_DIAMOND,              //< Cubic diamond structure
-        CUBIC_DIAMOND_FIRST_NEIGH,  //< First neighbor of a cubic diamond atom
-        CUBIC_DIAMOND_SECOND_NEIGH, //< Second neighbor of a cubic diamond atom
-        HEX_DIAMOND,                //< Hexagonal diamond structure
-        HEX_DIAMOND_FIRST_NEIGH,    //< First neighbor of a hexagonal diamond atom
-        HEX_DIAMOND_SECOND_NEIGH,   //< Second neighbor of a hexagonal diamond atom
-        SC,                         //< Simple cubic structure
-        GRAPHENE,                   //< Graphene structure
+    enum class PredefinedStructureType
+    {
+        OTHER = 0,                   //< Unidentified structure
+        FCC,                         //< Face-centered cubic
+        HCP,                         //< Hexagonal close-packed
+        BCC,                         //< Body-centered cubic
+        ICO,                         //< Icosahedral structure
+        CUBIC_DIAMOND,               //< Cubic diamond structure
+        CUBIC_DIAMOND_FIRST_NEIGH,   //< First neighbor of a cubic diamond atom
+        CUBIC_DIAMOND_SECOND_NEIGH,  //< Second neighbor of a cubic diamond atom
+        HEX_DIAMOND,                 //< Hexagonal diamond structure
+        HEX_DIAMOND_FIRST_NEIGH,     //< First neighbor of a hexagonal diamond atom
+        HEX_DIAMOND_SECOND_NEIGH,    //< Second neighbor of a hexagonal diamond atom
+        SC,                          //< Simple cubic structure
+        GRAPHENE,                    //< Graphene structure
         HEXAGONAL_ICE,
         CUBIC_ICE,
         INTERFACIAL_ICE,
@@ -93,7 +202,8 @@ public:
         NUMBER_OF_PREDEFINED_STRUCTURE_TYPES
     };
 
-    enum RadiusVariant {
+    enum class RadiusVariant
+    {
         DisplayRadius,
         VanDerWaalsRadius
     };
@@ -127,15 +237,15 @@ public:
 
     /// Returns the hard-coded symbol of a predefined chemical element (one or two characters).
     static const QString& getChemicalElementSymbol(ChemicalElement el) {
-        OVITO_ASSERT(el >= 0 && el < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
-        return _PredefinedChemicalTypes[el].symbol;
+        OVITO_ASSERT((int)el >= 0 && (int)el < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+        return _PredefinedChemicalTypes[(size_t)el].symbol;
     }
 
     /// Performs a reverse lookup. Given a chemical element symbol, find the corresponding ChemicalElement enum value.
     template<typename StringType>
         requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
     static ChemicalElement getChemicalElementFromSymbol(const StringType& symbol) {
-        for(int i = 0; i < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
+        for(int i = 0; i < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
             if(_PredefinedChemicalTypes[i].symbol == symbol)
                 return static_cast<ChemicalElement>(i);
         }
@@ -144,33 +254,40 @@ public:
 
     /// Returns the hard-coded full name of a predefined chemical element.
     static const QString& getChemicalElementFullName(ChemicalElement el) {
-        OVITO_ASSERT(el >= 0 && el < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
-        return _PredefinedChemicalTypes[el].fullName;
+        OVITO_ASSERT((int)el >= 0 && (int)el < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+        return _PredefinedChemicalTypes[(size_t)el].fullName;
     }
 
     /// Returns the hard-coded color of a predefined chemical element.
     static const Color& getChemicalElementColor(ChemicalElement el) {
-        OVITO_ASSERT(el >= 0 && el < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
-        return _PredefinedChemicalTypes[el].color;
+        OVITO_ASSERT((int)el >= 0 && (int)el < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+        return _PredefinedChemicalTypes[(size_t)el].color;
     }
 
     /// Returns the name string of a predefined structure type.
     static const QString& getPredefinedStructureTypeName(PredefinedStructureType predefType) {
-        OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-        return _predefinedStructureTypes[predefType].name;
+        OVITO_ASSERT((int)predefType >= 0 && (int)predefType < (int)PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+        return _predefinedStructureTypes[(size_t)predefType].name;
     }
 
     /// Returns the hard-coded color of a predefined structure type.
     static const Color& getPredefinedStructureTypeColor(PredefinedStructureType predefType) {
-        OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-        return _predefinedStructureTypes[predefType].color;
+        OVITO_ASSERT((int)predefType >= 0 && (int)predefType < (int)PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+        return _predefinedStructureTypes[(size_t)predefType].color;
     }
 
     /// Returns the default radius for a named particle type.
-    static FloatType getDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults, RadiusVariant radiusVariant = DisplayRadius);
+    static FloatType getDefaultParticleRadius(Particles::Type typeClass,
+                                              const QString& particleTypeName,
+                                              int particleTypeId,
+                                              bool loadUserDefaults,
+                                              RadiusVariant radiusVariant = RadiusVariant::DisplayRadius);
 
     /// Changes the default radius for a named particle type.
-    static void setDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
+    static void setDefaultParticleRadius(Particles::Type typeClass,
+                                         const QString& particleTypeName,
+                                         FloatType radius,
+                                         RadiusVariant radiusVariant = RadiusVariant::DisplayRadius);
 
     /// Returns the default mass for a named particle type.
     static FloatType getDefaultParticleMass(Particles::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults);
@@ -257,10 +374,11 @@ private:
     };
 
     /// Default names, colors, and radii for some predefined particle types (chemical elements)
-    static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_CHEMICAL_TYPES> _PredefinedChemicalTypes;
+    static const std::array<PredefinedChemicalType, (size_t)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES> _PredefinedChemicalTypes;
 
     /// Default names, colors, and radii for the predefined structure types (fcc, bcc, hcp, etc.)
-    static const std::array<PredefinedStructuralType, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;
+    static const std::array<PredefinedStructuralType, (size_t)PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES>
+        _predefinedStructureTypes;
 };
 
 }   // End of namespace

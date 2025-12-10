@@ -68,17 +68,21 @@ void ParticleType::initializeTypeInternal(const QString& typeName, const OwnerPr
 
     // Load standard display radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, DisplayRadius));
+    setRadius(getDefaultParticleRadius(
+        static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, RadiusVariant::DisplayRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
-        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, DisplayRadius));
+        setRadius(getDefaultParticleRadius(
+            static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, RadiusVariant::DisplayRadius));
 
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, VanDerWaalsRadius));
+    setVdwRadius(getDefaultParticleRadius(
+        static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, RadiusVariant::VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
-        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, VanDerWaalsRadius));
+        setVdwRadius(getDefaultParticleRadius(
+            static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, RadiusVariant::VanDerWaalsRadius));
 
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
@@ -179,8 +183,10 @@ void ParticleType::propertyChanged(const PropertyFieldDescriptor* field)
             const QString& symbol = getChemicalElementSymbol(chemicalElement());
             if(name().isEmpty())
                 setName(symbol);
-            setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, DisplayRadius));
-            setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, VanDerWaalsRadius));
+            setRadius(getDefaultParticleRadius(
+                static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, RadiusVariant::DisplayRadius));
+            setVdwRadius(getDefaultParticleRadius(
+                static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, RadiusVariant::VanDerWaalsRadius));
             setMass(getDefaultParticleMass(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true));
         }
     }
@@ -201,7 +207,8 @@ void ParticleType::propertyChanged(const PropertyFieldDescriptor* field)
 // The radii for ions (Na, K, Cl, Ca, Mg, and Cs) are based on the CHARMM27 Rmin/2 parameters for (SOD, POT, CLA, CAL, MG, CES).
 //
 // Some colors and covalent radii have been adopted from OpenBabel.
-const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES> ParticleType::_PredefinedChemicalTypes{{
+// clang-format off
+const std::array<ParticleType::PredefinedChemicalType, (size_t)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES> ParticleType::_PredefinedChemicalTypes{{
     ParticleType::PredefinedChemicalType{ QStringLiteral("X"),  QStringLiteral("Unspecified"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.00f, 0.00f, 0.0 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("H"),  QStringLiteral("Hydrogen"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 1.00794 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("He"), QStringLiteral("Helium"), Color(217.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.22f, 1.40f, 4.00260 },
@@ -337,7 +344,7 @@ const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_P
 }};
 
 // Define default names, colors, and radii for predefined structure types.
-const std::array<ParticleType::PredefinedStructuralType, ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> ParticleType::_predefinedStructureTypes{{
+const std::array<ParticleType::PredefinedStructuralType, (size_t)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> ParticleType::_predefinedStructureTypes{{
     ParticleType::PredefinedStructuralType{ QStringLiteral("Other"), Color(0.95f, 0.95f, 0.95f) },
     ParticleType::PredefinedStructuralType{ QStringLiteral("FCC"), Color(0.4f, 1.0f, 0.4f) },
     ParticleType::PredefinedStructuralType{ QStringLiteral("HCP"), Color(1.0f, 0.4f, 0.4f) },
@@ -357,6 +364,7 @@ const std::array<ParticleType::PredefinedStructuralType, ParticleType::NUMBER_OF
     ParticleType::PredefinedStructuralType{ QStringLiteral("Hydrate"), Color(1.0f, 0.3f, 0.1f) },
     ParticleType::PredefinedStructuralType{ QStringLiteral("Interfacial hydrate"), Color(0.1f, 1.0f, 0.1f) },
 }};
+// clang-format on
 
 /******************************************************************************
 * Returns the default radius for a particle type.
@@ -370,15 +378,17 @@ FloatType ParticleType::getDefaultParticleRadius(Particles::Type typeClass, cons
 #ifndef OVITO_DISABLE_QSETTINGS
         // Use the type's name, property type and container class to look up the
         // default radius saved by the user.
-        const QString& settingsKey = ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), typeClass),
-            (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
+        const QString& settingsKey = ElementType::getElementSettingsKey(
+            OwnerPropertyRef(&Particles::OOClass(), typeClass),
+            (radiusVariant == RadiusVariant::DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"),
+            particleTypeName);
         QVariant v = QSettings().value(settingsKey);
         if(v.isValid() && v.canConvert<FloatType>())
             return v.value<FloatType>();
 
         // The following is for backward compatibility with OVITO 3.3.5, which used to store the
         // default radii in a different branch of the settings registry.
-        if(radiusVariant == DisplayRadius) {
+        if(radiusVariant == RadiusVariant::DisplayRadius) {
             v = QSettings().value(QStringLiteral("particles/defaults/radius/%1/%2").arg(typeClass).arg(particleTypeName));
             if(v.isValid() && v.canConvert<FloatType>())
                 return v.value<FloatType>();
@@ -389,7 +399,7 @@ FloatType ParticleType::getDefaultParticleRadius(Particles::Type typeClass, cons
     if(typeClass == Particles::TypeProperty) {
         for(const PredefinedChemicalType& predefType : _PredefinedChemicalTypes) {
             if(predefType.symbol == particleTypeName) {
-                if(radiusVariant == DisplayRadius)
+                if(radiusVariant == RadiusVariant::DisplayRadius)
                     return predefType.displayRadius;
                 else
                     return predefType.vdwRadius;
@@ -415,8 +425,10 @@ void ParticleType::setDefaultParticleRadius(Particles::Type typeClass, const QSt
 
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;
-    const QString& settingsKey = ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), typeClass),
-        (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
+    const QString& settingsKey = ElementType::getElementSettingsKey(
+        OwnerPropertyRef(&Particles::OOClass(), typeClass),
+        (radiusVariant == RadiusVariant::DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"),
+        particleTypeName);
 
     if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, false, radiusVariant) - radius) > 1e-6)
         settings.setValue(settingsKey, QVariant::fromValue(radius));

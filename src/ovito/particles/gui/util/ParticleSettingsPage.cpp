@@ -113,7 +113,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     // Compile the list of predefined particle type names and any user-defined type names for which presets exist.
     QStringList typeNames;
-    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++)
+    for(int i = 0; i < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++)
         typeNames << ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(i));
 
     QSettings settings;
@@ -141,8 +141,10 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         QTreeWidgetItem* childItem = new QTreeWidgetItem();
         childItem->setText(0, tname);
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), tname, 0, true);
-        FloatType displayRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::DisplayRadius);
-        FloatType vdwRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::VanDerWaalsRadius);
+        FloatType displayRadius =
+            ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::RadiusVariant::DisplayRadius);
+        FloatType vdwRadius =
+            ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::RadiusVariant::VanDerWaalsRadius);
         childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
         childItem->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
         childItem->setData(3, Qt::DisplayRole, QVariant::fromValue(vdwRadius));
@@ -151,7 +153,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     }
 
     QStringList structureNames;
-    for(int i = 0; i < ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++)
+    for(int i = 0; i < (int)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++)
         structureNames << ParticleType::getPredefinedStructureTypeName((ParticleType::PredefinedStructureType)i);
     settings.beginGroup("particles/defaults/color");
     settings.beginGroup(QString::number((int)Particles::StructureTypeProperty));
@@ -237,8 +239,10 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
         FloatType displayRadius = item->data(2, Qt::DisplayRole).value<FloatType>();
         FloatType vdwRadius = item->data(3, Qt::DisplayRole).value<FloatType>();
         ElementType::setDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), typeName, color);
-        ParticleType::setDefaultParticleRadius(Particles::TypeProperty, typeName, displayRadius, ParticleType::DisplayRadius);
-        ParticleType::setDefaultParticleRadius(Particles::TypeProperty, typeName, vdwRadius, ParticleType::VanDerWaalsRadius);
+        ParticleType::setDefaultParticleRadius(
+            Particles::TypeProperty, typeName, displayRadius, ParticleType::RadiusVariant::DisplayRadius);
+        ParticleType::setDefaultParticleRadius(
+            Particles::TypeProperty, typeName, vdwRadius, ParticleType::RadiusVariant::VanDerWaalsRadius);
     }
 
     for(int i = 0; i < _structureTypesItem->childCount(); i++) {
@@ -254,23 +258,25 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
 ******************************************************************************/
 void ParticleSettingsPage::restoreBuiltinParticlePresets()
 {
-    OVITO_ASSERT(_particleTypesItem->childCount() >= ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
-    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
+    OVITO_ASSERT(_particleTypesItem->childCount() >= (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+    for(int i = 0; i < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
         QTreeWidgetItem* item = _particleTypesItem->child(i);
         OVITO_ASSERT(item);
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), item->text(0), 0, false);
-        FloatType displayRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, item->text(0), 0, false, ParticleType::DisplayRadius);
-        FloatType vdwRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, item->text(0), 0, false, ParticleType::VanDerWaalsRadius);
+        FloatType displayRadius = ParticleType::getDefaultParticleRadius(
+            Particles::TypeProperty, item->text(0), 0, false, ParticleType::RadiusVariant::DisplayRadius);
+        FloatType vdwRadius = ParticleType::getDefaultParticleRadius(
+            Particles::TypeProperty, item->text(0), 0, false, ParticleType::RadiusVariant::VanDerWaalsRadius);
         item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
         item->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
         item->setData(3, Qt::DisplayRole, QVariant::fromValue(vdwRadius));
     }
-    for(int i = _particleTypesItem->childCount() - 1; i >= ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i--) {
+    for(int i = _particleTypesItem->childCount() - 1; i >= (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i--) {
         delete _particleTypesItem->takeChild(i);
     }
 
-    OVITO_ASSERT(_structureTypesItem->childCount() >= ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
+    OVITO_ASSERT(_structureTypesItem->childCount() >= (int)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+    for(int i = 0; i < (int)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
         QTreeWidgetItem* item = _structureTypesItem->child(i);
         OVITO_ASSERT(item);
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), item->text(0), 0, false);

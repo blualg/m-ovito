@@ -958,7 +958,7 @@ void Particles::OOMetaClass::initialize()
 Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     if(property.typeId() == Particles::TypeProperty) {
-        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; predefType++) {
+        for(int predefType = 0; predefType < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; predefType++) {
             if(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(predefType)) == typeName)
                 return ParticleType::getChemicalElementColor(static_cast<ParticleType::ChemicalElement>(predefType));
         }
@@ -969,7 +969,8 @@ Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef&
         }
     }
     else if(property.typeId() == Particles::StructureTypeProperty) {
-        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; predefType++) {
+        for(int predefType = 0; predefType < (int)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES;
+            predefType++) {
             if(ParticleType::getPredefinedStructureTypeName(static_cast<ParticleType::PredefinedStructureType>(predefType)) == typeName)
                 return ParticleType::getPredefinedStructureTypeColor(static_cast<ParticleType::PredefinedStructureType>(predefType));
         }
