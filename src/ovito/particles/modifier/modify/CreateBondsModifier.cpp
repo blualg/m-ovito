@@ -217,22 +217,22 @@ const ElementType* CreateBondsModifier::lookupParticleType(const Property* typeP
 namespace {
 struct TypeMapItem {
     int32_t id;
-    uint8_t atomicNo;
+    ParticleType::ChemicalElement element;
     FloatType radius;
 };
 
 class TypeMap : public std::vector<TypeMapItem>
 {
 public:
-    [[nodiscard]] const TypeMapItem* getOvitoId(int32_t id) const noexcept
+    [[nodiscard]] const TypeMapItem* get(int32_t id) const noexcept
     {
         const auto it = std::ranges::find(*this, id, &TypeMapItem::id);
         return it == this->end() ? nullptr : std::addressof(*it);
     }
 
-    [[nodiscard]] const TypeMapItem* getAtomicNo(int8_t id) const noexcept
+    [[nodiscard]] const TypeMapItem* get(ParticleType::ChemicalElement id) const noexcept
     {
-        const auto it = std::ranges::find(*this, id, &TypeMapItem::atomicNo);
+        const auto it = std::ranges::find(*this, id, &TypeMapItem::element);
         return it == this->end() ? nullptr : std::addressof(*it);
     }
 
@@ -371,19 +371,19 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
 
             FloatType cutoff = 0;
             for(const ElementType* type : particleTypes->elementTypes()) {
-                std::optional<uint8_t> atomicNumber = AtomicNumbers::get(type->name().toStdString());
-                if(!atomicNumber) {
+                ParticleType::ChemicalElement atomicNumber = ParticleType::getChemicalElementFromSymbol(type->name());
+                if(atomicNumber == ParticleType::ChemicalElement::X) {
                     throw Exception(
                         tr("Unknown particle type %1: Particle type names need to exactly match element symbols in the periodic table.")
                             .arg(type->name()));
                 }
-                std::optional<FloatType> covalentRadius = CovalentRadii::get(*atomicNumber);
+                std::optional<FloatType> covalentRadius = CovalentRadii::get(atomicNumber);
                 if(!covalentRadius) {
                     throw Exception(tr("Unknown covalent radius for particle type %1: Particle type names need to exactly match element "
                                        "symbols in the periodic table.")
                                         .arg(type->name()));
                 }
-                typeMap.emplace_back(type->numericId(), *atomicNumber, *covalentRadius);
+                typeMap.emplace_back(type->numericId(), atomicNumber, *covalentRadius);
                 cutoff = std::max(cutoff, *covalentRadius);
             }
 
@@ -395,7 +395,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             // Create initial bonds list with all bonds below a cutoff threshold.
             auto partialBondsLists =
                 parallelForCollect<std::vector<Bond>>(particleCount, 32, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
-                    const TypeMapItem* typeA = typeMap.getOvitoId(particleTypesArray[particleIndex]);
+                    const TypeMapItem* typeA = typeMap.get(particleTypesArray[particleIndex]);
                     // Skip particles without a type
                     if(!typeA) {
                         return;
@@ -411,7 +411,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                         if(neighborQuery.current() <= particleIndex) {
                             continue;
                         }
-                        const TypeMapItem* typeB = typeMap.getOvitoId(particleTypesArray[neighborQuery.current()]);
+                        const TypeMapItem* typeB = typeMap.get(particleTypesArray[neighborQuery.current()]);
                         // Skip particles without a type
                         if(!typeB) {
                             continue;
@@ -469,7 +469,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             return;
                         }
 
-                        const TypeMapItem* typeA = typeMap.getOvitoId(particleTypesArray[particleIndex]);
+                        const TypeMapItem* typeA = typeMap.get(particleTypesArray[particleIndex]);
                         if(!typeA) {
                             OVITO_ASSERT(false);
                             return;
@@ -479,19 +479,19 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             return;
                         }
 
-                        std::optional<uint8_t> maxCoordination;
+                        std::optional<uint_fast8_t> maxCoordination;
                         if(numBonds == 2) {
-                            const TypeMapItem* typeNeigh1 = typeMap.getOvitoId(particleTypesArray[begin->index2]);
-                            const TypeMapItem* typeNeigh2 = typeMap.getOvitoId(particleTypesArray[(begin + 1)->index2]);
+                            const TypeMapItem* typeNeigh1 = typeMap.get(particleTypesArray[begin->index2]);
+                            const TypeMapItem* typeNeigh2 = typeMap.get(particleTypesArray[(begin + 1)->index2]);
                             if(!typeNeigh1 || !typeNeigh2) {
                                 OVITO_ASSERT(false);
                                 return;
                             }
                             maxCoordination =
-                                MaximumCoordination::get(typeA->atomicNo, std::make_pair(typeNeigh1->atomicNo, typeNeigh2->atomicNo));
+                                MaximumCoordination::get(typeA->element, std::make_pair(typeNeigh1->element, typeNeigh2->element));
                         }
                         else {
-                            maxCoordination = MaximumCoordination::get(typeA->atomicNo);
+                            maxCoordination = MaximumCoordination::get(typeA->element);
                         }
                         if(!maxCoordination) {
                             OVITO_ASSERT(false);
@@ -517,7 +517,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                                 continue;
                             }
 
-                            const TypeMapItem* typeB = typeMap.getOvitoId(particleTypesArray[it->index2]);
+                            const TypeMapItem* typeB = typeMap.get(particleTypesArray[it->index2]);
                             if(!typeB) {
                                 OVITO_ASSERT(false);
                                 continue;
@@ -530,7 +530,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
 
                             // For all atoms in typeMap we're guaranteed to have a covalent radius
                             const FloatType bondElongation =
-                                delta.length() / *CovalentRadii::getCleaveDistance(typeA->atomicNo, typeB->atomicNo);
+                                delta.length() / *CovalentRadii::getCleaveDistance(typeA->element, typeB->element);
                             cache.emplace_back(std::distance(totalBondsList.begin(), it), bondElongation);
                         }
                         std::ranges::sort(cache, std::less<>{}, &std::pair<size_t, FloatType>::second);

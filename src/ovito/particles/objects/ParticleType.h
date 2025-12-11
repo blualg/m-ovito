@@ -52,133 +52,22 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
     OVITO_CLASS_META(ParticleType, ParticleTypeClass);
 
 public:
-    enum class ChemicalElement
+    // clang-format off
+    enum class ChemicalElement: uint_fast8_t
     {
-        X,
-        H,
-        He,
-        Li,
-        Be,
-        B,
-        C,
-        N,
-        O,
-        F,
-        Ne,  // "X" is placeholder for unspecified type
-        Na,
-        Mg,
-        Al,
-        Si,
-        P,
-        S,
-        Cl,
-        Ar,
-        K,
-        Ca,
-        Sc,
-        Ti,
-        V,
-        Cr,
-        Mn,
-        Fe,
-        Co,
-        Ni,
-        Cu,
-        Zn,
-        Ga,
-        Ge,
-        As,
-        Se,
-        Br,
-        Kr,
-        Rb,
-        Sr,
-        Y,
-        Zr,
-        Nb,
-        Mo,
-        Tc,
-        Ru,
-        Rh,
-        Pd,
-        Ag,
-        Cd,
-        In,
-        Sn,
-        Sb,
-        Te,
-        I,
-        Xe,
-        Cs,
-        Ba,
-        La,
-        Ce,
-        Pr,
-        Nd,
-        Pm,
-        Sm,
-        Eu,
-        Gd,
-        Tb,
-        Dy,
-        Ho,
-        Er,
-        Tm,
-        Yb,
-        Lu,
-        Hf,
-        Ta,
-        W,
-        Re,
-        Os,
-        Ir,
-        Pt,
-        Au,
-        Hg,
-        Tl,
-        Pb,
-        Bi,
-        Po,
-        At,
-        Rn,
-        Fr,
-        Ra,
-        Ac,
-        Th,
-        Pa,
-        U,
-        Np,
-        Pu,
-        Am,
-        Cm,
-        Bk,
-        Cf,
-        Es,
-        Fm,
-        Md,
-        No,
-        Lr,
-        Rf,
-        Db,
-        Sg,
-        Bh,
-        Hs,
-        Mt,
-        Ds,
-        Rg,
-        Cn,
-        Nh,
-        Fl,
-        Mc,
-        Lv,
-        Ts,
-        Og,
-        D,  // Deuterium is given a special index to separate it from Hydrogen
-
+         // "X" is placeholder for unspecified type
+        X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, 
+        Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, 
+        Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, 
+        Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, 
+        W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, 
+        Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt, Ds, Rg, 
+        Cn, Nh, Fl, Mc, Lv, Ts, Og, D,  // Deuterium is given a special index to separate it from Hydrogen
         NUMBER_OF_PREDEFINED_CHEMICAL_TYPES
     };
+    // clang-format on
 
-    enum class PredefinedStructureType
+    enum class PredefinedStructureType : uint_fast8_t
     {
         OTHER = 0,                   //< Unidentified structure
         FCC,                         //< Face-centered cubic
@@ -202,7 +91,7 @@ public:
         NUMBER_OF_PREDEFINED_STRUCTURE_TYPES
     };
 
-    enum class RadiusVariant
+    enum class RadiusVariant : uint_fast8_t
     {
         DisplayRadius,
         VanDerWaalsRadius
@@ -231,7 +120,9 @@ public:
     }
 
     /// Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
-    [[nodiscard]] Future<DataOORef<TriangleMesh>> loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass = nullptr, const QString& importerFormat = {}) const;
+    [[nodiscard]] Future<DataOORef<TriangleMesh>> loadShapeMesh(QUrl sourceUrl,
+                                                                const FileImporterClass* importerClass = nullptr,
+                                                                const QString& importerFormat = {}) const;
 
     //////////////////////////////////// Default parameters ////////////////////////////////
 
@@ -245,9 +136,11 @@ public:
     template<typename StringType>
         requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
     static ChemicalElement getChemicalElementFromSymbol(const StringType& symbol) {
-        for(int i = 0; i < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
-            if(_PredefinedChemicalTypes[i].symbol == symbol)
-                return static_cast<ChemicalElement>(i);
+        const auto* it = std::ranges::find(_PredefinedChemicalTypes, symbol, &PredefinedChemicalType::symbol);
+        if(it != _PredefinedChemicalTypes.end()) {
+            OVITO_ASSERT(std::distance(_PredefinedChemicalTypes.begin(), it) > 0 &&
+                         std::distance(_PredefinedChemicalTypes.begin(), it) < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+            return (ChemicalElement)std::distance(_PredefinedChemicalTypes.begin(), it);
         }
         return ChemicalElement::X;
     }

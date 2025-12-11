@@ -101,7 +101,9 @@ void ParticleType::initializeTypeInternal(const QString& typeName, const OwnerPr
 /******************************************************************************
 * Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
 ******************************************************************************/
-Future<DataOORef<TriangleMesh>> ParticleType::loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat) const
+Future<DataOORef<TriangleMesh>> ParticleType::loadShapeMesh(QUrl sourceUrl,
+                                                            const FileImporterClass* importerClass,
+                                                            const QString& importerFormat) const
 {
     OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(this_task::isMainThread());
