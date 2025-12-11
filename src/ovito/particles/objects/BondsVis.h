@@ -122,10 +122,14 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    void initializeObject(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) {
+    void initializeObject(DataOORef<const Particles> particles,
+                          DataOORef<const SimulationCell> simulationCell,
+                          ConstDataBufferPtr subobjectToBondMapping)
+    {
         ObjectPickInfo::initializeObject();
         _particles = std::move(particles);
         _simulationCell = std::move(simulationCell);
+        _subobjectToBondMapping = std::move(subobjectToBondMapping);
     }
 
     /// Returns the particles object.
@@ -144,6 +148,9 @@ private:
 
     /// The simulation cell object.
     DataOORef<const SimulationCell> _simulationCell;
+
+    /// Stores the indices of the bonds associated with the rendering primitives.
+    ConstDataBufferPtr _subobjectToBondMapping;
 };
 
 }   // End of namespace

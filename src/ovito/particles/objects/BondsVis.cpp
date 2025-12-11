@@ -472,6 +472,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                      renderNodalVertices),
             [&](CylinderPrimitive& cylinders, ParticlePrimitive& vertices, OORef<BondPickInfo>& pickInfo) {
                 const FloatType bondDiameter = bondWidth();
+                // Remap cylinders to bonds
+                auto subobjectToBondMapping = (useBondOrder) ? BufferFactory<int32_t>(cylinderCount) : BufferFactory<int32_t>();
+
                 if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
                     // Allocate buffers for the bonds geometry.
                     BufferFactory<Point3G> bondPositions1(cylinderCount);
@@ -604,6 +607,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                             (cylinderIdx == 0) ? bondPositions1[cylinderIndex] + bondVecG * t
                                                                : bondPositions1[cylinderIndex] - bondVecG * (GraphicsFloatType(1) - t);
                                         if(isSplitBond) swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
+                                        if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                         cylinderIndex++;
                                     }
                                 }
@@ -618,6 +622,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                             bondColors[cylinderIndex] = colors[colorIndex];
                                             bondPositions1[cylinderIndex] = Point3G::Origin();
                                             bondPositions2[cylinderIndex] = Point3G::Origin();
+                                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                             cylinderIndex++;
                                         }
                                     }
@@ -676,6 +681,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
                                                     }
+                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                                     cylinderIndex++;
                                                     // Second half of split segment (second color)
                                                     currentColor = colors[colorIndex + 1];
@@ -685,6 +691,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
                                                     }
+                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                                     cylinderIndex++;
                                                 }
                                                 else {
@@ -695,6 +702,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
                                                     }
+                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                                     cylinderIndex++;
                                                 }
                                             }
@@ -719,13 +727,17 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                             if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
                             if(bondWidths) bondWidths[cylinderIndex] = 0;
                             bondPositions1[cylinderIndex] = Point3G::Origin();
-                            bondPositions2[cylinderIndex++] = Point3G::Origin();
+                            bondPositions2[cylinderIndex] = Point3G::Origin();
+                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
+                            cylinderIndex++;
 
                             bondColors[cylinderIndex] = colors[2 * bondIndex + 1];
                             if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
                             if(bondWidths) bondWidths[cylinderIndex] = 0;
                             bondPositions1[cylinderIndex] = Point3G::Origin();
-                            bondPositions2[cylinderIndex++] = Point3G::Origin();
+                            bondPositions2[cylinderIndex] = Point3G::Origin();
+                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
+                            cylinderIndex++;
                         }
                     }
 
@@ -756,7 +768,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     }
                 }
 
-                pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
+                pickInfo = OORef<BondPickInfo>::create(particles, simulationCell, subobjectToBondMapping.take());
             });
 
     if(!cylinders.basePositions()) return {};
@@ -893,7 +905,17 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles,
 QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
-    size_t bondIndex = subobjectId / 2;
+
+    size_t bondIndex;
+    OVITO_ASSERT(_subobjectToBondMapping ? subobjectId < _subobjectToBondMapping->size() : true);
+    if(_subobjectToBondMapping && subobjectId < _subobjectToBondMapping->size()) {
+        // Look up the bond index in the subobject to bond mapping.
+        bondIndex = BufferReadAccess<int32_t>(_subobjectToBondMapping)[subobjectId];
+    }
+    else {
+        // Default case, no no duoble / triple / dashed bonds
+        bondIndex = subobjectId / 2;
+    }
     if(particles()->bonds()) {
         BufferReadAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
         if(topologyProperty && topologyProperty.size() > bondIndex) {
@@ -981,7 +1003,7 @@ ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
         output.reset(Bonds::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds->elementCount(), Bonds::WidthProperty));
 
         // Assign the uniform default width to all bonds.
-        output.makeMutableInplace()->fill<GraphicsFloatType>(bondWidth());
+        output.makeMutableInplace()->fill<GraphicsFloatType>((GraphicsFloatType)bondWidth());
     }
 
     return output;
