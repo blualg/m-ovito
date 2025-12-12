@@ -73,6 +73,9 @@ template<> constexpr double FloatTypeEpsilon<double>() { return 1e-12f; }
 /// Low-precision floating-point type used for graphics data.
 using GraphicsFloatType = float;
 
+/// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
+#define GRAPHICS_FLOATTYPE_EPSILON Ovito::GraphicsFloatType(1e-12)
+
 /// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type Ovito::GraphicsFloatType.
 #define GRAPHICS_FLOATTYPE_SCANF_STRING "%g"
 

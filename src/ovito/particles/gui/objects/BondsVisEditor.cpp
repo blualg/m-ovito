@@ -108,6 +108,16 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     // Update the coloring controls when a parameter of the vis element has been changed.
     connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);
 
+    // Fractional bonds box
+    QGroupBox* fractionalBondsBox = new QGroupBox(tr("Fractional bonds"));
+    layout = new QGridLayout(fractionalBondsBox);
+    layout->setContentsMargins(4, 4, 4, 4);
+    layout->setHorizontalSpacing(4);
+    layout->setVerticalSpacing(5);
+    layout->setColumnStretch(1, 1);
+    layout->setRowMinimumHeight(3, 1);  // Extra space below the last option to better align the uniform color picker.
+    mainLayout->addWidget(fractionalBondsBox);
+
     auto* filledSegmentsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(BondsVis::filledSegments));
     layout->addWidget(filledSegmentsPUI->label(), 3, 0);
     layout->addLayout(filledSegmentsPUI->createFieldLayout(), 3, 1);

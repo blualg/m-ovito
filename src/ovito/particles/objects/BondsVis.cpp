@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_LABEL(BondsVis, filledSegments, "Number of filled segments");
 SET_PROPERTY_FIELD_LABEL(BondsVis, filledFraction, "Filled segment fraction");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, filledSegments, IntegerParameterUnit, 1);
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(BondsVis, filledFraction, FloatParameterUnit, 0, 1);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(BondsVis, filledFraction, PercentParameterUnit, 0, 1);
 
 /******************************************************************************
  * Computes the bounding box of the visual element.
@@ -125,8 +125,7 @@ namespace {
  ******************************************************************************/
 inline bool isFractionalBond(GraphicsFloatType bondOrder)
 {
-    OVITO_ASSERT(bondOrder >= (GraphicsFloatType)0 && bondOrder <= GraphicsFloatType(3 + 1e-9));
-    return std::abs(std::round(bondOrder) - bondOrder) > (GraphicsFloatType)1e-9;
+    return std::abs(std::round(bondOrder) - bondOrder) > GRAPHICS_FLOATTYPE_EPSILON;
 }
 
 /******************************************************************************
@@ -200,7 +199,7 @@ std::pair<Vector3G, Vector3G> getBondNormalVector(const ParticleIndexPair& parti
                 count++;
             }
         }
-        return {normal_z.squaredLength() <= 1e-18 ? normal_x : normal_z, direction};
+        return {normal_z.squaredLength() <= (GRAPHICS_FLOATTYPE_EPSILON * GRAPHICS_FLOATTYPE_EPSILON) ? normal_x : normal_z, direction};
     }
     return {{0, 0, 1}, Vector3G::Zero()};
 }
@@ -326,7 +325,7 @@ inline size_t bondOrderToCylinderCount(const GraphicsFloatType bondOrder, const 
     GraphicsFloatType intPart;
     const GraphicsFloatType remainder = std::modf(bondOrder, &intPart);
     size_t count = 2 * (size_t)std::clamp(intPart, (GraphicsFloatType)0, (GraphicsFloatType)3);
-    if(remainder > (GraphicsFloatType)1e-9) {
+    if(remainder > GRAPHICS_FLOATTYPE_EPSILON) {
         count += cylindersPerFilledSegment;
     }
     return count;
