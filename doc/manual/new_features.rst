@@ -12,10 +12,10 @@ Version 3.15.0 (dd-mm-2025)
 - Update gemmi to 0.7.3
 - CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
 - Simulation cell and particle types can no longer be edited directly
-- New modifier: Edit Types
-- New modifier Edit Simulation Cell
-- New data inspector tab for type lists
-- Display video duration estimate in RenderSettingsEditor
+- New modifier: :ref:`particles.modifiers.edit_types`
+- New modifier :ref:`particles.modifiers.edit_simulation_cell`
+- New data inspector tab for :ref:`type lists <data_inspector.types>`
+- Display video duration estimate in :ref:`render settings panel <core.render_settings>`
 - Memorize ParticlesVis radius scaling factor across program sessions
 - Fix bug where the Find Rings modifier would not find rings of size equal to max ring size
 - Fix bug where the Find Rings modifier would report evenly sized rings in both directions

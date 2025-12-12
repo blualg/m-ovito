@@ -17,7 +17,7 @@ combine several modifiers to accomplish more complex tasks.
   Analysis
   ================================================================= ==========================================================
   :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
-  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assign bond order to existing bonds.
+  :ref:`particles.modifiers.assign_bond_order` |ovito-pro|          Assign bond order to existing bonds.
   :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
   :ref:`particles.modifiers.coordination_analysis`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
@@ -65,6 +65,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.combine_particle_sets`           Merges the particles and bonds from two separate input files into one dataset.
   :ref:`particles.modifiers.compute_property`                Assigns property values to particles or bonds according to a user-defined formula.
   :ref:`particles.modifiers.delete_selected_particles`       Removes the selected elements from the visualization.
+  :ref:`particles.modifiers.edit_simulation_cell`            Set boundary conditions or change the cell geometry.
   :ref:`particles.modifiers.edit_types`                      Lets you edit the types associated with a typed property, e.g. particle types.
   :ref:`particles.modifiers.freeze_property`                 Freezes the values of a dynamic particle property at a given animation time to make them available at other times.
   :ref:`particles.modifiers.load_trajectory`                 Loads time-dependent atomic positions from a separate trajectory file.
@@ -168,6 +169,7 @@ combine several modifiers to accomplish more complex tasks.
   difference_between_frames
   dislocation_analysis
   displacement_vectors
+  edit_simulation_cell
   edit_types
   elastic_strain
   find_rings

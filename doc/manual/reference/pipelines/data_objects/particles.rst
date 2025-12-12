@@ -41,10 +41,6 @@ Particle property               Data type (components)     Description
 Typed properties
 """"""""""""""""
 
-.. image:: /images/scene_objects/particle_types_panel.png
-  :width: 30%
-  :align: right
-
 A *typed property* is a particle property where each numeric value identifies a *type*,
 and the corresponding descriptor of the type, which is stored in a separate lookup table, holds additional attributes.
 The ``Particle Type`` property is a common example: it stores each particle's type ID (e.g., 1, 2, 3, …), with an associated table defining the
@@ -55,21 +51,30 @@ display color, radius, and other attributes of each type. This is more space eff
 
 A particle structure may have multiple typed properties, allowing for different orthogonal classifications of particles.
 For example, in addition to ``Particle Type``, a dataset might include properties such as ``Residue Type``,
-``Structure Type``, or ``Molecule Type``.
+``Structure Type``, or ``Molecule Type``. You can inspect all typed properties by
+opening the :ref:`Particles <data_inspector.particles>` tab of the data inspector.
 
-The typed properties imported from a simulation file can be accessed and edited in the pipeline editor,
-as shown in the screenshot on the right. You can edit the types defined by the ``Particle Type`` property, which
-:ref:`affects particle rendering <visual_elements.particles>` (e.g. radius and color of each type).
+.. image:: /images/scene_objects/particles_typed_property.jpg
+  :width: 60%
 
-If a particle type's name corresponds to a standard chemical element, OVITO automatically assigns default values for
-display color, display radius, van der Waals radius, and mass -- based on an internal database of presets. You can change these defaults
-using the presets menu (see screenshot) or the :ref:`application settings dialog <application_settings.particles>`.
+The list of particle types loaded from a simulation file can be inspected on the :ref:`Types <data_inspector.types>` tab.
+You can change the attributes of individual types by inserting the :ref:`particles.modifiers.edit_types` modifier into the data pipeline.
 
-Additionally, you can predefine attributes for user-defined or unnamed particle types (e.g., "Type 1", "Type 2"),
-which is useful when loading files that contain only numeric type identifiers, such as :ref:`LAMMPS dump files <file_formats.input.lammps_dump>`.
+.. image:: /images/scene_objects/particles_type_list.jpg
+  :width: 70%
+
+If a type's name matches a standard chemical symbol, OVITO automatically assigns default values for
+display color, display radius, van der Waals radius, and mass -- based on an internal database of chemical element presets.
+You can change these defaults in the :ref:`application settings dialog <application_settings.particles>`.
+
+Furthermore, it is possible to predefine attributes for numeric (unnamed) particle types (e.g., "Type 1", "Type 2"),
+which is useful when loading files that contain only numeric type identifiers instead of type names,
+such as :ref:`LAMMPS dump files <file_formats.input.lammps_dump>`.
 
 .. seealso::
 
+  * :ref:`particles.modifiers.edit_types` modifier
+  * :ref:`Types <data_inspector.types>` tab of the data inspector
   * :py:class:`ovito.data.Particles` (Python API)
   * :py:class:`ovito.data.Property` (Python API)
   * :py:attr:`ovito.data.Property.types` (Python API)

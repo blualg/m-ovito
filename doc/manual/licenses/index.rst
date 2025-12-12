@@ -197,7 +197,7 @@ The table lists the licenses of the included components and, if they are used un
 Software Bill of Materials (SBOM)
 =================================
 
-OVITO ships with a machine-readable Software Bill of Materials (SBOM) that lists all third-party
+Since version 3.15, OVITO ships with a machine-readable Software Bill of Materials (SBOM) that lists all third-party
 components included in the software along with their versions and licenses. The SBOM is provided
 in `SPDX <https://spdx.dev/>`__ JSON format (version 2.3), an international open standard for
 communicating software bill of materials information.
@@ -208,7 +208,7 @@ The SBOM file (``ovito-*.spdx.json``) is found in the following directory of you
 - **macOS**: ``Ovito.app/Contents/Resources/ovito-*.spdx.json``
 - **Windows**: ``C:\Program Files\OVITO\ovito-*.spdx.json``
 
-Note: SBOM information is not included in ovito Conda and PyPI packages.
+Note: SBOM information is not included in Conda and PyPI packages.
 
 .. toctree::
   :hidden:

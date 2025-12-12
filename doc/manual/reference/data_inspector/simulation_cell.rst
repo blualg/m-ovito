@@ -45,7 +45,8 @@ The page is divided into four sections:
 .. hint::
 
   The information shown in the data inspector is read-only and reflects the state of the simulation cell at the end of the current :ref:`data pipeline <usage.modification_pipeline>`.
-  To modify the simulation cell geometry in OVITO, use the :ref:`particles.modifiers.affine_transformation` modifier in the data pipeline.
+  To modify the simulation cell geometry in OVITO, use the :ref:`particles.modifiers.edit_simulation_cell` or :ref:`particles.modifiers.affine_transformation` modifiers in the data pipeline.
+  The :guilabel:`Edit in pipeline...` button provides a convenient way to insert an :ref:`particles.modifiers.edit_simulation_cell` modifier into the current pipeline.
 
 .. note::
 

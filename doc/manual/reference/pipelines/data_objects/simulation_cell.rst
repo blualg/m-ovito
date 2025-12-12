@@ -3,22 +3,17 @@
 Simulation cell
 ---------------
 
-.. image:: /images/scene_objects/simulation_cell_panel.png
-  :width: 35%
-  :align: right
-
 The **Simulation cell** :ref:`data object <scene_objects>` defines the geometry of the simulation domain in two or three dimensions,
-including boundary conditions (PBC flags). The simulation cell loaded from the imported simulation file can be found in the
-**Data source** section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
+including boundary conditions (PBC flags). It is typically loaded from the simulation file and its parameters can be inspected
+by opening the *Simulation cell* tab of the :ref:`data inspector <data_inspector.simulation_cell>`.
 
-**Note:** Additionally, the upper section of the pipeline editor shows a second item labeled **Simulation cell**, which is the
-corresponding :ref:`visual element <visual_elements.simulation_cell>`. This visual element controls
-how the simulation cell appears in rendered images.
+The cell is visualized as a box or parallelepiped enclosing the particles. This visual representation can be configured
+in the :ref:`simulation cell visual element <visual_elements.simulation_cell>` settings.
 
-If the imported simulation file does not contain any simulation cell information, the corresponding entry will be missing in the pipeline editor
-and OVITO will assume non-periodic boundary conditions by default.
-If desired, you can then turn on the option :guilabel:`Generate bounding box if needed` in the
-:ref:`file reader settings <file_formats.input.xyz.simulation_cell>` to let OVITO automatically generate a simulation cell that
+If the imported simulation file lacks simulation cell information, the **Simulation cell** data inspector page and the visual element will be missing.
+In this case, OVITO implicitly assumes a non-periodic infinite cell in all pipeline computations.
+If desired, you can turn on the option :guilabel:`Generate bounding box if needed` in the
+:ref:`file reader settings <file_formats.input.xyz.simulation_cell>` to let OVITO automatically generate an ad-hoc simulation cell that
 tightly encloses all particles in an axis-aligned bounding box.
 
 Dimensionality
@@ -34,7 +29,7 @@ Boundary conditions
 
 The **periodic boundary condition (PBC)** flags determine whether OVITO applies periodicity when performing calculations.
 Where possible, OVITO reads or infers these flags from the imported simulation file.
-If needed, you can manually override these flags in the **Simulation cell** panel.
+If needed, you can manually override these flags using the :ref:`particles.modifiers.edit_simulation_cell` modifier.
 
 Note that, even though the PBC flags are labeled as *X*, *Y*, and *Z*, they actually
 refer to the three vectors spanning the simulation cell, which are not necessarily aligned
@@ -50,16 +45,15 @@ OVITO puts no restrictions on the lengths and angles of the three cell vectors. 
 The vectors can be specified in any order, but the default is to use the following convention:
 The cell vector :math:`\bf{a}` points in the positive X-direction, :math:`\bf{b}` in the positive Y-direction, and :math:`\bf{c}` in the positive Z-direction.
 
-For informational purposes, the panel also reports the axis-aligned dimensions of the simulation cell (bounding box) as **Width (X)**, **Height (Y)**, and **Depth (Z)**,
-which are calculated from the three cell vectors. These values are only meaningful for orthogonal cells using the default convention.
-
 .. note::
 
-  The **Simulation cell** panel, which is found under the **Data source** section of the pipeline editor, always displays the original cell
-  shape loaded or inferred from the imported simulation file. To modify the simulation cell vectors in OVITO, use
-  the :ref:`particles.modifiers.affine_transformation` modifier in the data pipeline. The final state of the cell after all applied modifications
-  is shown in the :ref:`data inspector <data_inspector.simulation_cell>`.
+  To modify the simulation cell geometry, boundary conditions, or dimensionality in OVITO, use
+  the :ref:`particles.modifiers.edit_simulation_cell` modifier in the data pipeline, which provides direct control over all cell parameters.
+  Alternatively, you can use the :ref:`particles.modifiers.affine_transformation` modifier to apply linear transformations to the cell.
+  The final state of the cell after all applied modifications is shown in the :ref:`data inspector <data_inspector.simulation_cell>`.
 
 .. seealso::
 
-  :py:class:`ovito.data.SimulationCell` (Python API)
+  * :py:class:`ovito.data.SimulationCell` (Python API)
+  * :ref:`data_inspector.simulation_cell`
+  * :ref:`particles.modifiers.edit_simulation_cell`
