@@ -474,6 +474,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                      shadingMode(),
                      renderNodalVertices),
             [&](CylinderPrimitive& cylinders, ParticlePrimitive& vertices, OORef<BondPickInfo>& pickInfo) {
+                const SimulationCellDataG cellData(simulationCell);
                 const FloatType bondDiameter = bondWidth();
                 // Remap cylinders to bonds
                 auto subobjectToBondMapping = (useBondOrder) ? BufferFactory<int32_t>(cylinderCount) : BufferFactory<int32_t>();
@@ -672,14 +673,27 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                             // End position of current segment
                                             endPos = currentPos + bondDirG * (on ? onSegmentLength : offSegmentLength);
 
+                                            bool currWrapped = false;
+                                            bool endWrapped = false;
+                                            Point3G currPosWrapped;
+                                            Point3G endPosWrapped;
+                                            if(isSplitBond) {
+                                                currPosWrapped = cellData.wrapPoint(currentPos);
+                                                endPosWrapped = cellData.wrapPoint(endPos);
+                                                currWrapped = isSplitBond && !currentPos.equals(currPosWrapped);
+                                                endWrapped = isSplitBond && !endPos.equals(endPosWrapped);
+                                            }
+
                                             if(on) {
                                                 // Color transition across half bond
                                                 if(accumulatedLength < halfBondLength &&
                                                    accumulatedLength + onSegmentLength >= halfBondLength) {
                                                     const Point3G centerPoint = startPos + bondDirG * halfBondLength;
                                                     // First half of split segment (first color)
-                                                    bondPositions1[cylinderIndex] = currentPos;
-                                                    bondPositions2[cylinderIndex] = centerPoint;
+                                                    bondPositions1[cylinderIndex] =
+                                                        (currWrapped && endWrapped) ? currPosWrapped : currentPos;
+                                                    bondPositions2[cylinderIndex] =
+                                                        (currWrapped && endWrapped) ? endPosWrapped : centerPoint;
                                                     bondColors[cylinderIndex] = currentColor;
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
@@ -688,8 +702,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                     cylinderIndex++;
                                                     // Second half of split segment (second color)
                                                     currentColor = colors[colorIndex + 1];
-                                                    bondPositions1[cylinderIndex] = centerPoint;
-                                                    bondPositions2[cylinderIndex] = endPos;
+                                                    bondPositions1[cylinderIndex] =
+                                                        (currWrapped && endWrapped) ? currPosWrapped : centerPoint;
+                                                    bondPositions2[cylinderIndex] = (currWrapped && endWrapped) ? endPosWrapped : endPos;
                                                     bondColors[cylinderIndex] = currentColor;
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
@@ -699,8 +714,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                 }
                                                 else {
                                                     // Segment without color change -> full color across full length
-                                                    bondPositions1[cylinderIndex] = currentPos;
-                                                    bondPositions2[cylinderIndex] = endPos;
+                                                    bondPositions1[cylinderIndex] =
+                                                        (currWrapped && endWrapped) ? currPosWrapped : currentPos;
+                                                    bondPositions2[cylinderIndex] = (currWrapped && endWrapped) ? endPosWrapped : endPos;
                                                     bondColors[cylinderIndex] = currentColor;
                                                     if(bondWidths) {
                                                         bondWidths[cylinderIndex] = bondWidth;
