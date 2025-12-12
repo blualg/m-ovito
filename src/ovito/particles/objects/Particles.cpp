@@ -337,7 +337,8 @@ ConstPropertyPtr Particles::inputBondColors(bool ignoreExistingColorProperty) co
             const Property* bondTopologyProperty = bonds()->getProperty(Bonds::TopologyProperty);
             const Property* bondOrderProperty = bonds()->getProperty(Bonds::OrderProperty);
             BufferReadAccess<GraphicsFloatType> bondInputOrders(bondOrderProperty);
-            const size_t cylinderCount = BondsVis::getCylinderCount(bondTopologyProperty, bondOrderProperty, bondsVis->filledSegments());
+            const size_t cylinderCount = BondsVis::getCylinderCount(
+                bondTopologyProperty, bondOrderProperty, bondsVis->filledSegments(), (GraphicsFloatType)bondsVis->filledFraction());
 
             // Request half-bond colors from vis element.
             std::vector<ColorG> halfBondColors =

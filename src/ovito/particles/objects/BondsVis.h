@@ -77,7 +77,8 @@ public:
     /// Determines the number of cylinders to be rendered for the given bond topology.
     [[nodiscard]] static size_t getCylinderCount(const Property* bondTopologyProperty,
                                                  const Property* bondOrderProperty,
-                                                 int filledSegments);
+                                                 int filledSegments,
+                                                 GraphicsFloatType filledFraction);
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const Bonds* bonds) const;

@@ -272,7 +272,7 @@ inline Vector3G getBondOffsetVector(size_t bondRepCount,
  Determine the number of cylinders to be rendered for the given dashed bond based on the number of filled segments
  Used to preallocated all the output arrays.
  ******************************************************************************/
-inline size_t filledSegmentsToCylinderCount(const int filledSegments)
+inline size_t filledSegmentsToCylinderCount(const int filledSegments, const GraphicsFloatType filledFraction)
 {
     if(filledSegments == 0) {
         return 0;
@@ -283,7 +283,6 @@ inline size_t filledSegmentsToCylinderCount(const int filledSegments)
 
     // Use hard coded values to estimate the number of segments
     constexpr GraphicsFloatType totalLength = 1;
-    constexpr GraphicsFloatType filledFraction = 0.5;
 
     // Number of odd indices (on)
     const GraphicsFloatType numOnSegments = filledSegments / 2;
@@ -339,7 +338,10 @@ inline size_t bondOrderToCylinderCount(const GraphicsFloatType bondOrder, const 
  * Determines the number of cylinders to be rendered for the given bond topology.
  * Used to preallocated all the output arrays.
  ******************************************************************************/
-size_t BondsVis::getCylinderCount(const Property* bondTopologyProperty, const Property* bondOrderProperty, const int filledSegments)
+size_t BondsVis::getCylinderCount(const Property* bondTopologyProperty,
+                                  const Property* bondOrderProperty,
+                                  const int filledSegments,
+                                  const GraphicsFloatType filledFraction)
 {
     // No bond topology
     if(!bondTopologyProperty) {
@@ -353,7 +355,7 @@ size_t BondsVis::getCylinderCount(const Property* bondTopologyProperty, const Pr
     OVITO_ASSERT(filledSegments >= 0);
 
     // Estimate the number of cylinders that will be required per dashed bond
-    const size_t cylindersPerFilledSegment = filledSegmentsToCylinderCount(filledSegments);
+    const size_t cylindersPerFilledSegment = filledSegmentsToCylinderCount(filledSegments, filledFraction);
 
     // Count the number of cylinders that will be required
     size_t count = 0;
@@ -409,10 +411,12 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                 : false;
 
     // Count the number of cylinders that will be required for each dashed bond
-    const size_t dashedCylinderCount = useBondOrder ? filledSegmentsToCylinderCount(numFilledSegments) : 0;
+    const size_t dashedCylinderCount =
+        useBondOrder ? filledSegmentsToCylinderCount(numFilledSegments, (GraphicsFloatType)filledFraction()) : 0;
 
     // Make sure we don't exceed our internal limits.
-    const size_t cylinderCount = getCylinderCount(bondTopologyProperty, bondOrderProperty, numFilledSegments);
+    const size_t cylinderCount =
+        getCylinderCount(bondTopologyProperty, bondOrderProperty, numFilledSegments, (GraphicsFloatType)filledFraction());
 
     if(bondTopologyProperty && cylinderCount > (size_t)std::numeric_limits<int>::max()) {
         throw Exception(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
