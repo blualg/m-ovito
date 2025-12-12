@@ -56,12 +56,12 @@ public:
     enum class ChemicalElement: uint_fast8_t
     {
          // "X" is placeholder for unspecified type
-        X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, 
-        Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, 
-        Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, 
-        Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, 
-        W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, 
-        Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt, Ds, Rg, 
+        X, H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K,
+        Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb,
+        Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs,
+        Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta,
+        W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U,
+        Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt, Ds, Rg,
         Cn, Nh, Fl, Mc, Lv, Ts, Og, D,  // Deuterium is given a special index to separate it from Hydrogen
         NUMBER_OF_PREDEFINED_CHEMICAL_TYPES
     };
@@ -136,7 +136,7 @@ public:
     template<typename StringType>
         requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
     static ChemicalElement getChemicalElementFromSymbol(const StringType& symbol) {
-        const auto* it = std::ranges::find(_PredefinedChemicalTypes, symbol, &PredefinedChemicalType::symbol);
+        const auto it = std::ranges::find(_PredefinedChemicalTypes, symbol, &PredefinedChemicalType::symbol);
         if(it != _PredefinedChemicalTypes.end()) {
             OVITO_ASSERT(std::distance(_PredefinedChemicalTypes.begin(), it) > 0 &&
                          std::distance(_PredefinedChemicalTypes.begin(), it) < (int)ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
