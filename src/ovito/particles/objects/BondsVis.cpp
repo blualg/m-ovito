@@ -756,9 +756,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     if(renderNodalVertices) {
                         OVITO_ASSERT(!useBondOrder);
                         OVITO_ASSERT(positionProperty);
-                        OVITO_ASSERT(!nodalColors || positionProperty->size() == nodalColors.size());
-                        OVITO_ASSERT(!nodalIndices || (positionProperty->size() == nodalIndices.size()));
-                        OVITO_ASSERT(!nodalTransparencies || (positionProperty->size() == nodalTransparencies.size()));
                         vertices.setParticleShape(ParticlePrimitive::SphericalShape);
                         vertices.setShadingMode((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading
                                                                                  : ParticlePrimitive::FlatShading);
