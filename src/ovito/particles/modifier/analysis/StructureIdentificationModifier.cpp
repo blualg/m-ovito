@@ -38,7 +38,7 @@ DEFINE_PROPERTY_FIELD(StructureIdentificationModifier, onlySelectedParticles);
 DEFINE_PROPERTY_FIELD(StructureIdentificationModifier, colorByType);
 SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, structureTypes, "Structure types");
 SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, onlySelectedParticles, "Use only selected particles");
-SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color particles by type");
+SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color particles by structure type");
 
 /******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
