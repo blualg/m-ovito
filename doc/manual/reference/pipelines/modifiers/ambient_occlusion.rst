@@ -26,7 +26,7 @@ OVITO uses the graphics card to quickly perform this illumination calculation.
 
 Note that the ambient occlusion modifier is only needed if you are using the standard :ref:`OpenGL renderer <rendering.opengl_renderer>`
 or want quick shading of structures displayed in the interactive viewports.
-Other rendering backends, for example the :ref:`Tachyon renderer <rendering.tachyon_renderer>` support ambient occlusion shading as part
+Other :ref:`rendering backends <usage.rendering>` in OVITO Pro support ambient occlusion shading as direct part
 of the image rendering process itself, which typically gives better visual quality than this modifier can produce.
 
 The modifier should always be placed at the very end of a data pipeline to obtain correct lighting results.
@@ -58,7 +58,7 @@ Render buffer resolution
 Implementation details
 """"""""""""""""""""""
 
-OVITO implements the following simple `ambient occlusion <http://en.wikipedia.org/wiki/Ambient_occlusion>`__ algorithm to
+The modifier implements the following simple `ambient occlusion <http://en.wikipedia.org/wiki/Ambient_occlusion>`__ algorithm to
 determine an illumination factor for each particle, which is used to modulate the particle color. The illumination of a sky sphere
 enclosing the input structure is approximated by a large number of parallel light sources directed
 at the structure. The amount of light received by a particle from one such light surface is determined

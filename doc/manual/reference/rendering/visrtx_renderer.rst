@@ -85,12 +85,12 @@ Occlusion cutoff
   .. figure:: /images/rendering/visrtx_small_ao_cutoff.png
     :figwidth: 30%
 
-    Small AO cutoff range
+    Short AO cutoff range
 
   .. figure:: /images/rendering/visrtx_large_ao_cutoff.png
     :figwidth: 30%
 
-    Large AO cutoff range
+    Long AO cutoff range
 
 Direct light
 """"""""""""

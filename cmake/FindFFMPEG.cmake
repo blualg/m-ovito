@@ -31,6 +31,7 @@
 #  FFMPEG_INCLUDE_DIRS  - the include directories
 #  FFMPEG_LIBRARY_DIR   - the directory containing the libraries
 #  FFMPEG_LIBRARIES     - link these to use ffmpeg
+#  FFMPEG_VERSION       - version of the found ffmpeg installation
 #
 
 # List of required headers.
@@ -81,12 +82,22 @@ FOREACH(lib ${FFMPEG_LIBRARY_NAMES})
     UNSET(lib_path CACHE)
 ENDFOREACH()
 
+SET(_ffmpeg_version_header_path "${FFMPEG_INCLUDE_DIR}/libavutil/ffversion.h")
+IF(EXISTS "${_ffmpeg_version_header_path}")
+    FILE(STRINGS "${_ffmpeg_version_header_path}" _ffmpeg_version REGEX "FFMPEG_VERSION")
+    STRING(REGEX REPLACE ".*\"n?\(.*\)\"" "\\1" FFMPEG_VERSION "${_ffmpeg_version}")
+    UNSET(_ffmpeg_version)
+ELSE()
+    SET(FFMPEG_VERSION FFMPEG_VERSION-NOTFOUND)
+ENDIF()
+UNSET(_ffmpeg_version_header_path)
+
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(FFMPEG DEFAULT_MSG FFMPEG_LIBRARY_DIR FFMPEG_INCLUDE_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(FFMPEG DEFAULT_MSG FFMPEG_LIBRARY_DIR FFMPEG_INCLUDE_DIR FFMPEG_VERSION)
 
 IF(APPLE)
     # libbz2 is an indirect dependency that needs to be linked in on MacOS.
-    FIND_PACKAGE(BZip2 REQUIRED)
+    OVITO_FIND_PACKAGE(BZip2 REQUIRED)
 
     # Apple's system libraries are required too.
     FIND_LIBRARY(COREFOUNDATION_LIBRARY CoreFoundation)

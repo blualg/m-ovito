@@ -15,11 +15,11 @@ For optimal performance, it is recommended to install the latest graphics driver
 Operating System Compatibility:
 
 Windows:
-  64-bit Windows 10 (21H2 or later), Windows 11 (21H2 or later) on x86_64 processor architecture.
+  Windows 10 (21H2 or later), Windows 11 (21H2 or later) on x86_64 processor architecture.
 Linux:
   Ubuntu 21.04+, ALT Linux 10+, RHEL 9+, Debian 11+, Fedora 34+, or compatible distributions with glibc >= 2.28, running on x86_64 processors.
 macOS:
-  macOS 14.0+, Apple Silicon (arm64).
+  macOS 14.0+, Apple Silicon (arm64 architecture).
 
 .. _installation.instructions:
 

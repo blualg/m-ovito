@@ -99,11 +99,12 @@ void SimulationCell::propertyChanged(const PropertyFieldDescriptor* field)
 * The wrapped coordinates are returned as a new property array that has the same
 * memory layout and visual elements as the input property.
 ******************************************************************************/
-ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) const
+template<typename T>
+    requires(std::same_as<T, FloatType> || std::same_as<T, GraphicsFloatType> || std::same_as<T, float> || std::same_as<T, double>)
+ConstPropertyPtr SimulationCellDataT<T>::wrapPoints(const Property* inputPositions) const
 {
     // Check the input data type and component count.
     OVITO_ASSERT(inputPositions);
-    OVITO_ASSERT(inputPositions->dataType() == DataBuffer::FloatDefault);
     OVITO_ASSERT(inputPositions->componentCount() == 3);
 
     // If PBCs are turned off, we have nothing to do and can return the input coordinates as is.
@@ -113,10 +114,24 @@ ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) 
     // Create a new buffer to store the wrapped coordinates.
     PropertyPtr outputPositions = inputPositions->cloneWithoutData(inputPositions->size());
 
-    // Make local copies of the cell matrix and the reciprocal cell matrix to help with code optimization.
     const auto cellMatrix = this->cellMatrix();
     const auto reciprocalCellMatrix = this->reciprocalCellMatrix();
     const auto pbcFlags = this->pbcFlags();
+
+#ifdef OVITO_DEBUG
+    if(inputPositions->dataType() == DataBuffer::FloatDefault) {
+        OVITO_ASSERT((std::is_same_v<T, FloatType>));
+    }
+    if(inputPositions->dataType() == DataBuffer::FloatGraphics) {
+        OVITO_ASSERT((std::is_same_v<T, GraphicsFloatType>));
+    }
+    if(inputPositions->dataType() == DataBuffer::Float64) {
+        OVITO_ASSERT((std::is_same_v<T, double>));
+    }
+    if(inputPositions->dataType() == DataBuffer::Float32) {
+        OVITO_ASSERT((std::is_same_v<T, float>));
+    }
+#endif
 
 #ifdef OVITO_USE_SYCL
     if(inputPositions->size() != 0) {
@@ -136,20 +151,21 @@ ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) 
         });
     }
 #else
-    BufferReadAccess<Point3> inputPosAcc{inputPositions};
-    BufferWriteAccess<Point3, access_mode::discard_write> outputPosAcc{outputPositions};
-    std::ranges::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
-        const Point3 rp = reciprocalCellMatrix * p;
-        const Vector3 rv(
-            pbcFlags[0] * std::floor(rp.x()),
-            pbcFlags[1] * std::floor(rp.y()),
-            pbcFlags[2] * std::floor(rp.z())
-        );
+    // Make local copies of the cell matrix and the reciprocal cell matrix to help with code optimization.
+    BufferReadAccess<Point_3<T>> inputPosAcc{inputPositions};
+    BufferWriteAccess<Point_3<T>, access_mode::discard_write> outputPosAcc{outputPositions};
+    std::ranges::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point_3<T>& p) {
+        const Point_3<T> rp = reciprocalCellMatrix * p;
+        const Vector_3<T> rv(pbcFlags[0] * std::floor(rp.x()), pbcFlags[1] * std::floor(rp.y()), pbcFlags[2] * std::floor(rp.z()));
         return p - cellMatrix * rv;
     });
 #endif
 
     return outputPositions;
 }
+
+// Explicit template instantiations
+template ConstPropertyPtr SimulationCellDataT<FloatType>::wrapPoints(const Property* inputPositions) const;
+template ConstPropertyPtr SimulationCellDataT<GraphicsFloatType>::wrapPoints(const Property* inputPositions) const;
 
 }   // End of namespace

@@ -22,24 +22,21 @@
 
 # Find ffmpeg libraries for video encoding support.
 IF(NOT EMSCRIPTEN)
-    FIND_PACKAGE(FFMPEG)
+    OVITO_FIND_PACKAGE(FFMPEG)
 ENDIF()
 
 # Find the zlib, needed for reading/writing compressed data files.
 IF(NOT EMSCRIPTEN)
-    FIND_PACKAGE(ZLIB)
+    OVITO_FIND_PACKAGE(ZLIB)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
 IF(OVITO_BUILD_SSH_CLIENT)
-    FIND_PACKAGE(libssh REQUIRED)
+    OVITO_FIND_PACKAGE(libssh REQUIRED)
 ENDIF()
 
-# Locate the Boost library.
-FIND_PACKAGE(Boost REQUIRED)
-IF(NOT TARGET Boost::boost)
-    MESSAGE(FATAL_ERROR "The Boost library was not found on your system. Please make sure it is available.")
-ENDIF()
+# Locate the Boost C++ library.
+OVITO_FIND_PACKAGE(Boost REQUIRED)
 
 SET(SourceFiles
     utilities/Exception.cpp
@@ -171,7 +168,7 @@ SET_PROPERTY(SOURCE oo/OvitoClass PROPERTY SKIP_AUTOMOC ON)
 
 IF(NOT EMSCRIPTEN)
     # Qt Network module is used by the Core module, except in the wasm build.
-    FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Network REQUIRED)
+    OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Network REQUIRED)
     TARGET_LINK_LIBRARIES(Core PUBLIC Qt6::Network)
 ENDIF()
 
@@ -185,7 +182,7 @@ IF(ZLIB_FOUND)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
     IF(OVITO_BUILD_CONDA)
         # In Conda builds, we expect zstd to be available via the Conda environment. We link the dynamic library there.
-        FIND_PACKAGE(zstd REQUIRED)
+        OVITO_FIND_PACKAGE(zstd REQUIRED)
         TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd)
     ELSE()
         # In non-Conda builds, we use the statically built zstd library from our 3rdparty/ directory.
@@ -251,7 +248,7 @@ IF(OVITO_USE_CUDA)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_USE_CUDA)
     # Deploy CUDA runtime library with the application.
     IF(NOT OVITO_BUILD_CONDA)
-        FIND_PACKAGE(CUDAToolkit REQUIRED)
+        OVITO_FIND_PACKAGE(CUDAToolkit REQUIRED)
         GET_TARGET_PROPERTY(CUDA_LIBRARY_LOCATION CUDA::cudart LOCATION)
         IF(WIN32)
             # Derive path of DLL from .lib location.
@@ -279,7 +276,7 @@ ENDIF()
 # Link to the pthread library on Linux platform.
 IF(LINUX)
     SET(THREADS_PREFER_PTHREAD_FLAG ON)
-    FIND_PACKAGE(Threads REQUIRED)
+    OVITO_FIND_PACKAGE(Threads REQUIRED)
     TARGET_LINK_LIBRARIES(Core PUBLIC Threads::Threads)
 ENDIF()
 
@@ -363,7 +360,7 @@ ENDIF()
 #   "warning: libEGL.so.1, needed by libQt6Gui.so.6.5.0, not found (try using -rpath or -rpath-link"
 IF(OVITO_BUILD_CONDA AND LINUX)
     # Find and link against EGL library (optional).
-    FIND_PACKAGE(OpenGL COMPONENTS EGL)
+    OVITO_FIND_PACKAGE(OpenGL COMPONENTS EGL)
     IF(TARGET OpenGL::EGL)
         TARGET_LINK_LIBRARIES(Core PUBLIC OpenGL::EGL)
     ENDIF()
@@ -373,7 +370,7 @@ ENDIF()
 IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
 
     # Find OpenSSL 3.0 or newer, needed by libssh.
-    FIND_PACKAGE(OpenSSL 3.0 REQUIRED COMPONENTS Crypto SSL)
+    OVITO_FIND_PACKAGE(OpenSSL 3.0 REQUIRED COMPONENTS Crypto SSL)
 
     # Get the location of the libssh and OpenSSL libraries.
     GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)

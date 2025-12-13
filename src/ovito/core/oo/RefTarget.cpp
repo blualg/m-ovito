@@ -104,8 +104,8 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    // Suppress notification events during object construction and destruction.
-    if(isBeingInitializedOrDeleted())
+    // Suppress notification events during object initialization, cloning and destruction.
+    if(shouldIgnoreChanges())
         return;
 
     // Prevent this object from being deleted while sending the notification event.
@@ -169,8 +169,9 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
         throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
     OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 
-    // Set being copied flag of the object.
-    clone->setIsBeingCopied(true);
+    // Set being initialized flag of the object again.
+    // The CloneHelper class will clear this flag after the cloning operation is complete.
+    clone->setIsBeingInitialized(true);
 
     // Clone properties and referenced objects.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {

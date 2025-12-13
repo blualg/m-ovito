@@ -334,13 +334,20 @@ ConstPropertyPtr Particles::inputBondColors(bool ignoreExistingColorProperty) co
     // Access the bonds vis element.
     if(bonds()) {
         if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
+            const Property* bondTopologyProperty = bonds()->getProperty(Bonds::TopologyProperty);
+            const Property* bondOrderProperty = bonds()->getProperty(Bonds::OrderProperty);
+            BufferReadAccess<GraphicsFloatType> bondInputOrders(bondOrderProperty);
+            const size_t cylinderCount = BondsVis::getCylinderCount(
+                bondTopologyProperty, bondOrderProperty, bondsVis->filledSegments(), (GraphicsFloatType)bondsVis->filledFraction());
 
             // Request half-bond colors from vis element.
-            std::vector<ColorG> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->coloringMode(), ignoreExistingColorProperty);
-            OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
+            std::vector<ColorG> halfBondColors =
+                bondsVis->halfBondColors(this, false, bondsVis->coloringMode(), ignoreExistingColorProperty);
+            OVITO_ASSERT(2 * bonds()->elementCount() == halfBondColors.size());
 
             // Map half-bond colors to full bond colors.
-            PropertyPtr colors = Bonds::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), Bonds::ColorProperty);
+            PropertyPtr colors =
+                Bonds::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), Bonds::ColorProperty);
             auto ci = halfBondColors.cbegin();
             for(ColorG& co : BufferWriteAccess<ColorG, access_mode::discard_write>(colors)) {
                 co = *ci;
@@ -689,6 +696,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
         componentCount = 1;
         break;
     case TypeProperty:
+    case FunctionalGroupProperty:
     case StructureTypeProperty:
     case CoordinationProperty:
     case MoleculeTypeProperty:
@@ -941,6 +949,8 @@ void Particles::OOMetaClass::initialize()
     registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), Property::FloatDefault, xyzList);
     registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), Property::FloatGraphics, QStringList() << "Phi" << "Theta");
     registerStandardProperty(VectorTransparencyProperty, tr("Vector Transparency"), Property::FloatGraphics, emptyList);
+    registerStandardProperty(
+        FunctionalGroupProperty, tr("Functional Group"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Functional Group"));
 }
 
 /******************************************************************************
@@ -949,9 +959,9 @@ void Particles::OOMetaClass::initialize()
 Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     if(property.typeId() == Particles::TypeProperty) {
-        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
-            if(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(predefType)) == typeName)
-                return ParticleType::getPredefinedParticleTypeColor(static_cast<ParticleType::PredefinedParticleType>(predefType));
+        for(int predefType = 0; predefType < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; predefType++) {
+            if(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(predefType)) == typeName)
+                return ParticleType::getChemicalElementColor(static_cast<ParticleType::ChemicalElement>(predefType));
         }
 
         // Sometimes atom type names have additional letters/numbers appended.
@@ -960,7 +970,8 @@ Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef&
         }
     }
     else if(property.typeId() == Particles::StructureTypeProperty) {
-        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; predefType++) {
+        for(int predefType = 0; predefType < (int)ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES;
+            predefType++) {
             if(ParticleType::getPredefinedStructureTypeName(static_cast<ParticleType::PredefinedStructureType>(predefType)) == typeName)
                 return ParticleType::getPredefinedStructureTypeColor(static_cast<ParticleType::PredefinedStructureType>(predefType));
         }

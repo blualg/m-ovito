@@ -21,7 +21,7 @@ by an existing bond.
 
   Output
 
-The modifier supports three modes of operation that use different criteria to decide which particles to connect by a bond:
+The modifier supports four modes of operation that use different criteria to decide which particles to connect by a bond:
 
 Uniform cutoff distance
   The same uniform cutoff distance is used to create bonds between pairs of particles, irrespective of their respective type(s).
@@ -41,6 +41,26 @@ Pair-wise cutoffs
   The table lists all pair-wise type combinations defined for the current system, and some of the cutoff values in the third column may already be pre-initialized according to the Van der Waals
   criterion described above. A positive cutoff value is needed to create bonds between pairs of particles of the given type(s).
   Note that this mode is only available if particle types have been defined for the system, i.e., the particle property ``Particle Type`` exists.
+
+Covalent radii
+  The bond creation algorithm uses a two-step process. First, all bonds are created based on a distance criterion, 
+  where particles that have a distance :math:`r_{ij} < r_{ij}^\text{Eq} + \epsilon` are bonded. Here, :math:`r_{ij}^\text{Eq}` is the sum of the 
+  covalent radii of particles :math:`i` and :math:`j`. These radii are taken from `[J. Comput. Chem. 12, 891-898, 1991] <https://doi.org/10.1002/jcc.540120716>`__.
+  :math:`\epsilon` is set to a constant value of :math:`0.4`. 
+  
+  This creates some over-coordinated bonds. Therefore, a second processing step is taken to remove excess bonds. Here, the maximum coordination
+  tabulated in `[J. Comput. Chem. 37, 1191-1205, 2016] <https://doi.org/10.1002/jcc.24309>`__ is used as a target such that no atom has 
+  excess bonds. To this end, the most elongated bonds relative to their equilibrium length are selected and removed.
+
+  To look up covalent radii and maxium coordination values, this method requires particles types to be defined and their names to 
+  match the symbols in the periodic table exactly.
+
+  This method is described in greater detail in the original reference paper:
+
+    | `S. Artemova et al. <https://doi.org/10.1002/jcc.24309>`__
+    | `Automatic Molecular Structure Perception for the Universal Force Field <https://doi.org/10.1002/jcc.24309>`__
+    | `Journal of Computational Chemistry, 37, 1191-1205 (2016) <https://doi.org/10.1002/jcc.24309>`__
+    | `doi:10.1002/jcc.24309`
 
 The option :guilabel:`Suppress inter-molecular bonds` restricts generation of bonds to particles that
 are part of the same molecule, i.e. which have matching values of the ``Molecule Identifier`` property.

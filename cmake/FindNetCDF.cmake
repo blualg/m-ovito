@@ -29,14 +29,14 @@
 
 # First look for netcdf-config.cmake
 IF(NOT OVITO_BUILD_CONDA)
-    FIND_PACKAGE(netcdf QUIET CONFIG)
+    OVITO_FIND_PACKAGE(netcdf QUIET CONFIG)
 ENDIF()
 
 IF(NOT netcdf_FOUND)
 
     # Look for netCDF-config.cmake
     IF(NOT OVITO_BUILD_CONDA)
-        FIND_PACKAGE(netCDF QUIET CONFIG)
+        OVITO_FIND_PACKAGE(netCDF QUIET CONFIG)
     ENDIF()
 
     IF(NOT netCDF_FOUND)

@@ -264,7 +264,7 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     }
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
-    if(scene() && autoRestart() && !isBeingInitializedOrDeleted()) {
+    if(scene() && autoRestart() && !shouldIgnoreChanges()) {
         // Force an immediate restart if there is no Qt event loop running.
         if(!QCoreApplication::instance()) {
             restartImmediately = true;

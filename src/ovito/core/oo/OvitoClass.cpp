@@ -133,7 +133,7 @@ OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) c
     // Instantiate the class.
     OORef<OvitoObject> obj = createInstanceImpl(flags);
 
-    // Object should have been allocated on the heap and its BeingConstructed flag cleared.
+    // Object should have been allocated on the heap and its BeingConstructed and BeingInitialized flags cleared.
     OVITO_ASSERT(obj->isBeingInitialized() == false);
 
     return obj;

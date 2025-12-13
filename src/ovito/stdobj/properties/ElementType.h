@@ -44,7 +44,23 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Initializes the element type to default parameter values.
-    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive());
+    void initializeType(std::invocable<> auto&& preinitializer, const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive()) {
+        // Start a second phase of object initialization.
+        setIsBeingInitialized(true);
+        try {
+            // Execute the pre-initializer function.
+            preinitializer();
+            // Let the derived class initialize the type's parameters based on the type's name.
+            initializeTypeInternal(nameOrNumericId(), property, loadUserDefaults);
+            // Complete object initialization.
+            completeObjectInitialization();
+        }
+        catch(...) {
+            // Rollback object initialization on error.
+            setIsBeingInitialized(false);
+            throw;
+        }
+    }
 
     /// Returns the name of this type, or a dynamically generated string representing the
     /// numeric ID if the type has no assigned name.
@@ -74,6 +90,9 @@ public:
     static QString getElementSettingsKey(const OwnerPropertyRef& property, const QString& parameterName, const QString& elementTypeName);
 
 protected:
+
+    /// Initializes the element type's parameters to default values based on the type's name or numeric ID.
+    virtual void initializeTypeInternal(const QString& typeName, const OwnerPropertyRef& property, bool loadUserDefaults);
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;

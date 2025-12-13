@@ -25,7 +25,7 @@ MACRO(OVITO_ADD_SYCL_TO_TARGET target_name)
 
     # Enable SYCL.
     IF(OVITO_USE_SYCL STREQUAL AdaptiveCpp)
-        FIND_PACKAGE(AdaptiveCpp CONFIG REQUIRED)
+        OVITO_FIND_PACKAGE(AdaptiveCpp CONFIG REQUIRED)
         ADD_SYCL_TO_TARGET(TARGET ${target_name})
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC HIPSYCL_DEBUG_LEVEL=${ADAPTIVECPP_DEBUG_LEVEL})
         TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:-O0>") # To silcense acpp warning: No optimization flag was given, optimizations are disabled by default.

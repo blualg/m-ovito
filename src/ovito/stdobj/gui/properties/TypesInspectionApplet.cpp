@@ -67,7 +67,7 @@ QWidget* TypesInspectionApplet::createWidget()
     _cleanupHandler.add(splitter);
 
     // Create action for editing an element type.
-    _editTypeAction = new ItemAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Edit this type in pipeline"), this);
+    _editTypeAction = new ItemAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Edit type in pipeline"), this);
     connect(_editTypeAction, &ItemAction::triggeredForItem, this, &TypesInspectionApplet::onEditType);
 
     return splitter;

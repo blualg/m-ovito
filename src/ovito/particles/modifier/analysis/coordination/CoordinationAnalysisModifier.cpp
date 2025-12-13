@@ -74,7 +74,7 @@ void CoordinationAnalysisModifier::initializeObject(ObjectInitializationFlags fl
 {
     Modifier::initializeObject(flags);
 
-    // Default to using the standard Particle Type property for backward compatibility
+    // Default to using the standard property "Particle Type" for backward compatibility
     setTypeProperty(PropertyReference{&Particles::OOClass(), Particles::TypeProperty});
 }
 

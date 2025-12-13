@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
     objects/VoxelGrid.cpp

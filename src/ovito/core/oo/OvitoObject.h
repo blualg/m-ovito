@@ -58,10 +58,9 @@ public:
     {
         NoFlags = 0,                  //< No flags set.
         BeingConstructed = (1 << 0),  //< Indicates that this object's constructor is executing.
-        BeingInitialized = (1 << 1),  //< Indicates that this object is being initialized (initializeObject() hasn't finished yet).
+        BeingInitialized = (1 << 1),  //< Indicates that this object is being initialized (initializeObject() hasn't finished yet or the object state is being copied from another object).
         BeingDeleted = (1 << 2),      //< Indicates that this object is in the process of being deleted.
         BeingLoaded = (1 << 3),       //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
-        BeingCopied = (1 << 4),       //< Indicates that this object is in the process of being constructed by copying another object.
     };
     Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
 
@@ -98,11 +97,12 @@ public:
     /// and aboutToBeDeleted() is being invoked.
     inline bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
 
-    /// Indicates whether this object is currently being constructed by copying parameter values from another object.
-    inline bool isBeingCopied() const { return _flags.testFlag(BeingCopied); }
-
     /// Indicates whether this object is currently being initialized or destroyed.
     inline bool isBeingInitializedOrDeleted() const { return _flags.testAnyFlags(ObjectFlags(BeingInitialized | BeingDeleted)); }
+
+    /// Indicates whether this object is currently being initialized, loaded, or destroyed.
+    /// During these times, changes made to the object's properties should typically be ignored.
+    inline bool shouldIgnoreChanges() const { return _flags.testAnyFlags(ObjectFlags(BeingInitialized | BeingDeleted | BeingLoaded)); }
 
 #ifdef OVITO_DEBUG
     /// \brief Returns whether this object has not been deleted yet.
@@ -132,14 +132,13 @@ protected:
     inline void completeObjectInitialization() {
         OVITO_ASSERT(!isBeingConstructed());
         OVITO_ASSERT(isBeingInitialized());
-        _flags.setFlag(BeingInitialized, false);
+        setIsBeingInitialized(false);
     }
 
-    /// Sets the BeingCopied flag of the object indicating that the object's parameters are in the
-    /// process of being copied from another object. Set by RefTarget::clone() when cloning begins and cleared
-    /// by CloneHelper when cloning is complete.
-    void setIsBeingCopied(bool isBeingCopied) {
-        _flags.setFlag(BeingCopied, isBeingCopied);
+    /// Sets the BeingInitialized flag of the object indicating that the object's parameters are in the
+    /// process of being initialized or being copied from another object.
+    void setIsBeingInitialized(bool isBeingInitialized) {
+        _flags.setFlag(BeingInitialized, isBeingInitialized);
     }
 
     /// \brief Saves the internal data of this object to an output stream.

@@ -318,194 +318,204 @@ private:
  * when a full-fledged DataObject is not needed. It offers performance advantages
  * because it can be stored on the stack and does not require dynamic memory allocation.
  */
-class OVITO_STDOBJ_EXPORT SimulationCellData
+template<typename T>
+    requires(std::same_as<T, FloatType> || std::same_as<T, GraphicsFloatType> || std::same_as<T, float> || std::same_as<T, double>)
+class OVITO_STDOBJ_EXPORT SimulationCellDataT
 {
 public:
 
     /// Default constructor. Creates an empty simulation cell.
-    constexpr SimulationCellData() = default;
+    constexpr SimulationCellDataT() = default;
 
     /// Constructor that copies the cell information from an existing SimulationCell object.
-    SimulationCellData(const SimulationCell& cell)
-        : _cellMatrix(cell.cellMatrix()),
-          _reciprocalCellMatrix(cell.reciprocalCellMatrix()),
+    SimulationCellDataT(const SimulationCell& cell)
+        : _cellMatrix(cell.cellMatrix().toDataType<T>()),
+          _reciprocalCellMatrix(cell.reciprocalCellMatrix().toDataType<T>()),
           _pbcFlags(cell.pbcFlagsCorrected()),
           _is2D(cell.is2D())
     {
     }
 
     /// Constructor that copies the cell information from a SimulationCell object if available.
-    constexpr SimulationCellData(const SimulationCell* cell) :
-        _cellMatrix(cell ? cell->cellMatrix() : AffineTransformation::Zero()),
-        _reciprocalCellMatrix(cell ? cell->reciprocalCellMatrix() : AffineTransformation::Zero()),
-        _pbcFlags(cell ? cell->pbcFlagsCorrected() : std::array<bool,3>{false}),
-        _is2D(cell ? cell->is2D() : false) {}
+    constexpr SimulationCellDataT(const SimulationCell* cell)
+        : _cellMatrix(cell ? cell->cellMatrix().toDataType<T>() : typename AffineTransformationT<T>::Zero()),
+          _reciprocalCellMatrix(cell ? cell->reciprocalCellMatrix().toDataType<T>() : typename AffineTransformationT<T>::Zero()),
+          _pbcFlags(cell ? cell->pbcFlagsCorrected() : std::array<bool, 3>{false}),
+          _is2D(cell ? cell->is2D() : false)
+    {
+    }
 
     /// Constructor that constructs an ad-hoc simulation cell from a 3d bounding box.
-    constexpr SimulationCellData(const Box3& box, bool is2D = false) :
-        _cellMatrix(Vector3(box.sizeX(), 0, 0),
-                    Vector3(0, box.sizeY(), 0),
-                    Vector3(0, 0, box.sizeZ()),
-                    box.minc - Point3::Origin()),
-        _reciprocalCellMatrix(_cellMatrix.inverse()),
-        _is2D(is2D) {}
+    constexpr SimulationCellDataT(const Box3& box, bool is2D = false)
+        : _cellMatrix(
+              Vector_3<T>(box.sizeX(), 0, 0), Vector_3<T>(0, box.sizeY(), 0), Vector_3<T>(0, 0, box.sizeZ()), box.minc - Point3::Origin()),
+          _reciprocalCellMatrix(_cellMatrix.inverse()),
+          _is2D(is2D)
+    {
+    }
 
     /// Constructor that constructs an ad-hoc simulation cell from the bounding box of a set of points.
-    SimulationCellData(const BufferReadAccess<Point3>& positions, bool is2D = false, FloatType minimumBoxSize = 1) : _is2D(is2D) {
+    SimulationCellDataT(const BufferReadAccess<Point_3<T>>& positions, bool is2D = false, T minimumBoxSize = 1) : _is2D(is2D)
+    {
         OVITO_ASSERT(minimumBoxSize > 0);
         if(positions && positions.size() != 0) {
-            Box3 box = positions.buffer()->boundingBox3();
+            Box_3<T> box = positions.buffer()->boundingBox3();
             OVITO_ASSERT(!box.isEmpty());
             if(box.sizeX() < minimumBoxSize) box.maxc.x() = box.minc.x() + minimumBoxSize;
             if(box.sizeY() < minimumBoxSize) box.maxc.y() = box.minc.y() + minimumBoxSize;
             if(box.sizeZ() < minimumBoxSize) box.maxc.z() = box.minc.z() + minimumBoxSize;
-            _cellMatrix = AffineTransformation(
-                    Vector3(box.sizeX(), 0, 0),
-                    Vector3(0, box.sizeY(), 0),
-                    Vector3(0, 0, box.sizeZ()),
-                    box.minc - Point3::Origin());
+            _cellMatrix = AffineTransformation(Vector_3<T>(box.sizeX(), 0, 0),
+                                               Vector_3<T>(0, box.sizeY(), 0),
+                                               Vector_3<T>(0, 0, box.sizeZ()),
+                                               box.minc - typename Point_3<T>::Origin());
             _reciprocalCellMatrix = _cellMatrix.inverse();
         }
         else {
-            _cellMatrix = AffineTransformation::scaling(minimumBoxSize);
-            _reciprocalCellMatrix = AffineTransformation::scaling(FloatType(1) / minimumBoxSize);
+            _cellMatrix = AffineTransformationT<T>::scaling(minimumBoxSize);
+            _reciprocalCellMatrix = AffineTransformationT<T>::scaling(T(1) / minimumBoxSize);
         }
     }
 
     /// Returns the cell matrix.
-    constexpr const AffineTransformation& cellMatrix() const { return _cellMatrix; }
+    [[nodiscard]] constexpr const AffineTransformationT<T>& cellMatrix() const { return _cellMatrix; }
 
     /// Returns inverse of the simulation cell matrix.
     /// This matrix maps the simulation cell to the unit cube ([0,1]^3).
-    constexpr const AffineTransformation& reciprocalCellMatrix() const { return _reciprocalCellMatrix; }
+    [[nodiscard]] constexpr const AffineTransformationT<T>& reciprocalCellMatrix() const { return _reciprocalCellMatrix; }
 
     /// Returns whether this simulation cell is 2D.
-    constexpr bool is2D() const { return _is2D; }
+    [[nodiscard]] constexpr bool is2D() const { return _is2D; }
 
     /// Change the dimensionality of the simulation cell.
     /// This method does not change the cell matrix, but only the is2D flag.
     constexpr void setIs2D(bool is2D) { _is2D = is2D; }
 
     /// Computes the (positive) volume of the three-dimensional cell.
-    FloatType volume3D() const { return std::abs(cellMatrix().determinant()); }
+    T volume3D() const { return std::abs(cellMatrix().determinant()); }
 
     /// Computes the (positive) volume of the two-dimensional cell.
-    constexpr FloatType volume2D() const { return cellMatrix().column(0).cross(cellMatrix().column(1)).length(); }
+    [[nodiscard]] constexpr T volume2D() const { return cellMatrix().column(0).cross(cellMatrix().column(1)).length(); }
 
     /// Returns the periodic boundary flags in all three spatial directions.
-    constexpr const std::array<bool,3>& pbcFlags() const { return _pbcFlags; }
+    [[nodiscard]] constexpr const std::array<bool, 3>& pbcFlags() const { return _pbcFlags; }
 
     /// Returns whether the simulation cell has periodic boundary conditions applied in the given direction.
-    constexpr bool hasPbc(size_t dim) const { OVITO_ASSERT(dim < 3); return pbcFlags()[dim]; }
+    [[nodiscard]] constexpr bool hasPbc(size_t dim) const
+    {
+        OVITO_ASSERT(dim < 3);
+        return pbcFlags()[dim];
+    }
 
     /// Returns whether the simulation cell has periodic boundary conditions applied in at least one direction.
-    constexpr bool hasPbc() const { return hasPbc(0) || hasPbc(1) || hasPbc(2); }
+    [[nodiscard]] constexpr bool hasPbc() const { return hasPbc(0) || hasPbc(1) || hasPbc(2); }
 
     /// Sets the periodic boundary flags in all three spatial directions.
-    constexpr void setPbcFlags(const std::array<bool,3>& flags) { _pbcFlags = flags; }
+    constexpr void setPbcFlags(const std::array<bool, 3>& flags) { _pbcFlags = flags; }
 
     /// Returns the first edge vector of the cell.
-    constexpr const Vector3& cellVector1() const { return cellMatrix().column(0); }
+    [[nodiscard]] constexpr const Vector_3<T>& cellVector1() const { return cellMatrix().column(0); }
 
     /// Returns the second edge vector of the cell.
-    constexpr const Vector3& cellVector2() const { return cellMatrix().column(1); }
+    [[nodiscard]] constexpr const Vector_3<T>& cellVector2() const { return cellMatrix().column(1); }
 
     /// Returns the third edge vector of the cell.
-    constexpr const Vector3& cellVector3() const { return cellMatrix().column(2); }
+    [[nodiscard]] constexpr const Vector_3<T>& cellVector3() const { return cellMatrix().column(2); }
 
     /// Returns the origin point of the cell.
-    constexpr const Point3& cellOrigin() const { return Point3::Origin() + cellMatrix().column(3); }
+    [[nodiscard]] constexpr const Point_3<T>& cellOrigin() const { return typename Point_3<T>::Origin() + cellMatrix().column(3); }
 
     /// Returns true if the three edges of the cell are parallel to the three coordinates axes.
-    constexpr bool isAxisAligned() const {
-        if(cellMatrix()(1,0) != 0 || cellMatrix()(2,0) != 0) return false;
-        if(cellMatrix()(0,1) != 0 || cellMatrix()(2,1) != 0) return false;
-        if(cellMatrix()(0,2) != 0 || cellMatrix()(1,2) != 0) return false;
+    [[nodiscard]] constexpr bool isAxisAligned() const
+    {
+        if(cellMatrix()(1, 0) != 0 || cellMatrix()(2, 0) != 0) return false;
+        if(cellMatrix()(0, 1) != 0 || cellMatrix()(2, 1) != 0) return false;
+        if(cellMatrix()(0, 2) != 0 || cellMatrix()(1, 2) != 0) return false;
         return true;
     }
 
     /// Checks whether the simulation cell has zero volume or the cell matrix contains NaN entries.
-    constexpr bool isDegenerate() const {
-        if((is2D() ? volume2D() : volume3D()) <= FLOATTYPE_EPSILON)
-            return true;
+    [[nodiscard]] constexpr bool isDegenerate() const
+    {
+        if((is2D() ? volume2D() : volume3D()) <= FLOATTYPE_EPSILON) return true;
         for(size_t i = 0; i < 3; i++)
             for(size_t j = 0; j < 4; j++)
-                if(std::isnan(cellMatrix()(i,j)))
-                    return true;
+                if(std::isnan(cellMatrix()(i, j))) return true;
         return false;
     }
 
     /// Checks if two simulation cells are identical.
-    constexpr bool equals(const SimulationCellData& other) const {
+    [[nodiscard]] constexpr bool equals(const SimulationCellDataT<T>& other) const
+    {
         return cellMatrix() == other.cellMatrix() && pbcFlags() == other.pbcFlags() && is2D() == other.is2D();
     }
 
     /// Converts a point given in reduced cell coordinates to a point in absolute coordinates.
-    constexpr Point3 reducedToAbsolute(const Point3& reducedPoint) const { return cellMatrix() * reducedPoint; }
+    [[nodiscard]] constexpr Point_3<T> reducedToAbsolute(const Point_3<T>& reducedPoint) const { return cellMatrix() * reducedPoint; }
 
     /// Converts a point given in absolute coordinates to a point in reduced cell coordinates.
-    constexpr Point3 absoluteToReduced(const Point3& absPoint) const { return reciprocalCellMatrix() * absPoint; }
+    [[nodiscard]] constexpr Point_3<T> absoluteToReduced(const Point_3<T>& absPoint) const { return reciprocalCellMatrix() * absPoint; }
 
     /// Converts a point given in absolute coordinates to a point in reduced cell coordinates and maps it to the [0,1) range.
-    constexpr Point3 absoluteToReducedAndWrap(const Point3& absPoint) const {
-        Point3 rp = absoluteToReduced(absPoint);
-        for(size_t dim = 0; dim < 3; dim++)
-            rp[dim] -= hasPbc(dim) * std::floor(rp[dim]);
+    [[nodiscard]] constexpr Point_3<T> absoluteToReducedAndWrap(const Point_3<T>& absPoint) const
+    {
+        Point_3<T> rp = absoluteToReduced(absPoint);
+        for(size_t dim = 0; dim < 3; dim++) rp[dim] -= hasPbc(dim) * std::floor(rp[dim]);
         return rp;
     }
 
     /// Converts a vector given in reduced cell coordinates to a vector in absolute coordinates.
-    constexpr Vector3 reducedToAbsolute(const Vector3& reducedVec) const { return cellMatrix() * reducedVec; }
+    [[nodiscard]] constexpr Vector_3<T> reducedToAbsolute(const Vector_3<T>& reducedVec) const { return cellMatrix() * reducedVec; }
 
     /// Converts a vector given in absolute coordinates to a point in vector cell coordinates.
-    constexpr Vector3 absoluteToReduced(const Vector3& absVec) const { return reciprocalCellMatrix() * absVec; }
+    [[nodiscard]] constexpr Vector_3<T> absoluteToReduced(const Vector_3<T>& absVec) const { return reciprocalCellMatrix() * absVec; }
 
     /// Wraps a point at the periodic boundaries of the cell.
-    constexpr Point3 wrapPoint(const Point3& p) const {
-        Point3 pout = p;
+    [[nodiscard]] constexpr Point_3<T> wrapPoint(const Point_3<T>& p) const
+    {
+        Point_3<T> pout = p;
         for(size_t dim = 0; dim < 3; dim++) {
             if(hasPbc(dim)) {
-                if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(p, dim)))
-                    pout -= s * cellMatrix().column(dim);
+                if(T s = std::floor(reciprocalCellMatrix().prodrow(p, dim))) pout -= s * cellMatrix().column(dim);
             }
         }
         return pout;
-    }
+     }
 
     /// Wraps a vector at the periodic boundaries of the cell using minimum image convention.
-    constexpr Vector3 wrapVector(const Vector3& v) const {
-        Vector3 vout = v;
-        for(size_t dim = 0; dim < 3; dim++) {
-            if(hasPbc(dim)) {
-                if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(v, dim) + FloatType(0.5)))
-                    vout -= s * cellMatrix().column(dim);
-            }
-        }
-        return vout;
-    }
+     [[nodiscard]] constexpr Vector_3<T> wrapVector(const Vector_3<T>& v) const
+     {
+         Vector_3<T> vout = v;
+         for(size_t dim = 0; dim < 3; dim++) {
+             if(hasPbc(dim)) {
+                 if(T s = std::floor(reciprocalCellMatrix().prodrow(v, dim) + T(0.5))) vout -= s * cellMatrix().column(dim);
+             }
+         }
+         return vout;
+     }
 
     /// Calculates the normal vector of the given simulation cell side.
-    constexpr Vector3 cellNormalVector(size_t dim) const {
-        size_t dim1 = (dim + 1) % 3;
-        size_t dim2 = (dim + 2) % 3;
-        Vector3 normal = cellMatrix().column(dim1).cross(cellMatrix().column(dim2));
-        // Flip normal if necessary.
-        if(normal.dot(cellMatrix().column(dim)) < 0)
-            return normal / (-normal.length());
-        else
-            return normal.safelyNormalized();
-    }
+   [[nodiscard]] constexpr Vector_3<T> cellNormalVector(size_t dim) const
+   {
+       size_t dim1 = (dim + 1) % 3;
+       size_t dim2 = (dim + 2) % 3;
+       Vector_3<T> normal = cellMatrix().column(dim1).cross(cellMatrix().column(dim2));
+       // Flip normal if necessary.
+       if(normal.dot(cellMatrix().column(dim)) < 0)
+           return normal / (-normal.length());
+       else
+           return normal.safelyNormalized();
+   }
 
     /// Tests if a vector so long that it would be wrapped at a periodic boundary when using the minimum image convention.
-    constexpr bool isWrappedVector(const Vector3& v) const {
-        for(size_t dim = 0; dim < 3; dim++) {
-            if(hasPbc(dim)) {
-                if(std::abs(reciprocalCellMatrix().prodrow(v, dim)) >= FloatType(0.5))
-                    return true;
-            }
-        }
-        return false;
-    }
+   [[nodiscard]] constexpr bool isWrappedVector(const Vector_3<T>& v) const
+   {
+       for(size_t dim = 0; dim < 3; dim++) {
+           if(hasPbc(dim)) {
+               if(std::abs(reciprocalCellMatrix().prodrow(v, dim)) >= T(0.5)) return true;
+           }
+       }
+       return false;
+   }
 
     /// Wraps the input coordinates at the periodic boundaries of the simulation cell.
     /// The wrapped coordinates are returned as a new property array that has the same
@@ -515,10 +525,10 @@ public:
 private:
 
     /// Stores the three cell vectors and the position of the cell origin.
-    AffineTransformation _cellMatrix{AffineTransformation::Zero()};
+    AffineTransformationT<T> _cellMatrix{typename AffineTransformationT<T>::Zero()};
 
     /// The inverse of the cell matrix.
-    AffineTransformation _reciprocalCellMatrix{AffineTransformation::Zero()};
+    AffineTransformationT<T> _reciprocalCellMatrix{typename AffineTransformationT<T>::Zero()};
 
     /// Periodic boundary condition flags.
     std::array<bool,3> _pbcFlags{false, false, false};
@@ -527,5 +537,10 @@ private:
     bool _is2D{false};
 };
 
+// Alias for convenience.
+using SimulationCellData = SimulationCellDataT<FloatType>;
+using SimulationCellDataG = SimulationCellDataT<GraphicsFloatType>;
+using SimulationCellDataF = SimulationCellDataT<float>;
+using SimulationCellDataD = SimulationCellDataT<double>;
 
 }   // End of namespace

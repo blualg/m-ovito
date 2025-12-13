@@ -149,7 +149,7 @@ void CutoffRadiusPresetsUI::initializeObject(PropertiesEditor* parentEditor, con
 
     _comboBox = new QComboBox();
 
-    QMap<ChemicalElement::CrystalStructure,QPair<QString,double> > HandledTypes;
+    QMap<ChemicalElement::CrystalStructure, QPair<QString,double>> HandledTypes;
 
     HandledTypes.insert(ChemicalElement::FaceCenteredCubic, qMakePair(QString("%1 (fcc) - %2"), 0.5 * (1.0/sqrt(2.0) + 1.0)));          // halfway between first and second nn shell
     HandledTypes.insert(ChemicalElement::BodyCenteredCubic, qMakePair(QString("%1 (bcc) - %2"), 0.5 * (1.0 + sqrt(2.0))  ));            // halfway between second and third nn shell

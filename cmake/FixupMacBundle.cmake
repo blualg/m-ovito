@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Determine the main Qt installation directory, which contains the Qt plugin libraries to be shipped with OVITO.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 SET(_qt_source_dir "${_qt_import_prefix}")
 GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
 GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)

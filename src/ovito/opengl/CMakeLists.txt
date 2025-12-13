@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt module.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGL REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGL REQUIRED)
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer

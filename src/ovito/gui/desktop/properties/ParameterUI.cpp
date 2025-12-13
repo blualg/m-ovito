@@ -52,6 +52,7 @@ void ParameterUI::completeObjectInitialization()
 {
     RefMaker::completeObjectInitialization();
 
+    // Automatically adopt the editor's edit object if none was set yet.
     if(!editObject() && editor()->editObject())
         setEditObject(editor()->editObject());
 }

@@ -57,21 +57,24 @@ void ElementType::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
-* Initializes the element type to default parameter values.
+* Initializes the element type's parameters to default values based on the
+* type's name or numeric ID.
 ******************************************************************************/
-void ElementType::initializeType(const OwnerPropertyRef& property, bool loadUserDefaults)
+void ElementType::initializeTypeInternal(const QString& typeName, const OwnerPropertyRef& property, bool loadUserDefaults)
 {
+    OVITO_ASSERT(isBeingInitialized());
     OVITO_ASSERT(property);
+    OVITO_ASSERT(identifier() == QString::number(numericId()));
 
     // Remember the kind of typed property this type belongs to.
     _ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
 
     // Assign a standard color to this element type.
     // First load the hardcoded default color and freeze it, then load the user-defined default color.
-    setColor(getDefaultColor(property, nameOrNumericId(), numericId(), false));
+    setColor(getDefaultColor(property, typeName, numericId(), false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
     if(loadUserDefaults)
-        setColor(getDefaultColor(property, nameOrNumericId(), numericId(), true));
+        setColor(getDefaultColor(property, typeName, numericId(), true));
 }
 
 /******************************************************************************

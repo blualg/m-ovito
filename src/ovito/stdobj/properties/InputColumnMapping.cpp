@@ -416,9 +416,10 @@ void InputColumnReader::assignTypeNamesFromSeparateColumns()
                 QLatin1String name(record.typeName.first, record.typeName.second);
                 if(type->name() != name) {
                     ElementType* elementType = record.property->makeMutable(type);
-                    elementType->setName(name);
                     // Load the color and radius presets for named particle types:
-                    elementType->initializeType(OwnerPropertyRef(&_container->getOOMetaClass(), record.property));
+                    elementType->initializeType([&]() {
+                        elementType->setName(name);
+                    }, type->ownerProperty());
 
                     // Log in type name assigned by the file reader as default value for the element type.
                     // This is needed for the Python code generator to detect manual changes subsequently made by the user.

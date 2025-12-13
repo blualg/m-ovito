@@ -34,7 +34,7 @@ IF(OVITO_BUILD_APP)
 
     # Locate a Python interpreter.
     # Note: Sphinx 4.x requires at least Python 3.6.
-    FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
+    OVITO_FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
 
     # Tell Intersphinx where to find the scripting reference manual files when building the user manual.
     # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists

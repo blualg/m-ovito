@@ -38,8 +38,8 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(CIFImporter);
 OVITO_CLASSINFO(CIFImporter, "DisplayName", "CIF");
 
 /******************************************************************************
-* Checks if the given file has format that can be read by this importer.
-******************************************************************************/
+ * Checks if the given file has format that can be read by this importer.
+ ******************************************************************************/
 bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
     // Open input file.
@@ -71,15 +71,13 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
     }
 
     // Make sure it is a CIF file.
-    if(!foundBlockHeader || !foundItem)
-        return false;
+    if(!foundBlockHeader || !foundItem) return false;
 
     // Continue reading the entire file until at least one "_atom_site_XXX" entry is found.
     // These entries are specific to the CIF format and do not occur in mmCIF files (macromolecular files).
     for(;;) {
         if(stream.lineStartsWith("_atom_site_", true) && !stream.lineContains(".")) return true;
-        if(stream.eof())
-            return false;
+        if(stream.eof()) return false;
         stream.readLine();
     }
 
@@ -87,8 +85,8 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 }
 
 /******************************************************************************
-* Parses the given input file.
-******************************************************************************/
+ * Parses the given input file.
+ ******************************************************************************/
 void CIFImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
@@ -114,8 +112,7 @@ void CIFImporter::FrameLoader::loadFile()
         cif::Document doc = cif::read_memory(buffer_start, buffer_end - buffer_start, qPrintable(frame().sourceFile.path()));
 
         // Unmap the input file from memory.
-        if(fileContents.isEmpty())
-            stream.munmap();
+        if(fileContents.isEmpty()) stream.munmap();
         this_task::throwIfCanceled();
 
         // Parse the CIF data into an atomic structure representation.
@@ -131,10 +128,8 @@ void CIFImporter::FrameLoader::loadFile()
         Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         for(const gemmi::SmallStructure::Site& site : sites) {
             addNumericType(Particles::OOClass(), typeProperty, site.element.ordinal(), site.element.name());
-            if(site.charge != 0)
-                hasNonzeroCharges = true;
-            if(site.occ != 1)
-                partialSiteIndices.push_back(siteIndex);
+            if(site.charge != 0) hasNonzeroCharges = true;
+            if(site.occ != 1) partialSiteIndices.push_back(siteIndex);
             ++siteIndex;
         }
         this_task::throwIfCanceled();
@@ -146,27 +141,22 @@ void CIFImporter::FrameLoader::loadFile()
 
         // Always remove any preexisting "Occupancy" property, because we will recreate it below.
         // This is necessary in case the number of vector components changes.
-        if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy")))
-            particles()->removeProperty(occProp);
+        if(const Property* occProp = particles()->getProperty(QStringLiteral("Occupancy"))) particles()->removeProperty(occProp);
         Property* occupancyProperty = nullptr;
 
         // Parse the optional site occupancy information.
         std::vector<int> siteToParticleMapping;
         std::vector<int32_t> multiSiteTypes;
         if(!partialSiteIndices.empty() && !typeProperty->elementTypes().empty()) {
-
             // Sort sites by coordinates to group identical positions together.
             // Identify sites with partial occupancy that share the same coordinates.
             // Secondary sorting criterion: element type to ensure a well-defined order when generating multi-element particle types below.
             std::sort(partialSiteIndices.begin(), partialSiteIndices.end(), [&](int a, int b) {
                 const gemmi::SmallStructure::Site& siteA = sites[a];
                 const gemmi::SmallStructure::Site& siteB = sites[b];
-                if(siteA.fract.x != siteB.fract.x)
-                    return siteA.fract.x < siteB.fract.x;
-                if(siteA.fract.y != siteB.fract.y)
-                    return siteA.fract.y < siteB.fract.y;
-                if(siteA.fract.z != siteB.fract.z)
-                   return siteA.fract.z < siteB.fract.z;
+                if(siteA.fract.x != siteB.fract.x) return siteA.fract.x < siteB.fract.x;
+                if(siteA.fract.y != siteB.fract.y) return siteA.fract.y < siteB.fract.y;
+                if(siteA.fract.z != siteB.fract.z) return siteA.fract.z < siteB.fract.z;
                 return siteA.element.ordinal() < siteB.element.ordinal();
             });
             this_task::throwIfCanceled();
@@ -176,7 +166,7 @@ void CIFImporter::FrameLoader::loadFile()
 
             // First, identify strides of sites with identical positions and map them to the same particle.
             int particleIndex = 0;
-            for(auto partialIter = partialSiteIndices.begin(); partialIter != partialSiteIndices.end(); ) {
+            for(auto partialIter = partialSiteIndices.begin(); partialIter != partialSiteIndices.end();) {
                 int firstSiteIndex = *partialIter;
                 siteToParticleMapping[firstSiteIndex] = particleIndex;
                 const gemmi::SmallStructure::Site& siteA = sites[firstSiteIndex];
@@ -190,7 +180,8 @@ void CIFImporter::FrameLoader::loadFile()
                         multiElementName += QStringLiteral("%1%2").arg(siteB.element.name()).arg(static_cast<int>(siteB.occ * 100));
                         ++nextIter;
                     }
-                    else break;
+                    else
+                        break;
                 }
                 multiSiteTypes.push_back(addNamedType(Particles::OOClass(), typeProperty, multiElementName, {}, 1000)->numericId());
                 particleIndex++;
@@ -200,24 +191,22 @@ void CIFImporter::FrameLoader::loadFile()
 
             // Then map the remaining sites (with full occupancy) to new particles.
             for(int& idx : siteToParticleMapping) {
-                if(idx == -1)
-                    idx = particleIndex++;
+                if(idx == -1) idx = particleIndex++;
             }
             setParticleCount(particleIndex);
 
             // Create "Occupancy" property with one component per particle type.
             QStringList componentsNames;
             for(const ElementType* type : typeProperty->elementTypes()) {
-                if(type->numericId() < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
+                if(type->numericId() < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES)
                     componentsNames.append(type->name());
             }
             size_t numTypes = componentsNames.size();
-            occupancyProperty = particles()->createProperty(
-                DataBuffer::BufferInitialization::Initialized,
-                QStringLiteral("Occupancy"),
-                Property::FloatDefault,
-                numTypes,
-                std::move(componentsNames));
+            occupancyProperty = particles()->createProperty(DataBuffer::BufferInitialization::Initialized,
+                                                            QStringLiteral("Occupancy"),
+                                                            Property::FloatDefault,
+                                                            numTypes,
+                                                            std::move(componentsNames));
         }
         else {
             setParticleCount(sites.size());
@@ -227,8 +216,9 @@ void CIFImporter::FrameLoader::loadFile()
         typeProperty = particles()->expectMutableProperty(Particles::TypeProperty);
         BufferWriteAccess<Point3, access_mode::discard_write> posAcc = particles()->createProperty(Particles::PositionProperty);
         Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
-        atomNameProperty->setTitle(tr("Atom names")); // Give this property a new title, which is displayed in the GUI.
-        Property* chargeProperty = hasNonzeroCharges ? particles()->createProperty(Particles::ChargeProperty) : const_cast<Property*>(particles()->getProperty(Particles::ChargeProperty));
+        atomNameProperty->setTitle(tr("Atom names"));  // Give this property a new title, which is displayed in the GUI.
+        Property* chargeProperty = hasNonzeroCharges ? particles()->createProperty(Particles::ChargeProperty)
+                                                     : const_cast<Property*>(particles()->getProperty(Particles::ChargeProperty));
         if(!hasNonzeroCharges && chargeProperty) {
             // Remove charge property if all charges are zero and no previous charge property existed.
             particles()->removeProperty(chargeProperty);
@@ -253,10 +243,10 @@ void CIFImporter::FrameLoader::loadFile()
                 typeAcc[particleIndex] = multiSiteTypes[particleIndex];
                 atomNameAcc[particleIndex] = addNamedType(Particles::OOClass(), atomNameProperty, QStringLiteral("Multi"))->numericId();
             }
-            if(chargeAcc)
-                chargeAcc[particleIndex] = static_cast<FloatType>(site.charge);
+            if(chargeAcc) chargeAcc[particleIndex] = static_cast<FloatType>(site.charge);
             if(occupancyAcc) {
-                for(int elementTypeIndex = 0; elementTypeIndex < static_cast<int>(typeProperty->elementTypes().size()); elementTypeIndex++) {
+                for(int elementTypeIndex = 0; elementTypeIndex < static_cast<int>(typeProperty->elementTypes().size());
+                    elementTypeIndex++) {
                     if(site.element.ordinal() == typeProperty->elementTypes()[elementTypeIndex]->numericId()) {
                         occupancyAcc.set(particleIndex, elementTypeIndex, static_cast<FloatType>(site.occ));
                         break;
@@ -283,28 +273,30 @@ void CIFImporter::FrameLoader::loadFile()
             // Process periodic unit cell definition.
             AffineTransformation cell = AffineTransformation::Identity();
             if(structure.cell.alpha == 90 && structure.cell.beta == 90 && structure.cell.gamma == 90) {
-                cell(0,0) = structure.cell.a;
-                cell(1,1) = structure.cell.b;
-                cell(2,2) = structure.cell.c;
+                cell(0, 0) = structure.cell.a;
+                cell(1, 1) = structure.cell.b;
+                cell(2, 2) = structure.cell.c;
             }
             else if(structure.cell.alpha == 90 && structure.cell.beta == 90) {
                 FloatType gamma = qDegreesToRadians(structure.cell.gamma);
-                cell(0,0) = structure.cell.a;
-                cell(0,1) = structure.cell.b * std::cos(gamma);
-                cell(1,1) = structure.cell.b * std::sin(gamma);
-                cell(2,2) = structure.cell.c;
+                cell(0, 0) = structure.cell.a;
+                cell(0, 1) = structure.cell.b * std::cos(gamma);
+                cell(1, 1) = structure.cell.b * std::sin(gamma);
+                cell(2, 2) = structure.cell.c;
             }
             else {
                 FloatType alpha = qDegreesToRadians(structure.cell.alpha);
                 FloatType beta = qDegreesToRadians(structure.cell.beta);
                 FloatType gamma = qDegreesToRadians(structure.cell.gamma);
-                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c * sqrt(1.0 - std::cos(alpha)*std::cos(alpha) - std::cos(beta)*std::cos(beta) - std::cos(gamma)*std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
-                cell(0,0) = structure.cell.a;
-                cell(0,1) = structure.cell.b * std::cos(gamma);
-                cell(1,1) = structure.cell.b * std::sin(gamma);
-                cell(0,2) = structure.cell.c * std::cos(beta);
-                cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
-                cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
+                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c *
+                              sqrt(1.0 - std::cos(alpha) * std::cos(alpha) - std::cos(beta) * std::cos(beta) -
+                                   std::cos(gamma) * std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
+                cell(0, 0) = structure.cell.a;
+                cell(0, 1) = structure.cell.b * std::cos(gamma);
+                cell(1, 1) = structure.cell.b * std::sin(gamma);
+                cell(0, 2) = structure.cell.c * std::cos(beta);
+                cell(1, 2) = structure.cell.c * (std::cos(alpha) - std::cos(beta) * std::cos(gamma)) / std::sin(gamma);
+                cell(2, 2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
             }
             simulationCell()->setCellMatrix(cell);
         }
@@ -326,4 +318,4 @@ void CIFImporter::FrameLoader::loadFile()
     ParticleImporter::FrameLoader::loadFile();
 }
 
-}   // End of namespace
+}  // namespace Ovito

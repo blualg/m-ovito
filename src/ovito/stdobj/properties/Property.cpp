@@ -37,17 +37,21 @@ SET_PROPERTY_FIELD_LABEL(Property, title, "Title");
 SET_PROPERTY_FIELD_CHANGE_EVENT(Property, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Constructor creating an empty property array.
-******************************************************************************/
-void Property::initializeObject(ObjectInitializationFlags flags)
-{
-    DataBuffer::initializeObject(flags);
-}
+ * Constructor creating an empty property array.
+ ******************************************************************************/
+void Property::initializeObject(ObjectInitializationFlags flags) { DataBuffer::initializeObject(flags); }
 
 /******************************************************************************
-* Constructor allocating a property array with given size and data layout.
-******************************************************************************/
-void Property::initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId, QStringList componentNames)
+ * Constructor allocating a property array with given size and data layout.
+ ******************************************************************************/
+void Property::initializeObject(ObjectInitializationFlags flags,
+                                BufferInitialization init,
+                                size_t elementCount,
+                                int dataType,
+                                size_t componentCount,
+                                const QStringView name,
+                                int typeId,
+                                QStringList componentNames)
 {
     DataBuffer::initializeObject(flags, init, elementCount, dataType, componentCount, std::move(componentNames));
 
@@ -57,16 +61,14 @@ void Property::initializeObject(ObjectInitializationFlags flags, BufferInitializ
 
 #ifdef OVITO_DEBUG
 /******************************************************************************
-* Destructor.
-******************************************************************************/
-Property::~Property()
-{
-}
+ * Destructor.
+ ******************************************************************************/
+Property::~Property() {}
 #endif
 
 /******************************************************************************
-* Creates a copy of a property object.
-******************************************************************************/
+ * Creates a copy of a property object.
+ ******************************************************************************/
 OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
     // Let the base class create an instance of this class.
@@ -91,16 +93,13 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 }
 
 /******************************************************************************
-* Returns the display title of this property object in the user interface.
-******************************************************************************/
-QString Property::objectTitle() const
-{
-    return title().isEmpty() ? name() : title();
-}
+ * Returns the display title of this property object in the user interface.
+ ******************************************************************************/
+QString Property::objectTitle() const { return title().isEmpty() ? name() : title(); }
 
 /******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
+ * Is called when the value of a property of this object has changed.
+ ******************************************************************************/
 void Property::propertyChanged(const PropertyFieldDescriptor* field)
 {
     DataBuffer::propertyChanged(field);
@@ -112,14 +111,13 @@ void Property::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Generates a human-readable string representation of the data object reference.
-******************************************************************************/
+ * Generates a human-readable string representation of the data object reference.
+ ******************************************************************************/
 QString Property::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& path) const
 {
     QString str;
     for(auto obj = path.begin(); obj != path.end(); ++obj) {
-        if(obj != path.begin())
-            str += QStringLiteral(u" \u2192 ");  // Unicode arrow
+        if(obj != path.begin()) str += QStringLiteral(u" \u2192 ");  // Unicode arrow
         if(obj != path.end() - 1)
             str += (*obj)->objectTitle();
         else
@@ -129,8 +127,8 @@ QString Property::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& p
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
+ * Saves the class' contents to the given stream.
+ ******************************************************************************/
 void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     DataBuffer::saveToStream(stream, excludeRecomputableData);
@@ -150,12 +148,12 @@ void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 }
 
 /******************************************************************************
-* Loads the class' contents from the given stream.
-******************************************************************************/
+ * Loads the class' contents from the given stream.
+ ******************************************************************************/
 void Property::loadFromStream(ObjectLoadStream& stream)
 {
     QString name;
-    if(stream.formatVersion() >= 30007) { // Current file format
+    if(stream.formatVersion() >= 30007) {  // Current file format
         DataBuffer::loadFromStream(stream);
 
         stream.expectChunk(0x100);
@@ -163,7 +161,7 @@ void Property::loadFromStream(ObjectLoadStream& stream)
         stream >> _typeId;
         stream.closeChunk();
     }
-    else { // Legacy file format
+    else {  // Legacy file format
         // For backward compatibility with OVITO 3.3.5 and earlier versions. Here, the Property class was a direct
         // subclass of DataObject and did not inherit from DataBuffer.
         DataObject::loadFromStream(stream);
@@ -180,42 +178,44 @@ void Property::loadFromStream(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Checks if this property storage and its contents exactly match those of
-* another property storage.
-******************************************************************************/
+ * Checks if this property storage and its contents exactly match those of
+ * another property storage.
+ ******************************************************************************/
 bool Property::equals(const Property& other) const
 {
     prepareReadAccess();
     other.prepareReadAccess();
 
     bool result = [&]() {
-        if(this->typeId() != other.typeId())
-            return false;
-        if(this->typeId() == GenericUserProperty && this->name() != other.name())
-            return false;
+        if(this->typeId() != other.typeId()) return false;
+        if(this->typeId() == GenericUserProperty && this->name() != other.name()) return false;
         return true;
     }();
 
     other.finishReadAccess();
     finishReadAccess();
 
-    if(!result)
-        return false;
+    if(!result) return false;
 
     return DataBuffer::equals(other);
 }
 
 /******************************************************************************
-* Creates an empty copy of this property object - without copying the stored
-* array data but cloning the metadata and list of element types.
-******************************************************************************/
+ * Creates an empty copy of this property object - without copying the stored
+ * array data but cloning the metadata and list of element types.
+ ******************************************************************************/
 PropertyPtr Property::cloneWithoutData(size_t newSize, int overrideDataType) const
 {
     UndoSuspender noUndo;
 
-    PropertyPtr clone = PropertyPtr::create(
-            ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, overrideDataType != 0 ? overrideDataType : this->dataType(),
-            this->componentCount(), this->name(), this->typeId(), this->componentNames());
+    PropertyPtr clone = PropertyPtr::create(ObjectInitializationFlag::DontInitializeObject,
+                                            DataBuffer::Uninitialized,
+                                            newSize,
+                                            overrideDataType != 0 ? overrideDataType : this->dataType(),
+                                            this->componentCount(),
+                                            this->name(),
+                                            this->typeId(),
+                                            this->componentNames());
 
     clone->setVisElements(this->visElements());
     clone->setElementTypes(this->elementTypes());
@@ -226,29 +226,27 @@ PropertyPtr Property::cloneWithoutData(size_t newSize, int overrideDataType) con
 }
 
 /******************************************************************************
-* Helper method that remaps the existing type IDs to a contiguous range starting at the given
-* base ID. This method is mainly used for file output, because some file formats
-* work with numeric particle types only, which must form a contiguous range.
-* The method returns the mapping of output type IDs to original type IDs
-* and a copy of the property array in which the original type ID values have
-* been remapped to the output IDs.
-******************************************************************************/
-std::tuple<std::map<int,int>, ConstPropertyPtr> Property::generateContiguousTypeIdMapping(int baseId) const
+ * Helper method that remaps the existing type IDs to a contiguous range starting at the given
+ * base ID. This method is mainly used for file output, because some file formats
+ * work with numeric particle types only, which must form a contiguous range.
+ * The method returns the mapping of output type IDs to original type IDs
+ * and a copy of the property array in which the original type ID values have
+ * been remapped to the output IDs.
+ ******************************************************************************/
+std::tuple<std::map<int, int>, ConstPropertyPtr> Property::generateContiguousTypeIdMapping(int baseId) const
 {
     OVITO_ASSERT(dataType() == Property::Int32 && componentCount() == 1);
 
     // Generate sorted list of existing type IDs.
     std::set<int32_t> typeIds;
-    for(const ElementType* t : elementTypes())
-        typeIds.insert(t->numericId());
+    for(const ElementType* t : elementTypes()) typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(auto t : BufferReadAccess<int32_t>(this))
-        typeIds.insert(t);
+    for(auto t : BufferReadAccess<int32_t>(this)) typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
-    std::map<int32_t,int32_t> oldToNewMap;
-    std::map<int32_t,int32_t> newToOldMap;
+    std::map<int32_t, int32_t> oldToNewMap;
+    std::map<int32_t, int32_t> newToOldMap;
     bool remappingRequired = false;
     for(int32_t id : typeIds) {
         if(id != baseId) remappingRequired = true;
@@ -261,8 +259,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> Property::generateContiguousType
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
         PropertyPtr copy = CloneHelper::cloneSingleObject(this, false);
-        for(auto& id : BufferWriteAccess<int32_t, access_mode::discard_write>(copy))
-            id = oldToNewMap[id];
+        for(auto& id : BufferWriteAccess<int32_t, access_mode::discard_write>(copy)) id = oldToNewMap[id];
         remappedArray = std::move(copy);
     }
     else {
@@ -274,11 +271,11 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> Property::generateContiguousType
 }
 
 /******************************************************************************
-* Sorts the types w.r.t. their name.
-* This method is used by file parsers that create element types on the
-* go while the read the data. In such a case, the ordering of types
-* depends on the storage order of data elements in the file, which is not desirable.
-******************************************************************************/
+ * Sorts the types w.r.t. their name.
+ * This method is used by file parsers that create element types on the
+ * go while the read the data. In such a case, the ordering of types
+ * depends on the storage order of data elements in the file, which is not desirable.
+ ******************************************************************************/
 void Property::sortElementTypesByName()
 {
     OVITO_ASSERT(dataType() == DataBuffer::Int32 && componentCount() == 1);
@@ -287,19 +284,20 @@ void Property::sortElementTypesByName()
     // If not, we leave the type order as it is.
     int id = 1;
     for(const ElementType* type : elementTypes()) {
-        if(type->numericId() != id++)
-            return;
+        if(type->numericId() != id++) return;
     }
 
     // Check if types are already in the correct order.
-    if(std::is_sorted(elementTypes().begin(), elementTypes().end(),
-            [](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; }))
+    if(std::is_sorted(elementTypes().begin(), elementTypes().end(), [](const ElementType* a, const ElementType* b) {
+           return a->name().compare(b->name(), Qt::CaseInsensitive) < 0;
+       }))
         return;
 
     // Reorder types by name.
     DataRefVector<ElementType> types = elementTypes();
-    std::sort(types.begin(), types.end(),
-        [](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; });
+    std::sort(types.begin(), types.end(), [](const ElementType* a, const ElementType* b) {
+        return a->name().compare(b->name(), Qt::CaseInsensitive) < 0;
+    });
     setElementTypes(std::move(types));
 
 #if 0
@@ -325,24 +323,26 @@ void Property::sortElementTypesByName()
 }
 
 /******************************************************************************
-* Sorts the element types with respect to the numeric identifier.
-******************************************************************************/
+ * Sorts the element types with respect to the numeric identifier.
+ ******************************************************************************/
 void Property::sortElementTypesById()
 {
     DataRefVector<ElementType> types = elementTypes();
-    std::sort(types.begin(), types.end(),
-        [](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
+    std::sort(types.begin(), types.end(), [](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
     setElementTypes(std::move(types));
 }
 
 /******************************************************************************
-* Creates and returns a new numeric element type with the given numeric ID and,
-* optionally, a human-readable name. If an element type with the given numeric ID
-* already exists in this property's element type list, it will be returned instead.
-******************************************************************************/
+ * Creates and returns a new numeric element type with the given numeric ID and,
+ * optionally, a human-readable name. If an element type with the given numeric ID
+ * already exists in this property's element type list, it will be returned instead.
+ ******************************************************************************/
 template<typename StringType>
-    requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
-const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const StringType& name, ElementTypeClassPtr elementTypeClass)
+    requires(std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass,
+                                            int id,
+                                            const StringType& name,
+                                            ElementTypeClassPtr elementTypeClass)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
@@ -358,20 +358,19 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     // determine the right element type class for the given property.
     if(elementTypeClass == nullptr) {
         elementTypeClass = containerClass.typedPropertyElementClass(typeId());
-        if(elementTypeClass == nullptr)
-            elementTypeClass = &ElementType::OOClass();
+        if(elementTypeClass == nullptr) elementTypeClass = &ElementType::OOClass();
     }
     OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
 
     // First initialization phase.
     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
     // Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
-    elementType->setNumericId(id);
-    if constexpr(std::same_as<StringType, QStringView>)
-        elementType->setName(name.toString());
-    else
-        elementType->setName(name);
-    elementType->initializeType(OwnerPropertyRef(&containerClass, this));
+    elementType->initializeType(
+        [&]() {
+            elementType->setNumericId(id);
+            elementType->setName(static_cast<QString>(name));
+        },
+        OwnerPropertyRef(&containerClass, this));
 
     // Log in type name assigned by the caller as default value for the element type.
     // This is needed for the Python code generator to detect manual changes subsequently made by the user.
@@ -382,14 +381,23 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
 }
 
 // Instantiate function template for different string types.
-template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, ElementTypeClassPtr elementTypeClass);
-template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QStringView& name, ElementTypeClassPtr elementTypeClass);
-template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QLatin1String& name, ElementTypeClassPtr elementTypeClass);
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass,
+                                                                         int id,
+                                                                         const QString& name,
+                                                                         ElementTypeClassPtr elementTypeClass);
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass,
+                                                                         int id,
+                                                                         const QStringView& name,
+                                                                         ElementTypeClassPtr elementTypeClass);
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass,
+                                                                         int id,
+                                                                         const QLatin1String& name,
+                                                                         ElementTypeClassPtr elementTypeClass);
 
 /******************************************************************************
-* Returns the display name of the property including the name of the given
-* vector component.
-******************************************************************************/
+ * Returns the display name of the property including the name of the given
+ * vector component.
+ ******************************************************************************/
 QString Property::nameWithComponent(int vectorComponent) const
 {
     if(componentCount() <= 1 || vectorComponent < 0) {
@@ -405,19 +413,16 @@ QString Property::nameWithComponent(int vectorComponent) const
 }
 
 /******************************************************************************
-* Throws an exception with an informative text if the given string is not a
-* valid name for an OVITO property.
-******************************************************************************/
+ * Throws an exception with an informative text if the given string is not a
+ * valid name for an OVITO property.
+ ******************************************************************************/
 void Property::throwIfInvalidPropertyName(const QStringView name)
 {
-    if(name.isEmpty())
-        throw Exception(tr("Invalid empty property name. OVITO property names must have at least length 1."));
+    if(name.isEmpty()) throw Exception(tr("Invalid empty property name. OVITO property names must have at least length 1."));
     if(name.contains(QChar('.')))
         throw Exception(tr("Invalid property name: '%1'. Dots are not allowed in OVITO property names.").arg(name));
-    if(name.contains(QChar('/')))
-        throw Exception(tr("Invalid property name: '%1'. '/' is not allowed in OVITO property names.").arg(name));
-    if(name.contains(QChar(':')))
-        throw Exception(tr("Invalid property name: '%1'. ':' is not allowed in OVITO property names.").arg(name));
+    if(name.contains(QChar('/'))) throw Exception(tr("Invalid property name: '%1'. '/' is not allowed in OVITO property names.").arg(name));
+    if(name.contains(QChar(':'))) throw Exception(tr("Invalid property name: '%1'. ':' is not allowed in OVITO property names.").arg(name));
     if(name.startsWith(QChar(' ')))
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not start with whitespace.").arg(name));
     if(name.endsWith(QChar(' ')))
@@ -427,13 +432,12 @@ void Property::throwIfInvalidPropertyName(const QStringView name)
 }
 
 /******************************************************************************
-* Throws an exception with an informative text if the given string is not a
-* valid name for an OVITO property vector component.
-******************************************************************************/
+ * Throws an exception with an informative text if the given string is not a
+ * valid name for an OVITO property vector component.
+ ******************************************************************************/
 void Property::throwIfInvalidPropertyComponentName(const QStringView name)
 {
-    if(name.isEmpty())
-        throw Exception(tr("Invalid empty component name. OVITO vector component names must have at least length 1."));
+    if(name.isEmpty()) throw Exception(tr("Invalid empty component name. OVITO vector component names must have at least length 1."));
     if(name.contains(QChar('.')))
         throw Exception(tr("Invalid component name: '%1'. Dots are not allowed in OVITO vector component names.").arg(name));
     if(name.contains(QChar('/')))
@@ -447,8 +451,8 @@ void Property::throwIfInvalidPropertyComponentName(const QStringView name)
 }
 
 /******************************************************************************
-* Performs name mangling if necessary to turn the given name into a valid property name.
-******************************************************************************/
+ * Performs name mangling if necessary to turn the given name into a valid property name.
+ ******************************************************************************/
 QString Property::makePropertyNameValid(const QString& name)
 {
     QString mangledName = name.trimmed();
@@ -457,14 +461,13 @@ QString Property::makePropertyNameValid(const QString& name)
     mangledName.replace(QChar(':'), QChar('_'));
     // Remove all underscores from the end of the name, because they interfere with
     // the "underscore notation" in OVITO's Python API (PropertyContainer dict lookup).
-    while(mangledName.endsWith(QChar('_')))
-        mangledName.chop(1);
+    while(mangledName.endsWith(QChar('_'))) mangledName.chop(1);
     return mangledName;
 }
 
 /******************************************************************************
-* Performs name mangling if necessary to turn the given name into a valid vector property component name.
-******************************************************************************/
+ * Performs name mangling if necessary to turn the given name into a valid vector property component name.
+ ******************************************************************************/
 QString Property::makeComponentNameValid(const QString& name)
 {
     QString mangledName = name.trimmed();
@@ -474,9 +477,8 @@ QString Property::makeComponentNameValid(const QString& name)
     mangledName.replace(QChar(' '), QChar('_'));
     // Remove all underscores from the end of the name, because they interfere with
     // the "underscore notation" in OVITO's Python API (PropertyContainer dict lookup).
-    while(mangledName.endsWith(QChar('_')))
-        mangledName.chop(1);
+    while(mangledName.endsWith(QChar('_'))) mangledName.chop(1);
     return mangledName;
 }
 
-}   // End of namespace
+}  // namespace Ovito

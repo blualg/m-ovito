@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
+OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
 
 # Include the resource in the Win32 executable.
 IF(WIN32)
@@ -96,7 +96,7 @@ ENDIF()
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
-    FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
+    OVITO_FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
     TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::DBus)
 ENDIF()
 
@@ -195,7 +195,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
     # this way, because the OVITO scripting plugins do not explicitly link the
     # Python interpreter library. They rely on it already being loaded into the
     # process memory (as is the case if the OVITO Python modules are imported by an external interpreter).
-    FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter Development)
+    OVITO_FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter Development)
     TARGET_LINK_LIBRARIES(Ovito PRIVATE pybind11::headers Python3::Python)
     TARGET_COMPILE_DEFINITIONS(Ovito PRIVATE "OVITO_BUILD_PLUGIN_PYSCRIPT=1")
     TARGET_INCLUDE_DIRECTORIES(Ovito PRIVATE "${CMAKE_SOURCE_DIR}/proprietary")

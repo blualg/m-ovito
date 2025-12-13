@@ -39,9 +39,13 @@ Exclusive features
 - :ref:`Render multi-viewport layouts <viewport_layouts.rendering>`
 - Additional modifier functions:
 
+  - :ref:`particles.modifiers.assign_bond_order`
   - :ref:`particles.modifiers.bin_and_reduce`
   - :ref:`particles.modifiers.bond_analysis`
   - :ref:`particles.modifiers.construct_surface_mesh.regions`
+  - :ref:`particles.modifiers.difference_between_frames`
+  - :ref:`particles.modifiers.find_rings`
+  - :ref:`particles.modifiers.reduce_property`
   - :ref:`particles.modifiers.time_averaging`
   - :ref:`particles.modifiers.time_series`
   - :ref:`modifiers.identify_fcc_planar_faults`

@@ -65,11 +65,20 @@ public:
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
     /// Returns the display color used for selected bonds.
-    ColorG selectionBondColor() const { return ColorG(1,0,0); }
+    [[nodiscard]] constexpr static ColorG selectionBondColor() { return {1, 0, 0}; }
 
     /// Determines the display colors of half-bonds.
     /// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-    std::vector<ColorG> halfBondColors(const Particles* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
+    std::vector<ColorG> halfBondColors(const Particles* particles,
+                                       bool highlightSelection,
+                                       ColoringMode coloringMode,
+                                       bool ignoreBondColorProperty) const;
+
+    /// Determines the number of cylinders to be rendered for the given bond topology.
+    [[nodiscard]] static size_t getCylinderCount(const Property* bondTopologyProperty,
+                                                 const Property* bondOrderProperty,
+                                                 int filledSegments,
+                                                 GraphicsFloatType filledFraction);
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const Bonds* bonds) const;
@@ -92,6 +101,15 @@ protected:
 
     /// Determines how the bonds are colored.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode{ParticleBasedColoring}, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
+
+    /// Number of filled segments for dashed bonds rendering
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{5}, filledSegments, setFilledSegments, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
+
+    /// Number of filled segments for dashed bonds rendering
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.5},
+                                            filledFraction,
+                                            setFilledFraction,
+                                            PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 };
 
 /**
@@ -105,10 +123,14 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    void initializeObject(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) {
+    void initializeObject(DataOORef<const Particles> particles,
+                          DataOORef<const SimulationCell> simulationCell,
+                          ConstDataBufferPtr subobjectToBondMapping)
+    {
         ObjectPickInfo::initializeObject();
         _particles = std::move(particles);
         _simulationCell = std::move(simulationCell);
+        _subobjectToBondMapping = std::move(subobjectToBondMapping);
     }
 
     /// Returns the particles object.
@@ -127,6 +149,9 @@ private:
 
     /// The simulation cell object.
     DataOORef<const SimulationCell> _simulationCell;
+
+    /// Stores the indices of the bonds associated with the rendering primitives.
+    ConstDataBufferPtr _subobjectToBondMapping;
 };
 
 }   // End of namespace

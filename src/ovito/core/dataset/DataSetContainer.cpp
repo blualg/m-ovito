@@ -103,7 +103,7 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             Q_EMIT viewportLayoutChanged(activeViewportConfig());
         }
         else if(event.type() == ReferenceEvent::TargetChanged) {
-            if(dynamic_object_cast<ViewportLayoutCell>(event.sender()) && !source->isBeingLoaded() && !source->isBeingDeleted()) {
+            if(dynamic_object_cast<ViewportLayoutCell>(event.sender()) && !source->shouldIgnoreChanges()) {
                 Q_EMIT viewportLayoutChanged(activeViewportConfig());
             }
         }

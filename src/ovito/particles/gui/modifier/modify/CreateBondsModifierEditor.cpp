@@ -62,8 +62,12 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     connect(uniformCutoffModeBtn, &QRadioButton::toggled, uniformCutoffPUI, &FloatParameterUI::setEnabled);
     layout1->addLayout(gridlayout);
 
+    QRadioButton* typeCovRadiusModeBtn =
+        cutoffModePUI->addRadioButton(CreateBondsModifier::CovalentRadiusCutoff, tr("Covalent radius mode"));
+    layout1->addWidget(typeCovRadiusModeBtn);
+
     // Van der Waals mode.
-    QRadioButton* typeRadiusModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::TypeRadiusCutoff, tr("Van der Waals radii:"));
+    QRadioButton* typeRadiusModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::VDWRadiusCutoff, tr("Van der Waals radii:"));
     layout1->addWidget(typeRadiusModeBtn);
     QVBoxLayout* sublayout = new QVBoxLayout();
     sublayout->setContentsMargins(26,0,0,0);

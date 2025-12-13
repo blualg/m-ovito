@@ -186,13 +186,13 @@ public:
     //////////////////////////// Component access //////////////////////////
 
     /// Returns the value of the X component of this vector.
-    constexpr T x() const { return (*this)[0]; }
+    [[nodiscard]] constexpr T x() const { return (*this)[0]; }
 
     /// Returns the value of the Y component of this vector.
-    constexpr T y() const { return (*this)[1]; }
+    [[nodiscard]] constexpr T y() const { return (*this)[1]; }
 
     /// Returns the value of the Z component of this vector.
-    constexpr T z() const { return (*this)[2]; }
+    [[nodiscard]] constexpr T z() const { return (*this)[2]; }
 
     /// Returns a reference to the X component of this vector.
     constexpr T& x() { return (*this)[0]; }
@@ -232,40 +232,42 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the three components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    constexpr bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const {
+    [[nodiscard]] constexpr bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const
+    {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    [[nodiscard]] constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const
+    {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
 
     ///////////////////////////////// Computations ////////////////////////////////
 
     /// Computes the inner dot product of this vector with the vector \a b.
-    constexpr T dot(const Vector_3& b) const { return x()*b.x() + y()*b.y() + z()*b.z(); }
+    [[nodiscard]] constexpr T dot(const Vector_3& b) const { return x() * b.x() + y() * b.y() + z() * b.z(); }
 
     /// Computes the cross product of this vector with the vector \a b.
-    constexpr Vector_3 cross(const Vector_3& b) const {
-        return Vector_3(y() * b.z() - z() * b.y(),
-                        z() * b.x() - x() * b.z(),
-                        x() * b.y() - y() * b.x());
+    [[nodiscard]] constexpr Vector_3 cross(const Vector_3& b) const
+    {
+        return Vector_3(y() * b.z() - z() * b.y(), z() * b.x() - x() * b.z(), x() * b.y() - y() * b.x());
     }
 
     /// Computes the squared length of the vector.
-    constexpr T squaredLength() const { return x()*x() + y()*y() + z()*z(); }
+    [[nodiscard]] constexpr T squaredLength() const { return x() * x() + y() * y() + z() * z(); }
 
     /// Computes the length of the vector.
-    constexpr T length() const { return static_cast<T>(sqrt(squaredLength())); }
+    [[nodiscard]] constexpr T length() const { return static_cast<T>(sqrt(squaredLength())); }
 
     /// \brief Normalizes this vector by dividing it by its length, making it a unit vector.
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely(), resize()
-    constexpr inline void normalize() {
+    constexpr inline void normalize()
+    {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         *this /= length();
     }
@@ -275,7 +277,8 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    constexpr inline Vector_3 normalized() const {
+    [[nodiscard]] constexpr inline Vector_3 normalized() const
+    {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         return *this / length();
     }
@@ -284,12 +287,23 @@ public:
     /// \param epsilon The epsilon used to test if this vector is zero.
     /// \return The normalized vector.
     /// \sa normalized(), normalizeSafely()
-    constexpr inline Vector_3 safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
-        T l = length();
-        if(l > epsilon)
-            return *this / l;
-        else
-            return Vector_3::Zero();
+    template<bool returnOptional = false>
+    [[nodiscard]] constexpr inline std::conditional_t<returnOptional, std::optional<Vector_3>, Vector_3> safelyNormalized(
+        T epsilon = FloatTypeEpsilon<T>()) const
+    {
+        const T l = length();
+        if constexpr(returnOptional) {
+            if(l > epsilon)
+                return *this / l;
+            else
+                return std::nullopt;
+        }
+        else {
+            if(l > epsilon)
+                return *this / l;
+            else
+                return Vector_3::Zero();
+        }
     }
 
     /// \brief Normalizes this vector to make it a unit vector (only if it is non-zero).
@@ -297,10 +311,15 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    constexpr inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    /// \return True if the vector was normalized, false otherwise.
+    constexpr inline bool normalizeSafely(T epsilon = FloatTypeEpsilon<T>())
+    {
         T l = length();
-        if(l > epsilon)
+        if(l > epsilon) {
             *this /= l;
+            return true;
+        }
+        return false;
     }
 
     /// \brief Rescales this vector to the given length.
@@ -319,7 +338,8 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resize(), normalized()
-    constexpr inline Vector_3 resized(T len) const {
+    [[nodiscard]] constexpr inline Vector_3 resized(T len) const
+    {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::resized", "Cannot resize a vector of length zero.");
         return *this * (len / length());
     }
@@ -327,19 +347,19 @@ public:
     ///////////////////////////////// Utilities ////////////////////////////////
 
     /// \brief Returns the index of the component with the maximum value.
-    constexpr inline size_type maxComponent() const {
+    [[nodiscard]] constexpr inline size_type maxComponent() const
+    {
         return ((x() >= y()) ? ((x() >= z()) ? 0 : 2) : ((y() >= z()) ? 1 : 2));
     }
 
     /// \brief Returns the index of the component with the minimum value.
-    constexpr inline size_type minComponent() const {
+    [[nodiscard]] constexpr inline size_type minComponent() const
+    {
         return ((x() <= y()) ? ((x() <= z()) ? 0 : 2) : ((y() <= z()) ? 1 : 2));
     }
 
     /// \brief Produces a string representation of the vector of the form (x y z).
-    QString toString() const {
-        return QString("(%1 %2 %3)").arg(x()).arg(y()).arg(z());
-    }
+    [[nodiscard]] QString toString() const { return QString("(%1 %2 %3)").arg(x()).arg(y()).arg(z()); }
 
 #ifdef OVITO_USE_SYCL
     // Workaround for missing swap() method in SYCL's marray class template.
