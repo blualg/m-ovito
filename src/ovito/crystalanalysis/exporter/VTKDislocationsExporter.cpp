@@ -66,7 +66,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
             // Count dislocation polylines and output vertices.
             std::vector<size_t> polyVertexCounts;
             for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
-                if(renderableLines->lineSegments()[i].dislocationIndex >= dislocations->segments().size())
+                if(renderableLines->lineSegments()[i].dislocationIndex >= dislocations->lines().size())
                     throw Exception(tr("Inconsistent data: Dislocation index out of range."));
                 if(i != 0) {
                     const auto& s1 = renderableLines->lineSegments()[i-1];
@@ -125,7 +125,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
             textStream() << "\nVECTORS burgers_vector_local double\n";
             segment = renderableLines->lineSegments().begin();
             for(auto c : polyVertexCounts) {
-                const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
+                const DislocationLine* dislocation = dislocations->lines()[segment->dislocationIndex];
                 textStream() << dislocation->burgersVector.localVec().x() << " " << dislocation->burgersVector.localVec().y() << " " << dislocation->burgersVector.localVec().z() << "\n";
                 segment += c - 1;
             }
@@ -134,7 +134,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
             textStream() << "\nVECTORS burgers_vector_world double\n";
             segment = renderableLines->lineSegments().begin();
             for(auto c : polyVertexCounts) {
-                const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
+                const DislocationLine* dislocation = dislocations->lines()[segment->dislocationIndex];
                 auto transformedVector = dislocation->burgersVector.toSpatialVector();
                 textStream() << transformedVector.x() << " " << transformedVector.y() << " " << transformedVector.z() << "\n";
                 segment += c - 1;

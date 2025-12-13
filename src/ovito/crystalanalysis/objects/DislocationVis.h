@@ -107,8 +107,8 @@ public:
     /// Computes the bounding box of the object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
-    /// Renders an overlay marker for a single dislocation segment.
-    void renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const SceneNode* sceneNode);
+    /// Renders an overlay marker for a single dislocation line.
+    void renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int lineIndex, FrameGraph& frameGraph, const SceneNode* sceneNode);
 
     /// Generates a pretty string representation of a Burgers vector.
     static QString formatBurgersVector(const Vector3& b, const MicrostructurePhase* structure);

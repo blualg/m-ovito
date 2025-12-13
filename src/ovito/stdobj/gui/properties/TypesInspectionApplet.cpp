@@ -92,7 +92,7 @@ std::vector<ConstDataObjectPath> TypesInspectionApplet::getDataObjectPaths()
         return path.nextToLastAs<DataTable>() != nullptr;
     }), paths.end());
 
-    // Make sure all particle properties appear first in the list.
+    // Make sure all particle properties appear at the top of the list, because they are often of greater interest to the user.
     std::stable_partition(paths.begin(), paths.end(), [](const ConstDataObjectPath& path) {
         const PropertyContainer* container = path.nextToLastAs<PropertyContainer>();
         return container && container->getOOClass().name() == QStringLiteral("Particles");

@@ -74,14 +74,14 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
             // Shift existing vertices so that they form the first image at grid position (0,0,0).
             const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
             if(!imageDelta.isZero()) {
-                for(DislocationSegment* segment : newDislocations->segments()) {
-                    for(Point3& p : segment->line)
+                for(DislocationLine* line : newDislocations->lines()) {
+                    for(Point3& p : line->vertices)
                         p += imageDelta;
                 }
             }
 
             // Replicate lines.
-            size_t oldSegmentCount = newDislocations->segments().size();
+            size_t oldLineCount = newDislocations->lines().size();
             for(int imageX = 0; imageX < nPBC[0]; imageX++) {
                 for(int imageY = 0; imageY < nPBC[1]; imageY++) {
                     for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
@@ -89,19 +89,19 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
                             continue;
                         // Shift vertex positions by the periodicity vector.
                         const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
-                        for(size_t i = 0; i < oldSegmentCount; i++) {
-                            DislocationSegment* oldSegment = newDislocations->segments()[i];
-                            DislocationSegment* newSegment = newDislocations->createSegment(oldSegment->burgersVector);
-                            newSegment->line = oldSegment->line;
-                            newSegment->coreSize = oldSegment->coreSize;
-                            for(Point3& p : newSegment->line)
+                        for(size_t i = 0; i < oldLineCount; i++) {
+                            DislocationLine* oldLine = newDislocations->lines()[i];
+                            DislocationLine* newLine = newDislocations->createLine(oldLine->burgersVector);
+                            newLine->vertices = oldLine->vertices;
+                            newLine->coreSize = oldLine->coreSize;
+                            for(Point3& p : newLine->vertices)
                                 p += imageDelta;
                         }
                         // TODO: Replicate nodal connectivity.
                     }
                 }
             }
-            OVITO_ASSERT(newDislocations->segments().size() == oldSegmentCount * numCopies);
+            OVITO_ASSERT(newDislocations->lines().size() == oldLineCount * numCopies);
 
             // Extend the periodic domain the dislocation network is embedded in.
             simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);

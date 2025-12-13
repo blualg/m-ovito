@@ -62,8 +62,8 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
             DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
 
             // Apply transformation to the vertices of the dislocation lines.
-            for(DislocationSegment* segment : outputDislocations->segments()) {
-                for(Point3& vertex : segment->line) {
+            for(DislocationLine* line : outputDislocations->lines()) {
+                for(Point3& vertex : line->vertices) {
                     vertex = tm * vertex;
                 }
             }

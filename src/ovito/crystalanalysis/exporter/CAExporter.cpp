@@ -152,28 +152,28 @@ OORef<FileExportJob> CAExporter::createExportJob(const QString& filePath, int nu
 
             if(dislocations) {
                 // Write list of dislocation segments.
-                textStream() << "DISLOCATIONS " << dislocations->segments().size() << "\n";
-                for(const DislocationSegment* segment : dislocations->segments()) {
+                textStream() << "DISLOCATIONS " << dislocations->lines().size() << "\n";
+                for(const DislocationLine* line : dislocations->lines()) {
 
                     // Make sure consecutive identifiers have been assigned to segments.
-                    OVITO_ASSERT(segment->id >= 0 && segment->id < dislocations->segments().size());
-                    OVITO_ASSERT(dislocations->segments()[segment->id] == segment);
+                    OVITO_ASSERT(line->id >= 0 && line->id < dislocations->lines().size());
+                    OVITO_ASSERT(dislocations->lines()[line->id] == line);
 
-                    textStream() << segment->id << "\n";
-                    textStream() << segment->burgersVector.localVec().x() << " " << segment->burgersVector.localVec().y() << " " << segment->burgersVector.localVec().z() << "\n";
-                    textStream() << segment->burgersVector.cluster()->id << "\n";
+                    textStream() << line->id << "\n";
+                    textStream() << line->burgersVector.localVec().x() << " " << line->burgersVector.localVec().y() << " " << line->burgersVector.localVec().z() << "\n";
+                    textStream() << line->burgersVector.cluster()->id << "\n";
 
                     // Write polyline.
-                    textStream() << segment->line.size() << "\n";
-                    if(segment->coreSize.empty()) {
-                        for(const Point3& p : segment->line) {
+                    textStream() << line->vertices.size() << "\n";
+                    if(line->coreSize.empty()) {
+                        for(const Point3& p : line->vertices) {
                             textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
                         }
                     }
                     else {
-                        OVITO_ASSERT(segment->coreSize.size() == segment->line.size());
-                        auto cs = segment->coreSize.cbegin();
-                        for(const Point3& p : segment->line) {
+                        OVITO_ASSERT(line->coreSize.size() == line->vertices.size());
+                        auto cs = line->coreSize.cbegin();
+                        for(const Point3& p : line->vertices) {
                             textStream() << p.x() << " " << p.y() << " " << p.z() << " " << (*cs++) << "\n";
                         }
                     }
@@ -181,13 +181,13 @@ OORef<FileExportJob> CAExporter::createExportJob(const QString& filePath, int nu
 
                 // Write dislocation connectivity information.
                 textStream() << "DISLOCATION_JUNCTIONS\n";
-                for(const DislocationSegment* segment : dislocations->segments()) {
-                    OVITO_ASSERT(segment->forwardNode().junctionRing->segment->id < dislocations->segments().size());
-                    OVITO_ASSERT(segment->backwardNode().junctionRing->segment->id < dislocations->segments().size());
+                for(const DislocationLine* line : dislocations->lines()) {
+                    OVITO_ASSERT(line->forwardNode().junctionRing->line->id < dislocations->lines().size());
+                    OVITO_ASSERT(line->backwardNode().junctionRing->line->id < dislocations->lines().size());
 
                     for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
-                        const DislocationNode* otherNode = segment->nodes[nodeIndex]->junctionRing;
-                        textStream() << (int)otherNode->isForwardNode() << " " << otherNode->segment->id << "\n";
+                        const DislocationNode* otherNode = line->nodes[nodeIndex]->junctionRing;
+                        textStream() << (int)otherNode->isForwardNode() << " " << otherNode->line->id << "\n";
                     }
                 }
             }

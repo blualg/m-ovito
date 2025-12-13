@@ -71,35 +71,35 @@ OORef<RefTarget> DislocationNetwork::clone(bool deepCopy, CloneHelper& cloneHelp
     // Let the base class create an instance of this class.
     OORef<DislocationNetwork> clone = static_object_cast<DislocationNetwork>(PeriodicDomainObject::clone(deepCopy, cloneHelper));
 
-    for(int segmentIndex = 0; segmentIndex < segments().size(); segmentIndex++) {
-        DislocationSegment* oldSegment = segments()[segmentIndex];
-        OVITO_ASSERT(oldSegment->replacedWith == nullptr);
-        OVITO_ASSERT(oldSegment->id == segmentIndex);
-        DislocationSegment* newSegment = clone->createSegment(oldSegment->burgersVector);
-        newSegment->line = oldSegment->line;
-        newSegment->coreSize = oldSegment->coreSize;
-        OVITO_ASSERT(newSegment->id == oldSegment->id);
+    for(int lineIndex = 0; lineIndex < lines().size(); lineIndex++) {
+        DislocationLine* oldLine = lines()[lineIndex];
+        OVITO_ASSERT(oldLine->replacedWith == nullptr);
+        OVITO_ASSERT(oldLine->id == lineIndex);
+        DislocationLine* newLine = clone->createLine(oldLine->burgersVector);
+        newLine->vertices = oldLine->vertices;
+        newLine->coreSize = oldLine->coreSize;
+        OVITO_ASSERT(newLine->id == oldLine->id);
     }
 
-    for(int segmentIndex = 0; segmentIndex < segments().size(); segmentIndex++) {
-        DislocationSegment* oldSegment = segments()[segmentIndex];
-        DislocationSegment* newSegment = clone->segments()[segmentIndex];
+    for(int lineIndex = 0; lineIndex < lines().size(); lineIndex++) {
+        DislocationLine* oldLine = lines()[lineIndex];
+        DislocationLine* newLine = clone->lines()[lineIndex];
         for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
-            DislocationNode* oldNode = oldSegment->nodes[nodeIndex];
+            DislocationNode* oldNode = oldLine->nodes[nodeIndex];
             if(oldNode->isDangling())
                 continue;
             DislocationNode* oldSecondNode = oldNode->junctionRing;
-            DislocationNode* newNode = newSegment->nodes[nodeIndex];
-            newNode->junctionRing = clone->segments()[oldNode->junctionRing->segment->id]->nodes[oldSecondNode->isForwardNode() ? 0 : 1];
+            DislocationNode* newNode = newLine->nodes[nodeIndex];
+            newNode->junctionRing = clone->lines()[oldNode->junctionRing->line->id]->nodes[oldSecondNode->isForwardNode() ? 0 : 1];
         }
     }
 
 #ifdef OVITO_DEBUG
-    for(int segmentIndex = 0; segmentIndex < segments().size(); segmentIndex++) {
-        DislocationSegment* oldSegment = segments()[segmentIndex];
-        DislocationSegment* newSegment = clone->segments()[segmentIndex];
+    for(int lineIndex = 0; lineIndex < lines().size(); lineIndex++) {
+        DislocationLine* oldLine = lines()[lineIndex];
+        DislocationLine* newLine = clone->lines()[lineIndex];
         for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
-            OVITO_ASSERT(oldSegment->nodes[nodeIndex]->countJunctionArms() == newSegment->nodes[nodeIndex]->countJunctionArms());
+            OVITO_ASSERT(oldLine->nodes[nodeIndex]->countJunctionArms() == newLine->nodes[nodeIndex]->countJunctionArms());
         }
     }
 #endif
@@ -117,10 +117,10 @@ void DislocationNetwork::referenceReplaced(const PropertyFieldDescriptor* field,
         // by remapping them to the new graph.
         if(oldTarget && newTarget) {
             ClusterGraph* newGraph = static_object_cast<ClusterGraph>(newTarget);
-            for(DislocationSegment* segment : segments()) {
-                if(segment->burgersVector.cluster()) {
-                    OVITO_ASSERT(static_object_cast<ClusterGraph>(oldTarget)->findCluster(segment->burgersVector.cluster()->id));
-                    segment->burgersVector = ClusterVector(segment->burgersVector.localVec(), newGraph->findCluster(segment->burgersVector.cluster()->id));
+            for(DislocationLine* line : lines()) {
+                if(line->burgersVector.cluster()) {
+                    OVITO_ASSERT(static_object_cast<ClusterGraph>(oldTarget)->findCluster(line->burgersVector.cluster()->id));
+                    line->burgersVector = ClusterVector(line->burgersVector.localVec(), newGraph->findCluster(line->burgersVector.cluster()->id));
                 }
             }
         }
@@ -130,29 +130,29 @@ void DislocationNetwork::referenceReplaced(const PropertyFieldDescriptor* field,
 }
 
 /******************************************************************************
-* Allocates a new dislocation segment terminated by two nodes.
+* Allocates a new dislocation line terminated by two nodes.
 ******************************************************************************/
-DislocationSegment* DislocationNetwork::createSegment(const ClusterVector& burgersVector)
+DislocationLine* DislocationNetwork::createLine(const ClusterVector& burgersVector)
 {
     DislocationNode* forwardNode  = _nodePool.construct();
     DislocationNode* backwardNode = _nodePool.construct();
 
-    DislocationSegment* segment = _segmentPool.construct(burgersVector, forwardNode, backwardNode);
-    segment->id = _segments.size();
-    _segments.push_back(segment);
+    DislocationLine* line = _linePool.construct(burgersVector, forwardNode, backwardNode);
+    line->id = _lines.size();
+    _lines.push_back(line);
 
-    return segment;
+    return line;
 }
 
 /******************************************************************************
-* Removes a segment from the list of segments.
+* Removes a line from the list of lines.
 ******************************************************************************/
-void DislocationNetwork::discardSegment(DislocationSegment* segment)
+void DislocationNetwork::discardLine(DislocationLine* line)
 {
-    OVITO_ASSERT(segment != nullptr);
-    auto i = std::find(_segments.begin(), _segments.end(), segment);
-    OVITO_ASSERT(i != _segments.end());
-    _segments.erase(i);
+    OVITO_ASSERT(line != nullptr);
+    auto i = std::find(_lines.begin(), _lines.end(), line);
+    OVITO_ASSERT(i != _lines.end());
+    _lines.erase(i);
 }
 
 /******************************************************************************
@@ -160,18 +160,18 @@ void DislocationNetwork::discardSegment(DislocationSegment* segment)
 ******************************************************************************/
 void DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, TaskProgress& progress)
 {
-    progress.setMaximum(segments().size());
+    progress.setMaximum(lines().size());
 
-    for(DislocationSegment* segment : segments()) {
+    for(DislocationLine* line : lines()) {
         progress.incrementValue();
-        if(segment->coreSize.empty())
+        if(line->coreSize.empty())
             continue;
-        std::deque<Point3> line;
+        std::deque<Point3> vertices;
         std::deque<int> coreSize;
-        coarsenDislocationLine(linePointInterval, segment->line, segment->coreSize, line, coreSize, segment->isClosedLoop(), segment->isInfiniteLine());
-        smoothDislocationLine(lineSmoothingLevel, line, segment->isClosedLoop());
-        segment->line = std::move(line);
-        segment->coreSize.clear();
+        coarsenDislocationLine(linePointInterval, line->vertices, line->coreSize, vertices, coreSize, line->isClosedLoop(), line->isInfiniteLine());
+        smoothDislocationLine(lineSmoothingLevel, vertices, line->isClosedLoop());
+        line->vertices = std::move(vertices);
+        line->coreSize.clear(); // core size info is no longer valid after smoothing
     }
 }
 
@@ -373,11 +373,11 @@ FloatType DislocationNetwork::generateDislocationStatistics(const OOWeakRef<cons
 
     // Classify, count and measure length of dislocation segments.
     FloatType totalLineLength = 0;
-    for(const DislocationSegment* segment : segments()) {
-        FloatType len = segment->calculateLength();
+    for(const DislocationLine* line : lines()) {
+        FloatType len = line->calculateLength();
         totalLineLength += len;
 
-        Cluster* cluster = segment->burgersVector.cluster();
+        Cluster* cluster = line->burgersVector.cluster();
         OVITO_ASSERT(cluster != nullptr);
         const MicrostructurePhase* structure = structureById(cluster->structure);
         if(structure == nullptr) continue;
@@ -385,7 +385,7 @@ FloatType DislocationNetwork::generateDislocationStatistics(const OOWeakRef<cons
         if(structure == defaultStructure) {
             family = structure->defaultBurgersVectorFamily();
             for(const BurgersVectorFamily* f : structure->burgersVectorFamilies()) {
-                if(f->isMember(segment->burgersVector.localVec(), structure)) {
+                if(f->isMember(line->burgersVector.localVec(), structure)) {
                     family = f;
                     break;
                 }

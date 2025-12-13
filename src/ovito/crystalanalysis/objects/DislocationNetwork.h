@@ -32,7 +32,7 @@
 namespace Ovito {
 
 /**
- * \brief Stores a collection of dislocation segments.
+ * \brief Stores a collection of dislocation lines.
  */
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetwork : public PeriodicDomainObject
 {
@@ -43,17 +43,17 @@ public:
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// Returns the list of dislocation segments.
-    const std::vector<DislocationSegment*>& segments() const { return _segments; }
+    /// Returns the list of dislocation lines.
+    const std::vector<DislocationLine*>& lines() const { return _lines; }
 
-    /// Returns the list of dislocation segments.
-    std::vector<DislocationSegment*>& segments() { return _segments; }
+    /// Returns the list of dislocation lines.
+    std::vector<DislocationLine*>& lines() { return _lines; }
 
-    /// Allocates a new dislocation segment terminated by two nodes.
-    DislocationSegment* createSegment(const ClusterVector& burgersVector);
+    /// Allocates a new dislocation line terminated by two nodes.
+    DislocationLine* createLine(const ClusterVector& burgersVector);
 
-    /// Removes a segment from the global list of segments.
-    void discardSegment(DislocationSegment* segment);
+    /// Removes a line from the global list of lines.
+    void discardLine(DislocationLine* line);
 
     /// Smoothens and coarsens the dislocation lines.
     void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, TaskProgress& progress);
@@ -110,11 +110,11 @@ private:
     // Used to allocate memory for DislocationNode instances.
     MemoryPool<DislocationNode> _nodePool;
 
-    /// The list of dislocation segments.
-    std::vector<DislocationSegment*> _segments;
+    /// The list of dislocation lines.
+    std::vector<DislocationLine*> _lines;
 
-    /// Used to allocate memory for DislocationSegment objects.
-    MemoryPool<DislocationSegment> _segmentPool;
+    /// To efficiently allocate memory for DislocationLine structures.
+    MemoryPool<DislocationLine> _linePool;
 };
 
 }   // End of namespace

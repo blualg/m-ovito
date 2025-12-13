@@ -32,22 +32,22 @@ namespace Ovito {
 struct BurgersCircuit;          // defined in BurgersCircuit.h
 
 /**
- * Every dislocation segment is delimited by two dislocation nodes.
+ * Every dislocation line is delimited by two dislocation nodes.
  */
 struct OVITO_CRYSTALANALYSIS_EXPORT DislocationNode
 {
-    /// The dislocation segment delimited by this node.
-    DislocationSegment* segment;
+    /// The dislocation line delimited by this node.
+    DislocationLine* line;
 
-    /// The opposite node of the dislocation segment.
+    /// The opposite node of this node's dislocation line.
     DislocationNode* oppositeNode;
 
-    /// Pointer to the next node in linked list of nodes that form a junction.
-    /// If this node is not part of a junction, then this pointer points to the node itself.
+    /// Pointer to the next node in the circular linked list of nodes that form a dislocation network junction.
+    /// If this node is not part of a junction, i.e., if it is a dangling node, then this points to the node itself.
     DislocationNode* junctionRing = this;
 
     /// The Burgers circuit associated with this node.
-    /// This field is only used during dislocation line tracing.
+    /// This field is only valid during the line tracing process.
     BurgersCircuit* circuit = nullptr;
 
     /// Returns the (signed) Burgers vector of the node.
@@ -59,12 +59,12 @@ struct OVITO_CRYSTALANALYSIS_EXPORT DislocationNode
     /// start or end point of the dislocation segment to which the node belongs.
     inline const Point3& position() const;
 
-    /// Returns true if this node is the forward node of its segment, that is,
-    /// when it is at the end of the associated dislocation segment.
+    /// Returns true if this node is the forward node of its line, that is,
+    /// when it is at the end of the associated dislocation line.
     inline bool isForwardNode() const;
 
-    /// Returns true if this node is the backward node of its segment, that is,
-    /// when it is at the beginning of the associated dislocation segment.
+    /// Returns true if this node is the backward node of its line, that is,
+    /// when it is at the beginning of the associated dislocation line.
     inline bool isBackwardNode() const;
 
     /// Determines whether the given node forms a junction with the given node.
@@ -113,115 +113,115 @@ struct OVITO_CRYSTALANALYSIS_EXPORT DislocationNode
         return armCount;
     }
 
-    /// Return whether the end of a segment, represented by this node, does not merge into a junction.
+    /// Return whether the end of a dislocation line, represented by this node, does not merge into a junction.
     bool isDangling() const {
         return (junctionRing == this);
     }
 };
 
 /**
- * A dislocation segment.
+ * A single dislocation line.
  *
- * Each segment has a Burgers vector and consists of a piecewise-linear curve in space.
- *
- * Two dislocation nodes delimit the segment.
+ * Each dislocation has a Burgers vector and consists of a piecewise-linear curve in space.
+ * The line is delimited by a dislocation node at each end, which serve as connection points
+ * to form dislocation networks.
  */
-struct DislocationSegment
+struct DislocationLine
 {
-    /// The unique identifier of the dislocation segment.
+    /// The unique identifier of the dislocation line.
     int id;
 
-    /// The piecewise linear curve in space.
-    std::deque<Point3> line;
+    /// The points forming the piecewise linear curve.
+    std::deque<Point3> vertices;
 
     /// Stores the circumference of the dislocation core at every sampling point along the line.
     /// This information is used to coarsen the sampling point array adaptively since a large
     /// core size leads to a high sampling rate.
     std::deque<int> coreSize;
 
-    /// The Burgers vector of the dislocation segment. It is expressed in the coordinate system of
-    /// the crystal cluster which the segment is embedded in.
+    /// The Burgers vector of the dislocation line. It is expressed in the coordinate system of
+    /// the crystal cluster which the line is embedded in.
     ClusterVector burgersVector;
 
-    /// The two nodes that delimit the segment.
+    /// The two nodes that delimit the line.
     std::array<DislocationNode*, 2> nodes;
 
-    /// The segment that replaces this discarded segment if the two have been merged into one segment.
-    DislocationSegment* replacedWith = nullptr;
+    /// The parent line if this line has been joined to another.
+    DislocationLine* replacedWith = nullptr;
 
-    /// A user-defined color assigned to the dislocation segment.
+    /// A user-defined color assigned to the dislocation line.
     Color customColor = Color(-1, -1, -1);
 
-    /// Constructs a new dislocation segment with the given Burgers vector
-    /// and connecting the two dislocation nodes.
-    DislocationSegment(const ClusterVector& b, DislocationNode* forwardNode, DislocationNode* backwardNode) : burgersVector(b) {
+    /// Constructs a new dislocation line with the given Burgers vector, connecting two dislocation nodes.
+    DislocationLine(const ClusterVector& b, DislocationNode* forwardNode, DislocationNode* backwardNode) : burgersVector(b) {
         OVITO_ASSERT(!b.localVec().isZero());
         nodes[0] = forwardNode;
         nodes[1] = backwardNode;
-        forwardNode->segment = this;
-        backwardNode->segment = this;
+        forwardNode->line = this;
+        backwardNode->line = this;
         forwardNode->oppositeNode = backwardNode;
         backwardNode->oppositeNode = forwardNode;
     }
 
-    /// Returns the forward-pointing node at the end of the dislocation segment.
+    /// Returns the forward-pointing node at the end of the dislocation line.
     DislocationNode& forwardNode() const { return *nodes[0]; }
 
-    /// Returns the backward-pointing node at the start of the dislocation segment.
+    /// Returns the backward-pointing node at the start of the dislocation line.
     DislocationNode& backwardNode() const { return *nodes[1]; }
 
-    /// Returns true if this segment forms a closed loop, that is, when its two nodes form a single 2-junction.
+    /// Returns true if this line forms a closed loop, that is, when its two nodes form a single 2-junction.
     /// Note that an infinite dislocation line, passing through a periodic boundary, is also considered a loop.
     bool isClosedLoop() const {
         OVITO_ASSERT(nodes[0] && nodes[1]);
         return (nodes[0]->junctionRing == nodes[1]) && (nodes[1]->junctionRing == nodes[0]);
     }
 
-    /// Returns true if this segment is an infinite dislocation line passing through a periodic boundary.
-    /// A segment is considered infinite if it is a closed loop but its start and end points do not coincide.
+    /// Returns true if this dislocation is an infinite dislocation line passing through a periodic boundary.
+    /// A dislocation is considered infinite if it is a closed loop but its start and end points do not coincide.
     bool isInfiniteLine() const {
-        return isClosedLoop() && line.back().equals(line.front(), CA_ATOM_VECTOR_EPSILON) == false;
+        return isClosedLoop() && vertices.back().equals(vertices.front(), CA_ATOM_VECTOR_EPSILON) == false;
     }
 
-    /// Calculates the line length of the segment.
+    /// Calculates the line length of the dislocation line.
     FloatType calculateLength() const {
         OVITO_ASSERT(!isDegenerate());
 
         FloatType length = 0;
-        auto i1 = line.begin();
+        auto i1 = vertices.begin();
         for(;;) {
             auto i2 = i1 + 1;
-            if(i2 == line.end()) break;
+            if(i2 == vertices.end()) break;
             length += (*i1 - *i2).length();
             i1 = i2;
         }
         return length;
     }
 
-    /// Returns true if this segment's curve consists of less than two points.
-    bool isDegenerate() const { return line.size() <= 1; }
+    /// Returns true if this line consists of less than two points.
+    bool isDegenerate() const { return vertices.size() <= 1; }
 
-    /// Reverses the direction of the segment.
-    /// This flips both the line sense and the segment's Burgers vector.
+    /// Reverses the direction of the line.
+    /// This flips both the line sense and the dislocation's Burgers vector.
     void flipOrientation() {
         burgersVector = -burgersVector;
         std::swap(nodes[0], nodes[1]);
-        std::reverse(line.begin(), line.end());
+        std::reverse(vertices.begin(), vertices.end());
         std::reverse(coreSize.begin(), coreSize.end());
     }
 
-    /// Computes the location of a point along the segment line.
+    /// Computes a location along the dislocation line.
     Point3 getPointOnLine(FloatType t) const
     {
-        if(line.empty()) return Point3::Origin();
+        if(vertices.empty())
+            return Point3::Origin();
 
         t *= calculateLength();
 
         FloatType sum = 0;
-        auto i1 = line.begin();
+        auto i1 = vertices.begin();
         for(;;) {
             auto i2 = i1 + 1;
-            if(i2 == line.end()) break;
+            if(i2 == vertices.end()) break;
             Vector3 delta = *i2 - *i1;
             FloatType len = delta.length();
             if(sum + len >= t && len != 0) {
@@ -231,55 +231,54 @@ struct DislocationSegment
             i1 = i2;
         }
 
-        return line.back();
+        return vertices.back();
     };
 
     /// Get the fully replaced dislocation ID (following successive replacements)
-    [[nodiscard]] int replacedId() const
-    {
-        DislocationSegment* currentSegment = replacedWith;
+    int replacedId() const {
+        DislocationLine* currentLine = replacedWith;
         int currentId = id;
-        while(currentSegment) {
-            currentId = currentSegment->id;
-            currentSegment = currentSegment->replacedWith;
+        while(currentLine) {
+            currentId = currentLine->id;
+            currentLine = currentLine->replacedWith;
         };
         return currentId;
     }
 };
 
-/// Returns true if this node is the forward node of its segment, that is,
-/// when it is at the end of the associated dislocation segment.
+/// Returns true if this node is the forward node of its dislocation, that is,
+/// when it is at the end of the associated dislocation line.
 inline bool DislocationNode::isForwardNode() const
 {
-    return &segment->forwardNode() == this;
+    return &line->forwardNode() == this;
 }
 
-/// Returns true if this node is the backward node of its segment, that is,
-/// when it is at the beginning of the associated dislocation segment.
+/// Returns true if this node is the backward node of its dislocation, that is,
+/// when it is at the beginning of the associated dislocation line.
 inline bool DislocationNode::isBackwardNode() const
 {
-    return &segment->backwardNode() == this;
+    return &line->backwardNode() == this;
 }
 
 /// Returns the (signed) Burgers vector of the node.
-/// This is the Burgers vector of the segment if this node is a forward node,
+/// This is the Burgers vector of the dislocation if this node is a forward node,
 /// or the negative Burgers vector if this node is a backward node.
 inline ClusterVector DislocationNode::burgersVector() const
 {
     if(isForwardNode())
-        return segment->burgersVector;
+        return line->burgersVector;
     else
-        return -segment->burgersVector;
+        return -line->burgersVector;
 }
 
 /// Returns the position of the node by looking up the coordinates of the
-/// start or end point of the dislocation segment to which the node belongs.
+/// start or end point of the dislocation line to which the node belongs.
 inline const Point3& DislocationNode::position() const
 {
     if(isForwardNode())
-        return segment->line.back();
+        return line->vertices.back();
     else
-        return segment->line.front();
+        return line->vertices.front();
 }
 
 }   // End of namespace

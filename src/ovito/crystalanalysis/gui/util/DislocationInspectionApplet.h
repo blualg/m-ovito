@@ -77,7 +77,7 @@ private:
         /// Returns the number of rows.
         virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
             if(parent.isValid()) return 0;
-            if(_dislocationObj) return _dislocationObj->segments().size();
+            if(_dislocationObj) return _dislocationObj->lines().size();
             return 0;
         }
 

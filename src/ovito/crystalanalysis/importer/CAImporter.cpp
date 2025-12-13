@@ -144,7 +144,7 @@ void CAImporter::FrameLoader::loadFile()
     int pbcFlags[3] = {1,1,1};
     int numClusters = 0;
     int numClusterTransitions = 0;
-    int numDislocationSegments = 0;
+    int numDislocationLines = 0;
     SurfaceMesh* defectSurface = nullptr;
     DataOORef<DislocationNetwork> dislocations;
     DataOORef<ClusterGraph> clusterGraph = DataOORef<ClusterGraph>::create();
@@ -349,10 +349,10 @@ void CAImporter::FrameLoader::loadFile()
         }
         else if(stream.lineStartsWith("DISLOCATIONS ")) {
             // Read dislocations list.
-            if(sscanf(stream.line(), "DISLOCATIONS %i", &numDislocationSegments) != 1)
-                throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
+            if(sscanf(stream.line(), "DISLOCATIONS %i", &numDislocationLines) != 1)
+                throw Exception(tr("Failed to parse file. Invalid number of dislocation lines in line %1.").arg(stream.lineNumber()));
             progress.setText(tr("Reading dislocations"));
-            progress.setMaximum(numDislocationSegments);
+            progress.setMaximum(numDislocationLines);
             if(const DislocationNetwork* existingDislocationsObj = state().getObject<DislocationNetwork>()) {
                 dislocations = state().makeMutable(existingDislocationsObj);
             }
@@ -360,12 +360,12 @@ void CAImporter::FrameLoader::loadFile()
                 dislocations = state().createObject<DislocationNetwork>(pipelineNode());
             }
             dislocations->setClusterGraph(clusterGraph);
-            dislocations->segments().clear();
-            for(int index = 0; index < numDislocationSegments; index++) {
+            dislocations->lines().clear();
+            for(int index = 0; index < numDislocationLines; index++) {
                 progress.setValueIntermittent(index);
-                int segmentId;
-                if(sscanf(stream.readLine(), "%i", &segmentId) != 1)
-                    throw Exception(tr("Failed to parse file. Invalid segment ID in line %1.").arg(stream.lineNumber()));
+                int lineId;
+                if(sscanf(stream.readLine(), "%i", &lineId) != 1)
+                    throw Exception(tr("Failed to parse file. Invalid line ID in line %1.").arg(stream.lineNumber()));
 
                 Vector3 burgersVector;
                 if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &burgersVector.x(), &burgersVector.y(), &burgersVector.z()) != 3)
@@ -387,14 +387,14 @@ void CAImporter::FrameLoader::loadFile()
                 if(!cluster)
                     throw Exception(tr("Failed to parse file. Invalid cluster reference in line %1.").arg(stream.lineNumber()));
 
-                DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector.toDataType<Cluster::VecType::value_type>(), cluster));
+                DislocationLine* line = dislocations->createLine(ClusterVector(burgersVector.toDataType<Cluster::VecType::value_type>(), cluster));
 
                 // Read polyline.
                 int numPoints;
                 if(sscanf(stream.readLine(), "%i", &numPoints) != 1 || numPoints <= 1)
-                    throw Exception(tr("Failed to parse file. Invalid segment number of points in line %1.").arg(stream.lineNumber()));
-                segment->line.resize(numPoints);
-                for(Point3& p : segment->line) {
+                    throw Exception(tr("Failed to parse file. Invalid number of dislocation points in line %1.").arg(stream.lineNumber()));
+                line->vertices.resize(numPoints);
+                for(Point3& p : line->vertices) {
                     if(fileFormatVersion <= 4) {
                         if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
                             throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
@@ -404,14 +404,14 @@ void CAImporter::FrameLoader::loadFile()
                         if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " %i", &p.x(), &p.y(), &p.z(), &coreSize) < 3)
                             throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
                         if(coreSize > 0)
-                            segment->coreSize.push_back(coreSize);
+                            line->coreSize.push_back(coreSize);
                     }
                 }
 
                 if(fileFormatVersion <= 4) {
                     // Read dislocation core size.
-                    segment->coreSize.resize(numPoints);
-                    for(int& coreSize : segment->coreSize) {
+                    line->coreSize.resize(numPoints);
+                    for(int& coreSize : line->coreSize) {
                         if(sscanf(stream.readLine(), "%i", &coreSize) != 1)
                             throw Exception(tr("Failed to parse file. Invalid core size in line %1.").arg(stream.lineNumber()));
                     }
@@ -420,13 +420,13 @@ void CAImporter::FrameLoader::loadFile()
         }
         else if(stream.lineStartsWith("DISLOCATION_JUNCTIONS") && dislocations) {
             // Read dislocation junctions.
-            for(int index = 0; index < numDislocationSegments; index++) {
-                DislocationSegment* segment = dislocations->segments()[index];
+            for(int index = 0; index < numDislocationLines; index++) {
+                DislocationLine* line = dislocations->lines()[index];
                 for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
-                    int isForward, otherSegmentId;
-                    if(sscanf(stream.readLine(), "%i %i", &isForward, &otherSegmentId) != 2 || otherSegmentId < 0 || otherSegmentId >= numDislocationSegments)
+                    int isForward, otherLineId;
+                    if(sscanf(stream.readLine(), "%i %i", &isForward, &otherLineId) != 2 || otherLineId < 0 || otherLineId >= numDislocationLines)
                         throw Exception(tr("Failed to parse file. Invalid dislocation junction record in line %1.").arg(stream.lineNumber()));
-                    segment->nodes[nodeIndex]->junctionRing = dislocations->segments()[otherSegmentId]->nodes[isForward ? 0 : 1];
+                    line->nodes[nodeIndex]->junctionRing = dislocations->lines()[otherLineId]->nodes[isForward ? 0 : 1];
                 }
             }
         }
@@ -577,7 +577,7 @@ void CAImporter::FrameLoader::loadFile()
         dislocations->generateDislocationStatistics(pipelineNode(), state(), true, mainStructure);
     }
 
-    state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
+    state().setStatus(tr("Number of dislocations: %1").arg(numDislocationLines));
 
     // Call base implementation to finalize the loaded data.
     ParticleImporter::FrameLoader::loadFile();

@@ -128,25 +128,25 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
 {
     if(role == Qt::DisplayRole) {
         if(_dislocationObj) {
-            DislocationSegment* segment = _dislocationObj->segments()[index.row()];
+            DislocationLine* line = _dislocationObj->lines()[index.row()];
             switch(index.column()) {
-            case 0: return _dislocationObj->segments()[index.row()]->id;
-            case 1: return DislocationVis::formatBurgersVector(segment->burgersVector.localVec().toDataType<FloatType>(), _dislocationObj->structureById(segment->burgersVector.cluster()->structure));
-            case 2: { Vector3 b = segment->burgersVector.toSpatialVector();
+            case 0: return _dislocationObj->lines()[index.row()]->id;
+            case 1: return DislocationVis::formatBurgersVector(line->burgersVector.localVec().toDataType<FloatType>(), _dislocationObj->structureById(line->burgersVector.cluster()->structure));
+            case 2: { Vector3 b = line->burgersVector.toSpatialVector();
                     return QStringLiteral("%1 %2 %3")
                                 .arg(QLocale::c().toString(b.x(), 'f', 4), 7)
                                 .arg(QLocale::c().toString(b.y(), 'f', 4), 7)
                                 .arg(QLocale::c().toString(b.z(), 'f', 4), 7); }
-            case 3: return QLocale::c().toString(segment->calculateLength());
-            case 4: return segment->burgersVector.cluster()->id;
-            case 5: return _dislocationObj->structureById(segment->burgersVector.cluster()->structure)->name();
-            case 6: { Point3 headLocation = segment->backwardNode().position();
+            case 3: return QLocale::c().toString(line->calculateLength());
+            case 4: return line->burgersVector.cluster()->id;
+            case 5: return _dislocationObj->structureById(line->burgersVector.cluster()->structure)->name();
+            case 6: { Point3 headLocation = line->backwardNode().position();
                         if(_dislocationObj->domain()) headLocation = _dislocationObj->domain()->wrapPoint(headLocation);
                         return QStringLiteral("%1 %2 %3")
                             .arg(QLocale::c().toString(headLocation.x(), 'f', 4), 7)
                             .arg(QLocale::c().toString(headLocation.y(), 'f', 4), 7)
                             .arg(QLocale::c().toString(headLocation.z(), 'f', 4), 7); }
-            case 7: { Point3 tailLocation = segment->forwardNode().position();
+            case 7: { Point3 tailLocation = line->forwardNode().position();
                         if(_dislocationObj->domain()) tailLocation = _dislocationObj->domain()->wrapPoint(tailLocation);
                         return QStringLiteral("%1 %2 %3")
                             .arg(QLocale::c().toString(tailLocation.x(), 'f', 4), 7)
@@ -157,11 +157,11 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
     }
     else if(role == Qt::DecorationRole && index.column() == 1) {
         if(_dislocationObj) {
-            const DislocationSegment* segment = _dislocationObj->segments()[index.row()];
-            const MicrostructurePhase* crystalStructure = _dislocationObj->structureById(segment->burgersVector.cluster()->structure);
+            const DislocationLine* line = _dislocationObj->lines()[index.row()];
+            const MicrostructurePhase* crystalStructure = _dislocationObj->structureById(line->burgersVector.cluster()->structure);
             const BurgersVectorFamily* family = crystalStructure->defaultBurgersVectorFamily();
             for(const BurgersVectorFamily* f : crystalStructure->burgersVectorFamilies()) {
-                if(f->isMember(segment->burgersVector.localVec(), crystalStructure)) {
+                if(f->isMember(line->burgersVector.localVec(), crystalStructure)) {
                     family = f;
                     break;
                 }
@@ -242,9 +242,9 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
         return;
 
     for(const QModelIndex& index : _applet->_tableView->selectionModel()->selectedRows()) {
-        int segmentIndex = index.row();
-        if(segmentIndex >= 0 && segmentIndex < dislocations->segments().size())
-            vis->renderOverlayMarker(dislocations, flowState, segmentIndex, frameGraph, _applet->currentSceneNode());
+        int lineIndex = index.row();
+        if(lineIndex >= 0 && lineIndex < dislocations->lines().size())
+            vis->renderOverlayMarker(dislocations, flowState, lineIndex, frameGraph, _applet->currentSceneNode());
     }
 }
 

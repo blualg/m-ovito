@@ -71,9 +71,9 @@ Future<std::shared_ptr<const RenderableDislocationLines>> DislocationVis::transf
         const ClusterGraph* clusterGraph = dislocations->clusterGraph();
 
         // Convert the dislocations object.
-        int segmentIndex = 0;
-        for(const DislocationSegment* segment : dislocations->segments()) {
-            const ClusterVector& b = segment->burgersVector;
+        int lineIndex = 0;
+        for(const DislocationLine* line : dislocations->lines()) {
+            const ClusterVector& b = line->burgersVector;
             // Determine the Burgers vector family the dislocation segment belongs to.
             if(const MicrostructurePhase* phase = dislocations->structureById(b.cluster()->structure)) {
                 const BurgersVectorFamily* family = phase->defaultBurgersVectorFamily();
@@ -85,14 +85,14 @@ Future<std::shared_ptr<const RenderableDislocationLines>> DislocationVis::transf
                 }
                 // Don't render dislocation segment if the Burgers vector family has been disabled.
                 if(family && !family->enabled()) {
-                    segmentIndex++;
+                    lineIndex++;
                     continue;
                 }
             }
-            clipDislocationLine(segment->line, simulationCell, dislocations->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
-                outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
+            clipDislocationLine(line->vertices, simulationCell, dislocations->cuttingPlanes(), [lineIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+                outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, lineIndex });
             });
-            segmentIndex++;
+            lineIndex++;
         }
 
         // Create output RenderableDislocationLines object.
@@ -118,9 +118,9 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 
     if(showBurgersVectors()) {
         padding = std::max(padding, burgersVectorWidth() * FloatType(2));
-        for(const DislocationSegment* segment : dislocations->segments()) {
-            Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
-            Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
+        for(const DislocationLine* line : dislocations->lines()) {
+            Point3 center = cellObject->wrapPoint(line->getPointOnLine(FloatType(0.5)));
+            Vector3 dir = burgersVectorScaling() * line->burgersVector.toSpatialVector();
             bb.addPoint(center + dir);
         }
     }
@@ -223,7 +223,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
                 Cluster::VecType lastBurgersVector = Cluster::VecType::Zero();
                 int lastRegion = -1;
                 int lastDislocationIndex = -1;
-                const DislocationSegment* lastInputDislocationSegment = nullptr;
+                const DislocationLine* lastInputDislocationLine = nullptr;
                 for(size_t lineSegmentIndex = 0; lineSegmentIndex < renderableLines->lineSegments().size(); lineSegmentIndex++) {
                     const auto& lineSegment = renderableLines->lineSegments()[lineSegmentIndex];
                     if(lineSegment.burgersVector != lastBurgersVector || lineSegment.region != lastRegion) {
@@ -271,13 +271,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
                     if(dislocations) {
                         if(lastDislocationIndex != lineSegment.dislocationIndex) {
                             lastDislocationIndex = lineSegment.dislocationIndex;
-                            const auto& segmentList = dislocations->segments();
-                            lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
-                                segmentList[lastDislocationIndex] : nullptr;
+                            const auto& lineList = dislocations->lines();
+                            lastInputDislocationLine = (lastDislocationIndex >= 0 && lastDislocationIndex < lineList.size()) ?
+                                lineList[lastDislocationIndex] : nullptr;
                         }
-                        if(lastInputDislocationSegment) {
-                            if(lastInputDislocationSegment->customColor.r() >= 0 && lastInputDislocationSegment->customColor.g() >= 0 && lastInputDislocationSegment->customColor.b() >= 0) {
-                                segmentColor = lastInputDislocationSegment->customColor.toDataType<GraphicsFloatType>();
+                        if(lastInputDislocationLine) {
+                            if(lastInputDislocationLine->customColor.r() >= 0 && lastInputDislocationLine->customColor.g() >= 0 && lastInputDislocationLine->customColor.b() >= 0) {
+                                segmentColor = lastInputDislocationLine->customColor.toDataType<GraphicsFloatType>();
                             }
                         }
                     }
@@ -309,14 +309,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
 
                 if(dislocations) {
                     if(showBurgersVectors()) {
-                        BufferFactory<Point3G> baseArrowPoints(dislocations->segments().size());
-                        BufferFactory<Point3G> headArrowPoints(dislocations->segments().size());
-                        subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocations->segments().size());
+                        BufferFactory<Point3G> baseArrowPoints(dislocations->lines().size());
+                        BufferFactory<Point3G> headArrowPoints(dislocations->lines().size());
+                        subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocations->lines().size());
                         int arrowIndex = 0;
-                        for(const DislocationSegment* segment : dislocations->segments()) {
+                        for(const DislocationLine* line : dislocations->lines()) {
                             subobjToSegmentMap.push_back(arrowIndex);
-                            Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
-                            Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
+                            Point3 center = cellObject->wrapPoint(line->getPointOnLine(FloatType(0.5)));
+                            Vector3 dir = burgersVectorScaling() * line->burgersVector.toSpatialVector();
                             // Check if arrow is clipped away by cutting planes.
                             if(dislocations->isPointCulled(center))
                                 dir.setZero(); // Hide arrow by setting length to zero.
@@ -354,9 +354,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
 }
 
 /******************************************************************************
-* Renders an overlay marker for a single dislocation segment.
+* Renders an overlay marker for a single dislocation line.
 ******************************************************************************/
-void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const SceneNode* sceneNode)
+void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int lineIndex, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get the dislocations.
     const DislocationNetwork* dislocations = dynamic_object_cast<DislocationNetwork>(dataObject);
@@ -368,16 +368,16 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     if(!cellObject)
         return;
 
-    if(segmentIndex < 0 || segmentIndex >= dislocations->segments().size())
+    if(lineIndex < 0 || lineIndex >= dislocations->lines().size())
         return;
 
-    const DislocationSegment* segment = dislocations->segments()[segmentIndex];
+    const DislocationLine* line = dislocations->lines()[lineIndex];
 
     // Generate the polyline segments to render.
     BufferFactory<Point3G> baseSegmentPoints(0);
     BufferFactory<Point3G> headSegmentPoints(0);
     BufferFactory<Point3G> cornerVertices(0);
-    clipDislocationLine(segment->line, *cellObject, dislocations->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
+    clipDislocationLine(line->vertices, *cellObject, dislocations->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
         baseSegmentPoints.push_back(v1.toDataType<GraphicsFloatType>());
         headSegmentPoints.push_back(v2.toDataType<GraphicsFloatType>());
         if(!isInitialSegment)
@@ -406,9 +406,9 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     cornerBuffer->setUniformRadius(0.5 * lineDiameter);
     frameGraph.addPrimitiveNonpickable(commandGroup, std::move(cornerBuffer), sceneNode);
 
-    if(!segment->line.empty()) {
+    if(!line->vertices.empty()) {
         BufferFactory<Point3G> wrappedHeadPos(1);
-        wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front()).toDataType<GraphicsFloatType>();
+        wrappedHeadPos[0] = cellObject->wrapPoint(line->vertices.front()).toDataType<GraphicsFloatType>();
         std::unique_ptr<ParticlePrimitive> headBuffer = std::make_unique<ParticlePrimitive>();
         headBuffer->setShadingMode(ParticlePrimitive::FlatShading);
         headBuffer->setRenderingQuality(ParticlePrimitive::HighQuality);
@@ -613,20 +613,20 @@ QString DislocationPickInfo::infoString(const Pipeline* pipeline, uint32_t subob
 {
     QString str;
 
-    int segmentIndex = segmentIndexFromSubObjectID(subobjectId);
+    int lineIndex = segmentIndexFromSubObjectID(subobjectId);
     if(dislocationObj()) {
-        if(segmentIndex >= 0 && segmentIndex < dislocationObj()->segments().size()) {
-            DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
-            const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
-            QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec().toDataType<FloatType>(), structure);
+        if(lineIndex >= 0 && lineIndex < dislocationObj()->lines().size()) {
+            DislocationLine* line = dislocationObj()->lines()[lineIndex];
+            const MicrostructurePhase* structure = dislocationObj()->structureById(line->burgersVector.cluster()->structure);
+            QString formattedBurgersVector = DislocationVis::formatBurgersVector(line->burgersVector.localVec().toDataType<FloatType>(), structure);
             str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
-            Vector3 transformedVector = segment->burgersVector.toSpatialVector();
+            Vector3 transformedVector = line->burgersVector.toSpatialVector();
             str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
                     .arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
                     .arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
                     .arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
-            str += tr("<sep><key>Cluster Id:</key> <val>%1</val>").arg(segment->burgersVector.cluster()->id);
-            str += tr("<sep><key>Dislocation Id:</key> <val>%1</val>").arg(segment->id);
+            str += tr("<sep><key>Cluster Id:</key> <val>%1</val>").arg(line->burgersVector.cluster()->id);
+            str += tr("<sep><key>Dislocation Id:</key> <val>%1</val>").arg(line->id);
             if(structure) {
                 str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(structure->name());
             }
