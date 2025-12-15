@@ -15,6 +15,8 @@ Version 3.15.0 (dd-mm-2025)
 - Simulation cell and particle types can no longer be edited directly
 - New modifier: :ref:`particles.modifiers.edit_types`
 - New modifier :ref:`particles.modifiers.edit_simulation_cell`
+- New modifier :ref:`particles.modifiers.assign_bond_order`
+- New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
 - New data inspector tab for :ref:`type lists <data_inspector.types>`
 - Display video duration estimate in :ref:`render settings panel <core.render_settings>`
 - Memorize ParticlesVis radius scaling factor across program sessions
