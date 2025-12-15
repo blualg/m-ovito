@@ -283,8 +283,7 @@ void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulati
  * Clips a point at the periodic box boundaries or cutting planes.
  ******************************************************************************/
 template<typename SegmentCallback>
-void clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
-               SegmentCallback&& segmentCallback)
+void clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes, SegmentCallback&& segmentCallback)
 {
     auto clippingFunction = [&clippingPlanes, &segmentCallback](const Point3& p1) {
         bool isClipped = false;
@@ -377,15 +376,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                     lines->verifyIntegrity();
 
                     // Retrieve the line position data stored in the Lines.
-                    // Long lines
+                    // For polylines
                     BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty);
-                    // Special case for A-B lines stored in a single line
+                    BufferReadAccess<int64_t> secProperty = lines->getProperty(Lines::SectionProperty);
+                    // For A-B segments stored in a single line element
                     BufferReadAccess<Point3> pos1Property = lines->getProperty(Lines::Position1Property);
                     BufferReadAccess<Point3> pos2Property = lines->getProperty(Lines::Position2Property);
 
-                    BufferReadAccess<int64_t> secProperty = lines->getProperty(Lines::SectionProperty);
                     BufferReadAccess<int32_t> timeProperty = lines->getProperty(Lines::SampleTimeProperty);
-
                     BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
                     RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
 
@@ -414,6 +412,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                         selectionProperty ? BufferFactory<SelectionIntType>(0) : BufferFactory<SelectionIntType>{};
 
                     if(pos1Property.valid() && pos2Property.valid()) {
+                        // Handle A-B segments stored in a single line element.
                         OVITO_ASSERT(pos1Property.size() == pos2Property.size());
                         subobjToSegmentMap.reserve(pos1Property.size());
 
@@ -451,8 +450,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                              segmentColors.push_back(colorProperty[row]);
                                          }
                                          else if(pseudoColorArray) {
-                                             GraphicsFloatType pseudoColor =
-                                                 pseudoColorArray.get<GraphicsFloatType>(row, pseudoColorPropertyComponent);
+                                             GraphicsFloatType pseudoColor = pseudoColorArray.get<GraphicsFloatType>(row, pseudoColorPropertyComponent);
                                              segmentPseudoColors.push_back(pseudoColor);
                                              segmentPseudoColors.push_back(pseudoColor);
                                          }
@@ -466,10 +464,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                         }
                     }
                     else if(posProperty.valid() && posProperty.size() >= 2) {
+                        // Handle polylines.
                         subobjToSegmentMap.reserve(posProperty.size());
 
                         const Point3* pos = posProperty.cbegin();
-                        // Lines does not have sample time. It's only valid for TrajectoryLines
                         const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
                         const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                         size_t inputColorIndex = 0;

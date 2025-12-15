@@ -150,7 +150,7 @@ struct DislocationLine
     DislocationLine* replacedWith = nullptr;
 
     /// A user-defined color assigned to the dislocation line.
-    Color customColor = Color(-1, -1, -1);
+    Color customColor{-1, -1, -1};
 
     /// Constructs a new dislocation line with the given Burgers vector, connecting two dislocation nodes.
     DislocationLine(const ClusterVector& b, DislocationNode* forwardNode, DislocationNode* backwardNode) : burgersVector(b) {

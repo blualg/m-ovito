@@ -164,11 +164,8 @@ void DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatTyp
 
     for(DislocationLine* line : lines()) {
         progress.incrementValue();
-        if(line->coreSize.empty())
-            continue;
         std::deque<Point3> vertices;
-        std::deque<int> coreSize;
-        coarsenDislocationLine(linePointInterval, line->vertices, line->coreSize, vertices, coreSize, line->isClosedLoop(), line->isInfiniteLine());
+        coarsenDislocationLine(linePointInterval, line->vertices, line->coreSize, vertices, line->isClosedLoop(), line->isInfiniteLine());
         smoothDislocationLine(lineSmoothingLevel, vertices, line->isClosedLoop());
         line->vertices = std::move(vertices);
         line->coreSize.clear(); // core size info is no longer valid after smoothing
@@ -178,30 +175,28 @@ void DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatTyp
 /******************************************************************************
 * Removes some of the sampling points from a dislocation line.
 ******************************************************************************/
-void DislocationNetwork::coarsenDislocationLine(FloatType linePointInterval, const std::deque<Point3>& input, const std::deque<int>& coreSize, std::deque<Point3>& output, std::deque<int>& outputCoreSize, bool isClosedLoop, bool isInfiniteLine)
+void DislocationNetwork::coarsenDislocationLine(FloatType linePointInterval, const std::deque<Point3>& input, const std::deque<int>& coreSize, std::deque<Point3>& output, bool isClosedLoop, bool isInfiniteLine)
 {
     OVITO_ASSERT(input.size() >= 2);
-    OVITO_ASSERT(input.size() == coreSize.size());
+    OVITO_ASSERT(input.size() == coreSize.size() || coreSize.empty());
+    constexpr int ConstantCoreSize = 6;
 
     if(linePointInterval <= 0) {
         output = input;
-        outputCoreSize = coreSize;
         return;
     }
 
     // Special handling for infinite lines.
     if(isInfiniteLine && input.size() >= 3) {
-        int coreSizeSum = std::accumulate(coreSize.cbegin(), coreSize.cend() - 1, 0);
         int count = input.size() - 1;
+        int coreSizeSum = !coreSize.empty() ? std::accumulate(coreSize.cbegin(), coreSize.cend() - 1, 0) : (ConstantCoreSize * count);
         if(coreSizeSum * linePointInterval > count * count) {
             // Make it a straight line.
             Vector3 com = Vector3::Zero();
             for(auto p = input.cbegin(); p != input.cend() - 1; ++p)
                 com += *p - input.front();
             output.push_back(input.front() + com / count);
-            outputCoreSize.push_back(coreSizeSum / count);
             output.push_back(input.back() + com / count);
-            outputCoreSize.push_back(coreSizeSum / count);
             return;
         }
     }
@@ -209,14 +204,12 @@ void DislocationNetwork::coarsenDislocationLine(FloatType linePointInterval, con
     // Special handling for very short segments.
     if(input.size() < 4) {
         output = input;
-        outputCoreSize = coreSize;
         return;
     }
 
     // Always keep the end points of linear segments fixed to not break junctions.
     if(!isClosedLoop) {
         output.push_back(input.front());
-        outputCoreSize.push_back(coreSize.front());
     }
 
     // Resulting line must contain at least two points (the end points).
@@ -235,30 +228,31 @@ void DislocationNetwork::coarsenDislocationLine(FloatType linePointInterval, con
     // Average over a half interval, starting from the beginning of the segment.
     Vector3 com = Vector3::Zero();
     do {
-        sum += *inputCoreSizePtr;
-        com += *inputPtr - input.front();
+        if(!coreSize.empty())
+            sum += *inputCoreSizePtr++;
+        else
+            sum += ConstantCoreSize;
+        com += *inputPtr++ - input.front();
         count++;
-        ++inputPtr;
-        ++inputCoreSizePtr;
     }
-    while(2*count*count < (int)(linePointInterval * sum) && count+1 < input.size()/minNumPoints/2);
+    while(2*count*count < (int)(linePointInterval * sum) && count+1 < input.size() / minNumPoints / 2);
 
     // Average over a half interval, starting from the end of the segment.
     auto inputPtrEnd = input.cend() - 1;
-    auto inputCoreSizePtrEnd = coreSize.cend() - 1;
+    auto inputCoreSizePtrEnd = coreSize.rbegin();
     OVITO_ASSERT(inputPtr < inputPtrEnd);
-    while(count*count < (int)(linePointInterval * sum) && count < input.size()/minNumPoints) {
-        sum += *inputCoreSizePtrEnd;
-        com += *inputPtrEnd - input.back();
+    while(count*count < (int)(linePointInterval * sum) && count < input.size() / minNumPoints) {
+        if(!coreSize.empty())
+            sum += *inputCoreSizePtrEnd++;
+        else
+            sum += ConstantCoreSize;
+        com += *inputPtrEnd-- - input.back();
         count++;
-        --inputPtrEnd;
-        --inputCoreSizePtrEnd;
     }
     OVITO_ASSERT(inputPtr < inputPtrEnd);
 
     if(isClosedLoop) {
         output.push_back(input.front() + com / count);
-        outputCoreSize.push_back(sum / count);
     }
 
     while(inputPtr < inputPtrEnd)
@@ -267,26 +261,26 @@ void DislocationNetwork::coarsenDislocationLine(FloatType linePointInterval, con
         int count = 0;
         Vector3 com = Vector3::Zero();
         do {
-            sum += *inputCoreSizePtr++;
+            if(!coreSize.empty())
+                sum += *inputCoreSizePtr++;
+            else
+                sum += ConstantCoreSize;
             com.x() += inputPtr->x();
             com.y() += inputPtr->y();
             com.z() += inputPtr->z();
-            count++;
             ++inputPtr;
+            count++;
         }
-        while(count*count < (int)(linePointInterval * sum) && count+1 < input.size()/minNumPoints && inputPtr != inputPtrEnd);
+        while(count*count < (int)(linePointInterval * sum) && count+1 < input.size() / minNumPoints && inputPtr != inputPtrEnd);
         output.push_back(Point3::Origin() + com / count);
-        outputCoreSize.push_back(sum / count);
     }
 
     if(!isClosedLoop) {
         // Always keep the end points of linear segments to not break junctions.
         output.push_back(input.back());
-        outputCoreSize.push_back(coreSize.back());
     }
     else {
         output.push_back(input.back() + com / count);
-        outputCoreSize.push_back(sum / count);
     }
 
     OVITO_ASSERT(output.size() >= minNumPoints);
@@ -352,9 +346,43 @@ void DislocationNetwork::smoothDislocationLine(int smoothingLevel, std::deque<Po
 }
 
 /******************************************************************************
- * Computes statistical information on the identified dislocation lines and
- * outputs it to the pipeline as data tables and global attributes.
- ******************************************************************************/
+* Aligns the directions of dislocation lines as much as possible.
+******************************************************************************/
+void DislocationNetwork::alignDislocationLineDirections()
+{
+    for(DislocationLine* line : lines()) {
+        const std::deque<Point3>& vertices = line->vertices;
+        OVITO_ASSERT(vertices.size() >= 2);
+
+        Vector3 dir = vertices.back() - vertices.front();
+        if(dir.isZero(CA_ATOM_VECTOR_EPSILON))
+            continue;
+
+        if(std::abs(dir.x()) > std::abs(dir.y())) {
+            if(std::abs(dir.x()) > std::abs(dir.z())) {
+                if(dir.x() >= 0.0) continue;
+            }
+            else {
+                if(dir.z() >= 0.0) continue;
+            }
+        }
+        else {
+            if(std::abs(dir.y()) > std::abs(dir.z())) {
+                if(dir.y() >= 0.0) continue;
+            }
+            else {
+                if(dir.z() >= 0.0) continue;
+            }
+        }
+
+        line->flipOrientation();
+    }
+}
+
+/******************************************************************************
+* Computes statistical information on the identified dislocation lines and
+* outputs it to the pipeline as data tables and global attributes.
+******************************************************************************/
 FloatType DislocationNetwork::generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, bool replaceDataObjects, const MicrostructurePhase* defaultStructure) const
 {
     std::map<const BurgersVectorFamily*, FloatType> dislocationLengths;

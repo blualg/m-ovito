@@ -80,6 +80,9 @@ public:
         return nullptr;
     }
 
+    /// Aligns the directions of dislocation lines as much as possible.
+    void alignDislocationLineDirections();
+
     /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
     FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, bool replaceDataObjects, const MicrostructurePhase* defaultStructure) const;
 
@@ -97,7 +100,7 @@ private:
     static void smoothDislocationLine(int smoothingLevel, std::deque<Point3>& line, bool isLoop);
 
     /// Removes some of the sampling points from a dislocation line.
-    static void coarsenDislocationLine(FloatType linePointInterval, const std::deque<Point3>& input, const std::deque<int>& coreSize, std::deque<Point3>& output, std::deque<int>& outputCoreSize, bool isClosedLoop, bool isInfiniteLine);
+    static void coarsenDislocationLine(FloatType linePointInterval, const std::deque<Point3>& input, const std::deque<int>& coreSize, std::deque<Point3>& output, bool isClosedLoop, bool isInfiniteLine);
 
 private:
 
