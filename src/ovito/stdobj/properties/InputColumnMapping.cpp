@@ -469,9 +469,19 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
                 _frameLoader.addNumericType(_container->getOOMetaClass(), prec.property, d, QString{}, prec.elementTypeClass);
             }
             else {
-                // Instantiate a new named element type and add it to the property's type list.
-                d = _frameLoader.addNamedType(_container->getOOMetaClass(), prec.property, QLatin1String(token, token_end), prec.elementTypeClass)->numericId();
-                prec.numericElementTypes = false;
+                if(_mapping.typeIdConverter()) {
+                    d = _mapping.typeIdConverter()(QLatin1String(token, token_end));
+                    _frameLoader.addNumericType(
+                        _container->getOOMetaClass(), prec.property, d, QLatin1String(token, token_end), prec.elementTypeClass);
+                }
+                else {
+                    // Instantiate a new named element type and add it to the property's type list.
+                    d = _frameLoader
+                            .addNamedType(
+                                _container->getOOMetaClass(), prec.property, QLatin1String(token, token_end), prec.elementTypeClass)
+                            ->numericId();
+                    prec.numericElementTypes = false;
+                }
             }
             prec.lastTypeId = d;
         }

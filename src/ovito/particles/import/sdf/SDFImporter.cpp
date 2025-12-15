@@ -31,6 +31,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include "SDFImporter.h"
 
 namespace Ovito {
@@ -185,6 +186,10 @@ void SDFImporter::FrameLoader::loadFile()
     particlesColumnMapping.mapColumnToStandardProperty(5, Particles::ChargeProperty);
     particlesColumnMapping.mapColumnToUserProperty(7, tr("Hydrogen Count +1"), Property::Int8);
     particlesColumnMapping.mapColumnToUserProperty(9, tr("Valence"), Property::Int8);
+    particlesColumnMapping.setTypeIdConverter([](QLatin1String name) {
+        const ParticleType::ChemicalElement element = ParticleType::getChemicalElementFromSymbol(name);
+        return (int)element;
+    });
 
     setParticleCount(numParticles);
 
