@@ -11,6 +11,7 @@ Version 3.15.0 (dd-mm-2025)
 - Add MOL/SDF file importer
 - Update gemmi to 0.7.3
 - CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
+- mmCIF file importer: read sequence id from file into new particle property "Sequence"
 - Simulation cell and particle types can no longer be edited directly
 - New modifier: :ref:`particles.modifiers.edit_types`
 - New modifier :ref:`particles.modifiers.edit_simulation_cell`

@@ -146,6 +146,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
         Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), Property::Int32);
+        Property* sequenceProperty = particles()->createProperty(QStringLiteral("Sequence"), Property::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI.
         atomNameProperty->setTitle(tr("Atom names"));
@@ -155,9 +156,11 @@ void mmCIFImporter::FrameLoader::loadFile()
         BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
         BufferWriteAccess<int32_t, access_mode::discard_write> atomNameAccess(atomNameProperty);
         BufferWriteAccess<int32_t, access_mode::discard_write> residueTypeAccess(residueTypeProperty);
+        BufferWriteAccess<int32_t, access_mode::discard_write> sequenceAccess(sequenceProperty);
         auto* typeIter = typeAccess.begin();
         auto* atomNameIter = atomNameAccess.begin();
         auto* residueTypeIter = residueTypeAccess.begin();
+        auto* sequenceIter = sequenceAccess.begin();
 
         // Transfer atomic data to OVITO particle properties.
         bool hasOccupancy = false;
@@ -184,6 +187,9 @@ void mmCIFImporter::FrameLoader::loadFile()
                     // Residue type.
                     *residueTypeIter++ = residueTypeId;
 
+                    // Sequence id -> identifies residues in a molecule (optional int)
+                    *sequenceIter++ = residue.label_seq ? *residue.label_seq : 0;
+
                     // Check for presence of occupancy values.
                     if(atom.occ != 1) hasOccupancy = true;
                 }
@@ -195,6 +201,12 @@ void mmCIFImporter::FrameLoader::loadFile()
         typeAccess.reset();
         atomNameAccess.reset();
         residueTypeAccess.reset();
+        sequenceAccess.reset();
+
+        // Remove sequence property if all sequence numbers are zero.
+        if(sequenceProperty->nonzeroCount() == 0) {
+            particles()->removeProperty(sequenceProperty);
+        }
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
