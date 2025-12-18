@@ -99,7 +99,7 @@ public:
     bool operator==(const ClusterVector& other) const { return _vec == other._vec && _cluster == other._cluster; }
 
     /// Not-equal comparison operator.
-    bool operator!=(const ClusterVector& other) const { return _vec != other._vec || _cluster != other._cluster; }
+    bool operator!=(const ClusterVector& other) const { return !(*this == other); }
 
     /// Prints a cluster vector to an output stream.
     friend inline std::ostream& operator<<(std::ostream& stream, const ClusterVector& v) {

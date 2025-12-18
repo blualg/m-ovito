@@ -554,7 +554,7 @@ private:
                             vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(currentCell, DelaunayTessellation::cellFacetVertexIndex(f, 2-v)));
 
                         // Bring vertices into a well-defined order, which can be used as lookup key to find the adjacent tetrahedron.
-                        reorderFaceVertices(vertices);
+                        DelaunayTessellation::reorderFacetVertices(vertices);
 
                         // Look up the adjacent Delaunay cell.
                         if(auto neighborCell = _cellLookupMap.find(vertices); neighborCell != _cellLookupMap.end()) {
@@ -625,7 +625,7 @@ private:
                         vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(0, v)));
 
                     // Bring vertices into a well-defined order, which can be used as lookup key.
-                    reorderFaceVertices(vertices);
+                    DelaunayTessellation::reorderFacetVertices(vertices);
 
                     // Find the primary tet whose face connects the same three particles.
                     if(auto neighborCell = _cellLookupMap.find(vertices); neighborCell != _cellLookupMap.end()) {
@@ -664,7 +664,7 @@ private:
                     vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, v)));
 
                 // Bring vertices into a well-defined order, which can be used as lookup key.
-                reorderFaceVertices(vertices);
+                DelaunayTessellation::reorderFacetVertices(vertices);
 
                 OVITO_ASSERT(_cellLookupMap.find(vertices) == _cellLookupMap.end());
 
@@ -775,12 +775,12 @@ private:
                     prepareMeshFaceFunc(oppositeFace, reverseVertexIndices, vertexHandles, adjacentCell);
 
                     // Insert new facet into lookup map.
-                    reorderFaceVertices(reverseVertexIndices);
+                    DelaunayTessellation::reorderFacetVertices(reverseVertexIndices);
                     _faceLookupMap.emplace(reverseVertexIndices, oppositeFace);
                 }
 
                 // Insert new facet into lookup map.
-                reorderFaceVertices(vertexIndices);
+                DelaunayTessellation::reorderFacetVertices(vertexIndices);
                 _faceLookupMap.emplace(vertexIndices, face);
 
                 // Insert into contiguous list of tetrahedron faces.
@@ -947,23 +947,12 @@ private:
                 int vertexIndex = DelaunayTessellation::cellFacetVertexIndex(facet.second, _flipOrientation ? i : (2-i));
                 faceVerts[i] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, vertexIndex));
             }
-            reorderFaceVertices(faceVerts);
+            DelaunayTessellation::reorderFacetVertices(faceVerts);
             if(auto item = _faceLookupMap.find(faceVerts); item != _faceLookupMap.end())
                 return item->second;
             else
                 return SurfaceMesh::InvalidIndex;
         }
-    }
-
-    static void reorderFaceVertices(std::array<size_t,3>& vertexIndices) {
-#if !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
-        // Shift the order of vertices so that the smallest index is at the front.
-        std::rotate(std::begin(vertexIndices), std::min_element(std::begin(vertexIndices), std::end(vertexIndices)), std::end(vertexIndices));
-#else
-        // Workaround for compiler bug in Xcode 10.0. Clang hangs when compiling the code above with -O2/-O3 flag.
-        auto min_index = std::min_element(vertexIndices.begin(), vertexIndices.end()) - vertexIndices.begin();
-        std::rotate(vertexIndices.begin(), vertexIndices.begin() + min_index, vertexIndices.end());
-#endif
     }
 
     /// Computes the volume of the given Delaunay cell that is (partially) overlapping with the simulation box.

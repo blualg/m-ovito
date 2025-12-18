@@ -325,6 +325,20 @@ public:
         return tab_vertex_triple_index[cellFacetIndex][facetVertexIndex];
     }
 
+    /// Helper function that reorders the vertex indices of a triangular face
+    /// such that the smallest index comes first.
+    template<std::integral T>
+    static void reorderFacetVertices(std::array<T, 3>& indices) {
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
+        // Shift the order of vertices so that the smallest index is at the front.
+        std::rotate(std::begin(indices), std::min_element(std::begin(indices), std::end(indices)), std::end(indices));
+#else
+        // Workaround for compiler bug in Xcode 10.0. Clang hangs when compiling the code above with -O2/-O3 flag.
+        auto min_index = std::min_element(indices.begin(), indices.end()) - indices.begin();
+        std::rotate(indices.begin(), indices.begin() + min_index, indices.end());
+#endif
+    }
+
     FacetCirculator incidentFacets(CellHandle cell, int i, int j) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         OVITO_ASSERT(i >= 0 && i < 4);

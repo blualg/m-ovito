@@ -264,21 +264,32 @@ bool SurfaceMeshTopology::isClosed() const
 void SurfaceMeshTopology::flipFaces()
 {
     for(edge_index firstFaceEdge : _faceEdges) {
-        if(firstFaceEdge == InvalidIndex) continue;
-        edge_index e = firstFaceEdge;
-        do {
-            transferEdgeToVertex(e, vertex1(e), vertex2(e), false);
-            e = nextFaceEdge(e);
-        }
-        while(e != firstFaceEdge);
-        vertex_index v1 = vertex1(e);
-        do {
-            std::swap(_edgeVertices[e], v1);
-            std::swap(_nextFaceEdges[e], _prevFaceEdges[e]);
-            e = prevFaceEdge(e);
-        }
-        while(e != firstFaceEdge);
+        if(firstFaceEdge == InvalidIndex)
+            continue;
+        flipFaceOfEdge(firstFaceEdge);
     }
+}
+
+/******************************************************************************
+* Flips the orientation of one face in the mesh.
+* Note: This method expects a half-edge index, not a face index.
+******************************************************************************/
+void SurfaceMeshTopology::flipFaceOfEdge(edge_index firstFaceEdge)
+{
+    OVITO_ASSERT(firstFaceEdge >= 0 && firstFaceEdge < edgeCount());
+    edge_index e = firstFaceEdge;
+    do {
+        transferEdgeToVertex(e, vertex1(e), vertex2(e), false);
+        e = nextFaceEdge(e);
+    }
+    while(e != firstFaceEdge);
+    vertex_index v1 = vertex1(e);
+    do {
+        std::swap(_edgeVertices[e], v1);
+        std::swap(_nextFaceEdges[e], _prevFaceEdges[e]);
+        e = prevFaceEdge(e);
+    }
+    while(e != firstFaceEdge);
 }
 
 /******************************************************************************

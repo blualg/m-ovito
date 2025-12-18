@@ -117,7 +117,7 @@ public:
 
         /// Adds a new face to the mesh.
         template<typename VertexIterator>
-        face_index createFace(VertexIterator begin, VertexIterator end, region_index region = InvalidIndex) {
+        face_index createFace(VertexIterator&& begin, VertexIterator&& end, region_index region = InvalidIndex) {
             OVITO_ASSERT(_topo);
             face_index face = _topo->createFaceAndEdges(std::forward<VertexIterator>(begin), std::forward<VertexIterator>(end));
             if(grow(1, SurfaceMeshFaces::RegionProperty) && _faceRegions)
@@ -394,6 +394,10 @@ public:
 
     /// Flips the orientation of all faces in the mesh.
     void flipFaces() { mutableTopology()->flipFaces(); }
+
+    /// Flips the orientation of one face in the mesh.
+    /// Note: This method expects a half-edge index, not a face index.
+    void flipFaceOfEdge(edge_index firstFaceEdge) { mutableTopology()->flipFaceOfEdge(firstFaceEdge); }
 
     /// Fairs the surface mesh.
     void smoothMesh(int numIterations, TaskProgress& progress, FloatType k_PB = FloatType(0.1), FloatType lambda = FloatType(0.5));

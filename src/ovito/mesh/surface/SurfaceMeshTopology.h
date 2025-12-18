@@ -180,6 +180,10 @@ public:
     /// Flips the orientation of all faces in the mesh.
     void flipFaces();
 
+    /// Flips the orientation of one face in the mesh.
+    /// Note: This method expects a half-edge index, not a face index.
+    void flipFaceOfEdge(edge_index firstFaceEdge);
+
     /// Converts the half-edge mesh to a triangle mesh.
     /// Note that this class holds only the mesh topology and no
     /// vertex coordinates. Thus, it is the responsibility of the caller to set the
