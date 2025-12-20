@@ -283,6 +283,11 @@ public:
             _container->_elementCount.set(_container, PROPERTY_FIELD(PropertyContainer::elementCount), _elementCount);
         }
 
+        /// Returns the current number of elements in the property container.
+        size_t elementCount() const {
+            return _elementCount;
+        }
+
         size_t grow(size_t numAdditionalElements) {
             // Grow property arrays.
             for(const Property* prop : _container->properties()) {

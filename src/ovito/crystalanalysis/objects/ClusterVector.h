@@ -50,6 +50,9 @@ public:
 
     using VecType = Ovito::Vector3F;  ///< Type alias for a 3D vector.
 
+    /// Default constructur, initializes the vector to the null vector (0,0,0).
+    ClusterVector() = default;
+
     /// Initializes the vector to the null vector (0,0,0).
     /// All three components are set to zero. Optionally, a cluster may be associated with the vector,
     /// which determines the frame of reference.
@@ -109,11 +112,11 @@ public:
 private:
 
     /// The XYZ components of the vector in the local lattice coordinate system.
-    VecType _vec;
+    VecType _vec = VecType::Zero();
 
     /// The cluster which serves as the frame of reference for this vector.
     /// This may be NULL if the vector's components are (0,0,0).
-    Cluster* _cluster;
+    Cluster* _cluster = nullptr;
 };
 
 }   // End of namespace

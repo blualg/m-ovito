@@ -94,6 +94,9 @@ public:
         /// Returns the coordinates of the i-th mesh vertex.
         const Point3& vertexPosition(vertex_index i) const { return _vertexPositions[i]; }
 
+        /// Sets the coordinates of the i-th mesh vertex.
+        void setVertexPosition(vertex_index i, const Point3& p) { _vertexPositions[i] = p; }
+
     private:
         SurfaceMeshTopology* _topo;
         BufferWriteAccess<Point3, access_mode::read_write> _vertexPositions;
