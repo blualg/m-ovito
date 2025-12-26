@@ -359,6 +359,17 @@ public:
         return _dt->locate_point(p.data(), hint);
     }
 
+    /// Determines whether the given cell has the specified four input points as vertices.
+    /// The order of the point indices in the array is irrelevant.
+    /// This method is most useful for debugging purposes.
+    bool cellHasInputPoints(CellHandle cell, const std::array<size_t, 4>& pointIndices) const {
+        for(size_t idx : pointIndices) {
+            if(findInputPointInCell(cell, idx) == -1)
+                return false;
+        }
+        return true;
+    }
+
     /// Returns the simulation cell geometry.
     const SimulationCellData& simCell() const { return _simCell; }
 

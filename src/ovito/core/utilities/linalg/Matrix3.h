@@ -680,6 +680,16 @@ constexpr inline Matrix_3<T> operator-(const Matrix_3<T>& a, const Matrix_3<T>& 
     return Matrix_3<T>(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
+/// \brief Subtracts the identity matrix from a matrix.
+/// \relates Matrix_3
+template<typename T>
+constexpr inline Matrix_3<T> operator-(const Matrix_3<T>& a, typename Matrix_3<T>::Identity)
+{
+    return Matrix_3<T>(a(0,0) - T(1), a(0,1),         a(0,2),
+                       a(1,0),         a(1,1) - T(1), a(1,2),
+                       a(2,0),         a(2,1),         a(2,2) - T(1));
+}
+
 /// \brief Multiplies a matrix with a scalar value.
 /// \relates Matrix_3
 template<typename T>
