@@ -80,15 +80,8 @@ void ElasticStrainModifier::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Creates the engine that will perform the structure identification.
 ******************************************************************************/
-std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures)
+std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-    // Get modifier inputs.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const SimulationCell* simCell = input.getObject<SimulationCell>();
-    if(simCell && simCell->is2D())
-        throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
-
     // Build list of preferred crystal orientations.
     std::vector<Matrix3> preferredCrystalOrientations;
     if(inputCrystalStructure() == StructureAnalysis::LATTICE_FCC || inputCrystalStructure() == StructureAnalysis::LATTICE_BCC || inputCrystalStructure() == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
@@ -96,7 +89,7 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifie
     }
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ElasticStrainEngine>(std::move(structures), particles->elementCount(),
+    return std::make_shared<ElasticStrainEngine>(*this, input,
             inputCrystalStructure(), std::move(preferredCrystalOrientations),
             calculateDeformationGradients(), calculateStrainTensors(),
             latticeConstant(), axialRatio(), pushStrainTensorsForward());

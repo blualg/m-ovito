@@ -59,8 +59,8 @@ public:
 protected:
 
     /// Creates the engine that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override {
-        return std::make_shared<DiamondIdentificationAlgorithm>(std::move(structures));
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override {
+        return std::make_shared<DiamondIdentificationAlgorithm>(*this, input);
     }
 
 private:
@@ -74,7 +74,7 @@ private:
         using Algorithm::Algorithm;
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
 
         /// Computes the structure identification statistics.
         virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;

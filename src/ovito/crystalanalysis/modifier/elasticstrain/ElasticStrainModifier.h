@@ -44,7 +44,7 @@ public:
 protected:
 
     /// Creates the engine that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

@@ -60,23 +60,23 @@ void ChillPlusModifier::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Performs the actual analysis.
 ******************************************************************************/
-void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
+void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures()
 {
-    if(simulationCell && simulationCell->is2D())
+    if(simulationCell().is2D())
         throw Exception(tr("The Chill+ algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Computing q_lm values in Chill+ analysis"));
 
     // Prepare the neighbor finder.
-    CutoffNeighborFinder neighborFinder(cutoff(), particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    CutoffNeighborFinder neighborFinder(cutoff(), particles()->expectProperty(Particles::PositionProperty), simulationCell(), particleSelection());
 
-    BufferReadAccess<SelectionIntType> selectionAcc(selection);
+    BufferReadAccess<SelectionIntType> selectionAcc(particleSelection());
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
 
     // Find all relevant q_lm
     // create matrix of q_lm
-    size_t particleCount = particles->elementCount();
+    size_t particleCount = particles()->elementCount();
     boost::numeric::ublas::matrix<std::complex<float>> q_values(particleCount, 7);
 
     auto compute_q_lm = [&](size_t particleIndex, int l, int m) {

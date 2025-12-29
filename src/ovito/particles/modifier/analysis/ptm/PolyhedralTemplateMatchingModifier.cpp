@@ -97,29 +97,29 @@ void PolyhedralTemplateMatchingModifier::initializeObject(ObjectInitializationFl
 /******************************************************************************
 * Creates the engine that will perform the structure identification.
 ******************************************************************************/
-std::shared_ptr<StructureIdentificationModifier::Algorithm> PolyhedralTemplateMatchingModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures)
+std::shared_ptr<StructureIdentificationModifier::Algorithm> PolyhedralTemplateMatchingModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     const Particles* particles = input.expectObject<Particles>();
 
     // Get input particle types if needed.
     const Property* typeProperty = outputOrderingTypes() ? particles->expectProperty(Particles::TypeProperty) : nullptr;
 
-    return std::make_shared<PTMEngine>(std::move(structures), particles->elementCount(), typeProperty,
+    return std::make_shared<PTMEngine>(*this, input, typeProperty,
             orderingTypes(), outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(PropertyPtr structures, size_t particleCount, ConstPropertyPtr particleTypes,
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const StructureIdentificationModifier& modifier, const PipelineFlowState& input, ConstPropertyPtr particleTypes,
         const OORefVector<ElementType>& orderingTypes, bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
-    Algorithm(std::move(structures)),
-    _rmsd(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particleCount, Property::FloatDefault, 1, QStringLiteral("RMSD"))),
-    _interatomicDistances(outputInteratomicDistance ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Interatomic Distance")) : nullptr),
-    _orientations(outputOrientation ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::OrientationProperty) : nullptr),
-    _deformationGradients(outputDeformationGradient ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::ElasticDeformationGradientProperty) : nullptr),
-    _orderingTypes(particleTypes ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int32, 1, QStringLiteral("Ordering Type")) : nullptr),
-    _correspondences(outputOrientation ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int64, 1, QStringLiteral("Correspondences")) : nullptr),    // only output correspondences if orientations are selected
+    Algorithm(modifier, input),
+    _rmsd(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particles()->elementCount(), Property::FloatDefault, 1, QStringLiteral("RMSD"))),
+    _interatomicDistances(outputInteratomicDistance ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particles()->elementCount(), Property::FloatDefault, 1, QStringLiteral("Interatomic Distance")) : nullptr),
+    _orientations(outputOrientation ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particles()->elementCount(), Particles::OrientationProperty) : nullptr),
+    _deformationGradients(outputDeformationGradient ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particles()->elementCount(), Particles::ElasticDeformationGradientProperty) : nullptr),
+    _orderingTypes(particleTypes ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particles()->elementCount(), Property::Int32, 1, QStringLiteral("Ordering Type")) : nullptr),
+    _correspondences(outputOrientation ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particles()->elementCount(), Property::Int64, 1, QStringLiteral("Correspondences")) : nullptr),    // only output correspondences if orientations are selected
     _rmsdHistogram(DataTable::OOClass().createUserProperty(DataBuffer::Initialized, 100, Property::Int64, 1, tr("Count"))),
     _outputDeformationGradient(outputDeformationGradient),
     _particleTypes(particleTypes)
@@ -138,13 +138,13 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(PropertyPtr structures,
 /******************************************************************************
 * Performs the actual analysis.
 ******************************************************************************/
-void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
+void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures()
 {
-    if(simulationCell && simulationCell->is2D())
+    if(simulationCell().is2D())
         throw Exception(tr("The PTM algorithm does not support 2d simulation cells."));
 
     // Initialize the PTM algorithm object.
-    _algorithm.emplace(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    _algorithm.emplace(particles()->expectProperty(Particles::PositionProperty), simulationCell(), particleSelection());
 
     _algorithm->setCalculateDefGradient(_outputDeformationGradient);
     _algorithm->setIdentifyOrdering(std::move(_particleTypes));
@@ -156,16 +156,16 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     }
 
     // Get access to the particle selection flags.
-    BufferReadAccess<SelectionIntType> selectionAcc(selection);
+    BufferReadAccess<SelectionIntType> selectionAcc(particleSelection());
 
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Pre-calculating neighbor ordering"));
 
     // Pre-order neighbors of each particle.
-    std::vector<uint64_t> cachedNeighbors(particles->elementCount());
+    std::vector<uint64_t> cachedNeighbors(particles()->elementCount());
 
     EnumerableThreadSpecific<PTMAlgorithm::Kernel> ptmKernels;
-    parallelForInnerOuter(particles->elementCount(), 1024, progress, [&](auto&& iterate) {
+    parallelForInnerOuter(particles()->elementCount(), 1024, progress, [&](auto&& iterate) {
         // Create a thread-local kernel for the PTM algorithm.
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
@@ -190,7 +190,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     BufferWriteAccess<int64_t, access_mode::write> correspondencesArray(correspondences());
 
     // Perform analysis on each particle.
-    parallelForInnerOuter(particles->elementCount(), 1024, progress, [&](auto&& iterate) {
+    parallelForInnerOuter(particles()->elementCount(), 1024, progress, [&](auto&& iterate) {
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
             // Skip particles that are not included in the analysis.

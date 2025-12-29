@@ -195,8 +195,8 @@ public:
     /// \param cell The simulation cell information.
     /// \param selection Per-particle selection flags determining which particles are included in the neighbor search (optional).
     /// \throw Exception on error.
-    PTMAlgorithm(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) :
-            NearestNeighborFinder(MAX_INPUT_NEIGHBORS, std::move(positions), cell, std::move(selection))
+    PTMAlgorithm(BufferReadAccess<Point3> positions, const SimulationCellData& cellData, BufferReadAccess<SelectionIntType> selection = {}) :
+            NearestNeighborFinder(MAX_INPUT_NEIGHBORS, std::move(positions), cellData, std::move(selection))
     {
         ptm_initialize_global();
     }

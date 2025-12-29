@@ -57,16 +57,16 @@ void IdentifyDiamondModifier::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Performs the actual analysis.
 ******************************************************************************/
-void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
+void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures()
 {
-    if(simulationCell && simulationCell->is2D())
+    if(simulationCell().is2D())
         throw Exception(tr("The algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Finding nearest neighbors"));
 
     // Prepare the neighbor list builder.
-    NearestNeighborFinder neighborFinder(4, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    NearestNeighborFinder neighborFinder(4, particles()->expectProperty(Particles::PositionProperty), simulationCell(), particleSelection());
 
     // This data structure stores information about a single neighbor.
     struct NeighborInfo {
@@ -74,11 +74,11 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
         int index;
     };
     // This array will be filled with the four nearest neighbors of each atom.
-    std::vector<std::array<NeighborInfo, 4>> neighLists(particles->elementCount());
+    std::vector<std::array<NeighborInfo, 4>> neighLists(particles()->elementCount());
 
     // Determine four nearest neighbors of each atom and store vectors in the working array.
-    BufferReadAccess<SelectionIntType> selectionAcc(selection);
-    parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {
+    BufferReadAccess<SelectionIntType> selectionAcc(particleSelection());
+    parallelFor(particles()->elementCount(), 1024, progress, [&](size_t index) {
         // Skip particles that are not included in the analysis.
         if(selectionAcc && !selectionAcc[index])
             return;
@@ -99,7 +99,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     progress.setText(tr("Identifying diamond structures"));
 
     BufferWriteAccess<int32_t, access_mode::discard_read_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {
+    parallelFor(particles()->elementCount(), 1024, progress, [&](size_t index) {
         // Mark atom as 'other' by default.
         structureAcc[index] = OTHER;
 

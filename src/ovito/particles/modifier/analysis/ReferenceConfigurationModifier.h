@@ -81,6 +81,21 @@ public:
 	/// has computed new results.
     virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
 
+    /// Computes the animation time intervals that should be cached by the upstream pipeline to keep the reference configuration available.
+    /// This static function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+    static void inputCachingHintsReusable(ModifierEvaluationRequest& request, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset);
+
+    /// Calculates the reference frame number to use.
+    /// This function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+    static int calculateReferenceFrameNumber(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset);
+
+    /// Obtains the reference configuration from the upstream pipeline.
+    /// This function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+    static Future<PipelineFlowState> obtainUpstreamReferenceConfiguration(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset);
+
+    /// Obtains the reference configuration from a separate pipeline source.
+    static Future<PipelineFlowState> obtainExternalReferenceConfiguration(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, PipelineNode* referenceSource, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset);
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.

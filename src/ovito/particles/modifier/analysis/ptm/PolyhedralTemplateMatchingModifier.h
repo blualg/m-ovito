@@ -55,7 +55,7 @@ public:
 protected:
 
     /// Creates the engine that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -65,11 +65,11 @@ private:
     public:
 
         /// Constructor.
-        PTMEngine(PropertyPtr structures, size_t particleCount, ConstPropertyPtr particleTypes, const OORefVector<ElementType>& orderingTypes,
+        PTMEngine(const StructureIdentificationModifier& modifier, const PipelineFlowState& input, ConstPropertyPtr particleTypes, const OORefVector<ElementType>& orderingTypes,
                 bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
 
         /// Obtains the modifier parameters that are relevant for the post-processing phase (phase II).
         /// The method is called by the StructureIdentificationModifier in the main thread before phase II begins to

@@ -55,15 +55,19 @@ class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public Modifier
 public:
 
     /// Abstract base class for structure identification algorithms.
-    class OVITO_PARTICLES_EXPORT Algorithm
+    class OVITO_PARTICLES_EXPORT Algorithm : public std::enable_shared_from_this<Algorithm>
     {
     public:
 
         /// Constructor.
-        Algorithm(PropertyPtr structures) : _structures(std::move(structures)) {}
+        Algorithm(const StructureIdentificationModifier& modifier, const PipelineFlowState& input);
 
-        /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) = 0;
+        /// Starts the algorithm by launching a worker task.
+        /// The method returns a Future that will hold a shared pointer to the Algorithm instance once the task has been started.
+        virtual Future<std::shared_ptr<Algorithm>> startAlgorithm(const StructureIdentificationModifier& modifier, const ModifierEvaluationRequest& request, const PipelineFlowState& input);
+
+        /// Performs the atomic structure classification in the current thread.
+        virtual void identifyStructures() = 0;
 
         /// Obtains the modifier parameters that are relevant for the post-processing phase (phase II).
         /// The method is called by the StructureIdentificationModifier in the main thread before phase II begins to
@@ -75,6 +79,15 @@ public:
 
         /// Computes the structure identification statistics.
         virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const;
+
+        /// Return the input particles to be analyzed.
+        const DataOORef<const Particles>& particles() const { return _particles; }
+
+        /// Returns the input simulation cell.
+        const SimulationCellData& simulationCell() const { return _simulationCell; }
+
+        /// Returns the input particle selection (only if the onlySelectedParticles option is true).
+        const ConstPropertyPtr& particleSelection() const { return _selection; }
 
         /// Returns the property storage for the computed per-particle structure types.
         const PropertyPtr& structures() const { return _structures; }
@@ -101,7 +114,17 @@ public:
 
     private:
 
+        /// The input particles to be analyzed.
+        DataOORef<const Particles> _particles;
+
+        /// The input particle selection (only if the onlySelectedParticles option is true).
+        ConstPropertyPtr _selection;
+
+        /// The particle property storing the computed per-particle structure types.
         PropertyPtr _structures;
+
+        /// The input simulation cell.
+        const SimulationCellData _simulationCell;
     };
 
 public:
@@ -134,7 +157,7 @@ public:
 protected:
 
     /// Creates the engine that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) = 0;
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) = 0;
 
     /// Adopts existing computation results for an interactive pipeline evaluation.
     virtual Future<PipelineFlowState> reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState);

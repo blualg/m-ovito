@@ -111,52 +111,21 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
         return std::move(state);
     }
 
-    // Phase I: Perform the structure identification. The results are cached in the node's partial cache.
+    // Phase I: Perform the structure identification. The results are cached in the pipeline node's partial cache.
     auto identificationFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
-        // Get the input particles.
-        DataOORef<const Particles> particles = state.expectObject<Particles>();
-        particles->verifyIntegrity();
-
-        // Get input particle selection.
-        ConstPropertyPtr selection = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
-
-        // Create the output structure property.
-        PropertyPtr structures = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::StructureTypeProperty);
-
-        // Create deep copies of the structure elements types, because data objects owned by the modifier should
-        // not be passed to the data pipeline.
-        for(const ElementType* type : structureTypes()) {
-            OVITO_ASSERT(type && type->numericId() == structures->elementTypes().size());
-
-            // Attach structure types to output particle property.
-            structures->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
-        }
-
         // Ask the subclass to create the engine that will perform the structure identification.
-        std::shared_ptr<Algorithm> algorithm = createAlgorithm(request, state, std::move(structures));
+        std::shared_ptr<Algorithm> algorithm = createAlgorithm(request, state);
 
-        // Get the simulation cell (optional).
-        DataOORef<const SimulationCell> simulationCell = state.getObject<SimulationCell>();
-
-        // Perform the structure identification in a separate thread.
-        return asyncLaunch([
-                algorithm = std::move(algorithm),
-                particles = std::move(particles),
-                simulationCell = std::move(simulationCell),
-                selection = std::move(selection)]() mutable
-        {
-            // Run the algorithm.
-            algorithm->identifyStructures(particles, simulationCell, selection);
-            return std::move(algorithm);
-        });
+        // Let the algorithm perform the structure identification.
+        return algorithm->startAlgorithm(*this, request, state);
     });
 
     // Phase II: Compute structure statistics.
     return identificationFuture.then(ObjectExecutor(this), [this, state = std::move(state),
                                              createdByNode = request.modificationNodeWeak()](std::shared_ptr<const Algorithm> algorithm) {
         auto modifierParameters = algorithm->getModifierParameters(this);
-        // Perform the structure identification in a separate thread.
+        // Perform the statistics calculation in a separate thread.
         return asyncLaunch([state = std::move(state), modifierParameters = std::move(modifierParameters),
                                                               algorithm = std::move(algorithm), colorByType = colorByType(),
                                                               createdByNode = std::move(createdByNode)]() mutable {
@@ -179,6 +148,46 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
 
             return std::move(state);
         });
+    });
+}
+
+/******************************************************************************
+* Algorithm constructor.
+******************************************************************************/
+StructureIdentificationModifier::Algorithm::Algorithm(const StructureIdentificationModifier& modifier, const PipelineFlowState& input) : _simulationCell(input.getObject<SimulationCell>())
+{
+    // Get the input particles.
+    _particles = input.expectObject<Particles>();
+    _particles->verifyIntegrity();
+
+    // Get input particle selection.
+    if(modifier.onlySelectedParticles())
+        _selection = _particles->expectProperty(Particles::SelectionProperty);
+
+    // Create the output structure property.
+    _structures = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, _particles->elementCount(), Particles::StructureTypeProperty);
+
+    // Create deep copies of the structure elements types, because data objects owned by the modifier should
+    // not be passed down the data pipeline.
+    for(const ElementType* type : modifier.structureTypes()) {
+        OVITO_ASSERT(type && type->numericId() == _structures->elementTypes().size());
+
+        // Attach structure types to output particle property.
+        _structures->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
+    }
+}
+
+/******************************************************************************
+* Starts the algorithm by launching a worker task.
+* The method returns a Future that will hold a shared pointer to the Algorithm instance once the task has been started.
+******************************************************************************/
+Future<std::shared_ptr<StructureIdentificationModifier::Algorithm>> StructureIdentificationModifier::Algorithm::startAlgorithm(const StructureIdentificationModifier& modifier, const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+{
+    // Perform the structure identification in a separate thread.
+    return asyncLaunch([self = shared_from_this()]() mutable
+    {
+        self->identifyStructures();
+        return std::move(self);
     });
 }
 

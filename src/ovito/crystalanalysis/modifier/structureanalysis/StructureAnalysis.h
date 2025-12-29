@@ -95,7 +95,7 @@ public:
     /// Constructor.
     StructureAnalysis(
             ConstPropertyPtr positions,
-            const SimulationCell* simCell,
+            const SimulationCellData& simCell,
             LatticeStructureType inputCrystalType,
             ConstPropertyPtr particleSelection,
             ClusterGraph* clusterGraph,
@@ -104,7 +104,7 @@ public:
             bool identifyPlanarDefects = true);
 
     /// Identifies the atomic structures.
-    void identifyStructures(TaskProgress& progress, const SimulationCell* simulationCell);
+    void identifyStructures(TaskProgress& progress);
 
     /// Combines adjacent atoms to clusters.
     void buildClusters(TaskProgress& progress);

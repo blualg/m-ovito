@@ -76,18 +76,16 @@ void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 /******************************************************************************
 * Performs the actual analysis.
 ******************************************************************************/
-void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
+void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures()
 {
-    if(!simulationCell)
-        throw Exception(tr("The VoroTop algorithm requires a simulation cell to be defined."));
-    if(simulationCell->is2D())
+    if(simulationCell().is2D())
         throw Exception(tr("The VoroTop algorithm does not support 2d simulation cells."));
 
     // Get the current positions.
-    const Property* positions = particles->expectProperty(Particles::PositionProperty);
+    const Property* positions = particles()->expectProperty(Particles::PositionProperty);
 
     // The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
-    if(particles->elementCount() > std::numeric_limits<int>::max())
+    if(particles()->elementCount() > std::numeric_limits<int>::max())
         throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
     TaskProgress progress(this_task::ui());
@@ -111,19 +109,19 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     progress.setText(tr("Performing VoroTop analysis"));
 
     BufferReadAccess<Point3> positionsArray(positions);
-    BufferReadAccess<SelectionIntType> selectionArray(selection);
+    BufferReadAccess<SelectionIntType> selectionArray(particleSelection());
     BufferReadAccess<GraphicsFloatType> radiiArray(_radii);
     BufferWriteAccess<int32_t, access_mode::discard_write> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
-    if(simulationCell->isAxisAligned()) {
+    if(simulationCell().isAxisAligned()) {
         // Use Voro++ container.
-        double ax = simulationCell->matrix()(0,3);
-        double ay = simulationCell->matrix()(1,3);
-        double az = simulationCell->matrix()(2,3);
-        double bx = ax + simulationCell->matrix()(0,0);
-        double by = ay + simulationCell->matrix()(1,1);
-        double bz = az + simulationCell->matrix()(2,2);
+        double ax = simulationCell().cellMatrix()(0,3);
+        double ay = simulationCell().cellMatrix()(1,3);
+        double az = simulationCell().cellMatrix()(2,3);
+        double bx = ax + simulationCell().cellMatrix()(0,0);
+        double by = ay + simulationCell().cellMatrix()(1,1);
+        double bz = az + simulationCell().cellMatrix()(2,2);
         if(ax > bx) std::swap(ax,bx);
         if(ay > by) std::swap(ay,by);
         if(az > bz) std::swap(az,bz);
@@ -135,7 +133,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
 
         if(!radiiArray) {
             voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                          simulationCell->hasPbc(0), simulationCell->hasPbc(1), simulationCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                          simulationCell().hasPbc(0), simulationCell().hasPbc(1), simulationCell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -169,7 +167,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
         }
         else {
             voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                               simulationCell->hasPbc(0), simulationCell->hasPbc(1), simulationCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                               simulationCell().hasPbc(0), simulationCell().hasPbc(1), simulationCell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -205,22 +203,22 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     }
     else {
         // Prepare the nearest neighbor list generator.
-        NearestNeighborFinder nearestNeighborFinder(16, positions, simulationCell, selection);
+        NearestNeighborFinder nearestNeighborFinder(16, positions, simulationCell(), particleSelection());
 
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
         double boxDiameter = std::sqrt(
-                                  simulationCell->matrix().column(0).squaredLength()
-                                  + simulationCell->matrix().column(1).squaredLength()
-                                  + simulationCell->matrix().column(2).squaredLength());
+                                  simulationCell().cellMatrix().column(0).squaredLength()
+                                  + simulationCell().cellMatrix().column(1).squaredLength()
+                                  + simulationCell().cellMatrix().column(2).squaredLength());
 
         // The normal vectors of the three cell planes.
         std::array<Vector3,3> planeNormals;
-        planeNormals[0] = simulationCell->cellNormalVector(0);
-        planeNormals[1] = simulationCell->cellNormalVector(1);
-        planeNormals[2] = simulationCell->cellNormalVector(2);
+        planeNormals[0] = simulationCell().cellNormalVector(0);
+        planeNormals[1] = simulationCell().cellNormalVector(1);
+        planeNormals[2] = simulationCell().cellNormalVector(2);
 
-        Point3 corner1 = Point3::Origin() + simulationCell->matrix().column(3);
-        Point3 corner2 = corner1 + simulationCell->matrix().column(0) + simulationCell->matrix().column(1) + simulationCell->matrix().column(2);
+        Point3 corner1 = Point3::Origin() + simulationCell().cellMatrix().column(3);
+        Point3 corner2 = corner1 + simulationCell().cellMatrix().column(0) + simulationCell().cellMatrix().column(1) + simulationCell().cellMatrix().column(2);
 
         // Perform analysis, particle-wise parallel.
         parallelFor(positions->size(), 1024, progress, [&](size_t index) {
@@ -241,7 +239,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
             // Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
             bool skipParticle = false;
             for(size_t dim = 0; dim < 3; dim++) {
-                if(!simulationCell->hasPbc(dim)) {
+                if(!simulationCell().hasPbc(dim)) {
                     double r;
                     r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
                     if(r <= 0) skipParticle = true;

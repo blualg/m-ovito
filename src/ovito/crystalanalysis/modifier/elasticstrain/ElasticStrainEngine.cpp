@@ -34,8 +34,8 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
-        PropertyPtr structures,
-        size_t particleCount,
+        const StructureIdentificationModifier& modifier,
+        const PipelineFlowState& input,
         int inputCrystalStructure,
         std::vector<Matrix3> preferredCrystalOrientations,
         bool calculateDeformationGradients,
@@ -43,14 +43,14 @@ ElasticStrainEngine::ElasticStrainEngine(
         FloatType latticeConstant,
         FloatType caRatio,
         bool pushStrainTensorsForward) :
-    StructureIdentificationModifier::Algorithm(std::move(structures)),
+    StructureIdentificationModifier::Algorithm(modifier, input),
     _inputCrystalStructure(inputCrystalStructure),
     _latticeConstant(latticeConstant),
     _pushStrainTensorsForward(pushStrainTensorsForward),
     _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
-    _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particleCount, DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
-    _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized,particleCount, Particles::ElasticStrainTensorProperty) : nullptr),
-    _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particleCount, Particles::ElasticDeformationGradientProperty) : nullptr)
+    _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particles()->elementCount(), DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
+    _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles()->elementCount(), Particles::ElasticStrainTensorProperty) : nullptr),
+    _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles()->elementCount(), Particles::ElasticDeformationGradientProperty) : nullptr)
 {
     if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
         // Cubic crystal structures always have a c/a ratio of one.
@@ -66,17 +66,20 @@ ElasticStrainEngine::ElasticStrainEngine(
 /******************************************************************************
 * Performs the actual analysis.
 ******************************************************************************/
-void ElasticStrainEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
+void ElasticStrainEngine::identifyStructures()
 {
+    if(simulationCell().is2D())
+        throw Exception(ElasticStrainModifier::tr("The elastic strain calculation modifier does not support 2d simulation cells."));
+
     TaskProgress progress(this_task::ui());
     progress.setText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
-    const Property* positions = particles->expectProperty(Particles::PositionProperty);
-    _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, clusterGraph(), structures(), std::move(_preferredCrystalOrientations));
+    const Property* positions = particles()->expectProperty(Particles::PositionProperty);
+    _structureAnalysis.emplace(positions, simulationCell(), (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, particleSelection(), clusterGraph(), structures(), std::move(_preferredCrystalOrientations));
     setAtomClusters(_structureAnalysis->atomClusters());
 
     progress.beginSubSteps({ 35, 6, 1, 1, 20 });
-    _structureAnalysis->identifyStructures(progress, simulationCell);
+    _structureAnalysis->identifyStructures(progress);
 
     progress.nextSubStep();
     _structureAnalysis->buildClusters(progress);
@@ -126,9 +129,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
                     int neighborAtomIndex = _structureAnalysis->getNeighbor(particleIndex, n);
                     // Add vector pair to matrices for computing the elastic deformation gradient.
                     Vector3 latticeVector = idealUnitCellTM * _structureAnalysis->neighborLatticeVector(particleIndex, n).toDataType<FloatType>();
-                    Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[particleIndex];
-                    if(simulationCell)
-                        spatialVector = simulationCell->wrapVector(spatialVector);
+                    Vector3 spatialVector = simulationCell().wrapVector(positionsArray[neighborAtomIndex] - positionsArray[particleIndex]);
                     for(size_t i = 0; i < 3; i++) {
                         for(size_t j = 0; j < 3; j++) {
                             orientationV(i,j) += (double)(latticeVector[j] * latticeVector[i]);

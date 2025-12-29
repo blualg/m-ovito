@@ -61,8 +61,8 @@ public:
 protected:
 
     /// Creates the engine that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override {
-        return std::make_shared<ChillPlusAlgorithm>(std::move(structures), cutoff());
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override {
+        return std::make_shared<ChillPlusAlgorithm>(*this, input, cutoff());
     }
 
     /// Computes the modifier's results.
@@ -71,12 +71,12 @@ protected:
     public:
 
         /// Constructor.
-        ChillPlusAlgorithm(PropertyPtr structures, FloatType cutoff) :
-            Algorithm(std::move(structures)),
+        ChillPlusAlgorithm(const StructureIdentificationModifier& modifier, const PipelineFlowState& input, FloatType cutoff) :
+            Algorithm(modifier, input),
             _cutoff(cutoff) {}
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
 
         /// Computes the structure identification statistics.
         virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;

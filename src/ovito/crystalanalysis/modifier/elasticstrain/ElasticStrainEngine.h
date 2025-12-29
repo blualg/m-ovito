@@ -37,13 +37,13 @@ class ElasticStrainEngine : public StructureIdentificationModifier::Algorithm
 public:
 
     /// Constructor.
-    ElasticStrainEngine(PropertyPtr structures, size_t particleCount,
+    ElasticStrainEngine(const StructureIdentificationModifier& modifier, const PipelineFlowState& input,
             int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
             bool calculateDeformationGradients, bool calculateStrainTensors,
             FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);
 
     /// Performs the atomic structure classification.
-    virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+    virtual void identifyStructures() override;
 
     /// Computes the structure identification statistics.
     virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;

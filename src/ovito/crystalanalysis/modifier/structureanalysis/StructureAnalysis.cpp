@@ -59,7 +59,7 @@ static void bitmapSort(iterator begin, iterator end, int max)
 ******************************************************************************/
 StructureAnalysis::StructureAnalysis(
         ConstPropertyPtr positions,
-        const SimulationCell* simCell,
+        const SimulationCellData& simCell,
         LatticeStructureType inputCrystalType,
         ConstPropertyPtr particleSelection,
         ClusterGraph* clusterGraph,
@@ -459,11 +459,11 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-void StructureAnalysis::identifyStructures(TaskProgress& progress, const SimulationCell* simulationCell)
+void StructureAnalysis::identifyStructures(TaskProgress& progress)
 {
     // Prepare the neighbor list.
     int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
-    NearestNeighborFinder neighFinder(maxNeighborListSize, positions(), simulationCell, _particleSelection.buffer());
+    NearestNeighborFinder neighFinder(maxNeighborListSize, positions(), cell(), _particleSelection.buffer());
 
     // Identify local structure around each particle.
     _maximumNeighborDistance = 0;

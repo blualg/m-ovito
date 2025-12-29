@@ -92,23 +92,33 @@ void ReferenceConfigurationModifier::inputCachingHints(ModifierEvaluationRequest
 {
     // Only need to communicate caching hints when reference configuration is provided by the upstream pipeline.
     if(!referenceConfiguration()) {
-        if(useReferenceFrameOffset()) {
-            // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals.
-            for(const TimeInterval& iv : TimeIntervalUnion(request.cachingIntervals())) {
-                int startFrame = request.modificationNode()->animationTimeToSourceFrame(iv.start());
-                int endFrame = request.modificationNode()->animationTimeToSourceFrame(iv.end());
-                AnimationTime shiftedStartTime = request.modificationNode()->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
-                AnimationTime shiftedEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
-                request.mutableCachingIntervals().add(TimeInterval(shiftedStartTime, shiftedEndTime));
-            }
-        }
-        else {
-            // When using a static reference configuration, ask the upstream pipeline to cache the corresponding animation frame.
-            request.mutableCachingIntervals().add(request.modificationNode()->sourceFrameToAnimationTime(referenceFrameNumber()));
-        }
+        inputCachingHintsReusable(request, useReferenceFrameOffset(), referenceFrameNumber(), referenceFrameOffset());
     }
 
     Modifier::inputCachingHints(request);
+}
+
+/******************************************************************************
+* Computes the animation time intervals that should be cached by the upstream
+* pipeline to keep the reference configuration available.
+* This static function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+******************************************************************************/
+void ReferenceConfigurationModifier::inputCachingHintsReusable(ModifierEvaluationRequest& request, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset)
+{
+    if(useReferenceFrameOffset) {
+        // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals.
+        for(const TimeInterval& iv : TimeIntervalUnion(request.cachingIntervals())) {
+            int startFrame = request.modificationNode()->animationTimeToSourceFrame(iv.start());
+            int endFrame = request.modificationNode()->animationTimeToSourceFrame(iv.end());
+            AnimationTime shiftedStartTime = request.modificationNode()->sourceFrameToAnimationTime(startFrame + referenceFrameOffset);
+            AnimationTime shiftedEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame + referenceFrameOffset);
+            request.mutableCachingIntervals().add(TimeInterval(shiftedStartTime, shiftedEndTime));
+        }
+    }
+    else {
+        // When using a static reference configuration, ask the upstream pipeline to cache the corresponding animation frame.
+        request.mutableCachingIntervals().add(request.modificationNode()->sourceFrameToAnimationTime(referenceFrameNumber));
+    }
 }
 
 /******************************************************************************
@@ -155,76 +165,14 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
         return std::move(state);
     }
 
-    // What is the reference frame number to use?
-    int referenceFrame;
-    if(useReferenceFrameOffset()) {
-        // Determine the current frame, preferably from the marker attribute stored in the pipeline flow state.
-        // If the source frame attribute is not present, fall back to inferring it from the current animation time.
-        int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
-        if(currentFrame < 0)
-            currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
-
-        // Use frame offset relative to current configuration.
-        referenceFrame = currentFrame + referenceFrameOffset();
-    }
-    else {
-        // Use a constant, user-specified frame as reference configuration.
-        referenceFrame = referenceFrameNumber();
-    }
-
     // Obtain the reference positions of the particles, either from the upstream pipeline or from a user-specified reference data source.
-    PipelineEvaluationResult refState;
-    if(!referenceConfiguration()) {
-        // Set up the pipeline request for obtaining the reference configuration.
-        ModifierEvaluationRequest referenceRequest = request;
-        referenceRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(referenceFrame));
-        inputCachingHints(referenceRequest);
-
-        // Send the request to the upstream pipeline.
-        refState = request.modificationNode()->evaluateInput(referenceRequest);
-    }
-    else {
-        if(referenceConfiguration()->numberOfSourceFrames() > 0) {
-            if(referenceFrame < 0 || referenceFrame >= referenceConfiguration()->numberOfSourceFrames()) {
-                if(referenceFrame > 0)
-                    throw Exception(tr("Requested reference frame number %1 is out of range. "
-                        "The loaded reference configuration contains only %2 frame(s).").arg(referenceFrame).arg(referenceConfiguration()->numberOfSourceFrames()));
-                else
-                    throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
-            }
-
-            // Convert frame to animation time.
-            AnimationTime referenceTime = referenceConfiguration()->sourceFrameToAnimationTime(referenceFrame);
-
-            // Set up the pipeline request for obtaining the reference configuration.
-            PipelineEvaluationRequest referenceRequest(referenceTime);
-            referenceRequest.setThrowOnError(request.throwOnError());
-
-            // Send the request to the pipeline branch.
-            refState = referenceConfiguration()->evaluate(referenceRequest);
-        }
-        else {
-            // Create an empty state for the reference configuration if it is yet to be specified by the user.
-            refState = PipelineFlowState{};
-        }
-    }
+    Future<PipelineFlowState> refStateFuture =
+        referenceConfiguration()
+        ? obtainExternalReferenceConfiguration(request, state, referenceConfiguration(), useReferenceFrameOffset(), referenceFrameNumber(), referenceFrameOffset())
+        : obtainUpstreamReferenceConfiguration(request, state, useReferenceFrameOffset(), referenceFrameNumber(), referenceFrameOffset());
 
     // Wait for the reference configuration to become available.
-    return refState.then(ObjectExecutor(this), [this, request, state = std::move(state), referenceFrame](const PipelineFlowState& referenceInput) mutable {
-
-        // Make sure the obtained reference configuration is valid and ready to use.
-        if(referenceInput.status().type() == PipelineStatus::Error)
-            throw Exception(tr("Reference configuration is not available: %1").arg(referenceInput.status().text()));
-        if(!referenceInput)
-            throw Exception(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
-
-        // Make sure we really got back the requested reference frame.
-        if(int sourceFrame = referenceInput.data()->sourceFrame(); sourceFrame != -1 && sourceFrame != referenceFrame) {
-            if(referenceFrame > 0)
-                throw Exception(tr("Requested reference frame %1 is out of range. Make sure the loaded reference configuration file contains a sufficent number of frames.").arg(referenceFrame));
-            else
-                throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
-        }
+    return refStateFuture.then(ObjectExecutor(this), [this, request, state = std::move(state)](PipelineFlowState&& referenceInput) mutable {
 
         // Let subclass create the compute engine.
         std::unique_ptr<Engine> engine = createEngine(request, state, referenceInput);
@@ -238,6 +186,120 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
             engine->perform(state);
             return std::move(state);
         });
+    });
+}
+
+/******************************************************************************
+* Calculates the reference frame number to use.
+* This function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+******************************************************************************/
+int ReferenceConfigurationModifier::calculateReferenceFrameNumber(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset)
+{
+    // What is the reference frame number to use?
+    if(useReferenceFrameOffset) {
+        // Determine the current frame, preferably from the marker attribute stored in the pipeline flow state.
+        // If the source frame attribute is not present, fall back to inferring it from the current animation time.
+        int currentFrame = inputState.data() ? inputState.data()->sourceFrame() : -1;
+        if(currentFrame < 0)
+            currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
+
+        // Use frame offset relative to current configuration.
+        return currentFrame + referenceFrameOffset;
+    }
+    else {
+        // Use a constant, user-specified frame as reference configuration.
+        return referenceFrameNumber;
+    }
+}
+
+/******************************************************************************
+* Obtains the reference configuration from the upstream pipeline.
+* This function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+******************************************************************************/
+Future<PipelineFlowState> ReferenceConfigurationModifier::obtainUpstreamReferenceConfiguration(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset)
+{
+    // What is the reference frame number to use?
+    int referenceFrame = calculateReferenceFrameNumber(request, inputState, useReferenceFrameOffset, referenceFrameNumber, referenceFrameOffset);
+
+    // Set up the pipeline request for obtaining the reference configuration.
+    ModifierEvaluationRequest referenceRequest = request;
+    referenceRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(referenceFrame));
+    inputCachingHintsReusable(referenceRequest, useReferenceFrameOffset, referenceFrameNumber, referenceFrameOffset);
+
+    // Send the request to the upstream pipeline.
+    auto refStateFuture = request.modificationNode()->evaluateInput(referenceRequest);
+
+    // Validate reference configuration after it became available.
+    return refStateFuture.then([referenceFrame](const PipelineFlowState& referenceInput) {
+
+        // Make sure the obtained reference configuration is valid and ready to use.
+        if(referenceInput.status().type() == PipelineStatus::Error)
+            throw Exception(tr("Reference configuration is not available: %1").arg(referenceInput.status().text()));
+        if(!referenceInput)
+            throw Exception(tr("Reference configuration is empty. Upstream pipeline did not yield any data at animation frame %1.").arg(referenceFrame));
+
+        // Make sure we really got back the requested reference frame.
+        if(int sourceFrame = referenceInput.data()->sourceFrame(); sourceFrame != -1 && sourceFrame != referenceFrame) {
+            if(referenceFrame > 0)
+                throw Exception(tr("Reference frame %1 is outside the range of the loaded trajectory.").arg(referenceFrame));
+            else
+                throw Exception(tr("Reference frame %1 is out of range. Cannot perform calculation at current animation time.").arg(referenceFrame));
+        }
+
+        return referenceInput;
+    });
+}
+
+/******************************************************************************
+* Obtains the reference configuration from a separate pipeline source.
+* This function is reusable by other modifier classes not derived from ReferenceConfigurationModifier.
+******************************************************************************/
+Future<PipelineFlowState> ReferenceConfigurationModifier::obtainExternalReferenceConfiguration(const ModifierEvaluationRequest& request, const PipelineFlowState& inputState, PipelineNode* referenceSource, bool useReferenceFrameOffset, int referenceFrameNumber, int referenceFrameOffset)
+{
+    // What is the reference frame number to use?
+    int referenceFrame = calculateReferenceFrameNumber(request, inputState, useReferenceFrameOffset, referenceFrameNumber, referenceFrameOffset);
+
+    int numberOfSourceFrames = referenceSource->numberOfSourceFrames();
+    if(numberOfSourceFrames <= 0) {
+        throw Exception(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
+    }
+
+    if(referenceFrame < 0 || referenceFrame >= numberOfSourceFrames) {
+        if(referenceFrame > 0)
+            throw Exception(tr("Requested reference frame number %1 is out of range. "
+                "The loaded reference configuration contains only %2 frame(s).").arg(referenceFrame).arg(numberOfSourceFrames));
+        else
+            throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
+    }
+
+    // Convert frame to animation time.
+    AnimationTime referenceTime = referenceSource->sourceFrameToAnimationTime(referenceFrame);
+
+    // Set up the pipeline request for obtaining the reference configuration.
+    PipelineEvaluationRequest referenceRequest(referenceTime);
+    referenceRequest.setThrowOnError(request.throwOnError());
+
+    // Send the request to the pipeline branch.
+    auto refStateFuture = referenceSource->evaluate(referenceRequest);
+
+    // Validate reference configuration after it became available.
+    return refStateFuture.then([referenceFrame](const PipelineFlowState& referenceInput) {
+
+        // Make sure the obtained reference configuration is valid and ready to use.
+        if(referenceInput.status().type() == PipelineStatus::Error)
+            throw Exception(tr("Reference configuration is not available: %1").arg(referenceInput.status().text()));
+        if(!referenceInput)
+            throw Exception(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
+
+        // Make sure we really got back the requested reference frame.
+        if(int sourceFrame = referenceInput.data()->sourceFrame(); sourceFrame != -1 && sourceFrame != referenceFrame) {
+            if(referenceFrame > 0)
+                throw Exception(tr("Requested reference frame %1 is out of range. Make sure the loaded reference configuration file contains a sufficent number of trajectory frames.").arg(referenceFrame));
+            else
+                throw Exception(tr("Requested reference frame %1 is out of range. Cannot perform calculation at the current animation time.").arg(referenceFrame));
+        }
+
+        return referenceInput;
     });
 }
 

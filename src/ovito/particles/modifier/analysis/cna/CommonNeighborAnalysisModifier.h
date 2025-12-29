@@ -120,7 +120,7 @@ public:
 protected:
 
     /// Creates the algorithm that will perform the structure identification.
-    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -160,12 +160,12 @@ private:
     public:
 
         /// Constructor.
-        FixedCNAAlgorithm(PropertyPtr structures, FloatType cutoff) :
-            CNAAlgorithm(std::move(structures)),
+        FixedCNAAlgorithm(const StructureIdentificationModifier& modifier, const PipelineFlowState& input, FloatType cutoff) :
+            CNAAlgorithm(modifier, input),
             _cutoff(cutoff) {}
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
 
     private:
 
@@ -182,7 +182,7 @@ private:
         using CNAAlgorithm::CNAAlgorithm;
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
     };
 
     /// Analysis engine that performs the interval common neighbor analysis.
@@ -194,7 +194,7 @@ private:
         using CNAAlgorithm::CNAAlgorithm;
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
     };
 
     /// Analysis engine that performs the common neighbor analysis based on existing bonds.
@@ -203,14 +203,17 @@ private:
     public:
 
         /// Constructor.
-        BondCNAAlgorithm(PropertyPtr structures, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-            CNAAlgorithm(std::move(structures)),
-            _bondTopology(std::move(bondTopology)),
-            _bondPeriodicImages(std::move(bondPeriodicImages)),
-            _cnaIndices(Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, _bondTopology->size(), Property::Int32, 3, tr("CNA Indices"))) {}
+        BondCNAAlgorithm(const StructureIdentificationModifier& modifier, const PipelineFlowState& input) : CNAAlgorithm(modifier, input)
+        {
+            const Bonds* bonds = particles()->expectBonds();
+            bonds->verifyIntegrity();
+            _bondTopology = bonds->expectProperty(Bonds::TopologyProperty);
+            _bondPeriodicImages = bonds->getProperty(Bonds::PeriodicImageProperty);
+            _cnaIndices = Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds->elementCount(), Property::Int32, 3, tr("CNA Indices"));
+        }
 
         /// Performs the atomic structure classification.
-        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
+        virtual void identifyStructures() override;
 
         /// Computes the structure identification statistics.
         virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
