@@ -25,6 +25,23 @@
 
 namespace Ovito {
 
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesAssignColorModifierDelegate);
+OVITO_CLASSINFO(LinesAssignColorModifierDelegate, "DisplayName", "Lines");
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesAssignColorModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all Lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesExpressionSelectionModifierDelegate);
 OVITO_CLASSINFO(LinesExpressionSelectionModifierDelegate, "DisplayName", "Lines");
 

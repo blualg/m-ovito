@@ -16,6 +16,7 @@ Version 3.15.0 (dd-mm-2025)
 - New modifier: :ref:`particles.modifiers.edit_types`
 - New modifier :ref:`particles.modifiers.edit_simulation_cell`
 - New modifier :ref:`particles.modifiers.assign_bond_order`
+- Implement :ref:`particles.modifiers.assign_color` modifier for lines
 - New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
 - New data inspector tab for :ref:`type lists <data_inspector.types>`
 - Display video duration estimate in :ref:`render settings panel <core.render_settings>`
