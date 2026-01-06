@@ -346,9 +346,11 @@ public:
     }
 
     /// Constructor that constructs an ad-hoc simulation cell from a 3d bounding box.
-    constexpr SimulationCellDataT(const Box3& box, bool is2D = false)
-        : _cellMatrix(
-              Vector_3<T>(box.sizeX(), 0, 0), Vector_3<T>(0, box.sizeY(), 0), Vector_3<T>(0, 0, box.sizeZ()), box.minc - Point3::Origin()),
+    constexpr SimulationCellDataT(const Box_3<T>& box, bool is2D = false)
+        : _cellMatrix(Vector_3<T>(box.sizeX(), 0, 0),
+                      Vector_3<T>(0, box.sizeY(), 0),
+                      Vector_3<T>(0, 0, box.sizeZ()),
+                      box.minc - typename Point_3<T>::Origin()),
           _reciprocalCellMatrix(_cellMatrix.inverse()),
           _is2D(is2D)
     {
@@ -359,15 +361,15 @@ public:
     {
         OVITO_ASSERT(minimumBoxSize > 0);
         if(positions && positions.size() != 0) {
-            Box_3<T> box = positions.buffer()->boundingBox3();
+            Box_3<T> box = positions.buffer()->boundingBox3().toDataType<T>();
             OVITO_ASSERT(!box.isEmpty());
             if(box.sizeX() < minimumBoxSize) box.maxc.x() = box.minc.x() + minimumBoxSize;
             if(box.sizeY() < minimumBoxSize) box.maxc.y() = box.minc.y() + minimumBoxSize;
             if(box.sizeZ() < minimumBoxSize) box.maxc.z() = box.minc.z() + minimumBoxSize;
-            _cellMatrix = AffineTransformation(Vector_3<T>(box.sizeX(), 0, 0),
-                                               Vector_3<T>(0, box.sizeY(), 0),
-                                               Vector_3<T>(0, 0, box.sizeZ()),
-                                               box.minc - typename Point_3<T>::Origin());
+            _cellMatrix = AffineTransformationT<T>(Vector_3<T>(box.sizeX(), 0, 0),
+                                                   Vector_3<T>(0, box.sizeY(), 0),
+                                                   Vector_3<T>(0, 0, box.sizeZ()),
+                                                   box.minc - typename Point_3<T>::Origin());
             _reciprocalCellMatrix = _cellMatrix.inverse();
         }
         else {
