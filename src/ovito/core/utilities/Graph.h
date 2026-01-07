@@ -27,11 +27,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace Ovito {
 
-// Forward declaration
+// Forward declarations
 template<typename NodeId, typename NodeProperty, typename EdgeProperty>
 class UndirectedSubgraph;
 
@@ -44,11 +45,12 @@ class UndirectedSubgraph;
  *   NodeProperty: Type of properties stored with each node
  *   EdgeProperty: Type of properties stored with each edge
  ******************************************************************************/
-template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgePropertyType = std::monostate>
-class UndirectedGraph : public std::enable_shared_from_this<UndirectedGraph<NodeIdType, NodeProperty, EdgePropertyType>>
+template<typename NodeIdType, typename NodePropertyType = std::monostate, typename EdgePropertyType = std::monostate>
+class UndirectedGraph : public std::enable_shared_from_this<UndirectedGraph<NodeIdType, NodePropertyType, EdgePropertyType>>
 {
 public:
     using NodeId = NodeIdType;
+    using NodeProperty = NodePropertyType;
     using EdgeProperty = EdgePropertyType;
 
     /// Represents an edge between two nodes
@@ -1000,8 +1002,15 @@ namespace GraphCycleDetection {
  *   NeighborFunc: Function type that returns neighbors for a given node
  ******************************************************************************/
 template<typename NodeId, typename NeighborFunc>
-void findCyclesDFS(NodeId current, NodeId parent, const NodeId& startNode, size_t minSize, size_t maxSize, NeighborFunc&& getNeighbors,
-                   std::unordered_set<NodeId>& visited, std::vector<NodeId>& path, std::vector<std::vector<NodeId>>& allCycles)
+void findCyclesDFS(NodeId current,
+                   NodeId parent,
+                   const NodeId& startNode,
+                   size_t minSize,
+                   size_t maxSize,
+                   NeighborFunc&& getNeighbors,
+                   std::unordered_set<NodeId>& visited,
+                   std::vector<NodeId>& path,
+                   std::vector<std::vector<NodeId>>& allCycles)
 {
     visited.insert(current);
     path.push_back(current);
@@ -1038,7 +1047,8 @@ void findCyclesDFS(NodeId current, NodeId parent, const NodeId& startNode, size_
         }
         // Continue DFS if not visited and path size is within limit
         else if(visited.find(neighbor) == visited.end() && path.size() < maxSize) {
-            findCyclesDFS(neighbor, current, startNode, minSize, maxSize, std::forward<NeighborFunc>(getNeighbors), visited, path, allCycles);
+            findCyclesDFS(
+                neighbor, current, startNode, minSize, maxSize, std::forward<NeighborFunc>(getNeighbors), visited, path, allCycles);
         }
     }
 
@@ -1114,9 +1124,7 @@ std::vector<NodeId> UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::find
     std::vector<NodeId> path;
 
     // Lambda to get neighbors for a given node
-    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& {
-        return neighbors(nodeId);
-    };
+    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& { return neighbors(nodeId); };
 
     // Get all nodes in the subgraph
     const std::unordered_set<NodeId>& subgraphNodes = nodes();
