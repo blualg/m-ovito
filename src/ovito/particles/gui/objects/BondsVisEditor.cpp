@@ -109,14 +109,14 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);
 
     // Fractional bonds box
-    QGroupBox* fractionalBondsBox = new QGroupBox(tr("Fractional bonds"));
-    layout = new QGridLayout(fractionalBondsBox);
+    _fractionalBondsBox = new QGroupBox(tr("Fractional bonds"));
+    layout = new QGridLayout(_fractionalBondsBox);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setHorizontalSpacing(4);
     layout->setVerticalSpacing(5);
     layout->setColumnStretch(1, 1);
     layout->setRowMinimumHeight(3, 1);  // Extra space below the last option to better align the uniform color picker.
-    mainLayout->addWidget(fractionalBondsBox);
+    mainLayout->addWidget(_fractionalBondsBox);
 
     auto* filledSegmentsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(BondsVis::filledSegments));
     layout->addWidget(filledSegmentsPUI->label(), 3, 0);
@@ -125,6 +125,9 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     auto* filledFractionPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(BondsVis::filledFraction));
     layout->addWidget(filledFractionPUI->label(), 4, 0);
     layout->addLayout(filledFractionPUI->createFieldLayout(), 4, 1);
+
+    // Update the fractional bonds box when a parameter of the data object has been changed.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateFractionalBondOptions);
 }
 
 /******************************************************************************
@@ -145,6 +148,20 @@ void BondsVisEditor::updateColoringOptions()
     _coloringModeUI->buttonGroup()->button(BondsVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
     _coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(Bonds::TypeProperty));
     _coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
+}
+
+/******************************************************************************
+ * Updates the fractional bond display UI.
+ ******************************************************************************/
+void BondsVisEditor::updateFractionalBondOptions()
+{
+    // Retrieve the Bonds this vis element is associated with.
+    DataOORef<const Bonds> bonds = dynamic_object_cast<const Bonds>(getVisDataObject());
+
+    // Do the bonds have a bond order property?
+    bool hasBondOrder = (bonds && bonds->getProperty(Bonds::OrderProperty));
+
+    _fractionalBondsBox->setEnabled(editObject() && hasBondOrder);
 }
 
 }   // End of namespace

@@ -27,8 +27,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-#include <utility>
-
 namespace Ovito {
 
 /**

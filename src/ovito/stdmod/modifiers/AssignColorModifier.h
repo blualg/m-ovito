@@ -53,7 +53,7 @@ public:
 
     /// Returns a reference to the property container being modified by this delegate.
     PropertyContainerReference inputContainerRef() const {
-        return PropertyContainerReference(inputContainerClass(), inputDataObject().dataPath(), inputDataObject().dataTitle());
+        return {inputContainerClass(), inputDataObject().dataPath(), inputDataObject().dataTitle()};
     }
 
 protected:
@@ -78,7 +78,10 @@ public:
         using DelegatingModifier::OOMetaClass::OOMetaClass;
 
         /// Return the metaclass of delegates for this modifier type.
-        virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return AssignColorModifierDelegate::OOClass(); }
+        [[nodiscard]] virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override
+        {
+            return AssignColorModifierDelegate::OOClass();
+        }
     };
 
     OVITO_CLASS_META(AssignColorModifier, AssignColorModifierClass)
@@ -96,7 +99,10 @@ public:
     Color color() const { return colorController() ? colorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }
 
     /// Sets the color that is assigned to the selected elements.
-    void setColor(const Color& color) { if(colorController()) colorController()->setColorValue(AnimationTime(0), color); }
+    void setColor(const Color& color)
+    {
+        if(colorController()) colorController()->setColorValue(AnimationTime(0), color);
+    }
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return QVariant::fromValue(static_cast<QColor>(color())); }

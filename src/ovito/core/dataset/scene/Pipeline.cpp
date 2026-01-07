@@ -265,12 +265,13 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
         // Invalidate caches when the pipeline's data provider is replaced.
         invalidatePipelineCache();
 
-        // The animation length and the title of the pipeline might have changed.
-        if(!isBeingLoaded() && !isBeingDeleted())
+        if(!isBeingLoaded() && !isBeingDeleted()) {
+            // The animation length and the title of the pipeline might have changed.
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-        // Determine the new source node of the pipeline.
-        updatePipelineSourceReference();
+            // Determine the new source node of the pipeline.
+            updatePipelineSourceReference();
+        }
     }
     else if(field == PROPERTY_FIELD(replacedVisElements)) {
         OVITO_ASSERT(false);
@@ -606,6 +607,9 @@ void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
 
     // Clear the ad-hoc reference to the SceneNode to avoid the circular reference.
     _deserializationSceneNode.reset();
+
+    // Update the pipeline source reference - just in case the serialized reference is not up-to-date.
+    updatePipelineSourceReference();
 }
 
 /******************************************************************************

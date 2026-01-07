@@ -46,10 +46,13 @@ private Q_SLOTS:
     /// Updates the coloring controls shown in the UI.
     void updateColoringOptions();
 
-private:
+    /// Updates the fractional bond display UI.
+    void updateFractionalBondOptions();
 
+private:
     IntegerRadioButtonParameterUI* _coloringModeUI;
     ColorParameterUI* _bondColorUI;
+    QGroupBox* _fractionalBondsBox;
 };
 
 }   // End of namespace

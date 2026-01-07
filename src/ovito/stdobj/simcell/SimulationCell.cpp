@@ -164,6 +164,9 @@ ConstPropertyPtr SimulationCellDataT<T>::wrapPoints(const Property* inputPositio
     return outputPositions;
 }
 
+template class SimulationCellDataT<FloatType>;
+template class SimulationCellDataT<GraphicsFloatType>;
+
 // Explicit template instantiations
 template ConstPropertyPtr SimulationCellDataT<FloatType>::wrapPoints(const Property* inputPositions) const;
 template ConstPropertyPtr SimulationCellDataT<GraphicsFloatType>::wrapPoints(const Property* inputPositions) const;

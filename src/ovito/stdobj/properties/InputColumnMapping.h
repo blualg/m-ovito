@@ -115,7 +115,7 @@ public:
     void convertToContainerClass(PropertyContainerClassPtr newClass);
 
     /// Saves the mapping into a byte array.
-    QByteArray toByteArray() const;
+    [[nodiscard]] QByteArray toByteArray() const;
 
     /// Loads the mapping from a byte array.
     void fromByteArray(const QByteArray& array);
@@ -125,17 +125,16 @@ public:
 
     /// Returns the first few lines of the file, which can help the user to figure out
     /// the column mapping.
-    const QString& fileExcerpt() const { return _fileExcerpt; }
+    [[nodiscard]] const QString& fileExcerpt() const { return _fileExcerpt; }
 
     /// Stores the first few lines of the file, which can help the user to figure out
     /// the column mapping.
     void setFileExcerpt(const QString& text) { _fileExcerpt = text; }
 
     /// Returns whether at least some of the file columns have names.
-    bool hasFileColumnNames() const {
-        return std::any_of(begin(), end(), [](const InputColumnInfo& column) {
-            return column.columnName.isEmpty() == false;
-        });
+    [[nodiscard]] bool hasFileColumnNames() const
+    {
+        return std::any_of(begin(), end(), [](const InputColumnInfo& column) { return !column.columnName.isEmpty(); });
     }
 
     /// \brief Maps a file column to a standard property unless there is already another column mapped to the same property.
@@ -150,6 +149,12 @@ public:
     /// \param dataType The data type of the property to create.
     /// \param vectorComponent The component index if the target property is a vector property.
     bool mapColumnToUserProperty(int column, const QString& propertyName, int dataType, int vectorComponent = -1);
+
+    /// Returns the callback function that can be provided to set the numeric ID of a new element type.
+    [[nodiscard]] const std::function<int(const QLatin1String&)>& typeIdConverter() const { return _typeIdConverter; }
+
+    /// Sets the callback function that can be provided to set the numeric ID of a new element type.
+    void setTypeIdConverter(std::function<int(const QLatin1String&)>&& typeIdConverter) { _typeIdConverter = std::move(typeIdConverter); }
 
     /// Compares two mapping for equality.
     bool operator==(const InputColumnMapping& other) const {
@@ -173,6 +178,10 @@ private:
 
     /// The property container type.
     PropertyContainerClassPtr _containerClass = nullptr;
+
+    /// Callback function that can be provided to set the numeric ID of a new element type.
+    /// This can be used to automatically set atomic numbers for known element names
+    std::function<int(const QLatin1String&)> _typeIdConverter;
 };
 
 /**

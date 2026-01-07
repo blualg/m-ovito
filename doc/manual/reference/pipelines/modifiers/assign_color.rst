@@ -23,6 +23,7 @@ The field :guilabel:`Operate on` selects the type of elements that get assigned 
   Particles        Selected particles will be colored by setting their ``Color`` property.
   Bonds            Selected bonds will be colored by setting their ``Color`` property.
   Particle vectors The :ref:`vector glyphs <visual_elements.vectors>` of selected particles will be colored by setting their ``Vector Color`` property.
+  Lines            Selected line segments will be colored by setting their ``Color`` property.
   Mesh faces       Selected facets of a :ref:`surface mesh <scene_objects.surface_mesh>` will be colored by setting their ``Color`` property.
   Mesh vertices    Selected vertices of a :ref:`surface mesh <scene_objects.surface_mesh>` will be colored by setting their ``Color`` property.
   ================ =================================================================================

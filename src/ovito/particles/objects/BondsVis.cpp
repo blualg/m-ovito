@@ -446,7 +446,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                          bool                 // Render nodal vertices
                                          >;
 
-    const bool renderNodalVertices = !useBondOrder && !transparencyProperty && !bondWidthProperty &&
+    const bool renderNodalVertices = !transparencyProperty && !bondWidthProperty &&
                                      (!particleVis || !particleVis->isEnabled() || particleTransparencyProperty != nullptr);
 
     // Lookup the rendering primitive in the vis cache.
@@ -594,7 +594,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                         // Shift individual bonds base on the current bond order
                                         OVITO_ASSERT(cylinderIndex < bondColors.size());
                                         bondColors[cylinderIndex] = colors[colorIndex + cylinderIdx];
-                                        if(nodalColors && !visitedParticles.test(particleIndices[cylinderIdx])) {
+                                        if(nodalColors && bondRepCount == 1 && !visitedParticles.test(particleIndices[cylinderIdx])) {
                                             nodalColors[particleIndices[cylinderIdx]] = bondColors[cylinderIndex];
                                             if(nodalTransparencies)
                                                 nodalTransparencies[particleIndices[cylinderIdx]] = bondInputTransparency[bondIndex];
@@ -770,7 +770,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     cylinders.setTransparencies(bondTransparencies.take());
 
                     if(renderNodalVertices) {
-                        OVITO_ASSERT(!useBondOrder);
                         OVITO_ASSERT(positionProperty);
                         vertices.setParticleShape(ParticlePrimitive::SphericalShape);
                         vertices.setShadingMode((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading

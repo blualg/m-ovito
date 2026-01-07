@@ -336,6 +336,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         return asyncLaunch([state = std::move(state),
                             particles,
                             particleTypes = typeProperty,
+                            minCutoff = minimumCutoff(),
+                            moleculeIDs = moleculeProperty,
                             bondType = DataOORef<BondType>::makeDeepCopy(
                                 bondType()),  // Note: Passing a deep copy of the original bond type to the data pipeline.
                             autoDisableBondDisplay = autoDisableBondDisplay(),
@@ -348,6 +350,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             if(!particleTypes) {
                 throw Exception(tr("This modifier mode requires particle types."));
             }
+
+            BufferReadAccess<IdentifierIntType> moleculeIDsArray(moleculeIDs);
             BufferReadAccess<int32_t> particleTypesArray(particleTypes);
 
             TaskProgress progress(this_task::ui());
@@ -392,6 +396,9 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             // Prepare the neighbor finder.
             CutoffNeighborFinder neighborFinder((2 * cutoff) + delta, particles->expectProperty(Particles::PositionProperty), simCell, {});
 
+            // The lower bond length cutoff squared.
+            const FloatType minCutoffSquared = minCutoff * minCutoff;
+
             // Create initial bonds list with all bonds below a cutoff threshold.
             auto partialBondsLists =
                 parallelForCollect<std::vector<Bond>>(particleCount, 32, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
@@ -406,6 +413,14 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                     for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd();
                         neighborQuery.next()) {
                         this_task::throwIfCanceled();
+
+                        // Filter out short and intra-molecular bonds
+                        if(neighborQuery.distanceSquared() < minCutoffSquared) {
+                            continue;
+                        }
+                        if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()]) {
+                            continue;
+                        }
 
                         // Don't duplicate A-B / B-A bonds
                         if(neighborQuery.current() <= particleIndex) {
