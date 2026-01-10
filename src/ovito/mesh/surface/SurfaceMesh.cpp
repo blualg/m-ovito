@@ -35,10 +35,11 @@ DEFINE_REFERENCE_FIELD(SurfaceMesh, topology);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, vertices);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, faces);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, regions);
-SET_PROPERTY_FIELD_LABEL(SurfaceMesh, topology, "Topology");
+DEFINE_PROPERTY_FIELD(SurfaceMesh, hasNonConvexFaces);
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, vertices, "Vertices");
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, faces, "Faces");
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, regions, "Regions");
+SET_PROPERTY_FIELD_LABEL(SurfaceMesh, hasNonConvexFaces, "Has non-convex faces");
 
 constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 

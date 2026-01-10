@@ -592,8 +592,10 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
         auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorProperty.findInContainerWithComponent(inputMesh()->vertices(), errorDescr);
         if(pseudoColorProperty) {
             OVITO_ASSERT(pseudoColorProperty->size() == outputMesh()->vertexCount());
-            outputMesh()->setHasVertexPseudoColors(true);
-            pseudoColorProperty->copyComponentTo(outputMesh()->vertexPseudoColors().begin(), pseudoColorPropertyComponent);
+            if(pseudoColorProperty->size() == outputMesh()->vertexCount()) {
+                outputMesh()->setHasVertexPseudoColors(true);
+                pseudoColorProperty->copyComponentTo(outputMesh()->vertexPseudoColors().begin(), pseudoColorPropertyComponent);
+            }
         }
         else {
             _status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
@@ -614,7 +616,9 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
 
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
     _outputMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-    inputMeshData.convertToTriMesh(*_outputMesh, _smoothShading, faceSubset, &_originalFaceMap, !renderFacesTwoSided);
+    if(!inputMeshData.convertToTriMesh(*_outputMesh, _smoothShading, faceSubset, &_originalFaceMap, !renderFacesTwoSided)) {
+        _status.combine(PipelineStatus(PipelineStatus::Warning, tr("Triangulation failed for one or more mesh face polygons due to self-intersections. These faces will not be displayed.")));
+    }
     OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
     this_task::throwIfCanceled();
 

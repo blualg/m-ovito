@@ -91,15 +91,21 @@ public:
             p[dimz] = 1;
             mesh.addVertex(p);
         }
+        // Note: It's okay to pass a local variable as vertex coordinates here, as our implementation of GLU will
+        // make a copy of the coordinate data internally.
         gluTessVertex(tess, vertexCoord, reinterpret_cast<void*>(vindex));
     }
 
+private:
+
+    /// GLU_TESS_BEGIN_DATA callback function.
     static void beginData(int type, void* polygon_data) {
         CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
         tessellator->primitiveType = type;
         tessellator->vertices.clear();
     }
 
+    /// GLU_TESS_END_DATA callback function.
     static void endData(void* polygon_data) {
         CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
         if(tessellator->primitiveType == GL_TRIANGLE_FAN) {
@@ -158,11 +164,13 @@ public:
         else OVITO_ASSERT(false);
     }
 
+    /// GLU_TESS_VERTEX_DATA callback function.
     static void vertexData(void* vertex_data, void* polygon_data) {
         CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
         tessellator->vertices.push_back(reinterpret_cast<intptr_t>(vertex_data));
     }
 
+    /// GLU_TESS_COMBINE_DATA callback function.
     static void combineData(double coords[3], void* vertex_data[4], float weight[4], void** outDatab, void* polygon_data) {
         CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
         Point3 p;
@@ -177,6 +185,7 @@ public:
         }
     }
 
+    /// GLU_TESS_ERROR_DATA callback function.
     static void errorData(int errnum, void* polygon_data) {
         if(errnum == GLU_TESS_NEED_COMBINE_CALLBACK)
             qWarning() << "ERROR: Could not tessellate cap polygon. It contains overlapping contours.";

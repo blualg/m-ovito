@@ -78,31 +78,13 @@ public:
     /// Returns the number of half-edges in this mesh.
     size_type edgeCount() const { return _edgeFaces.size(); }
 
-    /// Returns an iterator that points to the first vertex of the mesh topology.
-    auto begin_vertices() const { return boost::make_counting_iterator<size_type>(0); }
-
-    /// Returns an iterator that points beyond last vertex of the mesh topology.
-    auto end_vertices() const { return boost::make_counting_iterator<size_type>(vertexCount()); }
-
-    /// Returns an iterator that points to the first face of the mesh topology.
-    auto begin_faces() const { return boost::make_counting_iterator<size_type>(0); }
-
-    /// Returns an iterator that points beyond last face of the mesh topology.
-    auto end_faces() const { return boost::make_counting_iterator<size_type>(faceCount()); }
-
-    /// Returns an iterator that points to the first edge of the mesh topology.
-    auto begin_edges() const { return boost::make_counting_iterator<size_type>(0); }
-
-    /// Returns an iterator that points beyond last edge of the mesh topology.
-    auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
-
     /// Returns an iterator range over all vertices of the mesh topology.
     auto verticesRange() const { return std::views::iota(size_type{0}, vertexCount()); }
 
-    /// Returns an iterator range over all faces of the mesh topology.
+    /// Returns a C++ view over all faces of the mesh topology.
     auto facesRange() const { return std::views::iota(size_type{0}, faceCount()); }
 
-    /// Returns an iterator range over all half-edges of the mesh topology.
+    /// Returns a C++ view over all half-edges of the mesh topology.
     auto edgesRange() const { return std::views::iota(size_type{0}, edgeCount()); }
 
     /// Adds several new vertices to the mesh.
@@ -120,15 +102,17 @@ public:
     /// Creates a new face defined by the given range of vertices.
     /// Half-edges connecting the vertices will be created by this method too.
     /// Returns the index of the newly-created face.
-    template<typename VertexIterator>
-    face_index createFaceAndEdges(VertexIterator begin, VertexIterator end) {
+    template<std::ranges::input_range VertexRange = std::initializer_list<vertex_index>>
+    face_index createFaceAndEdges(VertexRange&& range) {
         // Faces - even degenerate ones - must have at least two vertices.
-        OVITO_ASSERT(std::distance(begin, end) >= 2);
+        OVITO_ASSERT(std::ranges::distance(range) >= 2);
 
         face_index faceIndex = createFace();
 
-        VertexIterator v2 = begin;
-        VertexIterator v1 = v2++;
+        auto begin = std::ranges::begin(range);
+        auto end = std::ranges::end(range);
+        auto v2 = begin;
+        auto v1 = v2++;
         for(; v2 != end; ++v1, ++v2) {
             createEdge(*v1, *v2, faceIndex);
         }
@@ -138,17 +122,6 @@ public:
         OVITO_ASSERT(firstFaceVertex(faceIndex) == *begin);
 
         return faceIndex;
-    }
-
-    /// Creates a new face defined by the given range of vertices.
-    template<typename VertexRange>
-    face_index createFaceAndEdges(VertexRange range) {
-        return createFaceAndEdges(std::begin(range), std::end(range));
-    }
-
-    /// Creates a new face defined by the given range of vertices.
-    face_index createFaceAndEdges(std::initializer_list<vertex_index> range) {
-        return createFaceAndEdges(std::begin(range), std::end(range));
     }
 
     /// Creates a new half-edge between two vertices and adjacent to the given face.

@@ -653,7 +653,7 @@ void SurfaceMeshBuilder::joinCoplanarFaces(FloatType thresholdAngle)
 {
     FloatType dotThreshold = std::cos(thresholdAngle);
 
-    // Compute mesh face normals.
+    // Compute mesh face unit normals.
     std::vector<Vector3> faceNormals(faceCount());
     BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     for(face_index face : facesRange()) {

@@ -75,13 +75,13 @@ public:
     /// Returns an iterator range over all vertices of the mesh topology.
     auto verticesRange() const { return std::views::iota(size_type{0}, vertexCount()); }
 
-    /// Returns an iterator range over all faces of the mesh topology.
+    /// Returns a C++ view over all faces of the mesh topology.
     auto facesRange() const { return std::views::iota(size_type{0}, faceCount()); }
 
-    /// Returns an iterator range over all half-edges of the mesh topology.
+    /// Returns a C++ view over all half-edges of the mesh topology.
     auto edgesRange() const { return std::views::iota(size_type{0}, edgeCount()); }
 
-    /// Returns an iterator range over all regions of the mesh.
+    /// Returns a C++ view over all regions of the mesh.
     auto regionsRange() const { return std::views::iota(size_type{0}, regionCount()); }
 
     /// Returns the index of the space-filling spatial region.
@@ -224,11 +224,18 @@ public:
         return regions()->getProperty(name);
     }
 
-    /// Triangulates the polygonal faces of this mesh and outputs the results as a TriangleMesh.
-    void convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
+    /// Produces a TriangleMesh from the SurfaceMesh by triangulating the
+    /// polygonal faces and computing averaged vertex normals if requested.
+    /// The method returns false to indicate that triangulation failed for one or more faces.
+    bool convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
 
-    /// Computes the unit normal vector of a mesh face.
+    /// Computes the normal vector of a mesh face.
     Vector3 computeFaceNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const;
+
+    /// Computes the normal vector of a mesh face, normalized to unit length.
+    Vector3 computeFaceUnitNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const {
+        return computeFaceNormal(face, vertexPositions).safelyNormalized();
+    }
 
     /// Returns the surface mesh object managed by this class.
     const SurfaceMesh* mesh() const { return _mesh; }
@@ -250,6 +257,21 @@ public:
         OVITO_ASSERT(_regions);
         return _regions;
     }
+
+    /// Indicates whether the mesh may have non-convex faces that require special handling during tessellation into renderable triangles.
+    /// Note that this method does not actually check the mesh faces for non-convexity; it only returns the value of the corresponding flag
+    /// that should be set during mesh creation.
+    bool hasNonConvexFaces() const {
+        return _mesh->hasNonConvexFaces();
+    }
+
+private:
+
+    /// Helper method that triangulates all faces of the surface mesh, assuming they are all convex, and adds them to the output triangle mesh.
+    void triangulateConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const;
+
+    /// Helper method that triangulates all faces of the surface mesh, using a method that can handle non-convex polygons, and adds them to the output triangle mesh.
+    bool triangulateNonConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const;
 
 protected:
 

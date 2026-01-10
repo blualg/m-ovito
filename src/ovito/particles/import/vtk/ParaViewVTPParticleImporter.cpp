@@ -455,11 +455,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     if(!state || state.status().type() == PipelineStatus::Error)
         return;
 
-    // Look for a triangle mesh or a surface mesh.
+    // Look for a TriangleMesh or a SurfaceMesh in the imported data.
     DataOORef<const TriangleMesh> meshObj = state.getObject<TriangleMesh>();
     if(!meshObj) {
         if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
-            // Convert surface mesh to triangle mesh.
+            // Convert surface meshes to triangle meshes.
             DataOORef<TriangleMesh> triMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
             SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
             meshObj = std::move(triMesh);
@@ -469,7 +469,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     // Release pipeline state.
     state.reset();
 
-    // Show sharp edges of the mesh.
+    // Visually show sharp edges of the mesh as wireframe lines.
     DataOORef<TriangleMesh> mutableMeshObj = std::move(meshObj).makeMutable();
     mutableMeshObj->determineEdgeVisibility();
 

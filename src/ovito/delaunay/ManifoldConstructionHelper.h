@@ -748,7 +748,7 @@ private:
                 }
 
                 // Create a new triangle facet.
-                SurfaceMesh::face_index face = topo->createFaceAndEdges(facetVertices.begin(), facetVertices.end());
+                SurfaceMesh::face_index face = topo->createFaceAndEdges(facetVertices);
                 faceRegions.push_back(filledRegion);
 
                 // Tell client code about the new facet.

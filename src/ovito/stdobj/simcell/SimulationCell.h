@@ -361,7 +361,7 @@ public:
     {
         OVITO_ASSERT(minimumBoxSize > 0);
         if(positions && positions.size() != 0) {
-            Box_3<T> box = positions.buffer()->boundingBox3().toDataType<T>();
+            Box_3<T> box = positions.buffer()->boundingBox3().template toDataType<T>();
             OVITO_ASSERT(!box.isEmpty());
             if(box.sizeX() < minimumBoxSize) box.maxc.x() = box.minc.x() + minimumBoxSize;
             if(box.sizeY() < minimumBoxSize) box.maxc.y() = box.minc.y() + minimumBoxSize;

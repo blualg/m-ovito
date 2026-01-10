@@ -952,27 +952,24 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 
             // Copy the faces of the existing mesh over to the new mesh data structure.
             SurfaceMesh::size_type originalFaceCount = mesh.faceCount();
-            for(SurfaceMesh::face_index face = 0; face <originalFaceCount; face++) {
+            for(SurfaceMesh::face_index face = 0; face < originalFaceCount; face++) {
 
                 // Compute the offset by which the face needs to be extruded outward.
-                Vector3 faceNormal = mesh.computeFaceNormal(face, vertexPositions);
+                Vector3 faceNormal = mesh.computeFaceUnitNormal(face, vertexPositions);
                 Vector3 offset = faceNormal * roundingRadius;
 
                 // Duplicate the vertices and shift them along the extrusion vector.
-                SurfaceMesh::size_type faceVertexCount = 0;
+                SurfaceMesh::size_type baseVertexIndex = roundedMesh.topology()->vertexCount();
                 SurfaceMesh::edge_index e = mesh.firstFaceEdge(face);
                 do {
                     roundedMeshVertexGrower.createVertex(vertexPositions[mesh.vertex1(e)] + offset);
                     vertexNormals.push_back(faceNormal);
-                    faceVertexCount++;
                     e = mesh.nextFaceEdge(e);
                 }
                 while(e != mesh.firstFaceEdge(face));
 
                 // Connect the duplicated vertices by a new face.
-                SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace(
-                    roundedMesh.topology()->end_vertices() - faceVertexCount,
-                    roundedMesh.topology()->end_vertices());
+                SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace(std::views::iota(baseVertexIndex, roundedMesh.topology()->vertexCount()));
 
                 // Register the newly created edges.
                 SurfaceMesh::edge_index new_e = roundedMesh.firstFaceEdge(new_f);

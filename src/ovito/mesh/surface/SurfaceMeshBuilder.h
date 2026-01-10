@@ -119,10 +119,10 @@ public:
         }
 
         /// Adds a new face to the mesh.
-        template<typename VertexIterator>
-        face_index createFace(VertexIterator&& begin, VertexIterator&& end, region_index region = InvalidIndex) {
+        template<std::ranges::input_range VertexRange = std::initializer_list<vertex_index>>
+        face_index createFace(VertexRange&& range, region_index region = InvalidIndex) {
             OVITO_ASSERT(_topo);
-            face_index face = _topo->createFaceAndEdges(std::forward<VertexIterator>(begin), std::forward<VertexIterator>(end));
+            face_index face = _topo->createFaceAndEdges(std::forward<VertexRange>(range));
             if(grow(1, SurfaceMeshFaces::RegionProperty) && _faceRegions)
                 _faceRegions.updateDataStorageAddress(face == 0);
             if(_faceRegions)
@@ -143,11 +143,6 @@ public:
             else
                 OVITO_ASSERT(region == InvalidIndex);
             return face;
-        }
-
-        /// Adds a new face to the mesh.
-        face_index createFace(std::initializer_list<vertex_index> range, region_index region = InvalidIndex) {
-            return createFace(std::begin(range), std::end(range), region);
         }
 
         /// Creates a copy of an existing face including all its properties.
@@ -263,7 +258,7 @@ public:
     }
 
     /// Creates several new vertices and initializes their positions.
-    template<typename CoordinatesRange>
+    template<std::ranges::range CoordinatesRange>
     vertex_index createVerticesRange(CoordinatesRange coordRange) {
         auto nverts = std::distance(std::begin(coordRange), std::end(coordRange));
         vertex_index startIndex = createVertices(nverts);
@@ -456,6 +451,11 @@ public:
 
     /// Set the volume of the external region to infinity if the simulation cell is non-periodic in at least one spatial direction.
     void setExternalRegionVolumeInfinityIfNonPeriodic();
+
+    /// Sets whether the mesh has non-convex faces that require special handling during tessellation into renderable triangles.
+    void setHasNonConvexFaces(bool hasNonConvexFaces) {
+        mutableMesh()->setHasNonConvexFaces(hasNonConvexFaces);
+    }
 
 private:
 

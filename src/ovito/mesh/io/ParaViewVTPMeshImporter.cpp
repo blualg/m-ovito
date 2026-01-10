@@ -213,7 +213,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                     xml.raiseError(tr("Invalid or inconsistent connectivity information in <Polys> element."));
                     break;
                 }
-                meshBuilder.mutableTopology()->createFaceAndEdges(vertexIndices.begin() + previousOffset, vertexIndices.begin() + offset);
+                meshBuilder.mutableTopology()->createFaceAndEdges(std::views::counted(vertexIndices.begin() + previousOffset, offset - previousOffset));
                 previousOffset = offset;
             }
             meshBuilder.mutableFaces()->setElementCount(meshBuilder.faceCount());

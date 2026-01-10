@@ -119,7 +119,7 @@ Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const Modi
                                 edge = topology->nextFaceEdge(edge);
                             }
                             while(edge != topology->firstFaceEdge(face));
-                            topology->createFaceAndEdges(newFaceVertices.begin(), newFaceVertices.end());
+                            topology->createFaceAndEdges(newFaceVertices);
                         }
                         // Copy face connectivity.
                         for(SurfaceMesh::face_index oldFace = 0; oldFace < oldFaceCount; oldFace++) {

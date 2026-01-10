@@ -24,6 +24,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/mesh/util/polytess/glu.h>
 #include "SurfaceMeshReadAccess.h"
 #include "SurfaceMesh.h"
 
@@ -228,10 +229,14 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
 }
 
 /******************************************************************************
-* Triangulates the polygonal faces of this mesh and outputs the results as a TriMesh object.
+* Produces a TriangleMesh from the SurfaceMesh by triangulating the
+* polygonal faces and computing averaged vertex normals if requested.
+* The method returns false to indicate that triangulation failed for one or more faces.
 ******************************************************************************/
-void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+bool SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
 {
+    OVITO_ASSERT(this_task::get());
+
     size_type faceCount = this->faceCount();
     OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);
 
@@ -246,39 +251,16 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
     for(auto p = outputMesh.vertices().begin() + baseVertexCount; p != outputMesh.vertices().end(); ++p)
         *p = vertexPositions[vidx++];
 
-    // Transfer faces from surface mesh to output triangle mesh.
-    for(face_index face = 0; face < faceCount; face++) {
-        if(!faceSubset.empty() && !faceSubset[face])
-            continue;
+    // Pre-allocate space for original face map.
+    if(originalFaceMap)
+        originalFaceMap->reserve(originalFaceMap->size() + faceCount * (autoGenerateOppositeFaces ? 2 : 1));
 
-        // Determine whether opposite triangles should be created for the current source face.
-        bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
-
-        // Go around the edges of the face to triangulate the polygon (assuming it is convex).
-        edge_index faceEdge = firstFaceEdge(face);
-        vertex_index baseVertex = vertex2(faceEdge);
-        edge_index edge1 = nextFaceEdge(faceEdge);
-        edge_index edge2 = nextFaceEdge(edge1);
-        while(edge2 != faceEdge) {
-            TriMeshFace& outputFace = outputMesh.addFace();
-            outputFace.setVertices(baseVertex + baseVertexCount, vertex2(edge1) + baseVertexCount, vertex2(edge2) + baseVertexCount);
-            outputFace.setEdgeVisibility(edge1 == nextFaceEdge(faceEdge), true, false);
-            if(originalFaceMap)
-                originalFaceMap->push_back(face);
-            edge1 = edge2;
-            edge2 = nextFaceEdge(edge2);
-            if(edge2 == faceEdge)
-                outputFace.setEdgeVisible(2);
-            if(createOppositeFace) {
-                TriMeshFace& oppositeFace = outputMesh.addFace();
-                const TriMeshFace& thisFace = outputMesh.face(outputMesh.faceCount()-2);
-                oppositeFace.setVertices(thisFace.vertex(2), thisFace.vertex(1), thisFace.vertex(0));
-                oppositeFace.setEdgeVisibility(thisFace.edgeVisible(1), thisFace.edgeVisible(0), thisFace.edgeVisible(2));
-                if(originalFaceMap)
-                    originalFaceMap->push_back(face);
-            }
-        }
-    }
+    // Transfer faces from surface mesh to the output triangle mesh and triangulate them if necessary.
+    bool triangulationSuccessful = true;
+    if(!hasNonConvexFaces())
+        triangulateConvexFaces(outputMesh, baseVertexCount, faceSubset, originalFaceMap, autoGenerateOppositeFaces);
+    else
+        triangulationSuccessful = triangulateNonConvexFaces(outputMesh, baseVertexCount, faceSubset, originalFaceMap, autoGenerateOppositeFaces);
 
     if(smoothShading) {
         // Compute mesh face normals.
@@ -288,7 +270,7 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
             if(!faceSubset.empty() && !faceSubset[face])
                 faceNormal->setZero();
             else
-                *faceNormal = computeFaceNormal(face, vertexPositions).toDataType<GraphicsFloatType>();
+                *faceNormal = computeFaceUnitNormal(face, vertexPositions).toDataType<GraphicsFloatType>();
         }
 
         // Smooth normals.
@@ -316,9 +298,9 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
         newFaceNormals.clear();
         newFaceNormals.shrink_to_fit();
 
-        // Helper method that calculates the mean normal at a surface mesh vertex.
-        // The method takes an half-edge incident on the vertex as input (instead of the vertex itself),
-        // because the method will only take into account incident faces belonging to one manifold.
+        // Helper method that calculates the mean normal at a SurfaceMesh vertex.
+        // The method takes an half-edge incident on the vertex as starting point (instead of the vertex itself),
+        // because the method only considers incident faces belonging to one manifold (the vertex can potentially be part of several manifolds).
         auto calculateNormalAtVertex = [&](edge_index startEdge) {
             Vector3G normal = Vector3G::Zero();
             edge_index edge = startEdge;
@@ -368,10 +350,230 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
         }
         OVITO_ASSERT(outputNormal == outputMesh.normals().end());
     }
+
+    return triangulationSuccessful;
 }
 
 /******************************************************************************
-* Computes the unit normal vector of a mesh face.
+* Helper method that triangulates all faces of the surface mesh, assuming they
+* are all convex, and adds them to the output triangle mesh.
+******************************************************************************/
+void SurfaceMeshReadAccess::triangulateConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+{
+    const size_type faceCount = this->faceCount();
+    for(face_index face = 0; face < faceCount; face++) {
+        // Skip faces that are not part of the specified optional subset.
+        if(!faceSubset.empty() && !faceSubset[face])
+            continue;
+
+        // Determine whether opposite triangles should be created for the current source face.
+        bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
+
+        // Go around the edges of the face to triangulate the polygon using a triangle fan, assuming it is convex.
+        edge_index faceEdge = firstFaceEdge(face);
+        vertex_index baseVertex = vertex2(faceEdge);
+        edge_index edge1 = nextFaceEdge(faceEdge);
+        edge_index edge2 = nextFaceEdge(edge1);
+        while(edge2 != faceEdge) {
+            TriMeshFace& outputFace = outputMesh.addFace();
+            outputFace.setVertices(baseVertex + baseVertexIndex, vertex2(edge1) + baseVertexIndex, vertex2(edge2) + baseVertexIndex);
+            outputFace.setEdgeVisibility(edge1 == nextFaceEdge(faceEdge), true, false);
+            if(originalFaceMap)
+                originalFaceMap->push_back(face);
+            edge1 = edge2;
+            edge2 = nextFaceEdge(edge2);
+            if(edge2 == faceEdge)
+                outputFace.setEdgeVisible(2);
+            if(createOppositeFace) {
+                TriMeshFace& oppositeFace = outputMesh.addFace();
+                const TriMeshFace& thisFace = outputMesh.face(outputMesh.faceCount()-2);
+                oppositeFace.setVertices(thisFace.vertex(2), thisFace.vertex(1), thisFace.vertex(0));
+                oppositeFace.setEdgeVisibility(thisFace.edgeVisible(1), thisFace.edgeVisible(0), thisFace.edgeVisible(2));
+                if(originalFaceMap)
+                    originalFaceMap->push_back(face);
+            }
+        }
+    }
+}
+
+/******************************************************************************
+* Helper method that triangulates all faces of the surface mesh, using a
+* method that can handle non-convex polygons, and adds them to the output
+* triangle mesh.
+******************************************************************************/
+bool SurfaceMeshReadAccess::triangulateNonConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+{
+    const size_type faceCount = this->faceCount();
+
+    // Need access to the vertex coordinates.
+    BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+
+    // Set up GLU tessellator.
+    std::unique_ptr<GLUtesselator, decltype(&gluDeleteTess)> tess(gluNewTess(), &gluDeleteTess);
+    gluTessProperty(tess.get(), GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
+
+    struct GLUCallbackHelper {
+        TriangleMesh& outputMesh;
+        std::vector<size_t>* originalFaceMap;
+        face_index currentSourceFace;
+        int localFaceVertexIndex = 0;
+        bool generateOppositeFace = false;
+        bool edgeFlag = false;
+        bool triangulationFailed = false;
+    } callbackData{outputMesh, originalFaceMap};
+
+    // Register an error handler callback.
+    gluTessCallback(tess.get(), GLU_TESS_ERROR_DATA, (_GLUfuncptr)(void(*)(int, void*))[](int errnum, void* polygon_data) {
+        GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
+        if(errnum == GLU_TESS_NEED_COMBINE_CALLBACK)
+            helper->triangulationFailed = true;
+        else
+            qWarning() << "WARNING: Could not tessellate surface mesh face - error code" << errnum;
+    });
+
+    // Register the begin callback, which is called at the beginning of each new primitive.
+    gluTessCallback(tess.get(), GLU_TESS_BEGIN, (_GLUfuncptr)(void(*)(int))[](int type) {
+        OVITO_ASSERT(type == GL_TRIANGLES); // Must always be invidiual triangles because we have set a GLU_TESS_EDGE_FLAG callback.
+    });
+
+    // Register the edge flag callback, which is called to indicate whether the next edge is visible or not.
+    gluTessCallback(tess.get(), GLU_TESS_EDGE_FLAG_DATA, (_GLUfuncptr)(void(*)(bool, void*))[](bool flag, void* polygon_data) {
+        GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
+        helper->edgeFlag = flag;
+    });
+
+    // Register the vertex callback, which is called for each vertex of the tessellated output.
+    gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, (_GLUfuncptr)(void(*)(void*,void*))[](void* vertex_data, void* polygon_data) {
+        GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
+        intptr_t vindex = reinterpret_cast<intptr_t>(vertex_data);
+
+        // Start a new triangle in the output mesh if necessary.
+        if(helper->localFaceVertexIndex == 0) {
+            helper->outputMesh.addFace();
+            // Record original face index for the triangle being created.
+            if(helper->originalFaceMap)
+                helper->originalFaceMap->push_back(helper->currentSourceFace);
+        }
+
+        // Set the current face's next vertex
+        TriMeshFace& outputFace = helper->outputMesh.faces().back();
+        if(!helper->edgeFlag)
+            outputFace.setEdgeHidden(helper->localFaceVertexIndex);
+        outputFace.setVertex(helper->localFaceVertexIndex++, vindex);
+
+        // Reset local vertex index after completing a triangle.
+        if(helper->localFaceVertexIndex == 3) {
+            helper->localFaceVertexIndex = 0;
+
+            // Create opposite face if requested.
+            if(helper->generateOppositeFace) {
+                TriMeshFace& oppositeFace = helper->outputMesh.addFace();
+                const TriMeshFace& thisFace = helper->outputMesh.face(helper->outputMesh.faceCount() - 2);
+                oppositeFace.setVertices(thisFace.vertex(2), thisFace.vertex(1), thisFace.vertex(0));
+                oppositeFace.setEdgeVisibility(thisFace.edgeVisible(1), thisFace.edgeVisible(0), thisFace.edgeVisible(2));
+                if(helper->originalFaceMap)
+                    helper->originalFaceMap->push_back(helper->currentSourceFace);
+            }
+        }
+    });
+
+    for(face_index face = 0; face < faceCount; face++) {
+        // Skip faces that are not part of the specified optional subset.
+        if(!faceSubset.empty() && !faceSubset[face])
+            continue;
+
+        // Determine whether opposite triangles should be created for the current face.
+        callbackData.generateOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
+
+        // Compute face normal.
+        Vector3 faceNormal = computeFaceNormal(face, vertexPositions);
+        if(faceNormal.isZero())
+            continue;
+
+        // First, determine whether the face can be correctly triangulated using a simple triangle fan
+        // Only if this fails, we invoke the more expensive GLU tessellator for general polygons.
+        //
+        // Go around the edges of the face to triangulate the general polygon using a triangle fan.
+        // The face is convex if all triangles have normals that consistently point
+        // into the same direction as the face normal.
+        const edge_index ffe = firstFaceEdge(face);
+        edge_index edge1 = nextFaceEdge(ffe);
+        edge_index edge2 = nextFaceEdge(edge1);
+        if(edge1 == ffe || edge2 == ffe) {
+            // Degenerate face with less than three vertices - skip it.
+            continue;
+        }
+        Point3 base = vertexPositions[vertex2(ffe)];
+        Vector3 e1 = wrapVector(vertexPositions[vertex2(edge1)] - base);
+        bool isSimplePolygon = true;
+        while(edge2 != ffe) {
+            Vector3 e2 = wrapVector(vertexPositions[vertex2(edge2)] - base);
+            Vector3 n = e1.cross(e2);
+            if(n.dot(faceNormal) < 0) {
+                isSimplePolygon = false;
+                break;
+            }
+            e1 = e2;
+            edge1 = edge2;
+            edge2 = nextFaceEdge(edge2);
+        }
+
+        if(isSimplePolygon) {
+            // Go around the edges of the face to triangulate the polygon using a triangle fan, assuming it is convex.
+            vertex_index baseVertex = vertex2(ffe);
+            edge_index edge1 = nextFaceEdge(ffe);
+            edge_index edge2 = nextFaceEdge(edge1);
+            while(edge2 != ffe) {
+                TriMeshFace& outputFace = outputMesh.addFace();
+                outputFace.setVertices(baseVertex + baseVertexIndex, vertex2(edge1) + baseVertexIndex, vertex2(edge2) + baseVertexIndex);
+                outputFace.setEdgeVisibility(edge1 == nextFaceEdge(ffe), true, false);
+                if(originalFaceMap)
+                    originalFaceMap->push_back(face);
+                edge1 = edge2;
+                edge2 = nextFaceEdge(edge2);
+                if(edge2 == ffe)
+                    outputFace.setEdgeVisible(2);
+                if(callbackData.generateOppositeFace) {
+                    TriMeshFace& oppositeFace = outputMesh.addFace();
+                    const TriMeshFace& thisFace = outputMesh.face(outputMesh.faceCount()-2);
+                    oppositeFace.setVertices(thisFace.vertex(2), thisFace.vertex(1), thisFace.vertex(0));
+                    oppositeFace.setEdgeVisibility(thisFace.edgeVisible(1), thisFace.edgeVisible(0), thisFace.edgeVisible(2));
+                    if(originalFaceMap)
+                        originalFaceMap->push_back(face);
+                }
+            }
+        }
+        else {
+            // Start GLU general polygon tessellation.
+            callbackData.currentSourceFace = face;
+            callbackData.localFaceVertexIndex = 0;
+            gluTessBeginPolygon(tess.get(), &callbackData);
+            gluTessBeginContour(tess.get());
+
+            // Go around the edges of the face to generate an unwrapped version of the general polygon,
+            // which can be passed to the GLU tessellator.
+            edge_index edge = ffe;
+            Point3 coord = vertexPositions[vertex1(edge)];
+            do {
+                intptr_t vindex = static_cast<intptr_t>(vertex1(edge));
+                Point_3<double> vertexCoord = coord.toDataType<double>();
+                gluTessVertex(tess.get(), vertexCoord.data(), reinterpret_cast<void*>(vindex + baseVertexIndex));
+                coord += edgeVector(edge, vertexPositions); // For unwrapping the polygon in case of periodic boundaries.
+                edge = nextFaceEdge(edge);
+            }
+            while(edge != ffe);
+
+            // Let GLU tessellate the polygonal face.
+            gluTessEndContour(tess.get());
+            gluTessEndPolygon(tess.get());
+        }
+    }
+
+    return !callbackData.triangulationFailed;
+}
+
+/******************************************************************************
+* Computes the normal vector of a mesh face.
 ******************************************************************************/
 Vector3 SurfaceMeshReadAccess::computeFaceNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const
 {
@@ -385,13 +587,19 @@ Vector3 SurfaceMeshReadAccess::computeFaceNormal(face_index face, const BufferRe
     Vector3 e1 = wrapVector(vertexPositions[vertex2(edge1)] - base);
     while(edge2 != faceEdge) {
         Vector3 e2 = wrapVector(vertexPositions[vertex2(edge2)] - base);
-        faceNormal += e1.cross(e2);
+        Vector3 n = e1.cross(e2);
+        // Reverse the contribution of back-facing triangles to get a reasonable normal
+        // for self-intersecting or non-convex polygons.
+        if(n.dot(faceNormal) >= 0)
+            faceNormal += n;
+        else
+            faceNormal -= n;
         e1 = e2;
         edge1 = edge2;
         edge2 = nextFaceEdge(edge2);
     }
 
-    return faceNormal.safelyNormalized();
+    return faceNormal;
 }
 
 }   // End of namespace
