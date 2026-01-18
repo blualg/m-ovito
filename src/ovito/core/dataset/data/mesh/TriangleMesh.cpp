@@ -123,13 +123,17 @@ void TriangleMesh::setFaceCount(int n)
 }
 
 /******************************************************************************
-* Adds a new triangle face and returns a reference to it.
-* The new face is NOT initialized by this method.
+* Reserves memory for at least \a n additional faces.
 ******************************************************************************/
-TriMeshFace& TriangleMesh::addFace()
+void TriangleMesh::reserveFaces(int n)
 {
-    setFaceCount(faceCount() + 1);
-    return _faces.back();
+    _faces.reserve(_faces.size() + n);
+    if(_hasFaceColors)
+        _faceColors.reserve(_faceColors.size() + n);
+    if(_hasFacePseudoColors)
+        _facePseudoColors.reserve(_facePseudoColors.size() + n);
+    if(_hasNormals)
+        _normals.reserve(_normals.size() + n * 3);
 }
 
 /******************************************************************************

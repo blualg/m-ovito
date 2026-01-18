@@ -110,11 +110,6 @@ private:
     /// If the mesh has zero faces and is embedded in a fully periodic domain,
     /// this indicates the volumetric region that fills the entire space.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index{SurfaceMesh::InvalidIndex}, spaceFillingRegion, setSpaceFillingRegion);
-
-    /// Indicates that the mesh may have non-convex faces that require special handling during tessellation into renderable triangles.
-    /// This flag should be set during mesh creation if the mesh is known to have non-convex faces. The SurfaceMeshVis element will
-    /// use the flag to select an appropriate tessellation algorithm.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, hasNonConvexFaces, setHasNonConvexFaces);
 };
 
 }   // End of namespace

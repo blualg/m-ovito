@@ -461,7 +461,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
             // Convert surface meshes to triangle meshes.
             DataOORef<TriangleMesh> triMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-            SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
+            SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh);
             meshObj = std::move(triMesh);
         }
         else return;

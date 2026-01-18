@@ -31,7 +31,7 @@ namespace Ovito {
 
 /// \brief The maximum number of smoothing groups in a mesh.
 ///
-/// Each face in a TriMesh can be a member of one of the 32 possible smoothing groups.
+/// Each TriMeshFace can be a member of one of the 32 possible smoothing groups.
 /// Adjacent faces that belong to the same smoothing group are rendered with
 /// interpolated normal vectors.
 #define OVITO_MAX_NUM_SMOOTHING_GROUPS      32
@@ -377,6 +377,10 @@ public:
     /// to assign vertices to the new faces.
     void setFaceCount(int n);
 
+    /// \brief Reserves memory for at least \a n additional faces.
+    /// \param n The number of faces for which to reserve memory.
+    void reserveFaces(int n);
+
     /// \brief Allows direct access to the face array of the mesh.
     /// \return A reference to the vector that stores all mesh faces.
     QVector<TriMeshFace>& faces() { return _faces; }
@@ -406,7 +410,17 @@ public:
     /// after it has been created.
     ///
     /// Increases the number of faces by one.
-    TriMeshFace& addFace();
+    TriMeshFace& addFace() {
+        setFaceCount(faceCount() + 1);
+        return _faces.back();
+    }
+
+    /// \brief Adds one or more triangle faces to the mesh and returns the index of the first newly added face.
+    int addFaces(int n) {
+        int oldCount = faceCount();
+        setFaceCount(oldCount + n);
+        return oldCount;
+    }
 
     /// \brief Flip the orientation of all faces.
     void flipFaces();

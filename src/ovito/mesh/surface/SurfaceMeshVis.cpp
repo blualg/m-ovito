@@ -614,16 +614,22 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
     // Create accessor for the input mesh data.
     const SurfaceMeshReadAccess inputMeshData(inputMesh());
 
-    // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
+    // Create the output TriangleMesh object.
     _outputMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-    if(!inputMeshData.convertToTriMesh(*_outputMesh, _smoothShading, faceSubset, &_originalFaceMap, !renderFacesTwoSided)) {
-        _status.combine(PipelineStatus(PipelineStatus::Warning, tr("Triangulation failed for one or more mesh face polygons due to self-intersections. These faces will not be displayed.")));
-    }
-    OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
+
+    // Enable face vertex normals if smooth shading is requested.
+    _outputMesh->setHasNormals(_smoothShading);
+
+    // Transfer mesh vertex colors to TriangleMesh.
+    // Note: This needs to be done before triangulation, because triangulation may create new vertices having interpolated colors.
+    _outputMesh->setVertexCount(inputMeshData.vertexCount());
+    determineVertexColors();
     this_task::throwIfCanceled();
 
-    // Assign mesh vertex colors if available.
-    determineVertexColors();
+    // Transfer vertex coordinates from half-edge mesh structure to triangle mesh structure and triangulate polygonal faces.
+    if(!inputMeshData.convertToTriMesh(*_outputMesh, faceSubset, &_originalFaceMap, !renderFacesTwoSided)) {
+        _status.combine(PipelineStatus(PipelineStatus::Warning, tr("Triangulation failed for one or more mesh face polygons due to self-intersections. These faces will not be displayed.")));
+    }
     this_task::throwIfCanceled();
 
     // Flip orientation of mesh faces if requested.

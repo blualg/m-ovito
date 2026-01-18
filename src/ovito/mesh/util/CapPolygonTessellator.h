@@ -171,14 +171,14 @@ private:
     }
 
     /// GLU_TESS_COMBINE_DATA callback function.
-    static void combineData(double coords[3], void* vertex_data[4], float weight[4], void** outDatab, void* polygon_data) {
+    static void combineData(double coords[3], void* vertex_data[4], float weight[4], void** outData, void* polygon_data) {
         CapPolygonTessellator* tessellator = static_cast<CapPolygonTessellator*>(polygon_data);
         Point3 p;
         p[tessellator->dimx] = coords[0];
         p[tessellator->dimy] = coords[1];
         p[tessellator->dimz] = (tessellator->_faceMode == BackFace) ? 1 : 0;
         intptr_t vindex = tessellator->mesh.addVertex(p);
-        *outDatab = reinterpret_cast<void*>(vindex);
+        *outData = reinterpret_cast<void*>(vindex);
         if(tessellator->_faceMode == PeriodicFace) {
             p[tessellator->dimz] = 1;
             tessellator->mesh.addVertex(p);

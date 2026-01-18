@@ -227,7 +227,8 @@ public:
     /// Produces a TriangleMesh from the SurfaceMesh by triangulating the
     /// polygonal faces and computing averaged vertex normals if requested.
     /// The method returns false to indicate that triangulation failed for one or more faces.
-    bool convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
+    /// Interpolated (smooth) vertex normals are only computed if face vertex normals are enabled for the output TriangleMesh.
+    bool convertToTriMesh(TriangleMesh& outputMesh, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
 
     /// Computes the normal vector of a mesh face.
     Vector3 computeFaceNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const;
@@ -257,21 +258,6 @@ public:
         OVITO_ASSERT(_regions);
         return _regions;
     }
-
-    /// Indicates whether the mesh may have non-convex faces that require special handling during tessellation into renderable triangles.
-    /// Note that this method does not actually check the mesh faces for non-convexity; it only returns the value of the corresponding flag
-    /// that should be set during mesh creation.
-    bool hasNonConvexFaces() const {
-        return _mesh->hasNonConvexFaces();
-    }
-
-private:
-
-    /// Helper method that triangulates all faces of the surface mesh, assuming they are all convex, and adds them to the output triangle mesh.
-    void triangulateConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const;
-
-    /// Helper method that triangulates all faces of the surface mesh, using a method that can handle non-convex polygons, and adds them to the output triangle mesh.
-    bool triangulateNonConvexFaces(TriangleMesh& outputMesh, int baseVertexIndex, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const;
 
 protected:
 

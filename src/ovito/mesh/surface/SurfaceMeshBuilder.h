@@ -452,11 +452,6 @@ public:
     /// Set the volume of the external region to infinity if the simulation cell is non-periodic in at least one spatial direction.
     void setExternalRegionVolumeInfinityIfNonPeriodic();
 
-    /// Sets whether the mesh has non-convex faces that require special handling during tessellation into renderable triangles.
-    void setHasNonConvexFaces(bool hasNonConvexFaces) {
-        mutableMesh()->setHasNonConvexFaces(hasNonConvexFaces);
-    }
-
 private:
 
     SurfaceMeshTopology* _mutableTopology = nullptr; ///< The topology of the surface mesh after it was made mutable.
