@@ -35,7 +35,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ModifierTemplatesPage);
 
 /******************************************************************************
 * When the user is creating a new template, this method populates the list of available objects,
-* which the the user can select to be included in the template.
+* which the user can select to be included in the template.
 ******************************************************************************/
 QVector<QTreeWidgetItem*> ModifierTemplatesPage::populateAvailableObjectsList(QTreeWidget* objectListWidget, QComboBox* nameBox)
 {

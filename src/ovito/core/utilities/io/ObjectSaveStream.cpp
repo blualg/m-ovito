@@ -115,7 +115,7 @@ void ObjectSaveStream::close()
                 OvitoClass::serializeRTTI(*this, clazz);
                 endChunk();
 
-                // Let the metaclass save additional information, example the list of property fields defined
+                // Let the metaclass save additional information, for example the list of property fields defined
                 // by RefMaker-derived classes.
                 beginChunk(0x202);
                 clazz->saveClassInfo(*this);
