@@ -105,9 +105,6 @@ protected:
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 

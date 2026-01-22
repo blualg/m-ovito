@@ -196,13 +196,13 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The list of input variables during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList{}, inputVariableNames, setInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QStringList{}, inputVariableNames, setInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// The list of input variables for the expressions managed by the delegate during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList{}, delegateInputVariableNames, setDelegateInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QStringList{}, delegateInputVariableNames, setDelegateInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// Human-readable text listing the input variables during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString{}, inputVariableTable, setInputVariableTable, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, inputVariableTable, setInputVariableTable, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 };
 
 }   // End of namespace

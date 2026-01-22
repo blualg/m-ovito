@@ -50,7 +50,7 @@ public:
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed or changed in a newer version of OVITO.
         /// This is needed for backward compatibility with OVITO 3.11.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
     };
     OVITO_CLASS_META(Viewport, ViewportClass)
 

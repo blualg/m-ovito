@@ -240,18 +240,36 @@ bool RefTarget::isBeingEdited() const
 {
     // Look up the PropertiesEditor class, which is defined in the GUI plugin module.
     // That means it is not accessible at compile time here from the Core module.
-    // Note: The GUI module and the PropertiesEditor class may not be present if OVITO is built without GUI support.
+    // Note: The GUI module and the PropertiesEditor class may not be present if OVITO was built without GUI support.
     static const OvitoClassPtr propertiesEditorClass = PluginManager::instance().findClass("Gui", "PropertiesEditor");
 
     bool result = false;
     if(propertiesEditorClass) {
-        // Check if this object is currently referenced by a PropertiesEditor instance.
+        // Determine whether this object is currently being referenced by a PropertiesEditor instance.
         visitDependents([&](const RefMaker* dependent) {
             if(propertiesEditorClass->isMember(dependent))
                 result = true;
         });
     }
     return result;
+}
+
+/******************************************************************************
+* Saves the class' contents to the given stream.
+******************************************************************************/
+void RefTarget::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+{
+    // Serializes the values of the object's parameter fields.
+    stream.serializeParameterFieldValues(this);
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void RefTarget::loadFromStream(ObjectLoadStream& stream)
+{
+    // Deserializes the values of the object's parameter fields.
+    stream.deserializeParameterFieldValues(this);
 }
 
 }   // End of namespace

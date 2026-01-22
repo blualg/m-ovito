@@ -33,7 +33,7 @@ template class DataObjectPathTemplate<ConstDataObjectRef>; // a.k.a. ConstDataOb
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
-DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNode);
+DEFINE_PROPERTY_FIELD(DataObject, createdByNode);
 DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DataObject, createdByNode, "dataSource"); // For backward compatibility with OVITO 3.9.2
@@ -75,25 +75,17 @@ bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    RefTarget::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x02);
-    // This chunk is reserved for future use.
-    stream.endChunk();
-}
-
-/******************************************************************************
 * Loads the class' contents from the given stream.
 ******************************************************************************/
 void DataObject::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
-    stream.expectChunk(0x02);
-    // This chunk is reserved for future use.
-    stream.closeChunk();
+
+    // For backward compatibility with OVITO 3.14:
+    if(stream.formatVersion() < 30016) {
+        stream.expectChunk(0x02);
+        stream.closeChunk();
+    }
 }
 
 /******************************************************************************

@@ -294,50 +294,6 @@ public:
 #define DECLARE_MODIFIABLE_PROPERTY_FIELD(init_value, fieldname, setterName) \
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
-/***************** Runtime property fields *******************/
-
-/// Adds a property field to a class definition which is not serializable.
-/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
-/// The second parameter determines the name of the property field. It must be unique within the current class.
-/// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, flags) \
-    private: \
-        static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \
-    public: \
-        static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(fieldname) { \
-            return &fieldname##__propdescr_instance; \
-        } \
-        Ovito::RuntimePropertyField<std::remove_reference_t<decltype(init_value)>, flags> _##fieldname{init_value}; \
-        std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const { OVITO_CHECK_OBJECT_POINTER(this); return _##fieldname; } \
-        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { OVITO_CHECK_OBJECT_POINTER(this); _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
-        void setterName(std::remove_reference_t<decltype(init_value)>&& value) { OVITO_CHECK_OBJECT_POINTER(this); _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
-    private:
-
-#define DEFINE_RUNTIME_PROPERTY_FIELD(classname, fieldname) \
-    Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
-            const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
-            #fieldname, \
-            static_cast<Ovito::PropertyFieldFlags>(static_cast<Ovito::PropertyFieldFlag>(decltype(classname::_##fieldname)::property_field_flags)), \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) { /* propertyStorageCopyFunc */ \
-                static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
-            }, \
-            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { /* propertyStorageReadFunc */ \
-                return static_cast<const classname*>(obj)->_##fieldname.getQVariant(); \
-            }, \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
-                static_cast<classname*>(obj)->_##fieldname.setQVariant(obj, PROPERTY_FIELD(classname::fieldname), newValue); \
-            }, \
-            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
-        );
-
-/// Adds a property field to a class definition which is not serializable .
-/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
-/// The second parameter determines the name of the property field. It must be unique within the current class.
-/// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD(init_value, fieldname, setterName) \
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
-
 /***************** Virtual property fields *******************/
 
 /// Adds a property field to a class definition which is defined purely by a getter and a setter method, i.e,
@@ -395,8 +351,12 @@ public:
                 if(static_cast<const classname*>(other)->_##fieldname##__shadow.hasSnapshot()) \
                     static_cast<classname*>(obj)->_##fieldname##__shadow.takeSnapshot(static_cast<const classname*>(other)->_##fieldname##__shadow.get()); \
             }, \
-            nullptr, \
-            nullptr, \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { \
+                return static_cast<const classname*>(obj)->_##fieldname##__shadow.getQVariant(); \
+            }, \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { \
+                static_cast<classname*>(obj)->_##fieldname##__shadow.setQVariant(obj, SHADOW_PROPERTY_FIELD(classname::fieldname), newValue); \
+            }, \
             [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) { \
                 static_cast<const classname*>(obj)->_##fieldname##__shadow.saveToStream(stream); \
             }, \

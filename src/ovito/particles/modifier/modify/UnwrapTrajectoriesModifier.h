@@ -108,7 +108,7 @@ protected:
     virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture) override;
 
     /// Saves the class' contents to an output stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const override;
 
     /// Loads the class' contents from an input stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;

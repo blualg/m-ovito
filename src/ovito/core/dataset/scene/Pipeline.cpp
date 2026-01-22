@@ -39,7 +39,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(Pipeline);
 OVITO_CLASSINFO(Pipeline, "ClassNameAlias", "PipelineSceneNode");  // For backward compatibility with OVITO 3.9.2
 DEFINE_REFERENCE_FIELD(Pipeline, head);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, visElements);
-DEFINE_RUNTIME_PROPERTY_FIELD(Pipeline, replacedVisElements);
+DEFINE_PROPERTY_FIELD(Pipeline, replacedVisElements);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacementVisElements);
 DEFINE_REFERENCE_FIELD(Pipeline, source);
 DEFINE_PROPERTY_FIELD(Pipeline, pipelineTrajectoryCachingEnabled);
@@ -539,14 +539,15 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
 {
-    RefTarget::saveToStream(stream, excludeRecomputableData);
+    RefTarget::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+
     stream.beginChunk(0x02);
     // Save list of weak references to vis elements that have been replaced with local copies.
     stream.writeSizeT(replacedVisElements().size());
     for(const auto& weakRef : replacedVisElements()) {
-        stream.saveObject(weakRef.lock().get(), excludeRecomputableData);
+        stream.saveWeakObjectReference(weakRef.lock().get());
     }
     stream.endChunk();
 }
@@ -571,7 +572,7 @@ void Pipeline::loadFromStream(ObjectLoadStream& stream)
         // Load list of weak references to replaced vis elements.
         std::vector<OOWeakRef<DataVis>> visElements(stream.readSizeT());
         for(auto& weakRef : visElements) {
-            weakRef = stream.loadObject<DataVis>();
+            weakRef = stream.loadWeakObjectReference<DataVis>();
         }
         setReplacedVisElements(std::move(visElements));
     }
@@ -632,15 +633,14 @@ OORef<SceneNode>& Pipeline::deserializationSceneNode()
 * serialized property field that has been removed or changed in a newer version of OVITO.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr Pipeline::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr Pipeline::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // For backward compatibility with OVITO 3.11:
     // The 'replacedVisElements' list used to be a vector reference field in previous program versions.
     // Now it is a simple property field holding a vector of weak references to vis elements.
     if(field.definingClass == &Pipeline::OOClass() && stream.formatVersion() < 30013) {
         if(field.identifier == "replacedVisElements") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numElements;
                 stream >> numElements;
                 std::vector<OOWeakRef<DataVis>> elements;
@@ -648,7 +648,6 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
                     elements.push_back(stream.loadObject<DataVis>());
                 }
                 static_object_cast<Pipeline>(&owner)->setReplacedVisElements(std::move(elements));
-                stream.closeChunk();
             };
         }
     }
@@ -658,38 +657,29 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
     // the deserialization of the SceneNode fields here and then copy them over to the separate SceneNode instance.
     if(field.definingClass == &SceneNode::OOClass() && stream.formatVersion() < 30013) {
         if(field.identifier == "displayColor") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x04);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->_displayColor.loadFromStream(stream);
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "sceneNodeName" || field.identifier == "nodeName") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x04);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->_sceneNodeName.loadFromStream(stream);
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "transformationController") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->setTransformationController(stream.loadObject<Controller>());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "lookatTargetNode") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 SceneNode* node = static_object_cast<Pipeline>(&owner)->deserializationSceneNode();
                 if(OORef<Pipeline> targetPipeline = stream.loadObject<Pipeline>())
                     node->_lookatTargetNode.set(node, PROPERTY_FIELD(SceneNode::lookatTargetNode), targetPipeline->deserializationSceneNode());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "hiddenInViewports") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numHiddenInViewports;
                 stream >> numHiddenInViewports;
                 std::vector<OOWeakRef<Viewport>> viewports;
@@ -697,16 +687,13 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
                     viewports.push_back(stream.loadObject<Viewport>());
                 }
                 static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->setHiddenInViewports(std::move(viewports));
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "children") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numChildren;
                 stream >> numChildren;
                 OVITO_ASSERT(numChildren == 0);
-                stream.closeChunk();
             };
         }
     }

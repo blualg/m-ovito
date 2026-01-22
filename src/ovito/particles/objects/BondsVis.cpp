@@ -797,10 +797,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
 }
 
 /******************************************************************************
- * Determines the display colors of half-bonds.
- * Returns an array with two colors per full bond, because the two half-bonds
- * may have different colors.
- ******************************************************************************/
+* Determines the display colors of half-bonds.
+* Returns an array with two colors per full bond, because the two half-bonds
+* may have different colors.
+******************************************************************************/
 std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles,
                                              bool highlightSelection,
                                              ColoringMode coloringMode,
@@ -914,9 +914,9 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles,
 }
 
 /******************************************************************************
- * Returns a human-readable string describing the picked object,
- * which will be displayed in the status bar by OVITO.
- ******************************************************************************/
+* Returns a human-readable string describing the picked object,
+* which will be displayed in the status bar by OVITO.
+******************************************************************************/
 QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
@@ -976,25 +976,29 @@ QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 }
 
 /******************************************************************************
- * Allows the object to parse the serialized contents of a property field in a custom way.
- ******************************************************************************/
-bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream,
-                                           const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField)
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field.
+* This is needed for file backward compatibility with OVITO 3.5.4.
+******************************************************************************/
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr BondsVis::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
-    // For backward compatibility with OVITO 3.5.4:
+    // For backward compatibility with OVITO 3.5.4.
+
     // Parse the "useParticleColors" field, which has been replaced by the "coloringMode" parameter field in later versions.
-    if(serializedField.definingClass == &BondsVis::OOClass() && serializedField.identifier == "useParticleColors") {
-        bool useParticleColors;
-        stream >> useParticleColors;
-        setColoringMode(useParticleColors ? ParticleBasedColoring : ByTypeColoring);
-        return true;
+    if(field.definingClass == &BondsVis::OOClass() && field.identifier == "useParticleColors") {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
+            bool useParticleColors;
+            stream >> useParticleColors;
+            static_cast<BondsVis&>(owner).setColoringMode(useParticleColors ? ParticleBasedColoring : ByTypeColoring);
+        };
     }
-    return DataVis::loadPropertyFieldFromStream(stream, serializedField);
+
+    return DataVis::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************
- * Determines the display bond widths.
- ******************************************************************************/
+* Determines the display bond widths.
+******************************************************************************/
 ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
 {
     bonds->verifyIntegrity();

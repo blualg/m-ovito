@@ -651,15 +651,13 @@ void Viewport::removeViewportGizmo(ViewportGizmo* gizmo)
 * serialized property field that has been removed or changed in a newer version of OVITO.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr Viewport::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr Viewport::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     if(field.definingClass == &Viewport::OOClass() && stream.formatVersion() < 30013) {
         if(field.identifier == "viewNode") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 if(OORef<Pipeline> pipeline = stream.loadObject<Pipeline>())
                     static_object_cast<Viewport>(&owner)->setViewNode(pipeline->deserializationSceneNode());
-                stream.closeChunk();
             };
         }
     }

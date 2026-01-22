@@ -47,7 +47,7 @@ public:
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed or changed in a newer version of OVITO.
         /// This is needed for backward compatibility with OVITO 3.11.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
     };
     OVITO_CLASS_META(SceneNode, SceneNodeClass)
 
@@ -264,7 +264,7 @@ protected:
     virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
     /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const override;
 
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
@@ -310,7 +310,7 @@ private:
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Viewports in which this node should NOT be rendered. Allows to selectively control the visibility of the scene node in different viewports.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<OOWeakRef<Viewport>>{}, hiddenInViewports, setHiddenInViewports);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(std::vector<OOWeakRef<Viewport>>{}, hiddenInViewports, setHiddenInViewports, PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// The pipeline displayed by the scene node.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Pipeline>, pipeline, setPipeline);

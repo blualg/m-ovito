@@ -39,7 +39,19 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 {
-    OVITO_CLASS(BondsVis)
+    /// Give this class its own metaclass.
+    class BondsVisClass : public DataVis::OOMetaClass
+    {
+    public:
+
+        /// Inherit constructor from base class.
+        using DataVis::OOMetaClass::OOMetaClass;
+
+        /// Provides a custom function that takes are of the deserialization of a serialized property field.
+        /// This is needed for backward compatibility with OVITO 3.5.4.
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
+    };
+    OVITO_CLASS_META(BondsVis, BondsVisClass)
 
 public:
 
@@ -82,11 +94,6 @@ public:
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const Bonds* bonds) const;
-
-protected:
-
-    /// Allows the object to parse the serialized contents of a property field in a custom way.
-    virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) override;
 
 protected:
 

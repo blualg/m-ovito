@@ -141,46 +141,6 @@ protected:
         _flags.setFlag(BeingInitialized, isBeingInitialized);
     }
 
-    /// \brief Saves the internal data of this object to an output stream.
-    /// \param stream The destination data stream.
-    /// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.
-    ///
-    /// Subclasses can override this method to write their data fields
-    /// to a file. The derived class must call the base implementation saveToStream() first
-    /// before it writes its own data to the stream.
-    ///
-    /// The default implementation of this method does nothing.
-    /// \sa loadFromStream()
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const {}
-
-    /// \brief Loads the data of this class from an input stream.
-    /// \param stream The source data stream.
-    /// \throw Exception when a parsing error has occurred.
-    ///
-    /// Subclasses can override this method to read their saved data
-    /// from the input stream. The derived class must call the base implementation of loadFromStream() first
-    /// before reading its own data from the stream.
-    ///
-    /// The default implementation of this method does nothing.
-    ///
-    /// \note The OvitoObject is not in a fully initialized state when the loadFromStream() method is called.
-    ///       In particular the developer cannot assume that all other objects stored in the data stream and
-    ///       referenced by this object have already been restored at the time loadFromStream() is invoked.
-    ///       The loadFromStreamComplete() method will be called after all objects stored in a file have been completely
-    ///       loaded and and their data has been restored. If you have to perform some post-deserialization
-    ///       tasks that require other referenced objects to be in place and fully loaded, then this should
-    ///       be done by overriding loadFromStreamComplete().
-    ///
-    /// \sa saveToStream()
-    virtual void loadFromStream(ObjectLoadStream& stream) {}
-
-    /// \brief This method is called once for this object after it has been
-    ///        completely deserialized from a data stream.
-    ///
-    /// It is safe to access sub-objects from this method.
-    /// The default implementation of this method does nothing.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) {}
-
     /// This method is called after the reference counter of this object has reached zero
     /// and before the object is being finally deleted. You should not call this method from user
     /// code and typically it is not necessary to override this method.
@@ -216,8 +176,7 @@ private:
     template<class T> friend class OORef;
     template<typename T> friend struct OOAllocator;
 
-    // These classes need to access the protected serialization functions.
-    friend class ObjectSaveStream;
+    // Give ObjectLoadStream direct acccess to the BeingLoaded object flag.
     friend class ObjectLoadStream;
 };
 
@@ -402,7 +361,5 @@ inline Pointer<const T> static_object_cast(Pointer<const U>&& obj) noexcept {
 
 Q_DECLARE_SMART_POINTER_METATYPE(Ovito::OORef);
 
-#include <ovito/core/utilities/io/ObjectSaveStream.h>
-#include <ovito/core/utilities/io/ObjectLoadStream.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>

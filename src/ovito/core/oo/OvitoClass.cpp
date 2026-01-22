@@ -151,15 +151,14 @@ OORef<OvitoObject> OvitoClass::createInstanceImpl(ObjectInitializationFlags flag
 /******************************************************************************
 * Writes a class descriptor to the stream.
 ******************************************************************************/
-void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
+void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type, bool isNonessentialType)
 {
-    stream.beginChunk(0x10000000);
     if(type) {
-        stream << type->plugin()->pluginId();
-        stream << type->name();
+        stream.beginChunk(isNonessentialType ? 0x02 : 0x01);
+        stream << QByteArray::fromRawData(type->className(), qstrlen(type->className()));
     }
     else {
-        stream << QString() << QString();
+        stream.beginChunk(0x00);
     }
     stream.endChunk();
 }
@@ -167,19 +166,34 @@ void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
 /******************************************************************************
 * Loads a class descriptor from the stream.
 ******************************************************************************/
-OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool throwOnMissingClass)
+OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool isNonessentialType)
 {
     QString pluginId, className;
-    stream.expectChunk(0x10000000);
-    stream >> pluginId;
-    stream >> className;
-    stream.closeChunk();
+
+    if(stream.formatVersion() >= 30016) {
+        int version = stream.expectChunkRange(0x00, 2);
+        if(version != 0) {
+            QByteArray rawName;
+            stream >> rawName;
+            className = QString::fromLatin1(rawName);
+            if(version == 2)
+                isNonessentialType = true; // Class was tagged as non-essential at serialization time.
+        }
+        stream.closeChunk();
+    }
+    else {
+        // For backward compatibility with OVITO 3.14:
+        stream.expectChunk(0x10000000);
+        stream >> pluginId;
+        stream >> className;
+        stream.closeChunk();
+    }
 
     if(pluginId.isEmpty() && className.isEmpty())
         return nullptr;
 
     try {
-        // Look plugin.
+        // Look up plugin.
         Plugin* plugin = PluginManager::instance().plugin(pluginId);
         if(!plugin) {
             // If plugin does not exist anymore, fall back to searching other plugins for the requested class.
@@ -187,8 +201,12 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool throwOnMissin
                 if(OvitoClassPtr clazz = otherPlugin->findClass(className))
                     return clazz;
             }
-            if(throwOnMissingClass)
-                throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
+            if(!isNonessentialType) {
+                if(!pluginId.isEmpty())
+                    throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
+                else
+                    throw Exception(OvitoObject::tr("Required class '%1' not found in this program version.").arg(className));
+            }
             else
                 return nullptr;
         }
@@ -202,7 +220,7 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool throwOnMissin
                 if(OvitoClassPtr clazz = otherPlugin->findClass(className))
                     return clazz;
             }
-            if(throwOnMissingClass)
+            if(!isNonessentialType)
                 throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(className, pluginId));
             else
                 return nullptr;

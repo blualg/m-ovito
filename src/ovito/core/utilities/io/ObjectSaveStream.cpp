@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/OvitoObject.h>
+#include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/UserInterface.h>
 #include "ObjectSaveStream.h"
 
@@ -44,31 +44,69 @@ ObjectSaveStream::~ObjectSaveStream()
 }
 
 /******************************************************************************
-* Saves an object with runtime type information to the stream.
+* Registers an object instance to be written to the stream.
 ******************************************************************************/
-void ObjectSaveStream::saveObject(const OvitoObject* object, bool excludeRecomputableData)
+quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool excludeRecomputableData, const RefTarget* deltaReferenceObject)
 {
     if(object == nullptr) {
-        *this << (quint32)0;
+        // Object ID zero is reserved for null pointers.
+        return 0;
+    }
+
+    // Instead of saving the object's data immediately, we only assign a unique instance ID to the object here
+    // and write that ID to the stream. The object itself will get saved later when the stream
+    // is being closed.
+    OVITO_CHECK_OBJECT_POINTER(object);
+    OVITO_ASSERT(_objects.size() == _objectMap.size());
+    OVITO_ASSERT(!deltaReferenceObject || &object->getOOClass() == &deltaReferenceObject->getOOClass());
+    quint32& id = _objectMap[object];
+    if(id == 0) {
+        // Add object to serialization queue.
+        _objects.push_back({object, deltaReferenceObject, excludeRecomputableData});
+        id = (quint32)_objects.size();
     }
     else {
-        // Instead of saving the object's data, we only assign a unique instance ID to the object here
-        // and write that ID to the stream. The object itself will get saved later when the stream
-        // is being closed.
-        OVITO_CHECK_OBJECT_POINTER(object);
-        OVITO_ASSERT(_objects.size() == _objectMap.size());
-        quint32& id = _objectMap[object];
+        // Object has already been registered for serialization before.
+        // Verify that the previous registration is consistent with the current one.
+        OVITO_ASSERT(_objects[id-1].object == object);
+        OVITO_ASSERT(!deltaReferenceObject || _objects[id-1].deltaReferenceObject);
+        if(!excludeRecomputableData) {
+            _objects[id-1].excludeRecomputableData = false;
+        }
+    }
+    // Write the object's unique serialization ID to the stream.
+    return id;
+}
+
+/******************************************************************************
+* Saves an object with runtime type information to the stream.
+******************************************************************************/
+void ObjectSaveStream::saveObject(const RefTarget* object, bool excludeRecomputableData, const RefTarget* deltaReferenceObject)
+{
+    *this << registerObjectInstance(object, excludeRecomputableData, deltaReferenceObject);
+}
+
+/******************************************************************************
+* Registers an object class to be written to the stream.
+******************************************************************************/
+quint32 ObjectSaveStream::registerObjectClass(OvitoClassPtr clazz)
+{
+    if(clazz == nullptr) {
+        // Class ID zero is reserved for null pointers.
+        return 0;
+    }
+    else {
+        OVITO_ASSERT(clazz->isDerivedFrom(RefTarget::OOClass()));
+        OVITO_ASSERT(_classes.size() == _classMap.size());
+        quint32& id = _classMap[clazz];
         if(id == 0) {
-            _objects.push_back({object, excludeRecomputableData});
-            id = (quint32)_objects.size();
+            _classes.push_back(clazz);
+            id = (quint32)_classes.size();
         }
         else {
-            OVITO_ASSERT(_objects[id-1].object == object);
-            if(!excludeRecomputableData) {
-                _objects[id-1].excludeRecomputableData = false;
-            }
+            OVITO_ASSERT(_classes[id - 1] == clazz);
         }
-        *this << id;
+        return id;
     }
 }
 
@@ -80,69 +118,229 @@ void ObjectSaveStream::close()
     if(!isOpen())
         return;
 
-    try {
-        // Byte offsets of object instances.
-        std::vector<qint64> objectOffsets;
+    // Prevent re-entrance in case of an exception.
+    if(!_currentObjectRecord) {
+        try {
+            // Serialize each object.
+            // Note: Not using range-based for-loop here, because further objects may be appended to the list as we save objects.
+            qint64 startObjectSection = filePosition();
+            beginChunk(0x100);
+            for(size_t i = 0; i < _objects.size(); i++) { // NOLINT(modernize-loop-convert)
+                ObjectRecord& record = _objects[i];
+                OVITO_CHECK_OBJECT_POINTER(record.object);
+                record.byteOffset = filePosition();
+                _currentObjectRecord = &record;
 
-        // Serialize the data of each object.
-        // Note: Not using range-based for-loop here, because additional objects may be appended to the end of the list
-        // as we save objects which are already in the list.
-        beginChunk(0x100);
-        for(size_t i = 0; i < _objects.size(); i++) { // NOLINT(modernize-loop-convert)
-            OVITO_CHECK_OBJECT_POINTER(_objects[i].object);
-            objectOffsets.push_back(filePosition());
-            _objects[i].object->saveToStream(*this, _objects[i].excludeRecomputableData);
+                // Register the object's class for serialization.
+                record.classId = registerObjectClass(&record.object->getOOClass());
+
+                // Let the object class serialize its internal state.
+                record.object->saveToStream(*this, record.excludeRecomputableData, record.deltaReferenceObject);
+            }
+            endChunk();
+            //qDebug() << "Objects section:" << (filePosition() - startObjectSection) << "bytes";
+
+            // Save the list of parameter fields.
+            qint64 fieldTableStart = filePosition();
+            beginChunk(0x101);
+            for(const PropertyFieldDescriptor* field : _fields) {
+                serializeParameterField(field);
+            }
+            endChunk();
+            //qDebug() << "Field table section:" << (filePosition() - fieldTableStart) << "bytes";
+
+            // Save the list of classes.
+            // Note: Not using range-based for-loop here, because further classes may be appended to the list as we save classes.
+            qint64 classTableStart = filePosition();
+            beginChunk(0x200);
+            for(size_t i = 0; i < _classes.size(); i++) { // NOLINT(modernize-loop-convert)
+                serializeObjectClass(_classes[i]);
+            }
+            endChunk();
+            //qDebug() << "Class table section:" << (filePosition() - classTableStart) << "bytes";
+
+            // Save object index table.
+            qint64 objectIndexStart = filePosition();
+            beginChunk(0x300);
+            for(const auto& objectRecord : _objects) {
+                serializeObjectInstance(objectRecord);
+            }
+            endChunk();
+            //qDebug() << "Objects table section:" << (filePosition() - objectIndexStart) << "bytes";
+
+            // Write index of tables.
+            *this << fieldTableStart << (quint32)_fields.size();
+            *this << classTableStart << (quint32)_classes.size();
+            *this << objectIndexStart << (quint32)_objects.size();
         }
-        endChunk();
+        catch(...) {
+            SaveStream::close();
+            throw;
+        }
+    }
 
-        // Save the class of each object instance.
-        qint64 classTableStart = filePosition();
-        std::map<OvitoClassPtr, quint32> classes;
-        beginChunk(0x200);
-        for(const auto& record : _objects) {
-            OvitoClassPtr clazz = &record.object->getOOClass();
-            if(classes.find(clazz) == classes.end()) {
-                classes.insert(std::make_pair(clazz, (quint32)classes.size()));
+    SaveStream::close();
+}
 
-                // Is the class tagged as nonessential?
-                // For nonessential classes it is not an error if they are getting removed in a future version of OVITO
-                // or if objects of this class cannot be deserialized from a state file.
-                // In other words, it's okay to remove such classes in a future version of OVITO without breaking compatibility with older state files.
-                bool isNonessentialClass = (clazz->classMetadata("NonessentialClass").isEmpty() == false);
+/******************************************************************************
+* Writes the information associated with an object instance to the stream.
+******************************************************************************/
+void ObjectSaveStream::serializeObjectInstance(const ObjectRecord& objectRecord)
+{
+    *this << objectRecord.classId;
+    *this << objectRecord.byteOffset;
+}
 
-                // Write the basic runtime type information (name and plugin ID) of the class to the stream.
-                beginChunk(isNonessentialClass ? 0x202 : 0x201);
-                OvitoClass::serializeRTTI(*this, clazz);
-                endChunk();
+/******************************************************************************
+* Writes the information associated with an object class to the stream.
+******************************************************************************/
+void ObjectSaveStream::serializeObjectClass(OvitoClassPtr clazz)
+{
+    OVITO_ASSERT(clazz);
+    OVITO_ASSERT(clazz->isDerivedFrom(RefTarget::OOClass()));
 
-                // Let the metaclass save additional information, for example the list of property fields defined
-                // by RefMaker-derived classes.
-                beginChunk(0x202);
-                clazz->saveClassInfo(*this);
+    // Is the class tagged as nonessential?
+    // For non-essential classes it is not an error in case they get removed in a future version of OVITO
+    // or if objects of this class cannot be deserialized from a state file.
+    // In other words, it's okay to remove such classes in a future version of OVITO without breaking compatibility with older state files.
+    bool isNonessentialClass = (clazz->classMetadata("NonessentialClass").isEmpty() == false);
+    beginChunk(isNonessentialClass ? 0x202 : 0x201);
+
+    // Write the class' name to the stream.
+    *this << QByteArray::fromRawData(clazz->className(), qstrlen(clazz->className()));
+    // Write the class' super class to the stream. Cut off at the RefTarget root class.
+    *this << registerObjectClass(clazz != &RefTarget::OOClass() ? clazz->superClass() : nullptr);
+
+    endChunk();
+}
+
+/******************************************************************************
+* Registers a parameter field of a class for serialization.
+******************************************************************************/
+quint32 ObjectSaveStream::registerParameterField(const PropertyFieldDescriptor* field)
+{
+    OVITO_ASSERT(field);
+    OVITO_ASSERT(_fields.size() == _fieldMap.size());
+    quint32& id = _fieldMap[field];
+    if(id == 0) {
+        _fields.push_back(field);
+        id = (quint32)_fields.size();
+    }
+    else {
+        OVITO_ASSERT(_fields[id - 1] == field);
+    }
+    return id;
+}
+
+/******************************************************************************
+* Writes the metadata associated with a parameter field to the stream.
+******************************************************************************/
+void ObjectSaveStream::serializeParameterField(const PropertyFieldDescriptor* field)
+{
+    *this << registerObjectClass(field->definingClass());
+    *this << QByteArray::fromRawData(field->identifier(), qstrlen(field->identifier()));
+    *this << field->flags();
+    *this << field->isReferenceField();
+    if(field->isReferenceField())
+        *this << registerObjectClass(field->targetClass());
+}
+
+/******************************************************************************
+* Serializes the values of an object's parameter fields.
+* This method is called from RefTarget::saveToStream().
+******************************************************************************/
+void ObjectSaveStream::serializeParameterFieldValues(const RefTarget* object)
+{
+    OVITO_ASSERT(_currentObjectRecord != nullptr);
+    OVITO_ASSERT(_currentObjectRecord->object.get() == object);
+    const ObjectRecord& record = *_currentObjectRecord;
+    const RefTarget* refObject = record.deltaReferenceObject.get();
+
+#if 0
+    qDebug() << "Saving object" << object;
+#endif
+
+    // Iterate over all property fields in the class hierarchy.
+    for(const PropertyFieldDescriptor* field : object->getOOMetaClass().propertyFields()) {
+        if(field->dontSerialize())
+            continue; // Skip non-serializable fields.
+
+        try {
+            // Serialize reference or property field.
+            if(field->isReferenceField()) {
+                // Write the object pointed to by the reference field to the stream.
+                beginChunk(registerParameterField(field));
+                if(!field->isVector()) {
+
+                    // Get the current referenced target.
+                    RefTarget* target = object->getReferenceFieldTarget(field);
+
+                    // Check if the current referenced target is of the same type as the one in the delta reference object.
+                    const RefTarget* deltaReferenceTarget = nullptr;
+                    if(refObject) {
+                        deltaReferenceTarget = refObject->getReferenceFieldTarget(field);
+                        if(deltaReferenceTarget && target && &target->getOOClass() != &deltaReferenceTarget->getOOClass())
+                            deltaReferenceTarget = nullptr; // Don't use delta reference if types differ.
+                    }
+
+                    // Serialize the referenced subobject.
+                    saveObject(target, record.excludeRecomputableData || field->dontSaveRecomputableData(), deltaReferenceTarget);
+                }
+                else {
+                    qint32 count = object->getVectorReferenceFieldSize(field);
+                    *this << count;
+                    for(int i = 0; i < count; i++) {
+                        // Get the current referenced target.
+                        RefTarget* target = object->getVectorReferenceFieldTarget(field, i);
+
+                        // Check if the current referenced target is of the same type as the one in the delta reference object.
+                        const RefTarget* deltaReferenceTarget = nullptr;
+                        if(refObject) {
+                            if(refObject->getVectorReferenceFieldSize(field) > i) {
+                                deltaReferenceTarget = refObject->getVectorReferenceFieldTarget(field, i);
+                                if(deltaReferenceTarget && target && &target->getOOClass() != &deltaReferenceTarget->getOOClass())
+                                    deltaReferenceTarget = nullptr; // Don't use delta reference if types differ.
+                            }
+                        }
+
+                        // Serialize the referenced subobject.
+                        saveObject(target, record.excludeRecomputableData || field->dontSaveRecomputableData(), deltaReferenceTarget);
+                    }
+                }
                 endChunk();
             }
-        }
-        endChunk();
+            else {
+                // Check if the property value differs from the parameter's default value.
+                if(refObject) {
+                    QVariant curValue = object->getPropertyFieldValue(field);
+                    QVariant refValue = refObject->getPropertyFieldValue(field);
+                    if(curValue.isValid() && refValue.isValid() && curValue == refValue) {
+#if 0
+                        qDebug() << "  Skipping unchanged parameter" << field->identifier() << "of" << object;
+#endif
+                        continue; // Skip serializing this value if it is equal to the default value.
+                    }
+                }
 
-        // Save object table.
-        qint64 objectTableStart = filePosition();
-        beginChunk(0x300);
-        auto offsetIterator = objectOffsets.cbegin();
-        for(const auto& record : _objects) {
-            *this << classes[&record.object->getOOClass()];
-            *this << *offsetIterator++;
+                // Write the value stored in the property field to the stream.
+                beginChunk(registerParameterField(field));
+#if 0
+                qDebug() << "  Writing parameter" << field->identifier() << "of" << object;
+#endif
+                OVITO_ASSERT(field->_propertyStorageSaveFunc != nullptr);
+                field->_propertyStorageSaveFunc(object, field, *this);
+                endChunk();
+#if 0
+                qDebug() << "  Property field" << field->identifier() << " contains" << field->propertyStorageReadFunc(object, field);
+#endif
+            }
         }
-        endChunk();
-
-        // Write index of tables.
-        *this << classTableStart << (quint32)classes.size();
-        *this << objectTableStart << (quint32)_objects.size();
+        catch(Exception& ex) {
+            throw ex.prependGeneralMessage(tr("Failed to serialize contents of property field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
+        }
     }
-    catch(...) {
-        SaveStream::close();
-        throw;
-    }
-    SaveStream::close();
+    beginChunk(0); // Terminator to mark end of parameter list.
+    endChunk();
 }
 
 }   // End of namespace

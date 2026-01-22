@@ -93,8 +93,8 @@ public:
     /// Returns true if this reference field stores a vector of objects.
     bool isVector() const { return _flags.testFlag(PROPERTY_FIELD_VECTOR); }
 
-    /// Returns true if referenced objects should not be saved to a scene file.
-    bool dontSaveTarget() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SAVE_TARGET); }
+    /// Returns true if referenced target or the property field's value should not be saved to a scene file.
+    bool dontSerialize() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE); }
 
     /// Returns true if referenced objects should not save their recomputable data to a scene file.
     bool dontSaveRecomputableData() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA); }
@@ -209,6 +209,8 @@ protected:
 
     friend class RefMaker;
     friend class RefTarget;
+    friend class ObjectSaveStream; // Needs direct access to _propertyStorageSaveFunc
+    friend class ObjectLoadStream; // Needs direct access to _propertyStorageLoadFunc
 };
 
 }   // End of namespace

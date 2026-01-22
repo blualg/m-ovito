@@ -252,6 +252,21 @@ inline SaveStream& operator<<(SaveStream& stream, const std::array<T, N>& a)
     return stream;
 }
 
+/// \brief Writes an array of size_t values to the output stream.
+/// \relates SaveStream
+///
+/// \param stream The destination stream.
+/// \param a The array to be written to the stream.
+/// \return The destination stream.
+/// \throw Exception if an I/O error has occurred.
+template<std::size_t N>
+inline SaveStream& operator<<(SaveStream& stream, const std::array<size_t, N>& a)
+{
+    for(typename std::array<size_t, N>::size_type i = 0; i < N; ++i)
+        stream.writeSizeT(a[i]);
+    return stream;
+}
+
 /// \brief Writes Qt flag to the output stream.
 /// \relates SaveStream
 ///

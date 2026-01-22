@@ -54,9 +54,6 @@ public:
 
 public:
 
-    /// Returns the stored selection set.
-    const ConstPropertyPtr& selection() const { return _selection; }
-
     /// Adopts the selection set from the given input property container.
     void resetSelection(const PropertyContainer* container);
 
@@ -86,27 +83,19 @@ public:
 
 protected:
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
-
-    /// Creates a copy of this object.
-    virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 private:
 
     /// The selection flags array.
-    ConstPropertyPtr _selection;
+    DECLARE_REFERENCE_FIELD(DataOORef<const Property>, selection);
 
     /// Stores the selection as a list of element identifiers.
-    QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for file format backward compatibility with OVITO 3.8
+    DECLARE_PROPERTY_FIELD(QSet<qlonglong>{}, selectedIdentifiers); // Note: using qlonglong instead of IdentifierIntType for file format backward compatibility with OVITO 3.8
 
     /// Controls whether the object should store the identifiers of selected elements (when available).
     DECLARE_PROPERTY_FIELD(bool{true}, useIdentifiers);
-
-    friend class ReplaceSelectionOperation;
 };
 
 }   // End of namespace

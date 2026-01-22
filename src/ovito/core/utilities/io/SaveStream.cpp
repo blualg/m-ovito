@@ -107,11 +107,8 @@ void SaveStream::endChunk()
     qint64 chunkSize = filePosition() - chunkStart;
     OVITO_ASSERT(chunkSize >= 0 && chunkSize <= 0xFFFFFFFF);
 
-    // Write chunk end code.
-    *this << (quint32)0x0FFFFFFF;
-
     // Seek to chunk size field.
-    if(!_os.device()->seek(chunkStart - sizeof(unsigned int)) )
+    if(!_os.device()->seek(chunkStart - sizeof(quint32)) )
         throw Exception(tr("Failed to close chunk in output file."));
 
     // Patch chunk size field.
@@ -121,7 +118,7 @@ void SaveStream::endChunk()
     if(!_os.device()->seek(_os.device()->size()))
         throw Exception(tr("Failed to close chunk in output file."));
 
-    OVITO_ASSERT(filePosition() == chunkStart + chunkSize + sizeof(unsigned int));
+    OVITO_ASSERT(filePosition() == chunkStart + chunkSize);
 }
 
 /******************************************************************************

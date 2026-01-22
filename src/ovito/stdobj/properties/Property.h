@@ -92,13 +92,6 @@ public:
     /// Sets the property's name, which is also the property object's unique identifier.
     void setName(const QStringView name) { setIdentifier(name.toString()); }
 
-    /// Returns the kind of this property (standard or user-defined).
-    int typeId() const { OVITO_CHECK_OBJECT_POINTER(this); return _typeId; }
-
-    /// Changes the type identifier of this property. Note that this method is only for internal use.
-    /// Normally, you should not change the type ID of a property after it has been created.
-    void setTypeId(int newTypeId) { OVITO_CHECK_OBJECT_POINTER(this); _typeId = newTypeId; }
-
     /// Indicates whether this property is a standard property (and not a user-defined property).
     bool isStandardProperty() const { return typeId() != 0; }
 
@@ -237,9 +230,6 @@ public:
 
 protected:
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
@@ -259,7 +249,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
-    int _typeId = 0;
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, typeId, setTypeId);
 
     /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
     std::weak_ptr<BufferPythonAccessGuard> _pythonAccessGuard;

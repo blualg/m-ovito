@@ -84,8 +84,8 @@ protected:
 
     /// \brief Is called when the value of a reference field of this RefMaker changes.
     /// \param field Specifies the reference field of this RefMaker that has been changed.
-    /// \param oldTarget The old target that was referenced by the ReferenceField. This can be \c NULL.
-    /// \param newTarget The new target that is now referenced by the ReferenceField. This can be \c NULL.
+    /// \param oldTarget The old target that was referenced by the ReferenceField. This can be \c nullptr.
+    /// \param newTarget The new target that is now referenced by the ReferenceField. This can be \c nullptr.
     ///
     /// This method can by overridden by derived classes that want to be informed when
     /// any of their reference fields are changed.
@@ -150,7 +150,7 @@ protected:
     /// \brief Stops observing a RefTarget object.
     /// \param target All references hold by the RefMaker to the this target are cleared.
     ///
-    /// All reference fields containing a pointer to \a target will be reset to \c NULL.
+    /// All reference fields containing a pointer to \a target will be reset to \c nullptr.
     /// If \a target is referenced in a VectorReferenceField then the item is
     /// removed from the vector field.
     void clearReferencesTo(const RefTarget* target);
@@ -158,54 +158,15 @@ protected:
     /// \brief Clears a reference field.
     /// \param field Specifies the reference field of this RefMaker to be cleared.
     ///
-    /// If the reference field specified by \a field is a single reference field then it is set to the value \c NULL.
+    /// If the reference field specified by \a field is a single reference field then it is set to the value \c nullptr.
     /// If it is a VectorReferenceField then all references are removed.
     void clearReferenceField(const PropertyFieldDescriptor* field);
-
-    /// \brief Saves the class' contents to an output stream.
-    /// \param stream The destination stream.
-    ///
-    /// Derived classes can overwrite this virtual method to store their specific data
-    /// in the output stream. The derived class \b must always call the base implementation of the saveToStream() method
-    /// before it writes its own data to the stream.
-    ///
-    /// The RefMaker implementation of this virtual method saves all
-    /// references and referenced RefTarget object of this RefMaker to the output stream.
-    ///
-    /// \sa loadFromStream()
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
-    /// \brief Loads the class' contents from an input stream.
-    /// \param stream The source data stream.
-    /// \throw Exception when a parsing error has occurred.
-    ///
-    /// Derived classes can overwrite this virtual method to read their specific data
-    /// from the input stream. The derived class \b must always call the loadFromStream() method
-    /// of the base class before it reads its own data from the stream.
-    ///
-    /// The RefMaker implementation of this method restores all
-    /// reference fields and loads the referenced objects that had been serialized to the data stream.
-    ///
-    /// \sa saveToStream()
-    virtual void loadFromStream(ObjectLoadStream& stream) override;
-
-    /// \brief Allows the object to parse the serialized contents of a property field in a custom way.
-    /// \param stream The source data stream.
-    /// \param serializedField The property field to be parsed.
-    /// \throw Exception when a parsing error has occurred.
-    /// \return \c true if the function has parsed the field; \c false if the standard parsing routine should be invoked.
-    ///
-    /// Overriding this method is useful if a property field has been replaced by another. To maintain file
-    /// compatibility, the object can parse the value of the old property field from the file and store it in the new field.
-    ///
-    /// The default implementation returns \c false.
-    virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) { return false; }
 
 public:
 
     /// \brief Clears all references held by this RefMarker.
     ///
-    /// All single reference fields are set to \c NULL and all vector reference
+    /// All single reference fields are set to \c nullptr and all vector reference
     /// fields are cleared.
     void clearAllReferences();
 

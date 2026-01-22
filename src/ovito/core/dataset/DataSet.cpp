@@ -36,7 +36,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
 DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
-DEFINE_RUNTIME_PROPERTY_FIELD(DataSet, filePath);
+DEFINE_PROPERTY_FIELD(DataSet, filePath);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
@@ -258,31 +258,25 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
     if(field.definingClass == &DataSet::OOClass()) {
         // Load the legacy objects from the stream and temporarily store them in the DataSet::globalObjects list.
         // Once the entire DataSet has been loaded, loadFromStreamComplete() will move them rto the right places.
         if(field.identifier == "animationSettings") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<AnimationSettings>());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "sceneRoot") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<Scene>());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "selection") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<SelectionSet>());
-                stream.closeChunk();
             };
         }
     }

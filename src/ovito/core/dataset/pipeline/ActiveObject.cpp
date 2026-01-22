@@ -32,7 +32,7 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ActiveObject);
 DEFINE_PROPERTY_FIELD(ActiveObject, isEnabled);
 DEFINE_PROPERTY_FIELD(ActiveObject, title);
-DEFINE_RUNTIME_PROPERTY_FIELD(ActiveObject, status);
+DEFINE_PROPERTY_FIELD(ActiveObject, status);
 DEFINE_SHADOW_PROPERTY_FIELD(ActiveObject, isEnabled);
 DEFINE_SHADOW_PROPERTY_FIELD(ActiveObject, title);
 SET_PROPERTY_FIELD_LABEL(ActiveObject, isEnabled, "Enabled");

@@ -51,7 +51,7 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.7.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
     };
 
     OVITO_CLASS_META(DataSet, DataSetClass)
@@ -143,7 +143,7 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, globalObjects, setGlobalObjects, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
     /// The file path this DataSet has been saved to on disk.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString{}, filePath, setFilePath, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, filePath, setFilePath, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 };
 
 }   // End of namespace

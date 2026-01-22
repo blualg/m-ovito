@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/io/ObjectLoadStream.h>
 #include <ovito/core/oo/OvitoClass.h>
 #include "OvitoObject.h"
 

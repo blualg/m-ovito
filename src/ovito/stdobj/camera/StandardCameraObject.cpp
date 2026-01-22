@@ -67,15 +67,13 @@ void StandardCameraObject::initializeObject(ObjectInitializationFlags flags)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3 and earlier.
     if(field.identifier == "fovController" && field.definingClass == &StandardCameraObject::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {
@@ -84,11 +82,9 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
         };
     }
     else if(field.identifier == "zoomController" && field.definingClass == &StandardCameraObject::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {

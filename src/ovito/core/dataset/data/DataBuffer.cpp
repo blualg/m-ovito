@@ -319,9 +319,9 @@ void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWrite
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
 {
-    DataObject::saveToStream(stream, excludeRecomputableData);
+    DataObject::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
 
     ReadAccess readAccess(*this);
     stream.beginChunk(0x03);

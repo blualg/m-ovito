@@ -29,10 +29,10 @@
 namespace Ovito {
 
 /**
- * \brief An output stream that can serialize an OvitoObject graph a file.
+ * \brief An output stream that can serialize a RefTarget object graph a file.
  *
  * This class is used to write OVITO state files, which are on-disk representations of
- * OvitoObject graphs. The object graph can be read back from the file using ObjectLoadStream.
+ * object reference graphs. The object graph can be read back from the file using ObjectLoadStream.
  *
  * \note All objects written to a stream must belong to the same DataSet.
  *
@@ -56,24 +56,75 @@ public:
     /// \throw Exception if an I/O error has occurred.
     virtual void close() override;
 
+    /// \brief Registers an object class to be written to the stream.
+    /// \return The unique serialization ID assigned to the class.
+    quint32 registerObjectClass(OvitoClassPtr clazz);
+
+    /// \brief Registers an object instance to be written to the stream.
+    /// \return The unique serialization ID assigned to the object instance.
+    quint32 registerObjectInstance(const RefTarget* object, bool excludeRecomputableData = false, const RefTarget* deltaReferenceObject = nullptr);
+
     /// \brief Serializes an object and writes its data to the output stream.
     /// \throw Exception if an I/O error has occurred.
     /// \sa ObjectLoadStream::loadObject()
-    void saveObject(const OvitoObject* object, bool excludeRecomputableData = false);
+    void saveObject(const RefTarget* object, bool excludeRecomputableData = false, const RefTarget* deltaReferenceObject = nullptr);
+
+    /// \brief Serializes a weak reference to an object and writes it to the output stream.
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa ObjectLoadStream::loadWeakObjectReference()
+    void saveWeakObjectReference(const RefTarget* object) {
+        saveObject(object, true); // exclude recomputable data for weak references until someone else requests saving a full object
+    }
 
 private:
 
     /// A data record kept for each object written to the stream.
     struct ObjectRecord {
-        const OvitoObject* object;
+        OORef<const RefTarget> object;
+        OORef<const RefTarget> deltaReferenceObject;
         bool excludeRecomputableData;
+        quint32 classId;
+        qint64 byteOffset;
     };
 
-    /// Contains all objects stored so far and their IDs.
-    std::unordered_map<const OvitoObject*, quint32> _objectMap;
+    /// Serializes the values of the current object's parameter fields.
+    /// This method is called from RefTarget::saveToStream().
+    void serializeParameterFieldValues(const RefTarget* object);
 
-    /// Contains all objects ordered by ID.
+    /// Registers a parameter field of a class for serialization.
+    quint32 registerParameterField(const PropertyFieldDescriptor* field);
+
+    /// Writes the metadata associated with a parameter field to the stream.
+    void serializeParameterField(const PropertyFieldDescriptor* field);
+
+    /// Writes the information associated with an object class to the stream.
+    void serializeObjectClass(OvitoClassPtr clazz);
+
+    /// Writes the information associated with an object instance to the stream.
+    void serializeObjectInstance(const ObjectRecord& objectRecord);
+
+    /// All objects registered for serialization and their corresponding numeric IDs.
+    std::unordered_map<const RefTarget*, quint32> _objectMap;
+
+    /// All objects registered for serialization ordered by numeric ID.
     std::vector<ObjectRecord> _objects;
+
+    /// All object classes that have been written to the stream so far and their corresponding numeric IDs.
+    std::unordered_map<OvitoClassPtr, quint32> _classMap;
+
+    /// All object classes that have been written to the stream.
+    std::vector<OvitoClassPtr> _classes;
+
+    /// All parameter fields that have been written to the stream so far and their corresponding numeric IDs.
+    std::unordered_map<const PropertyFieldDescriptor*, quint32> _fieldMap;
+
+    /// All parameter fields that have been written to the stream.
+    std::vector<const PropertyFieldDescriptor*> _fields;
+
+    /// The object object currently being saved to the stream.
+    ObjectRecord* _currentObjectRecord = nullptr;
+
+    friend class RefTarget; // for access to serializeParameterFieldValues()
 };
 
 }   // End of namespace

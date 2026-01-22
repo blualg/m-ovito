@@ -130,16 +130,13 @@ public:
 
 protected:
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:
 
     /// The shape of the grid (i.e. number of voxels in each dimension).
-    DECLARE_RUNTIME_PROPERTY_FIELD((GridDimensions{{0,0,0}}), shape, setShape);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((GridDimensions{{0,0,0}}), shape, setShape, PROPERTY_FIELD_WAS_RUNTIME_PROPERTY_FIELD);
 
     /// Determines whether the stored field values are volume- or vertex-based, i.e.,
     /// whether values are associated with the centers or with the corners of the grid cells.

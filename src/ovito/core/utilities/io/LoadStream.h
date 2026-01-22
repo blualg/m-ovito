@@ -325,6 +325,23 @@ inline LoadStream& operator>>(LoadStream& stream, std::array<T, N>& a)
     return stream;
 }
 
+/// \brief Reads an array with a fixed number of size_t values from the input stream.
+/// \relates LoadStream
+///
+/// \param stream The source stream.
+/// \param a The array into which the data will be stored.
+/// \return The source stream.
+/// \throw Exception if an I/O error has occurred.
+///
+/// \note The destination array's size must exactly match the size of the array read from the file.
+template<std::size_t N>
+inline LoadStream& operator>>(LoadStream& stream, std::array<size_t, N>& a)
+{
+    for(typename std::array<size_t, N>::size_type i = 0; i < N; ++i)
+        stream.readSizeT(a[i]);
+    return stream;
+}
+
 /// \brief Reads a floating-point value from the input stream.
 /// \relates LoadStream
 ///

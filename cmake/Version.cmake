@@ -38,11 +38,11 @@ SET(OVITO_VERSION_REVISION      "0")
 # Format version 30009 - OVITO ver>=3.8.0: New DataSet structure (per-viewport Scene, per-scene AnimationSettings, new AnimationTime data type)
 # Format version 30010 - OVITO ver>=3.9.0: New property data types (Float32, Float64, Int8)
 # Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
-# Format version 30012 - OVITO ver>=3.11.0: Added reference field flag PROPERTY_FIELD_DONT_SAVE_TARGET
+# Format version 30012 - OVITO ver>=3.11.0: Added reference field flag PROPERTY_FIELD_DONT_SERIALIZE
 # Format version 30013 - OVITO ver>=3.12.0: Removed weak reference fields. Serialized classes can be tagged as "nonessential". Split Pipeline class from SceneNode class.
 # Format version 30014 - OVITO ver>=3.14.0: Use AnimationFrameLabel class instead of QString to store animation frame labels.
-# Format version 30015 - OVITO ver>=3.15.0: Removed support for editable proxy objects. Changed serialization of AnimationFrameLabel structures.
-SET(OVITO_FILE_FORMAT_VERSION "30015")
+# Format version 30016 - OVITO ver>=3.15.0: Removed support for editable proxy objects. Changed serialization of AnimationFrameLabel structures. Option to serialize only modified object parameters.
+SET(OVITO_FILE_FORMAT_VERSION "30016")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

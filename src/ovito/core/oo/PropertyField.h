@@ -96,10 +96,10 @@ struct QVariantTypeFromPropertyType<Color> {
 };
 
 /**
- * \brief Stores a non-animatable property of a RefTarget derived class, which is not serializable.
+ * \brief Stores a non-animatable property of a RefTarget derived class.
  */
 template<typename property_data_type, int flags>
-class RuntimePropertyField : public PropertyFieldBase
+class PropertyField : public PropertyFieldBase
 {
 public:
     using property_type = property_data_type;
@@ -118,7 +118,7 @@ public:
 
     /// Forwarding constructor.
     template<class... Args>
-    explicit RuntimePropertyField(Args&&... args) : _value(std::forward<Args>(args)...) {}
+    explicit PropertyField(Args&&... args) : _value(std::forward<Args>(args)...) {}
 
     /// Changes the value of the property. Handles undo and sends a notification message.
     template<typename T>
@@ -156,7 +156,7 @@ public:
             }
         }
         else {
-            OVITO_ASSERT_MSG(false, "RuntimePropertyField::setQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
+            OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
         }
     }
 
@@ -166,7 +166,7 @@ public:
             return QVariant::fromValue<qvariant_type>(static_cast<qvariant_type>(this->get()));
         }
         else {
-            OVITO_ASSERT_MSG(false, "RuntimePropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
+            OVITO_ASSERT_MSG(false, "PropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
             return {};
         }
     }
@@ -180,6 +180,26 @@ public:
 
     /// Cast the property field to the property value.
     inline operator std::add_const_t<property_type>&() const { return get(); }
+
+    /// Saves the property's value to a stream.
+    inline void saveToStream(SaveStream& stream) const {
+        if constexpr(!(flags & PROPERTY_FIELD_DONT_SERIALIZE)) {
+            if constexpr(std::is_same_v<property_data_type, size_t>)
+                stream.writeSizeT(this->get());
+            else
+                stream << this->get();
+        }
+    }
+
+    /// Loads the property's value from a stream.
+    inline void loadFromStream(LoadStream& stream) {
+        if constexpr(!(flags & PROPERTY_FIELD_DONT_SERIALIZE)) {
+            if constexpr(std::is_same_v<property_data_type, size_t>)
+                stream.readSizeT(this->mutableValue());
+            else
+                stream >> this->mutableValue();
+        }
+    }
 
 private:
 
@@ -198,7 +218,7 @@ private:
 
         /// Constructor.
         /// Makes a copy of the current property value.
-        PropertyChangeOperation(RefMaker* owner, RuntimePropertyField& field, const PropertyFieldDescriptor* descriptor) :
+        PropertyChangeOperation(RefMaker* owner, PropertyField& field, const PropertyFieldDescriptor* descriptor) :
             PropertyFieldOperation(owner, descriptor), _field(field), _oldValue(field.get()) {}
 
         /// Restores the old property value.
@@ -212,47 +232,13 @@ private:
     private:
 
         /// The property field that has been changed.
-        RuntimePropertyField& _field;
+        PropertyField& _field;
         /// The old value of the property.
         property_type _oldValue;
     };
 
     /// The internal property value.
     property_type _value;
-};
-
-/**
- * \brief Stores a non-animatable property of a RefTarget derived class.
- */
-template<typename property_data_type, int flags>
-class PropertyField : public RuntimePropertyField<property_data_type, flags>
-{
-private:
-
-    using base_class = RuntimePropertyField<property_data_type, flags>;
-
-public:
-
-    using property_type = property_data_type;
-
-    /// Inherit constructor.
-    using base_class::base_class;
-
-    /// Saves the property's value to a stream.
-    inline void saveToStream(SaveStream& stream) const {
-        if constexpr(std::is_same_v<property_data_type, size_t>)
-            stream.writeSizeT(this->get());
-        else
-            stream << this->get();
-    }
-
-    /// Loads the property's value from a stream.
-    inline void loadFromStream(LoadStream& stream) {
-        if constexpr(std::is_same_v<property_data_type, size_t>)
-            stream.readSizeT(this->mutableValue());
-        else
-            stream >> this->mutableValue();
-    }
 };
 
 /**

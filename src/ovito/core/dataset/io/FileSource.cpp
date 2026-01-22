@@ -560,9 +560,9 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
 {
-    BasePipelineSource::saveToStream(stream, excludeRecomputableData);
+    BasePipelineSource::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
 
     // Serialize the list of animation frames.
     stream.beginChunk(0x04);
@@ -570,7 +570,7 @@ void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 
     // To compactly serialize the list of frames, we use a combination of run-length encoding (RLE) and range-based encoding (start,step).
     // For example, in many cases, consecutive frames will come from the same source file URL. And in many cases the line numbers follow a regular pattern.
-    if(!frames().empty()) {
+    if(!frames().empty() && !excludeRecomputableData) {
         // Helper that checks whether the given array can be range-encoded, i.e., the numeric values follow a regular pattern with a fixed step size.
         auto isRangeEncodable = [&](auto&& getterFunc) {
             if constexpr (std::is_arithmetic_v<std::remove_reference_t<decltype(getterFunc(frames()[0]))>>) {

@@ -63,25 +63,17 @@ ElementType* StructureIdentificationModifier::createStructureType(int id, Partic
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    Modifier::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x02);
-    // For future use.
-    stream.endChunk();
-}
-
-/******************************************************************************
 * Loads the class' contents from the given stream.
 ******************************************************************************/
 void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 {
     Modifier::loadFromStream(stream);
-    stream.expectChunkRange(0, 2);
-    // For future use.
-    stream.closeChunk();
+
+    // For backward compatibility with OVITO 3.14:
+    if(stream.formatVersion() < 30016) {
+        stream.expectChunkRange(0, 2);
+        stream.closeChunk();
+    }
 }
 
 /******************************************************************************

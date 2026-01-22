@@ -36,7 +36,48 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT RefTarget : public RefMaker
 {
-    OVITO_CLASS(RefTarget)
+public:
+
+    /// Data structure loaded from an OVITO state file describing a single property field
+    /// of a RefMaker-derived class that was serialized.
+    struct SerializedPropertyField
+    {
+        /// Function pointer to a custom deserialization handler for a property field.
+        using CustomDeserializationFunctionPtr = void (*)(const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner);
+
+        /// The identifier of the property field.
+        QByteArray identifier;
+
+        /// The RefMaker-derived class that owns the property field.
+        /// Can be null if the class no longer exists in this version of OVITO.
+        const RefMakerClass* definingClass = nullptr;
+
+        /// The stored flags of the property field (see PropertyFieldFlag).
+        int flags;
+
+        /// Indicates whether this is a reference field or a property field.
+        bool isReferenceField;
+
+        /// If this is a reference field, this is its RefTarget-derived class.
+        /// Can be null if the class no longer exists in this version of OVITO.
+        OvitoClassPtr targetClass = nullptr;
+
+        /// The property field of the defining class that matches the stored field.
+        /// Can be null if the property field no longer exists in this version of OVITO.
+        const PropertyFieldDescriptor* field = nullptr;
+    };
+
+    /// Give this class its own metaclass.
+    class RefTargetClass : public RefMaker::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using RefMaker::OOMetaClass::OOMetaClass;
+
+        /// Virtual customization function, which lets sub-classes override the deserialization mechanism for a serialized property field.
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const { return nullptr; }
+    };
+    OVITO_CLASS_META(RefTarget, RefTargetClass)
 
 protected:
 
@@ -145,6 +186,49 @@ protected:
     /// \sa CloneHelper::cloneObject()
     virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const;
 
+    //////////////////////////////// Serialization //////////////////////////////////////
+
+    /// \brief Saves the internal state of this object to an output stream.
+    /// \param stream The destination data stream.
+    /// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.
+    /// \param deltaReferenceObject An optional default-constructed reference object, which is used to identify unchanged parameters that don't need to be serialized.
+    ///
+    /// Subclasses can override this method to write their internal state
+    /// to a file. The derived class must call the base implementation saveToStream() first
+    /// before it writes its own data to the stream.
+    ///
+    /// The default implementation of this method does nothing.
+    /// \sa loadFromStream()
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const;
+
+    /// \brief Loads the internal state of this class from an input stream.
+    /// \param stream The source data stream.
+    /// \throw Exception when a parsing error has occurred.
+    ///
+    /// Subclasses can override this method to read their saved internal state
+    /// from the input stream. The derived class must call the base implementation of loadFromStream() first
+    /// before reading its own data from the stream.
+    ///
+    /// The default implementation of this method does nothing.
+    ///
+    /// \note The OvitoObject is not in a fully initialized state when the loadFromStream() method is called.
+    ///       In particular the developer cannot assume that all other objects stored in the data stream and
+    ///       referenced by this object have already been restored at the time loadFromStream() is invoked.
+    ///       The loadFromStreamComplete() method will be called after all objects stored in a file have been completely
+    ///       loaded and and their data has been restored. If you have to perform some post-deserialization
+    ///       tasks that require other referenced objects to be in place and fully loaded, then this should
+    ///       be done by overriding loadFromStreamComplete().
+    ///
+    /// \sa saveToStream()
+    virtual void loadFromStream(ObjectLoadStream& stream);
+
+    /// \brief This method is called once for this object after it has been
+    ///        completely deserialized from a data stream.
+    ///
+    /// It is safe to access sub-objects from this method.
+    /// The default implementation of this method does nothing.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) {}
+
 public:
 
     /// Initialization function.
@@ -252,6 +336,13 @@ private:
     friend class CloneHelper;
     template<typename T> friend class SingleReferenceFieldBase;
     template<typename T> friend class VectorReferenceFieldBase;
+
+    // These classes need to access the protected serialization functions.
+    friend class ObjectSaveStream;
+    friend class ObjectLoadStream;
 };
 
 }   // End of namespace
+
+#include <ovito/core/utilities/io/ObjectSaveStream.h>
+#include <ovito/core/utilities/io/ObjectLoadStream.h>

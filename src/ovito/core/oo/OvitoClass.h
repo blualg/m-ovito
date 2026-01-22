@@ -35,18 +35,6 @@ class OVITO_CORE_EXPORT OvitoClass
 {
 public:
 
-    /// Structure holding the serialized metadata for a class that was loaded from a file.
-    /// It may be subclassed by metaclasses if they want to store additional information
-    /// for each of their classes. This structure is used by the ObjectLoadStream class.
-    struct SerializedClassInfo
-    {
-        /// Virtual destructor.
-        virtual ~SerializedClassInfo() = default;
-
-        /// The metaclass instance.
-        OvitoClassPtr clazz;
-    };
-
     /// Stores a single key-value pair associated with an OvitoClass instance.
     /// Use the OVITO_CLASSINFO macro to add a metadata item to a class.
     /// Use the OvitoClass::classMetadata() method to look up a metadata item.
@@ -126,11 +114,14 @@ public:
     bool operator!=(const OvitoClass& other) const { return (this != &other); }
 
     /// \brief Writes a type descriptor to the stream.
-    static void serializeRTTI(SaveStream& stream, OvitoClassPtr type);
+    /// \param isNonessentialType If true, marks the serialized type as non-essential, which means
+    ///                           it will not be a fatal error if the type no longer exists in a future version of OVITO
+    ///                           at deserialization time.
+    static void serializeRTTI(SaveStream& stream, OvitoClassPtr type, bool isNonessentialType = false);
 
     /// \brief Loads a type descriptor from the stream.
-    /// \throw Exception if the class is not defined or the required plugin is not installed (only if \c throwOnMissingClass is true).
-    static OvitoClassPtr deserializeRTTI(LoadStream& stream, bool throwOnMissingClass = true);
+    /// \throw Exception if the class is not defined or the required plugin is not installed (only if the type was not tagged as non-essential).
+    static OvitoClassPtr deserializeRTTI(LoadStream& stream, bool isNonessentialType = false);
 
     /// \brief Encodes the plugin ID and the class name as a string.
     static QString encodeAsString(OvitoClassPtr type);
@@ -139,23 +130,8 @@ public:
     /// \throw Exception if the class is invalid or the plugin is no longer available.
     static OvitoClassPtr decodeFromString(const QString& str);
 
-    /// \brief This method is called by the ObjectSaveStream class when saving one or more object instances of
-    ///        a class belonging to this metaclass. May be overridden by sub-metaclasses if they want to store
-    ///        additional meta information for the class in the output stream.
-    virtual void saveClassInfo(SaveStream& stream) const {}
-
-    /// \brief This method is called by the ObjectLoadStream class when loading one or more object instances
-    ///        of a class belonging to this metaclass. May be overridden by sub-metaclasses if they want to restore
-    ///        additional meta information for the class from the input stream.
-    virtual void loadClassInfo(LoadStream& stream, SerializedClassInfo* classInfo) const {}
-
     /// Looks up a string value in the class' metadata table.
     QString classMetadata(const char* metadataKey) const;
-
-    /// Creates a new instance of the SerializedClassInfo structure.
-    virtual std::unique_ptr<SerializedClassInfo> createClassInfoStructure() const {
-        return std::make_unique<SerializedClassInfo>();
-    }
 
     /// Is called by OVITO to ask the class for any information that should be included in the application's system report.
     virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const {}

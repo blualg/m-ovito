@@ -650,28 +650,20 @@ void XYZImporter::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
- * Saves the class' contents to the given stream.
- *****************************************************************************/
-void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    ParticleImporter::saveToStream(stream, excludeRecomputableData);
-
-    stream.beginChunk(0x02);
-    stream.endChunk();
-}
-
-/******************************************************************************
  * Loads the class' contents from the given stream.
  *****************************************************************************/
 void XYZImporter::loadFromStream(ObjectLoadStream& stream)
 {
     ParticleImporter::loadFromStream(stream);
 
-    // For backward compatibility with OVITO 3.1:
-    if(stream.expectChunkRange(0x00, 0x02) == 0x01) {
-        stream >> _columnMapping.mutableValue();
+    // For backward compatibility with OVITO 3.14:
+    if(stream.formatVersion() < 30016) {
+        // For backward compatibility with OVITO 3.1:
+        if(stream.expectChunkRange(0x00, 0x02) == 0x01) {
+            stream >> _columnMapping.mutableValue();
+        }
+        stream.closeChunk();
     }
-    stream.closeChunk();
 }
 
 }   // End of namespace

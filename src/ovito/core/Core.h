@@ -167,11 +167,11 @@
 * Our own basic headers
 ******************************************************************************/
 #include <ovito/core/utilities/Debugging.h>
-#define TCB_SPAN_NAMESPACE_NAME Ovito
 #include <ovito/core/utilities/DataTypes.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/linalg/LinAlg.h>
 #include <ovito/core/utilities/Color.h>
+#include <ovito/core/utilities/Enumerate.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/SCFuture.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
