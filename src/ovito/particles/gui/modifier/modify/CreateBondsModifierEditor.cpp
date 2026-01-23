@@ -49,37 +49,63 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->setContentsMargins(4,4,4,4);
     layout1->setSpacing(6);
 
+    // Setup bond creation mode group box.
+    auto* groupBox = new QGroupBox(tr("Bond creation mode"));
+    layout1->addWidget(groupBox);
+
+    auto* layout2 = new QVBoxLayout(groupBox);
+    layout2->setContentsMargins(4, 4, 4, 4);
+    layout2->setSpacing(6);
+
     // Setup combo box and
     auto* bondModeSelectionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CreateBondsModifier::cutoffMode));
     bondModeSelectionUI->comboBox()->addItem(tr("Uniform cutoff distance"), QVariant::fromValue((int)CreateBondsModifier::UniformCutoff));
     bondModeSelectionUI->comboBox()->addItem(tr("Covalent radii"), QVariant::fromValue((int)CreateBondsModifier::CovalentRadiusCutoff));
     bondModeSelectionUI->comboBox()->addItem(tr("Van der Waals radii"), QVariant::fromValue((int)CreateBondsModifier::VDWRadiusCutoff));
     bondModeSelectionUI->comboBox()->addItem(tr("Pair-wise cutoffs"), QVariant::fromValue((int)CreateBondsModifier::PairCutoff));
-    layout1->addWidget(bondModeSelectionUI->comboBox());
+    layout2->addWidget(bondModeSelectionUI->comboBox());
 
     // Setup stacked layout for the different parameter widgets.
-    auto* paramStack = new QStackedLayout();
-    layout1->addLayout(paramStack);
-    auto* uniformCutoffParamsWidget = new QWidget();
-    auto* covalentRadiusParamsWidget = new QWidget();
-    auto* vdwRadiiParamsWidget = new QWidget();
-    auto* pairCutoffParamsWidget = new QWidget();
+    QWidget* uniformCutoffParamsWidget = new QWidget();
+    QWidget* covalentRadiusParamsWidget = nullptr;
+    QWidget* vdwRadiiParamsWidget = new QWidget();
+    QWidget* pairCutoffParamsWidget = new QWidget();
+    if(uniformCutoffParamsWidget) layout2->addWidget(uniformCutoffParamsWidget);
+    if(covalentRadiusParamsWidget) layout2->addWidget(covalentRadiusParamsWidget);
+    if(vdwRadiiParamsWidget) layout2->addWidget(vdwRadiiParamsWidget);
+    if(pairCutoffParamsWidget) layout2->addWidget(pairCutoffParamsWidget);
 
-    paramStack->addWidget(uniformCutoffParamsWidget);
-    paramStack->addWidget(covalentRadiusParamsWidget);
-    paramStack->addWidget(vdwRadiiParamsWidget);
-    paramStack->addWidget(pairCutoffParamsWidget);
+    auto paramWidgets =
+        std::to_array({uniformCutoffParamsWidget, covalentRadiusParamsWidget, vdwRadiiParamsWidget, pairCutoffParamsWidget});
 
-    connect(bondModeSelectionUI->comboBox(), &QComboBox::currentIndexChanged, this, [=](int index) {
-        // Show/hide parameters depending on the selected algorithm version.
-        paramStack->setCurrentIndex(index);
+    auto updateParamVisibility = [=, this](int index) {
+        for(int i = 0; i < paramWidgets.size(); ++i) {
+            if(paramWidgets[i]) paramWidgets[i]->setVisible(i == index);
+        }
+        container()->updateRolloutsLater();
+    };
+
+    // Show/hide parameters depending on the selected mode.
+    connect(bondModeSelectionUI->comboBox(), &QComboBox::currentIndexChanged, this, [=, this](int index) { updateParamVisibility(index); });
+    // Set the correct list index when editor is populated.
+    connect(this, &CreateBondsModifierEditor::contentsChanged, this, [=, this]() {
+        if(CreateBondsModifier* mod = static_object_cast<CreateBondsModifier>(editObject())) {
+            const int prevIndex = bondModeSelectionUI->comboBox()->currentIndex();
+            const int currentIndex = (int)mod->cutoffMode();
+            bondModeSelectionUI->comboBox()->setCurrentIndex(currentIndex);
+            // The "currentIndexChanged" signal is not emitted when current index equals the previous index.
+            // Therefore we manually force the visibility update here.
+            if(prevIndex == currentIndex) {
+                updateParamVisibility(currentIndex);
+            }
+        }
     });
 
     int row = 0;
 
     // Uniform cutoff parameter.
     auto* gridlayout = new QGridLayout(uniformCutoffParamsWidget);
-    gridlayout->setContentsMargins(0,0,0,0);
+    gridlayout->setContentsMargins(0, 0, 0, 0);
     gridlayout->setColumnStretch(1, 1);
     auto* uniformCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
     gridlayout->addWidget(uniformCutoffPUI->label(), row, 0);
@@ -89,6 +115,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     gridlayout->setRowStretch(row++, 1);
 
     // Covalent radius mode.
+    // No settings
 
     // Van der Waals mode.
     auto* vBoxLayout = new QVBoxLayout(vdwRadiiParamsWidget);
@@ -96,11 +123,9 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     BooleanParameterUI* skipHydrogenHydrogenBondsUI =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
     vBoxLayout->addWidget(skipHydrogenHydrogenBondsUI->checkBox());
-    skipHydrogenHydrogenBondsUI->setEnabled(false);
 
     _vdwTable = new QTableWidget();
     _vdwTable->verticalHeader()->setVisible(false);
-    _vdwTable->setEnabled(false);
     _vdwTable->setShowGrid(false);
     _vdwTable->setColumnCount(2);
     _vdwTable->setHorizontalHeaderLabels(QStringList() << tr("Particle type") << tr("VdW radius"));
@@ -114,16 +139,23 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     _pairCutoffTable = new QTableView();
     _pairCutoffTable->verticalHeader()->setVisible(false);
-    _pairCutoffTable->setEnabled(false);
     _pairCutoffTableModel = new PairCutoffTableModel(this);
     _pairCutoffTable->setModel(_pairCutoffTableModel);
     _pairCutoffTable->verticalHeader()->setDefaultSectionSize(_pairCutoffTable->verticalHeader()->minimumSectionSize());
     _pairCutoffTable->horizontalHeader()->setStretchLastSection(true);
     vBoxLayout->addWidget(_pairCutoffTable);
 
+    // Setup general options group box.
+    groupBox = new QGroupBox(tr("General options"));
+    layout1->addWidget(groupBox);
+
+    layout2 = new QVBoxLayout(groupBox);
+    layout2->setContentsMargins(4, 4, 4, 4);
+    layout2->setSpacing(6);
+
     BooleanParameterUI* onlyIntraMoleculeBondsUI =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
-    layout1->addWidget(onlyIntraMoleculeBondsUI->checkBox());
+    layout2->addWidget(onlyIntraMoleculeBondsUI->checkBox());
 
     // Lower cutoff parameter.
     row = 0;
@@ -133,7 +165,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     FloatParameterUI* minCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateBondsModifier::minimumCutoff));
     gridlayout->addWidget(minCutoffPUI->label(), row, 0);
     gridlayout->addLayout(minCutoffPUI->createFieldLayout(), row++, 1);
-    layout1->addLayout(gridlayout);
+    layout2->addLayout(gridlayout);
 
     // Status label.
     layout1->addSpacing(10);
