@@ -55,6 +55,22 @@ All these options are disabled when the ``Color`` per-bond property is defined, 
    or :ref:`particles.modifiers.color_coding` modifiers to set the ``Color`` bond property.
    Once this property exists, it takes precedence over all coloring mode options.
 
+Fractional Bonds
+''''''''''''''''
+
+Fractional bonds (i.e., non-integer ``Bond Order`` property values) are visualized as dashed cylinders instead of solid ones. 
+Note that only the fractional part of the bond order is rendered as dashes. For example, a bond order of 1.5 is rendered 
+as one solid bond and one dashed bond.
+
+Number of filled segments
+  Controls the number of dashes making up each fractional bond. 
+
+Filled segment fraction
+  Controls the length of the filled dashes, where a greater value results in longer dashes.
+
+Additional bond properties
+''''''''''''''''''''''''''
+
 The visualization can additionally be affected by certain properties of the bonds themselves, listed in the following table.
 
 .. table::
@@ -67,6 +83,8 @@ The visualization can additionally be affected by certain properties of the bond
   ``Width``                          Real                    Controls the display diameter of individual bonds.
   ``Transparency``                   Real                    Controls the transparency of individual bonds. Must be in the range [0,1].
   ``Selection``                      Integer                 Marks currently selected bonds (1 = selected, 0 = unselected). Selected bonds are highlighted in red (only in interactive viewports but not in rendered images).
+  ``Bond Order``                     Real                    Controls the number of cylinders used to render a bond. Bond orders in the range (1,3] are 
+                                                             displayed as multiple cylinders next to each other. Bond orders greater than 3 are rendered as a single cylinder.
   ================================== ======================= ==============================================================================
 
 To see the list of bond properties present in your dataset, open the :ref:`data inspector panel <data_inspector.bonds>`.
