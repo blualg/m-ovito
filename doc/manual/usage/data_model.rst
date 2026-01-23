@@ -78,7 +78,7 @@ OVITO offers several selection modifiers, which let you create a particle select
 For example, the :ref:`Select type <particles.modifiers.select_particle_type>` modifier uses the ``Particle Type``
 property of each particle to decide whether or not to select that particle. This allows you to select all atoms of a particular chemical type, for example.
 
-:ref:`particles.modifiers.coordination_analysis` is another typical modifier.
+:ref:`particles.modifiers.radial_distribution_function` is another typical modifier.
 It computes the number of neighbors of each particle within a given cutoff range and stores the computation results in a new particle
 property named ``Coordination``. Subsequently, you can use the values of this property, e.g., select particles having a
 certain maximum coordination or color all particles based on their coordination number (see :ref:`particles.modifiers.color_coding` modifier).

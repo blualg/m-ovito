@@ -163,7 +163,7 @@ and small features (e.g. pores) of the geometric shape will be captured by the m
   :align: right
 
   (a) Atomistic model of a carbon nanoparticle with an inset showing the corresponding
-  :ref:`pair distribution function <particles.modifiers.coordination_analysis>`.
+  :ref:`pair distribution function <particles.modifiers.radial_distribution_function>`.
   The position of the first peak is used as probe sphere radius (:math:`R_{\alpha}=2.5\,\text{Å}`)
   for the alpha-shape construction. (b) The resulting triangulated surface mesh.
   (c) Final surface model after six iterations of the smoothing algorithm were applied.
@@ -182,7 +182,7 @@ apply a fairing procedure [Taubin, SIGGRAPH 95 Conf. Proc., pp. 351-358, 1995] t
 It should be emphasized that the results of the described surface reconstruction method will generally depend on the selected probe
 sphere radius parameter :math:`R_{\alpha}`. A rule of thumb for choosing :math:`R_{\alpha}` is to use the nearest neighbor atom
 separation distance in the material at hand as demonstrated in figure (a) on the right. OVITO allows you determine the first peak of the radial pair distribution
-function :math:`g(r)` with the :ref:`particles.modifiers.coordination_analysis` modifier if needed.
+function :math:`g(r)` with the :ref:`particles.modifiers.radial_distribution_function` modifier if needed.
 Generally, you should report the value of :math:`R_{\alpha}` in your publications when measuring surface area, solid volumes, or porosities.
 
 Parameters
@@ -197,7 +197,7 @@ Probe sphere radius
   distance. Otherwise artificial holes will appear in the constructed surface.
 
   A rule of thumb is to choose this parameter equal to the nearest neighbor atom separation in the material at
-  hand. You can use the :ref:`particles.modifiers.coordination_analysis` modifier to determine the nearest neighbor separation, which is the
+  hand. You can use the :ref:`particles.modifiers.radial_distribution_function` modifier to determine the nearest neighbor separation, which is the
   position of the first peak in the radial pair distribution function.
 
 Smoothing level

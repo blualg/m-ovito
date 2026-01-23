@@ -109,7 +109,7 @@ where
 
 is applied to reduce finite-cutoff ringing artifacts. Here, :math:`\rho` is the particle density,
 :math:`L` the maximum simulation cell vector length, and :math:`g(r)` the radial distribution function (RDF) internally calculated
-using the :ref:`particles.modifiers.coordination_analysis` function of OVITO.
+using the :ref:`particles.modifiers.radial_distribution_function` function of OVITO.
 
 Partial structure factors are calculated from partial radial distribution functions.
 

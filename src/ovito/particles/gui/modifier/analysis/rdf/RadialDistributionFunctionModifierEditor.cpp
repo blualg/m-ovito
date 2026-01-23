@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/modifier/analysis/coordination/CoordinationAnalysisModifier.h>
+#include <ovito/particles/modifier/analysis/rdf/RadialDistributionFunctionModifier.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -30,58 +30,62 @@
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include "CoordinationAnalysisModifierEditor.h"
+#include "RadialDistributionFunctionModifierEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinationAnalysisModifierEditor);
-SET_OVITO_OBJECT_EDITOR(CoordinationAnalysisModifier, CoordinationAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(RadialDistributionFunctionModifierEditor);
+SET_OVITO_OBJECT_EDITOR(RadialDistributionFunctionModifier, RadialDistributionFunctionModifierEditor);
 
 /******************************************************************************
-* Sets up the UI widgets of the editor.
-******************************************************************************/
-void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+ * Sets up the UI widgets of the editor.
+ ******************************************************************************/
+void RadialDistributionFunctionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("Coordination analysis"), rolloutParams, "manual:particles.modifiers.coordination_analysis");
+    QWidget* rollout =
+        createRollout(tr("Radial distribution function (RDF)"), rolloutParams, "manual:particles.modifiers.radial_distribution_function");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);
-    layout->setContentsMargins(4,4,4,4);
+    layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
 
     QGridLayout* gridlayout = new QGridLayout();
-    gridlayout->setContentsMargins(0,0,0,0);
+    gridlayout->setContentsMargins(0, 0, 0, 0);
     gridlayout->setColumnStretch(1, 1);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::cutoff));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(RadialDistributionFunctionModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
     gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
 
     // Number of bins parameter.
-    IntegerParameterUI* numBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
+    IntegerParameterUI* numBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RadialDistributionFunctionModifier::numberOfBins));
     gridlayout->addWidget(numBinsPUI->label(), 1, 0);
     gridlayout->addLayout(numBinsPUI->createFieldLayout(), 1, 1);
 
     // Partial RDFs option.
-    BooleanParameterUI* partialRdfPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
+    BooleanParameterUI* partialRdfPUI =
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(RadialDistributionFunctionModifier::computePartialRDF));
     partialRdfPUI->checkBox()->setText(tr("Compute partial RDFs per:"));
     gridlayout->addWidget(partialRdfPUI->checkBox(), 2, 0);
 
     // Type property selection.
-    _typePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::typeProperty), &Particles::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
+    _typePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(RadialDistributionFunctionModifier::typeProperty),
+                                                                  &Particles::OOClass(),
+                                                                  PropertyReferenceParameterUI::ShowNoComponents);
     gridlayout->addWidget(_typePropertyUI->comboBox(), 2, 1);
     _typePropertyUI->setEnabled(false);
     connect(partialRdfPUI->checkBox(), &QCheckBox::toggled, _typePropertyUI, &ParameterUI::setEnabled);
 
     // Show only typed properties that have some element types attached to them.
-    _typePropertyUI->setPropertyFilter([](const PropertyContainer* container, const Property* property) {
-        return property->isTypedProperty();
-    });
+    _typePropertyUI->setPropertyFilter(
+        [](const PropertyContainer* container, const Property* property) { return property->isTypedProperty(); });
 
     // Only selected particles.
-    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
+    BooleanParameterUI* onlySelectedPUI =
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(RadialDistributionFunctionModifier::onlySelected));
     gridlayout->addWidget(onlySelectedPUI->checkBox(), 3, 0, 1, 2);
     layout->addLayout(gridlayout);
 
@@ -101,22 +105,23 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Update data plot whenever the modifier has calculated new results.
-    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationAnalysisModifierEditor::plotRDF);
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &RadialDistributionFunctionModifierEditor::plotRDF);
 }
 
 /******************************************************************************
-* Updates the plot of the RDF computed by the modifier.
-******************************************************************************/
-void CoordinationAnalysisModifierEditor::plotRDF()
+ * Updates the plot of the RDF computed by the modifier.
+ ******************************************************************************/
+void RadialDistributionFunctionModifierEditor::plotRDF()
 {
     handleExceptions([&]() {
         // Look up the data table in the modifier's pipeline output.
-        DataOORef<const DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName);
+        DataOORef<const DataTable> table =
+            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), RadialDistributionFunctionModifier::OOMetaClass::tableName);
 
         // Determine X plotting range.
         if(table) {
             ConstPropertyPtr x = table->getXValues();
-            BufferReadAccessAndRef<FloatType>  rdfXArray(x);
+            BufferReadAccessAndRef<FloatType> rdfXArray(x);
             BufferReadAccessAndRef<FloatType*> rdfYArray(table->y());
             double minX = 0;
             for(size_t i = 0; i < rdfYArray.size(); i++) {
@@ -128,10 +133,11 @@ void CoordinationAnalysisModifierEditor::plotRDF()
                 }
                 if(minX) break;
             }
-            _rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
+            _rdfPlot->setAxisScale(
+                QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
         }
         _rdfPlot->setTable(std::move(table));
     });
 }
 
-}   // End of namespace
+}  // namespace Ovito

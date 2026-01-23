@@ -1,7 +1,7 @@
-.. _particles.modifiers.coordination_analysis:
+.. _particles.modifiers.radial_distribution_function:
 
-Coordination analysis
----------------------
+Radial Distribution Function (RDF)
+----------------------------------
 
 .. image:: /images/modifiers/coordination_analysis_panel.png
   :width: 30%
@@ -86,4 +86,4 @@ This modifier can additionally compute the distribution of bond angles formed by
 
 .. seealso::
 
-  :py:class:`ovito.modifiers.CoordinationAnalysisModifier` (Python API)
+  :py:class:`ovito.modifiers.RadialDistributionFunctionModifier` (Python API)

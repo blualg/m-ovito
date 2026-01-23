@@ -17,7 +17,7 @@ Attributes
 
 Data tables
   The modifier can compute the time-averaged versions of :ref:`data tables <scene_objects.data_table>`.
-  Data tables typically contain dynamically computed structural or statistical information such as a :ref:`radial distribution function <particles.modifiers.coordination_analysis>`
+  Data tables typically contain dynamically computed structural or statistical information such as a :ref:`radial distribution function <particles.modifiers.radial_distribution_function>`
   or :ref:`histograms <particles.modifiers.histogram>` of some particle property.
   With the help of the time averaging modifier you can average such time-varying tables over the entire trajectory.
 
