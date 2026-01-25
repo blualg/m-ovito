@@ -260,13 +260,8 @@ void ModifyCommandPage::onInsertNewModifier(int index)
 ******************************************************************************/
 void ModifyCommandPage::onSelectedItemChanged()
 {
-    RefTarget* selectedObject = pipelineListModel()->selectedObject();
-
-    _modifierSelector->setEnabled(selectedObject != nullptr);
-
-    if(selectedObject != _propertiesPanel->editObject()) {
-        _propertiesPanel->setEditObject(selectedObject);
-    }
+    _modifierSelector->setEnabled(pipelineListModel()->selectedPipeline() != nullptr);
+    _propertiesPanel->setEditObject(pipelineListModel()->selectedObject());
 
     // Whenever no object is selected, show information about the program.
     if(pipelineListModel()->selectedItems().empty())

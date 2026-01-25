@@ -454,13 +454,11 @@ void AvailableModifiersModel::updateActionState()
     }
 
     // Obtain pipeline output at the selected stage.
-    if(currentItem) {
-        if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
-            inputState = pipelineNode->getCachedPipelineNodeOutput(currentAnimationTime());
-        }
-        else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
-            inputState = pipeline->getCachedPipelineOutput(currentAnimationTime());
-        }
+    if(PipelineNode* pipelineNode = currentItem ? dynamic_object_cast<PipelineNode>(currentItem->object()) : nullptr) {
+        inputState = pipelineNode->getCachedPipelineNodeOutput(currentAnimationTime());
+    }
+    else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
+        inputState = pipeline->getCachedPipelineOutput(currentAnimationTime());
     }
 
     // Update the actions.
