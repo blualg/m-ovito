@@ -33,7 +33,7 @@ namespace Ovito {
 enum ObjectInitializationFlag
 {
     NoFlags               = 0,        //< Selects standard object initialization behavior.
-    DontInitializeObject  = (1 << 0), //< Indicates that an object is being cloned or deserialized from a file stream. Means do not initialize parameter values and don't create child objects.
+    DontInitializeObject  = (1 << 0), //< Indicates that an object is being cloned. Means do not default-initialize parameters and don't create child objects.
     DontCreateVisElement  = (1 << 1), //< Do not automatically attach a visual element when creating a new data object.
 };
 Q_DECLARE_FLAGS(ObjectInitializationFlags, ObjectInitializationFlag);

@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
 #include "ObjectSaveStream.h"
 
 namespace Ovito {
@@ -48,42 +49,153 @@ ObjectSaveStream::~ObjectSaveStream()
 ******************************************************************************/
 quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool excludeRecomputableData, const RefTarget* deltaReferenceObject)
 {
+    OVITO_ASSERT(_saveOnlyModifiedObjects || deltaReferenceObject == nullptr);
+
     if(object == nullptr) {
         // Object ID zero is reserved for null pointers.
         return 0;
     }
 
     // Instead of saving the object's data immediately, we only assign a unique instance ID to the object here
-    // and write that ID to the stream. The object itself will get saved later when the stream
-    // is being closed.
+    // and write that ID to the stream. The object itself will get saved later when the stream is being closed.
     OVITO_CHECK_OBJECT_POINTER(object);
     OVITO_ASSERT(_objects.size() == _objectMap.size());
     OVITO_ASSERT(!deltaReferenceObject || &object->getOOClass() == &deltaReferenceObject->getOOClass());
+
     quint32& id = _objectMap[object];
     if(id == 0) {
-        // Add object to serialization queue.
-        _objects.push_back({object, deltaReferenceObject, excludeRecomputableData});
-        id = (quint32)_objects.size();
+        // If the saveOnlyModifiedObjects mode is active, we cannot register further objects for serialization
+        // while we are already in the process of serializing objects.
+        OVITO_ASSERT(!_saveOnlyModifiedObjects || !_currentObjectRecord);
+        if(_saveOnlyModifiedObjects && _currentObjectRecord)
+            throw Exception("Cannot register another object instances for serialization while objects are already being serialized.");
+
+        // To serialize only changed parameters, create a default-constructed object instance as reference to compare against.
+        OORef<const RefTarget> defaultConstructedObject = deltaReferenceObject;
+        if(_saveOnlyModifiedObjects && !defaultConstructedObject) {
+            // Temporarily establish a non-interactive context to always initialize
+            // object parameters to factory default settings.
+            NoninteractiveContext noninteractiveContext;
+            defaultConstructedObject = static_object_cast<RefTarget>(object->getOOClass().createInstance());
+        }
+
+        // Add object to serialization set and give it a unique serialization ID.
+        _objects.push_back({object, defaultConstructedObject, excludeRecomputableData});
+        id = static_cast<quint32>(_objects.size());
+
+        // Determine whether the object completely matches the provided reference object state
+        // and recursively gather all sub-objects for serialization.
+        if(_saveOnlyModifiedObjects)
+            gatherSubObjectsAndDetectInitialState(id);
     }
-    else {
+    else if(!_saveOnlyModifiedObjects || !_currentObjectRecord) {
         // Object has already been registered for serialization before.
         // Verify that the previous registration is consistent with the current one.
-        OVITO_ASSERT(_objects[id-1].object == object);
-        OVITO_ASSERT(!deltaReferenceObject || _objects[id-1].deltaReferenceObject);
+        ObjectRecord& record = _objects[id - 1];
+        OVITO_ASSERT(record.object == object);
+
+        // The excludeRecomputableData option must be specified by all registrations.
+        // Otherwise, we have to reset the flag and include recomputable data.
         if(!excludeRecomputableData) {
-            _objects[id-1].excludeRecomputableData = false;
+            record.excludeRecomputableData = false;
+        }
+
+        // If not the same delta reference object is used for all registrations,
+        // the object must be serialized.
+        if(deltaReferenceObject != record.deltaReferenceObject) {
+            record.canBeSkipped = false;
         }
     }
-    // Write the object's unique serialization ID to the stream.
+
     return id;
 }
 
 /******************************************************************************
 * Saves an object with runtime type information to the stream.
 ******************************************************************************/
-void ObjectSaveStream::saveObject(const RefTarget* object, bool excludeRecomputableData, const RefTarget* deltaReferenceObject)
+void ObjectSaveStream::saveObject(const RefTarget* object, bool excludeRecomputableData)
 {
-    *this << registerObjectInstance(object, excludeRecomputableData, deltaReferenceObject);
+    // TODO: Allow serialization of further objects during object serialization?
+    OVITO_ASSERT(!_saveOnlyModifiedObjects || _currentObjectRecord == nullptr);
+
+    // Register object and write its unique serialization ID to the stream.
+    *this << registerObjectInstance(object, excludeRecomputableData);
+}
+
+/******************************************************************************
+* Determines whether the given object completely matches its corresponding reference state
+* and recursively gathers its sub-object references for serialization.
+******************************************************************************/
+void ObjectSaveStream::gatherSubObjectsAndDetectInitialState(quint32 objectId)
+{
+    const RefTarget* object = _objects[objectId - 1].object.get();
+    const RefTarget* refObject = _objects[objectId - 1].deltaReferenceObject.get();
+    bool excludeRecomputableData = _objects[objectId - 1].excludeRecomputableData;
+    bool allParametersMatch = true;
+    OVITO_ASSERT(refObject);
+
+    // Visit all property fields of the object.
+    for(const PropertyFieldDescriptor* field : object->getOOMetaClass().propertyFields()) {
+        if(field->dontSerialize())
+            continue; // Skip non-serializable fields.
+
+        if(field->isReferenceField()) {
+            if(!field->isVector()) {
+                // Get the current referenced target and obtain the corresponding sub-object from the delta reference object.
+                const RefTarget* target = object->getReferenceFieldTarget(field);
+                const RefTarget* refTarget = refObject->getReferenceFieldTarget(field);
+                allParametersMatch &= ((bool)target == (bool)refTarget);
+
+                // Don't use delta reference if types differ.
+                if(refTarget && target && &target->getOOClass() != &refTarget->getOOClass()) {
+                    refTarget = nullptr;
+                    allParametersMatch = false;
+                }
+
+                // Process the referenced sub-object.
+                if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), refTarget)) {
+                    allParametersMatch &= _objects[subobjectId - 1].canBeSkipped;
+                }
+            }
+            else {
+                const auto count = object->getVectorReferenceFieldSize(field);
+                const auto refCount = refObject->getVectorReferenceFieldSize(field);
+                allParametersMatch &= (count == refCount);
+                for(int i = 0; i < count; i++) {
+                    // Get the current referenced target.
+                    const RefTarget* target = object->getVectorReferenceFieldTarget(field, i);
+
+                    // Obtain the corresponding sub-object from the delta reference object.
+                    const RefTarget* refTarget = nullptr;
+                    if(i < refCount) {
+                        refTarget = refObject->getVectorReferenceFieldTarget(field, i);
+                        allParametersMatch &= ((bool)target == (bool)refTarget);
+                        // Don't use delta reference if types differ.
+                        if(refTarget && target && &target->getOOClass() != &refTarget->getOOClass()) {
+                            refTarget = nullptr;
+                            allParametersMatch = false;
+                        }
+                    }
+
+                    // Process the referenced sub-object.
+                    if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), refTarget)) {
+                        allParametersMatch &= _objects[subobjectId - 1].canBeSkipped;
+                    }
+                }
+            }
+        }
+        else if(allParametersMatch) {
+            // Check if the property value differs from the parameter's default value.
+            allParametersMatch &= object->comparePropertyFieldValue(field, *refObject);
+        }
+    }
+
+    // TODO: Ask the object's class if it considers the object to match its reference state.
+    //if(allParametersMatch)
+    //    allParametersMatch &= object->doesMatchReferenceState(*this, excludeRecomputableData, refObject);
+
+    // Mark object as skippable if all its parameters match the reference state.
+    _objects[objectId - 1].canBeSkipped = allParametersMatch;
 }
 
 /******************************************************************************
@@ -100,14 +212,55 @@ quint32 ObjectSaveStream::registerObjectClass(OvitoClassPtr clazz)
         OVITO_ASSERT(_classes.size() == _classMap.size());
         quint32& id = _classMap[clazz];
         if(id == 0) {
+            // Add class to serialization set and give it a unique serialization ID.
             _classes.push_back(clazz);
-            id = (quint32)_classes.size();
+            id = static_cast<quint32>(_classes.size());
         }
         else {
             OVITO_ASSERT(_classes[id - 1] == clazz);
         }
         return id;
     }
+}
+
+/******************************************************************************
+* Determines whether the subtree rooted at the given object can be completely
+* skipped from serialization.
+******************************************************************************/
+bool ObjectSaveStream::checkSkippableSubTree(ObjectRecord& objectRecord)
+{
+    if(!objectRecord.canBeSkipped)
+        return false; // Already determined to be non-skippable.
+
+    const RefTarget* object = objectRecord.object.get();
+
+    // Visit all reference fields of the object.
+    for(const PropertyFieldDescriptor* field : object->getOOMetaClass().propertyFields()) {
+        if(field->dontSerialize() || !field->isReferenceField())
+            continue; // Skip non-serializable fields and non-reference fields.
+
+        if(!field->isVector()) {
+            if(RefTarget* target = object->getReferenceFieldTarget(field)) {
+                // Sub-object must have been registered already.
+                OVITO_ASSERT(_objectMap.find(target) != _objectMap.end());
+                // The current object can only be skipped if all its referenced sub-objects can also be skipped.
+                objectRecord.canBeSkipped &= checkSkippableSubTree(_objects[_objectMap.find(target)->second - 1]);
+            }
+        }
+        else {
+            const auto count = object->getVectorReferenceFieldSize(field);
+            for(int i = 0; i < count; i++) {
+                if(RefTarget* target = object->getVectorReferenceFieldTarget(field, i)) {
+                    // Sub-object must have been registered already.
+                    OVITO_ASSERT(_objectMap.find(target) != _objectMap.end());
+                    // The current object can only be skipped if all its referenced sub-objects can also be skipped.
+                    objectRecord.canBeSkipped &= checkSkippableSubTree(_objects[_objectMap.find(target)->second - 1]);
+                }
+            }
+        }
+    }
+
+    return objectRecord.canBeSkipped;
 }
 
 /******************************************************************************
@@ -121,12 +274,22 @@ void ObjectSaveStream::close()
     // Prevent re-entrance in case of an exception.
     if(!_currentObjectRecord) {
         try {
+            // Determine which objects can be skipped.
+            if(_saveOnlyModifiedObjects) {
+                for(ObjectRecord& record : _objects) {
+                    checkSkippableSubTree(record);
+                }
+            }
+
             // Serialize each object.
             // Note: Not using range-based for-loop here, because further objects may be appended to the list as we save objects.
             qint64 startObjectSection = filePosition();
             beginChunk(0x100);
             for(size_t i = 0; i < _objects.size(); i++) { // NOLINT(modernize-loop-convert)
                 ObjectRecord& record = _objects[i];
+                if(record.canBeSkipped)
+                    continue; // Omit object from file that match their reference state.
+
                 OVITO_CHECK_OBJECT_POINTER(record.object);
                 record.byteOffset = filePosition();
                 _currentObjectRecord = &record;
@@ -134,8 +297,8 @@ void ObjectSaveStream::close()
                 // Register the object's class for serialization.
                 record.classId = registerObjectClass(&record.object->getOOClass());
 
-                // Let the object class serialize its internal state.
-                record.object->saveToStream(*this, record.excludeRecomputableData, record.deltaReferenceObject);
+                // Let the object serialize its internal state.
+                record.object->saveToStream(*this, record.excludeRecomputableData);
             }
             endChunk();
             //qDebug() << "Objects section:" << (filePosition() - startObjectSection) << "bytes";
@@ -147,7 +310,7 @@ void ObjectSaveStream::close()
                 serializeParameterField(field);
             }
             endChunk();
-            //qDebug() << "Field table section:" << (filePosition() - fieldTableStart) << "bytes";
+            //qDebug() << "Field table section:" << (filePosition() - fieldTableStart) << "bytes (" << _fields.size() << "fields)";
 
             // Save the list of classes.
             // Note: Not using range-based for-loop here, because further classes may be appended to the list as we save classes.
@@ -157,21 +320,28 @@ void ObjectSaveStream::close()
                 serializeObjectClass(_classes[i]);
             }
             endChunk();
-            //qDebug() << "Class table section:" << (filePosition() - classTableStart) << "bytes";
+            //qDebug() << "Class table section:" << (filePosition() - classTableStart) << "bytes (" << _classes.size() << "classes)";
 
             // Save object index table.
             qint64 objectIndexStart = filePosition();
             beginChunk(0x300);
-            for(const auto& objectRecord : _objects) {
-                serializeObjectInstance(objectRecord);
+            quint32 numObjectsWritten = 0;
+            for(const auto& [id, objectRecord] : Ovito::enumerate(_objects)) {
+                OVITO_ASSERT(_saveOnlyModifiedObjects || !objectRecord.canBeSkipped);
+                if(objectRecord.canBeSkipped)
+                    continue; // Omit object from file that match their reference state.
+                *this << (quint32)(id + 1);
+                *this << objectRecord.classId;
+                *this << objectRecord.byteOffset;
+                numObjectsWritten++;
             }
             endChunk();
-            //qDebug() << "Objects table section:" << (filePosition() - objectIndexStart) << "bytes";
+            //qDebug() << "Objects table section:" << (filePosition() - objectIndexStart) << "bytes (" << numObjectsWritten << "objects)";
 
             // Write index of tables.
             *this << fieldTableStart << (quint32)_fields.size();
             *this << classTableStart << (quint32)_classes.size();
-            *this << objectIndexStart << (quint32)_objects.size();
+            *this << objectIndexStart << (quint32)numObjectsWritten;
         }
         catch(...) {
             SaveStream::close();
@@ -180,15 +350,6 @@ void ObjectSaveStream::close()
     }
 
     SaveStream::close();
-}
-
-/******************************************************************************
-* Writes the information associated with an object instance to the stream.
-******************************************************************************/
-void ObjectSaveStream::serializeObjectInstance(const ObjectRecord& objectRecord)
-{
-    *this << objectRecord.classId;
-    *this << objectRecord.byteOffset;
 }
 
 /******************************************************************************
@@ -221,10 +382,12 @@ quint32 ObjectSaveStream::registerParameterField(const PropertyFieldDescriptor* 
 {
     OVITO_ASSERT(field);
     OVITO_ASSERT(_fields.size() == _fieldMap.size());
+
     quint32& id = _fieldMap[field];
     if(id == 0) {
+        // Add field to serialization set and give it a unique serialization ID.
         _fields.push_back(field);
-        id = (quint32)_fields.size();
+        id = static_cast<quint32>(_fields.size());
     }
     else {
         OVITO_ASSERT(_fields[id - 1] == field);
@@ -269,52 +432,72 @@ void ObjectSaveStream::serializeParameterFieldValues(const RefTarget* object)
             // Serialize reference or property field.
             if(field->isReferenceField()) {
                 // Write the object pointed to by the reference field to the stream.
-                beginChunk(registerParameterField(field));
                 if(!field->isVector()) {
-
                     // Get the current referenced target.
-                    RefTarget* target = object->getReferenceFieldTarget(field);
+                    const RefTarget* target = object->getReferenceFieldTarget(field);
 
-                    // Check if the current referenced target is of the same type as the one in the delta reference object.
-                    const RefTarget* deltaReferenceTarget = nullptr;
                     if(refObject) {
-                        deltaReferenceTarget = refObject->getReferenceFieldTarget(field);
-                        if(deltaReferenceTarget && target && &target->getOOClass() != &deltaReferenceTarget->getOOClass())
-                            deltaReferenceTarget = nullptr; // Don't use delta reference if types differ.
+                        // Get the corresponding target from the reference object.
+                        const RefTarget* refTarget = refObject->getReferenceFieldTarget(field);
+                        // Skip field if the value is null in both the object and the reference object.
+                        if(!target && !refTarget)
+                            continue;
                     }
 
-                    // Serialize the referenced subobject.
-                    saveObject(target, record.excludeRecomputableData || field->dontSaveRecomputableData(), deltaReferenceTarget);
+                    // Serialize the referenced sub-object.
+                    quint32 subobjectId = registerObjectInstance(target, record.excludeRecomputableData || field->dontSaveRecomputableData());
+
+                    // Serialize the referenced sub-object (unless it is skipped).
+                    if(!subobjectId || !_objects[subobjectId - 1].canBeSkipped) {
+#if 0
+                        qDebug() << "  Writing reference field" << field->identifier() << "of" << object;
+#endif
+                        beginChunk(registerParameterField(field));
+                        *this << subobjectId;
+                        endChunk();
+                    }
                 }
                 else {
                     qint32 count = object->getVectorReferenceFieldSize(field);
+
+                    // Check if the complete list of referenced targets can be skipped.
+                    if(refObject) {
+                        qint32 refcount = refObject->getVectorReferenceFieldSize(field);
+                        if(refcount == count) {
+                            bool canSkipAll = true;
+                            for(qint32 i = 0; i < count; i++) {
+                                const RefTarget* target = object->getVectorReferenceFieldTarget(field, i);
+                                quint32 subobjectId = registerObjectInstance(target, record.excludeRecomputableData || field->dontSaveRecomputableData());
+                                if(!subobjectId || !_objects[subobjectId - 1].canBeSkipped) {
+                                    canSkipAll = false;
+                                    break;
+                                }
+                            }
+                            if(canSkipAll)
+                                continue;
+                        }
+                    }
+#if 0
+                    qDebug() << "  Writing reference field" << field->identifier() << "of" << object;
+#endif
+                    beginChunk(registerParameterField(field));
                     *this << count;
-                    for(int i = 0; i < count; i++) {
+                    for(qint32 i = 0; i < count; i++) {
                         // Get the current referenced target.
                         RefTarget* target = object->getVectorReferenceFieldTarget(field, i);
-
-                        // Check if the current referenced target is of the same type as the one in the delta reference object.
-                        const RefTarget* deltaReferenceTarget = nullptr;
-                        if(refObject) {
-                            if(refObject->getVectorReferenceFieldSize(field) > i) {
-                                deltaReferenceTarget = refObject->getVectorReferenceFieldTarget(field, i);
-                                if(deltaReferenceTarget && target && &target->getOOClass() != &deltaReferenceTarget->getOOClass())
-                                    deltaReferenceTarget = nullptr; // Don't use delta reference if types differ.
-                            }
-                        }
-
-                        // Serialize the referenced subobject.
-                        saveObject(target, record.excludeRecomputableData || field->dontSaveRecomputableData(), deltaReferenceTarget);
+                        // Serialize the referenced sub-object.
+                        quint32 subobjectId = registerObjectInstance(target, record.excludeRecomputableData || field->dontSaveRecomputableData());
+                        if(subobjectId && _objects[subobjectId - 1].canBeSkipped)
+                            subobjectId = std::numeric_limits<quint32>::max(); // Indicate skipped sub-object.
+                        *this << subobjectId;
                     }
+                    endChunk();
                 }
-                endChunk();
             }
             else {
                 // Check if the property value differs from the parameter's default value.
                 if(refObject) {
-                    QVariant curValue = object->getPropertyFieldValue(field);
-                    QVariant refValue = refObject->getPropertyFieldValue(field);
-                    if(curValue.isValid() && refValue.isValid() && curValue == refValue) {
+                    if(object->comparePropertyFieldValue(field, *refObject)) {
 #if 0
                         qDebug() << "  Skipping unchanged parameter" << field->identifier() << "of" << object;
 #endif
@@ -330,9 +513,6 @@ void ObjectSaveStream::serializeParameterFieldValues(const RefTarget* object)
                 OVITO_ASSERT(field->_propertyStorageSaveFunc != nullptr);
                 field->_propertyStorageSaveFunc(object, field, *this);
                 endChunk();
-#if 0
-                qDebug() << "  Property field" << field->identifier() << " contains" << field->propertyStorageReadFunc(object, field);
-#endif
             }
         }
         catch(Exception& ex) {

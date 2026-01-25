@@ -30,8 +30,6 @@
 #include <ovito/core/oo/ReferenceEvent.h>
 #include <ovito/core/oo/RefMaker.h>
 
-#include <boost/type_traits/has_equal_to.hpp>
-
 namespace Ovito {
 
 /**
@@ -126,7 +124,7 @@ public:
         OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
 
         // The value type supports comparison, do nothing if the new value is equal to the old one.
-        if constexpr(boost::has_equal_to<property_type, std::decay_t<T>>::value) {
+        if constexpr(std::equality_comparable_with<property_type, std::decay_t<T>>) {
             if(get() == newValue)
                 return;
         }
@@ -201,6 +199,17 @@ public:
         }
     }
 
+    /// Compares two property field values for equality.
+    inline bool equals(const PropertyField<property_data_type, flags>& other) const {
+        if constexpr(std::equality_comparable<property_type>) {
+            return this->get() == other.get();
+        }
+        else {
+            OVITO_ASSERT_MSG(false, "PropertyField::equals()", "The property data type does not support equality comparison.");
+            return false;
+        }
+    }
+
 private:
 
     /// Internal helper function that generates notification events.
@@ -270,6 +279,13 @@ public:
         stream >> _hasSnapshot;
         if(_hasSnapshot)
             base_class::loadFromStream(stream);
+    }
+
+    /// Compares two property field values for equality.
+    inline bool equals(const ShadowPropertyField<property_data_type>& other) const {
+        if(!_hasSnapshot || !other._hasSnapshot)
+            return _hasSnapshot == other._hasSnapshot;
+        return base_class::equals(other);
     }
 
     /// Returns whether this shadow field currently stores a valid value.

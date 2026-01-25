@@ -58,8 +58,8 @@ public:
     /// \note The returned object is not fully initialized yet when the function returns, and should not be accessed.
     ///       The object's contents are loaded later when close() is called.
     template<class T>
-    OORef<T> lookupObject(quint32 objectId) {
-        OORef<RefTarget> ptr = lookupObjectInternal(objectId);
+    OORef<T> lookupObject(quint32 objectId, T* existingObject = nullptr) {
+        OORef<RefTarget> ptr = lookupObjectInternal(objectId, existingObject);
         OVITO_ASSERT(!ptr || ptr->getOOClass().isDerivedFrom(T::OOClass()));
         if(ptr && !ptr->getOOClass().isDerivedFrom(T::OOClass()))
             throw Exception(tr("Class hierarchy mismatch in file. The object class '%1' is not derived from '%2'.").arg(ptr->getOOClass().name()).arg(T::OOClass().name()));
@@ -70,10 +70,10 @@ public:
     /// \note The returned object is not initialized yet when the function returns, and should not be accessed.
     ///       The object's contents are loaded when close() is called.
     template<class T>
-    OORef<T> loadObject() {
+    OORef<T> loadObject(T* existingObject = nullptr) {
         quint32 objectId;
         (*this) >> objectId;
-        return lookupObject<T>(objectId);
+        return lookupObject<T>(objectId, existingObject);
     }
 
     /// \brief Loads a weak reference to an object from the stream.
@@ -84,12 +84,6 @@ public:
         return loadObject<T>();
     }
 
-    /// Sets the dataset to which objects loaded from the stream should be added to.
-    void setDatasetToBePopulated(DataSet* dataset) { _dataset = dataset; }
-
-    /// Returns the dataset which is being loaded (may be null).
-    DataSet* datasetToBePopulated() const { return _dataset; }
-
     /// Registers a callback function that will be executed after the object graph has been completely loaded.
     /// This is useful for post-processing or manipulating of the loaded data if access to the entire object graph is required.
     void registerPostLoadCallback(fu2::unique_function<void()> callback) {
@@ -97,10 +91,13 @@ public:
         _postLoadCallbacks.push_back(std::move(callback));
     }
 
+    /// \brief Returns the DataSet object that is currently being loaded from the stream, if any.
+    DataSet* datasetBeingLoaded() const;
+
 private:
 
     /// Loads an object with runtime type information from the stream.
-    OORef<RefTarget> lookupObjectInternal(quint32 objectId);
+    OORef<RefTarget> lookupObjectInternal(quint32 objectId, RefTarget* existingObject);
 
     /// Metadata for a parameter field loaded from the stream.
     struct FieldRecord : RefTarget::SerializedPropertyField
@@ -157,7 +154,7 @@ private:
     void deserializeObjectClass(ClassRecord& classRecord);
 
     /// Parses the definition of an object instance from the stream.
-    void deserializeObjectInstance(ObjectRecord& objectRecord);
+    void deserializeObjectInstance(quint32 index, ObjectRecord& objectRecord);
 
     /// Lets runtime classes override deserialization behavior for individual parameter fields.
     void registerParameterFieldHandlers(ClassRecord& classRecord);
@@ -179,14 +176,14 @@ private:
     /// All object instances found in the file.
     std::vector<ObjectRecord> _objects;
 
-    /// Objects that need to be loaded.
+    /// Objects that need to be deserialized.
     std::vector<quint32> _objectsToLoad;
+
+    /// All objects mapped by their object ID.
+    std::unordered_map<quint32, ObjectRecord*> _objectMap;
 
     /// The object object currently being loaded from the stream.
     ObjectRecord* _currentObjectRecord = nullptr;
-
-    /// The current dataset being loaded.
-    DataSet* _dataset = nullptr;
 
     /// List of callbacks that are executed after the object graph has been completely loaded.
     std::vector<fu2::unique_function<void()>> _postLoadCallbacks;

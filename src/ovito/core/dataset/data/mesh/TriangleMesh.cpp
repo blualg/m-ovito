@@ -135,9 +135,9 @@ TriMeshFace& TriangleMesh::addFace()
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void TriangleMesh::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void TriangleMesh::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    DataObject::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+    DataObject::saveToStream(stream, excludeRecomputableData);
 
     stream.beginChunk(0x01);
     stream.beginChunk(0x04);

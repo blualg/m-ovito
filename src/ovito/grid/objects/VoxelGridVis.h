@@ -69,11 +69,6 @@ public:
     /// Replaces this visual element with a shared visual element by telling all dependents to update their references.
     virtual void replaceWithSharedElement(DataVis* sharedVis) const override;
 
-protected:
-
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
-
 private:
 
     /// Renders the outer surfaces of the grid.

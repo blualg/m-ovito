@@ -94,20 +94,6 @@ void SurfaceMeshVis::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    DataVis::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!surfaceColorMapping())
-        setSurfaceColorMapping(OORef<PropertyColorMapping>::create());
-}
-
-/******************************************************************************
 * Replaces this visual element with a shared visual element
 * by telling all dependents to update their references.
 ******************************************************************************/

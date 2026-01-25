@@ -264,6 +264,9 @@ public:
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { \
                 static_cast<classname*>(obj)->_##fieldname.setQVariant(obj, PROPERTY_FIELD(classname::fieldname), newValue); \
             }, \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) -> bool { \
+                return static_cast<const classname*>(obj)->_##fieldname.equals(static_cast<const classname*>(other)->_##fieldname); \
+            }, \
             [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) { \
                 static_cast<const classname*>(obj)->_##fieldname.saveToStream(stream); \
             }, \
@@ -312,7 +315,7 @@ public:
     Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
             const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
             #fieldname, \
-            Ovito::PROPERTY_FIELD_NO_FLAGS, \
+            Ovito::PROPERTY_FIELD_DONT_SERIALIZE, \
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) {}, /* propertyStorageCopyFunc */ \
             [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { /* propertyStorageReadFunc */ \
                 return QVariant::fromValue(static_cast<const classname*>(obj)->fieldname()); \
@@ -320,8 +323,11 @@ public:
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
                 static_cast<classname*>(obj)->setterName(newValue.value<classname::_##fieldname##__prop_type>()); \
             }, \
-            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) -> bool { /* propertyStorageCompareFunc */ \
+                return static_cast<const classname*>(obj)->fieldname() == static_cast<const classname*>(other)->fieldname(); \
+            }, \
+            nullptr, /* propertyStorageSaveFunc */ \
+            nullptr /* propertyStorageLoadFunc */ \
         );
 
 /***************** Shadow property fields *******************/
@@ -356,6 +362,9 @@ public:
             }, \
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { \
                 static_cast<classname*>(obj)->_##fieldname##__shadow.setQVariant(obj, SHADOW_PROPERTY_FIELD(classname::fieldname), newValue); \
+            }, \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) -> bool { \
+                return static_cast<const classname*>(obj)->_##fieldname##__shadow.equals(static_cast<const classname*>(other)->_##fieldname##__shadow); \
             }, \
             [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) { \
                 static_cast<const classname*>(obj)->_##fieldname##__shadow.saveToStream(stream); \

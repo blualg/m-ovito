@@ -72,28 +72,6 @@ void VoxelGridVis::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    DataVis::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!colorMapping()) {
-        // Create a color mapping object for pseudo-color visualization of a grid property.
-        setColorMapping(OORef<PropertyColorMapping>::create());
-    }
-
-    // For backward compatibility with OVITO 3.12.x.
-    // Create a opacity function if it wasn't loaded from the state file.
-    if(!opacityFunction()) {
-        setOpacityFunction(DataOORef<OpacityFunction>::create());
-    }
-}
-
-/******************************************************************************
 * Replaces this visual element with a shared visual element
 * by telling all dependents to update their references.
 ******************************************************************************/

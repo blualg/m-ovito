@@ -453,9 +453,9 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    ModificationNode::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+    ModificationNode::saveToStream(stream, excludeRecomputableData);
 
     if(!excludeRecomputableData) {
         stream.beginChunk(0x02);

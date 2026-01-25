@@ -539,12 +539,12 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    RefTarget::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+    RefTarget::saveToStream(stream, excludeRecomputableData);
 
-    stream.beginChunk(0x02);
     // Save list of weak references to vis elements that have been replaced with local copies.
+    stream.beginChunk(0x02);
     stream.writeSizeT(replacedVisElements().size());
     for(const auto& weakRef : replacedVisElements()) {
         stream.saveWeakObjectReference(weakRef.lock().get());

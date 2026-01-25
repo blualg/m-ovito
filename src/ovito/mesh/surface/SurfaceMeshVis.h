@@ -82,9 +82,6 @@ public:
 
 protected:
 
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
-
     /// Algorithm for building the renderable surface mesh.
     /// Subclasses can customize individual aspects of the algorithm by overriding the virtual methods.
     class OVITO_MESH_EXPORT RenderableSurfaceBuilder

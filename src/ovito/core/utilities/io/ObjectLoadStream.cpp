@@ -25,6 +25,7 @@
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
 #include "ObjectLoadStream.h"
 
 namespace Ovito {
@@ -81,8 +82,9 @@ ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
     setFilePosition(objectTableStart);
     expectChunk(0x300);
     _objects.resize(objectCount);
-    for(auto& objectRecord : _objects) {
-        deserializeObjectInstance(objectRecord);
+    _objectMap.reserve(objectCount);
+    for(auto [index, objectRecord] : Ovito::enumerate(_objects)) {
+        deserializeObjectInstance(index, objectRecord);
     }
     closeChunk();
 
@@ -159,9 +161,14 @@ void ObjectLoadStream::deserializeObjectClass(ClassRecord& classRecord)
 /******************************************************************************
 * Parses the definition of an object instance from the stream.
 ******************************************************************************/
-void ObjectLoadStream::deserializeObjectInstance(ObjectRecord& objectRecord)
+void ObjectLoadStream::deserializeObjectInstance(quint32 index, ObjectRecord& objectRecord)
 {
     objectRecord.object = nullptr;
+    quint32 objectId;
+    if(formatVersion() >= 30016)
+        *this >> objectId;
+    else
+        objectId = index + 1; // Legacy files had object IDs starting at 1 in sequential order.
     quint32 classId;
     *this >> classId;
     if(formatVersion() < 30016)
@@ -170,6 +177,7 @@ void ObjectLoadStream::deserializeObjectInstance(ObjectRecord& objectRecord)
         throw Exception(tr("Serialized class ID %1 is out of range.").arg(classId));
     objectRecord.classRecord = &_classes[classId - 1];
     *this >> objectRecord.fileOffset;
+    _objectMap.emplace(objectId, &objectRecord);
 }
 
 /******************************************************************************
@@ -295,15 +303,16 @@ void ObjectLoadStream::registerParameterFieldHandlers(ClassRecord& classRecord)
 * The method returns a pointer to the object but this object will be
 * in an uninitialized state until it is loaded at a later time.
 ******************************************************************************/
-OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId)
+OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTarget* existingObject)
 {
     if(objectId == 0) {
         return {};
     }
     else {
-        if(objectId > _objects.size())
-            throw Exception(tr("Serialized object ID %1 is out of range.").arg(objectId));
-        ObjectRecord& record = _objects[objectId - 1];
+        auto iter = _objectMap.find(objectId);
+        if(iter == _objectMap.end())
+            throw Exception(tr("Serialized object ID %1 is not defined or out of range.").arg(objectId));
+        ObjectRecord& record = *iter->second;
         if(record.object != nullptr) {
             return record.object;
         }
@@ -315,30 +324,43 @@ OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId)
             throw Exception(tr("Tried to deserialize an object of type '%1' that is no longer available in this version of OVITO.")
                 .arg(QString::fromLatin1(record.classRecord->name)));
         }
+        else if(existingObject && &existingObject->getOOClass() == record.classRecord->clazz) {
+            // Use the provided existing object instance.
+            record.object = existingObject;
+            // Schedule the object for later deserialization.
+            _objectsToLoad.push_back(objectId);
+
+            return record.object;
+        }
         else {
+            // Temporarily establish a non-interactive context to always initialize
+            // object parameters to factory default settings. This is necessary to
+            // ensure that the loaded objects are in a consistent state even if parameters have
+            // been added to the objects in newer OVITO versions since the session state file was written.
+            NoninteractiveContext noninteractiveContext;
+
             // Create an instance of the object class.
             record.object = static_object_cast<RefTarget>(record.classRecord->clazz->createInstance());
 
-            if(record.classRecord->clazz == &DataSet::OOClass()) {
-                // When deserializing a DataSet, the caller may have provided a pre-existing DataSet which should be populated with the serialized sub-objects.
-                // Otherwise, create a new DataSet instance.
-                if(_dataset == nullptr) {
-                    setDatasetToBePopulated(static_object_cast<DataSet>(record.object.get()));
-                }
-                else {
-                    // If an existing DataSet has been provided, load the objects from the stream into
-                    // that existing Dataset instead of creating a new one. This feature is used in DataSet::loadFromFile();
-                    record.object = _dataset;
-                }
-            }
-            else {
-                OVITO_ASSERT(!record.classRecord->clazz->isDerivedFrom(DataSet::OOClass()));
-            }
+            // Schedule the object for later deserialization.
+            _objectsToLoad.push_back(objectId);
 
-            _objectsToLoad.push_back(objectId - 1);
             return record.object;
         }
     }
+}
+
+/******************************************************************************
+* Returns the DataSet object that is currently being loaded from the stream, if any.
+******************************************************************************/
+DataSet* ObjectLoadStream::datasetBeingLoaded() const
+{
+    for(const ObjectRecord& record : _objects) {
+        if(record.object && record.object->getOOClass().isDerivedFrom(DataSet::OOClass())) {
+            return static_object_cast<DataSet>(record.object.get());
+        }
+    }
+    return nullptr;
 }
 
 /******************************************************************************
@@ -349,10 +371,16 @@ void ObjectLoadStream::close()
     // This prevents re-entrance in case of an exception.
     if(!_currentObjectRecord) {
 
+        // Temporarily establish a non-interactive context to always initialize
+        // object parameters to factory default settings. This is necessary to
+        // ensure that the loaded objects are in a consistent state even if parameters have
+        // been added to the objects in newer OVITO versions since the session state file was written.
+        NoninteractiveContext noninteractiveContext;
+
         // Note: Not using range-based for-loop here, because new objects may be appended to the list at any time.
         for(int i = 0; i < _objectsToLoad.size(); i++) { // NOLINT(modernize-loop-convert)
-            quint32 index = _objectsToLoad[i];
-            _currentObjectRecord = &_objects[index];
+            quint32 objectId = _objectsToLoad[i];
+            _currentObjectRecord = _objectMap[objectId];
             RefTarget* currentObject = _currentObjectRecord->object.get();
             OVITO_ASSERT(currentObject != nullptr);
 
@@ -428,34 +456,49 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 OVITO_ASSERT(field->isVector() == field->flags().testFlag(PROPERTY_FIELD_VECTOR));
                 OVITO_ASSERT(fieldRecord.targetClass->isDerivedFrom(*field->targetClass()));
                 if(!field->isVector()) {
-                    OORef<RefTarget> target = loadObject<RefTarget>();
+                    OORef<RefTarget> target = loadObject<RefTarget>(object->getReferenceFieldTarget(field));
                     if(target && !target->getOOClass().isDerivedFrom(*fieldRecord.targetClass)) {
                         throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
                             .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name()).arg(fieldRecord.targetClass->name()).arg(target->getOOClass().name()));
                     }
 #if 0
-                    qDebug() << "  Reference field" << fieldEntry.identifier << " contains" << target;
+                    qDebug() << "  Reference field" << fieldRecord.identifier << " contains" << target;
 #endif
                     field->_singleReferenceWriteFuncRef(object, field, std::move(target));
                 }
                 else {
-                    // Remove any pre-existing targets from the vector reference field.
-                    object->clearReferenceField(field);
-
                     // Load each serialized object and insert it into the vector reference field.
                     qint32 numEntries;
                     *this >> numEntries;
                     OVITO_ASSERT(numEntries >= 0);
+                    qint32 oldCount = object->getVectorReferenceFieldSize(field);
                     for(qint32 i = 0; i < numEntries; i++) {
-                        OORef<RefTarget> target = loadObject<RefTarget>();
-                        if(target && !target->getOOClass().isDerivedFrom(*fieldRecord.targetClass)) {
-                            throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
-                                .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name(), fieldRecord.targetClass->name(), target->getOOClass().name()));
-                        }
+                        quint32 subobjectId;
+                        *this >> subobjectId;
+                        if(subobjectId != std::numeric_limits<quint32>::max()) {
+                            OORef<RefTarget> target = lookupObject<RefTarget>(subobjectId, (i < oldCount) ? object->getVectorReferenceFieldTarget(field, i) : nullptr);
+                            if(target && !target->getOOClass().isDerivedFrom(*fieldRecord.targetClass)) {
+                                throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
+                                    .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name(), fieldRecord.targetClass->name(), target->getOOClass().name()));
+                            }
 #if 0
-                        qDebug() << "  Vector reference field" << fieldRecord.identifier << " contains" << target;
+                            qDebug() << "  Vector reference field" << fieldRecord.identifier << " contains" << target;
 #endif
-                        field->_vectorReferenceInsertFunc(object, field, i, std::move(target));
+                            if(oldCount > i) {
+                                // Reuse existing entry in the vector if possible.
+                                field->_vectorReferenceSetFunc(object, field, i, target.get());
+                            }
+                            else {
+                                // Insert new entry at the end of the vector.
+                                field->_vectorReferenceInsertFunc(object, field, i, std::move(target));
+                            }
+                        }
+                    }
+                    if(oldCount > numEntries) {
+                        // Remove any excess entries that may have existed in the vector before loading.
+                        for(qint32 i = oldCount - 1; i >= numEntries; i--) {
+                            field->_vectorReferenceRemoveFunc(object, field, i);
+                        }
                     }
                 }
             }
@@ -464,7 +507,7 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 qDebug() << "  Reference field" << fieldEntry.identifier << " no longer exists.";
 #endif
                 // The serialized reference field no longer exists in the current program version.
-                // Deserealize dead object and then release it immediately.
+                // Deserialize dead object and then release it immediately.
                 if(fieldRecord.flags & PROPERTY_FIELD_VECTOR) {
                     qint32 numEntries;
                     *this >> numEntries;
@@ -478,7 +521,7 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
         }
         else {
             // Read the value of the property field from the stream.
-            if(field && !field->flags().testFlag(PROPERTY_FIELD_DONT_SERIALIZE)) {
+            if(field && !field->dontSerialize()) {
                 // For backward compatibility with OVITO 3.14.x and earlier:
                 // Skip loading of runtime property fields that have been converted to regular property fields in OVITO 3.15.0.
                 if(!field->flags().testFlag(PROPERTY_FIELD_WAS_RUNTIME_PROPERTY_FIELD) || formatVersion() >= 30016) {

@@ -191,6 +191,12 @@ public:
     /// \param other The source object. Must be of the same class type as this instance.
     void copyPropertyFieldValue(const PropertyFieldDescriptor* field, const RefMaker& other);
 
+    /// \brief Compares the value stored in a non-animatable property field of from another RefMaker instance to this RefMaker object for equality.
+    /// \param field The descriptor of a property field defined by this RefMaker derived class.
+    /// \param other The source object. Must be of the same class type as this instance.
+    /// \return \c true if the property field values of both objects are equal; \c false otherwise.
+    bool comparePropertyFieldValue(const PropertyFieldDescriptor* field, const RefMaker& other) const;
+
     /// \brief Returns the target object a reference field of this RefMaker is pointing to.
     /// \param field The descriptor of a reference property field defined by this RefMaker derived class.
     /// \return The current value of the reference field.

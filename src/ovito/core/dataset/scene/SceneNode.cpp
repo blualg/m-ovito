@@ -439,9 +439,9 @@ bool SceneNode::isSelected() const
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    RefTarget::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+    RefTarget::saveToStream(stream, excludeRecomputableData);
 
     stream.beginChunk(0x03);
     // Save list of weak references to viewports in which the node is hidden.

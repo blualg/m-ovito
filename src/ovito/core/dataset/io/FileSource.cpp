@@ -560,9 +560,9 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    BasePipelineSource::saveToStream(stream, excludeRecomputableData, deltaReferenceObject);
+    BasePipelineSource::saveToStream(stream, excludeRecomputableData);
 
     // Serialize the list of animation frames.
     stream.beginChunk(0x04);

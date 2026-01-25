@@ -46,8 +46,9 @@ public:
 
     /// \brief Initializes the ObjectSaveStream.
     /// \param destination The Qt data stream to which data is written. This stream must support random access.
+    /// \param saveOnlyModifiedObjects If true, only objects that differ from their reference state are saved to the stream to minimize file size.
     /// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-    explicit ObjectSaveStream(QDataStream& destination) : SaveStream(destination) {}
+    explicit ObjectSaveStream(QDataStream& destination, bool saveOnlyModifiedObjects = false) : SaveStream(destination), _saveOnlyModifiedObjects(saveOnlyModifiedObjects) {}
 
     /// Calls close() to close the ObjectSaveStream.
     virtual ~ObjectSaveStream();
@@ -67,7 +68,7 @@ public:
     /// \brief Serializes an object and writes its data to the output stream.
     /// \throw Exception if an I/O error has occurred.
     /// \sa ObjectLoadStream::loadObject()
-    void saveObject(const RefTarget* object, bool excludeRecomputableData = false, const RefTarget* deltaReferenceObject = nullptr);
+    void saveObject(const RefTarget* object, bool excludeRecomputableData = false);
 
     /// \brief Serializes a weak reference to an object and writes it to the output stream.
     /// \throw Exception if an I/O error has occurred.
@@ -85,7 +86,16 @@ private:
         bool excludeRecomputableData;
         quint32 classId;
         qint64 byteOffset;
+        bool canBeSkipped = false;
     };
+
+    /// Determines whether the given object completely matches its corresponding reference state
+    /// and recursively gathers its sub-object references for serialization.
+    void gatherSubObjectsAndDetectInitialState(quint32 objectId);
+
+    /// Determines whether the subtree rooted at the given object can be completely
+    /// skipped from serialization.
+    bool checkSkippableSubTree(ObjectRecord& objectRecord);
 
     /// Serializes the values of the current object's parameter fields.
     /// This method is called from RefTarget::saveToStream().
@@ -99,9 +109,6 @@ private:
 
     /// Writes the information associated with an object class to the stream.
     void serializeObjectClass(OvitoClassPtr clazz);
-
-    /// Writes the information associated with an object instance to the stream.
-    void serializeObjectInstance(const ObjectRecord& objectRecord);
 
     /// All objects registered for serialization and their corresponding numeric IDs.
     std::unordered_map<const RefTarget*, quint32> _objectMap;
@@ -123,6 +130,9 @@ private:
 
     /// The object object currently being saved to the stream.
     ObjectRecord* _currentObjectRecord = nullptr;
+
+    /// If true, only objects that differ from their factory default state are saved to the stream.
+    bool _saveOnlyModifiedObjects = false;
 
     friend class RefTarget; // for access to serializeParameterFieldValues()
 };

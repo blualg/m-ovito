@@ -191,7 +191,6 @@ protected:
     /// \brief Saves the internal state of this object to an output stream.
     /// \param stream The destination data stream.
     /// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.
-    /// \param deltaReferenceObject An optional default-constructed reference object, which is used to identify unchanged parameters that don't need to be serialized.
     ///
     /// Subclasses can override this method to write their internal state
     /// to a file. The derived class must call the base implementation saveToStream() first
@@ -199,7 +198,7 @@ protected:
     ///
     /// The default implementation of this method does nothing.
     /// \sa loadFromStream()
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const;
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const;
 
     /// \brief Loads the internal state of this class from an input stream.
     /// \param stream The source data stream.

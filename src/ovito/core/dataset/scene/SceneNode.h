@@ -264,7 +264,7 @@ protected:
     virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
     /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const override;
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;

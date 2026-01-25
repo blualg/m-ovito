@@ -82,19 +82,6 @@ void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void StandardCameraSource::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    AbstractCameraSource::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.10.6:
-    if(!cameraVis())
-        setCameraVis(OORef<CameraVis>::create());
-}
-
-/******************************************************************************
 * Lets the source generate a camera object for the given animation time.
 ******************************************************************************/
 DataOORef<const AbstractCameraObject> StandardCameraSource::cameraObject(AnimationTime time) const

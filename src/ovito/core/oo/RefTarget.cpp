@@ -257,7 +257,7 @@ bool RefTarget::isBeingEdited() const
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void RefTarget::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData, const RefTarget* deltaReferenceObject) const
+void RefTarget::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     // Serializes the values of the object's parameter fields.
     stream.serializeParameterFieldValues(this);

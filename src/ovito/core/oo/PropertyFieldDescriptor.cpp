@@ -32,6 +32,7 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
     void (*propertyStorageCopyFunc)(RefMaker*, const PropertyFieldDescriptor*, const RefMaker*),
     QVariant (*propertyStorageReadFunc)(const RefMaker*, const PropertyFieldDescriptor*),
     void (*propertyStorageWriteFunc)(RefMaker*, const PropertyFieldDescriptor*, const QVariant&),
+    bool (*propertyStorageCompareFunc)(const RefMaker*, const PropertyFieldDescriptor*, const RefMaker*),
     void (*propertyStorageSaveFunc)(const RefMaker*, const PropertyFieldDescriptor*, SaveStream&),
     void (*propertyStorageLoadFunc)(RefMaker*, const PropertyFieldDescriptor*, LoadStream&),
     void (*propertyStorageTakeSnapshotFunc)(RefMaker*, const PropertyFieldDescriptor*),
@@ -40,6 +41,7 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
         _propertyStorageCopyFunc(propertyStorageCopyFunc),
         _propertyStorageReadFunc(propertyStorageReadFunc),
         _propertyStorageWriteFunc(propertyStorageWriteFunc),
+        _propertyStorageCompareFunc(propertyStorageCompareFunc),
         _propertyStorageSaveFunc(propertyStorageSaveFunc),
         _propertyStorageLoadFunc(propertyStorageLoadFunc),
         _propertyStorageTakeSnapshotFunc(propertyStorageTakeSnapshotFunc),
@@ -56,6 +58,8 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
         this->_next = definingClass->_firstPropertyField;
         definingClass->_firstPropertyField = this;
     }
+    OVITO_ASSERT(_propertyStorageSaveFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE));
+    OVITO_ASSERT(_propertyStorageLoadFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE));
 }
 
 /// Constructor for a property field that stores a single reference to a RefTarget.

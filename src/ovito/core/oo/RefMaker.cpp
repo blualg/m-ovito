@@ -71,6 +71,19 @@ void RefMaker::copyPropertyFieldValue(const PropertyFieldDescriptor* field, cons
 }
 
 /******************************************************************************
+* Compares the value stored in a non-animatable property field of from another
+* RefMaker instance to this RefMaker object for equality.
+******************************************************************************/
+bool RefMaker::comparePropertyFieldValue(const PropertyFieldDescriptor* field, const RefMaker& other) const
+{
+    OVITO_ASSERT_MSG(!field->isReferenceField(), "RefMaker::comparePropertyFieldValue", "This function may be used only to access property fields and not reference fields.");
+    OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::comparePropertyFieldValue", "The property field has not been defined in this class or its base classes.");
+    OVITO_ASSERT_MSG(other.getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::comparePropertyFieldValue", "The property field has not been defined in the source's class or its base classes.");
+    OVITO_ASSERT(field->_propertyStorageCompareFunc != nullptr);
+    return field->_propertyStorageCompareFunc(this, field, &other);
+}
+
+/******************************************************************************
 * Returns the target object a reference field of this RefMaker is pointing to.
 ******************************************************************************/
 RefTarget* RefMaker::getReferenceFieldTarget(const PropertyFieldDescriptor* field) const
