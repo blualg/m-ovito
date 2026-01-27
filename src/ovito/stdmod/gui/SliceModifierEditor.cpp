@@ -326,9 +326,9 @@ void SliceModifierEditor::onAlignPlaneToView()
         }
 
         // Perform rounding of almost axis-aligned normal vectors.
-        if(std::abs(newPlaneLocal.normal.x()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.x() = 0;
-        if(std::abs(newPlaneLocal.normal.y()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.y() = 0;
-        if(std::abs(newPlaneLocal.normal.z()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.z() = 0;
+        if(std::abs(newPlaneLocal.normal.x()) < Ovito::epsilon_v<FloatType>) newPlaneLocal.normal.x() = 0;
+        if(std::abs(newPlaneLocal.normal.y()) < Ovito::epsilon_v<FloatType>) newPlaneLocal.normal.y() = 0;
+        if(std::abs(newPlaneLocal.normal.z()) < Ovito::epsilon_v<FloatType>) newPlaneLocal.normal.z() = 0;
 
         mod->setNormal(newPlaneLocal.normal.normalized());
         mod->setDistance(newPlaneLocal.dist);
@@ -457,8 +457,8 @@ void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEv
 
             // Do not select the same point twice.
             bool ignore = false;
-            if(_numPickedPoints >= 1 && _pickedPoints[0].equals(pickResult->hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
-            if(_numPickedPoints >= 2 && _pickedPoints[1].equals(pickResult->hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
+            if(_numPickedPoints >= 1 && _pickedPoints[0].equals(pickResult->hitLocation(), Ovito::epsilon_v<FloatType>)) ignore = true;
+            if(_numPickedPoints >= 2 && _pickedPoints[1].equals(pickResult->hitLocation(), Ovito::epsilon_v<FloatType>)) ignore = true;
 
             if(!ignore) {
                 _pickedPoints[_numPickedPoints] = pickResult->hitLocation();
@@ -490,7 +490,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 
     _editor->handleExceptions([&] {
         Plane3 worldPlane(_pickedPoints[0], _pickedPoints[1], _pickedPoints[2], true);
-        if(worldPlane.normal.equals(Vector3::Zero(), FLOATTYPE_EPSILON))
+        if(worldPlane.normal.equals(Vector3::Zero(), Ovito::epsilon_v<FloatType>))
             throw Exception(tr("Cannot set the new slicing plane. The three selected points are colinear."));
 
         // Get the object-to-world transformation for the currently selected pipeline.

@@ -434,10 +434,10 @@ void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const S
                 isClipped = true;
                 break;
             }
-            else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
+            else if(c1 > Ovito::epsilon_v<FloatType> && c2 < -Ovito::epsilon_v<FloatType>) {
                 p1 += (p2 - p1) * (c1 / (c1 - c2));
             }
-            else if(c1 < -FLOATTYPE_EPSILON && c2 > FLOATTYPE_EPSILON) {
+            else if(c1 < -Ovito::epsilon_v<FloatType> && c2 > Ovito::epsilon_v<FloatType>) {
                 p2 += (p1 - p2) * (c2 / (c2 - c1));
             }
         }

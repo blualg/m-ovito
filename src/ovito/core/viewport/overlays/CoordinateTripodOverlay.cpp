@@ -365,7 +365,7 @@ FloatType CoordinateTripodOverlay::paintSolidArrow(QPainter& painter, const Vect
         FloatType offset = len / tripodSize * lineWidth;
         cylPth.moveTo(offset, lineWidth);
         cylPth.lineTo(len, lineWidth);
-        if(std::abs(dir3d.z()) > FLOATTYPE_EPSILON) {
+        if(std::abs(dir3d.z()) > Ovito::epsilon_v<FloatType>) {
             qreal d = -dir3d.z() / tripodSize * lineWidth;
             cylPth.arcTo(QRectF(len - d, -lineWidth, d*2, lineWidth*2), 270.0, 180.0);
             if(dir3d.z() > 0) {
@@ -376,7 +376,7 @@ FloatType CoordinateTripodOverlay::paintSolidArrow(QPainter& painter, const Vect
             cylPth.lineTo(len, -lineWidth);
         }
         cylPth.lineTo(offset, -lineWidth);
-        if(std::abs(dir3d.z()) > FLOATTYPE_EPSILON) {
+        if(std::abs(dir3d.z()) > Ovito::epsilon_v<FloatType>) {
             qreal d = -dir3d.z() / tripodSize * lineWidth;
             cylPth.arcTo(QRectF(offset - d, -lineWidth, d*2, lineWidth*2), 90.0, -180.0);
         }

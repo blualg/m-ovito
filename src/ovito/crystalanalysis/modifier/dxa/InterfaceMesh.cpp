@@ -94,7 +94,8 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
             // Check if edge is spanning more than half of a periodic simulation cell.
             for(size_t dim = 0; dim < 3; dim++) {
                 if(this->hasPbc(dim)) {
-                    if(std::abs(this->domain().reciprocalCellMatrix().prodrow(_edges[edge].physicalVector, dim)) >= FloatType(0.5) + FLOATTYPE_EPSILON)
+                    if(std::abs(this->domain().reciprocalCellMatrix().prodrow(_edges[edge].physicalVector, dim)) >=
+                       FloatType(0.5) + Ovito::epsilon_v<FloatType>)
                         StructureAnalysis::generateCellTooSmallError(dim);
                 }
             }

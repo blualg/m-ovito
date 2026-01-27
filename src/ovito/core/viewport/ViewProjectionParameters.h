@@ -105,8 +105,7 @@ struct ViewProjectionParameters
             Point3 p1 = projectionMatrix * p;
             Point3 p2 = projectionMatrix * (p + Vector3(0,1,0));
             FloatType dist = (p1 - p2).length();
-            if(std::abs(dist) < FLOATTYPE_EPSILON)
-                return 1;
+            if(std::abs(dist) < Ovito::epsilon_v<FloatType>) return 1;
             return FloatType(0.8) * baseSize / dist / (FloatType)height;
         }
         else {

@@ -203,7 +203,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
                 FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - std::sqrt(FloatType(5)));
                 Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
-                OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
+                OVITO_ASSERT(std::abs(dir.length() - 1.0) < Ovito::epsilon_v<FloatType>);
 
                 // Set up view projection.
                 ViewProjectionParameters projParams;

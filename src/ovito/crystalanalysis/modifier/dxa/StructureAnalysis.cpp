@@ -345,7 +345,7 @@ void StructureAnalysis::initializeListOfStructures()
                 for(int i2 = i1 + 1; i2 < coordStruct->numNeighbors; i2++) {
                     if(!coordStruct->neighborArray.neighborBond(neighIndex, i2)) continue;
                     tm.column(2) = coordStruct->latticeVectors[i2];
-                    if(std::abs(tm.determinant()) > FLOATTYPE_EPSILON) {
+                    if(std::abs(tm.determinant()) > Ovito::epsilon_v<FloatType>) {
                         coordStruct->commonNeighbors[neighIndex][0] = i1;
                         coordStruct->commonNeighbors[neighIndex][1] = i2;
                         found = true;
@@ -374,17 +374,17 @@ void StructureAnalysis::initializeListOfStructures()
         for(int i = 0; i < coordStruct.numNeighbors && n < 3; i++) {
             tm1.column(n) = coordStruct.latticeVectors[i];
             if(n == 1) {
-                if(tm1.column(0).cross(tm1.column(1)).squaredLength() <= FLOATTYPE_EPSILON)
+                if(tm1.column(0).cross(tm1.column(1)).squaredLength() <= Ovito::epsilon_v<FloatType>)
                     continue;
             }
             else if(n == 2) {
-                if(std::abs(tm1.determinant()) <= FLOATTYPE_EPSILON)
+                if(std::abs(tm1.determinant()) <= Ovito::epsilon_v<FloatType>)
                     continue;
             }
             nindices[n++] = i;
         }
         OVITO_ASSERT(n == 3);
-        OVITO_ASSERT(std::abs(tm1.determinant()) > FLOATTYPE_EPSILON);
+        OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon_v<FloatType>);
         Matrix3 tm1inverse = tm1.inverse();
 
         // Find symmetry permutations.
@@ -740,7 +740,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
                 // Check if neighbor vectors spans more than half of a periodic simulation cell.
                 for(size_t dim = 0; dim < 3; dim++) {
                     if(cell().hasPbc(dim)) {
-                        if(std::abs(cell().reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON)
+                        if(std::abs(cell().reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+Ovito::epsilon_v<FloatType>)
                             StructureAnalysis::generateCellTooSmallError(dim);
                     }
                 }
@@ -859,7 +859,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
                 }
 
                 // Determine the misorientation matrix.
-                OVITO_ASSERT(std::abs(tm1.determinant()) > FLOATTYPE_EPSILON);
+                OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon_v<FloatType>);
                 Matrix3 tm2inverse;
                 if(!tm2.inverse(tm2inverse)) continue;
                 Matrix3 transition = tm1 * tm2inverse;
@@ -1015,8 +1015,8 @@ void StructureAnalysis::connectClusters(TaskProgress& progress)
                 continue;
 
             // Determine the misorientation matrix.
-            OVITO_ASSERT(std::abs(tm1.determinant()) > FLOATTYPE_EPSILON);
-            //OVITO_ASSERT(std::abs(tm2.determinant()) > FLOATTYPE_EPSILON);
+            OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon_v<FloatType>);
+            //OVITO_ASSERT(std::abs(tm2.determinant()) > Ovito::epsilon_v<FloatType>);
             Matrix3 tm1inverse;
             if(!tm1.inverse(tm1inverse)) continue;
             Matrix3 transition = tm2 * tm1inverse;

@@ -40,7 +40,9 @@ AffineDecomposition::AffineDecomposition(const AffineTransformation& tm)
     Matrix4 A(tm);
     decomp_affine(A);
 
-    OVITO_ASSERT_MSG(std::abs(scaling.Q.dot(scaling.Q) - 1.0) <= FLOATTYPE_EPSILON, "AffineDecomposition", "Resulting quaternion is not normalized.");
+    OVITO_ASSERT_MSG(std::abs(scaling.Q.dot(scaling.Q) - 1.0) <= Ovito::epsilon_v<FloatType>,
+                     "AffineDecomposition",
+                     "Resulting quaternion is not normalized.");
     if(std::abs(scaling.Q.w()) >= FloatType(1) || scaling.S.equals(Vector3(1,1,1)))
         scaling.Q.setIdentity();
 
@@ -59,7 +61,7 @@ AffineDecomposition::AffineDecomposition(const AffineTransformation& tm)
     F(0,0) *= f; F(1,1) *= f; F(2,2) *= f;
     AffineTransformation product = T * F * R * S;
     for(size_t i=0; i<4; i++) {
-        if(!product[i].equals(tm[i], FLOATTYPE_EPSILON)) {
+        if(!product[i].equals(tm[i], Ovito::epsilon_v<FloatType>)) {
             qDebug() << "Original matrix: " << tm;
             qDebug() << "Product of affine parts: " << product;
             OVITO_ASSERT_MSG(false, "AffineDecomposition", "Could not decompose matrix to affine transformations.");
@@ -319,8 +321,7 @@ FloatType polar_decomp(Matrix4& M, Matrix4& Q, Matrix4& S)
         E_one = norm_one(Ek);
         M_one = norm_one(Mk);
         M_inf = norm_inf(Mk);
-    }
-    while(E_one > M_one * FLOATTYPE_EPSILON);
+    } while(E_one > M_one * Ovito::epsilon_v<FloatType>);
     mat_tpose(Q,=,Mk,3);
     mat_pad(Q);
     mat_mult(Mk, M, S);

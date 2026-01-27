@@ -131,7 +131,7 @@ public:
     /// The rotation angle calculated from the quaternion will be in the range [0, 2*pi].
     constexpr explicit RotationT(const QuaternionT<T>& q) {
         T scaleSquared = q.x()*q.x() + q.y()*q.y() + q.z()*q.z();
-        if(scaleSquared <= FloatTypeEpsilon<T>()) {
+        if(scaleSquared <= Ovito::epsilon_v<T>) {
             _angle = T(0);
             _axis = Vector_3<T>(0, 0, 1);
         }
@@ -143,7 +143,7 @@ public:
             else
                 _angle = std::acos(q.w()) * T(2);
             _axis = Vector_3<T>(q.x(), q.y(), q.z()) / std::sqrt(scaleSquared);
-            OVITO_ASSERT(std::abs(_axis.squaredLength() - T(1)) <= FloatTypeEpsilon<T>());
+            OVITO_ASSERT(std::abs(_axis.squaredLength() - T(1)) <= Ovito::epsilon_v<T>);
         }
     }
 
@@ -154,11 +154,11 @@ public:
         Vector_3<T> an = a.normalized();
         Vector_3<T> bn = b.normalized();
         T cos = an.dot(bn);
-        if(cos > T(1) - FloatTypeEpsilon<T>()) {
+        if(cos > T(1) - Ovito::epsilon_v<T>) {
             _angle = 0;
             _axis = Vector_3<T>(0,0,1);
         }
-        else if(cos < T(-1) + FloatTypeEpsilon<T>()) {
+        else if(cos < T(-1) + Ovito::epsilon_v<T>) {
             _angle = T(FLOATTYPE_PI);
             _axis = Vector_3<T>(0,0,1);
         }
@@ -253,7 +253,8 @@ public:
     ///        the absolute differences in the X, Y, and Z components of the rotation vector and the angle are all smaller than this tolerance value.
     ///        Note that rotations with equal but opposite axis and angle are also considered equal.
     /// \return \c true if this rotation is equal to the rotation \a r within the given tolerance.
-    constexpr bool equals(const RotationT& r, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const RotationT& r, T tolerance = Ovito::epsilon_v<T>) const
+    {
         return (std::abs(angle() - r.angle()) <= tolerance && axis().equals( r.axis(), tolerance)) ||
                (std::abs(angle() + r.angle()) <= tolerance && axis().equals(-r.axis(), tolerance));
     }
@@ -343,7 +344,7 @@ public:
         // fashion. To this end, we test all possible combinations of revolutions until
         // we find the one that yields the original axis-angle rotation. Multiple equivalent decompositions
         // are ranked, because we prefer Euler decompositions that rotate about a single axis.
-        int maxRevolutions = (int)std::floor(std::abs(angle()) / T(FLOATTYPE_PI*2) + T(0.5 + FLOATTYPE_EPSILON));
+        int maxRevolutions = (int)std::floor(std::abs(angle()) / T(FLOATTYPE_PI * 2) + T(0.5 + Ovito::epsilon_v<FloatType>));
         if(maxRevolutions == 0) return euler;
         Vector_3<T> bestDecomposition = euler;
         int bestDecompositionRanking = -1;
@@ -357,7 +358,8 @@ public:
                 for(int zr = -maxRevolutionsZ; zr <= maxRevolutionsZ; zr++) {
                     euler2.z() = euler.z() + T(FLOATTYPE_PI*2) * zr;
                     if(equals(fromEuler(euler2, axisSequence))) {
-                        int ranking = int(std::abs(euler2.x()) <= FloatTypeEpsilon<T>()) + int(std::abs(euler2.y()) <= FloatTypeEpsilon<T>()) + int(std::abs(euler2.z()) <= FloatTypeEpsilon<T>());
+                        int ranking = int(std::abs(euler2.x()) <= Ovito::epsilon_v<T>) + int(std::abs(euler2.y()) <= Ovito::epsilon_v<T>) +
+                                      int(std::abs(euler2.z()) <= Ovito::epsilon_v<T>);
                         if(ranking > bestDecompositionRanking) {
                             bestDecomposition = euler2;
                             bestDecompositionRanking = ranking;
@@ -376,7 +378,7 @@ public:
     /// The rotation angle is equal to the length of v.
     constexpr static RotationT fromRodriguesVector(const Vector_3<T>& v)
     {
-        if(v.squaredLength() < FloatTypeEpsilon<T>() * FloatTypeEpsilon<T>()) {
+        if(v.squaredLength() < Ovito::epsilon_v<T> * Ovito::epsilon_v<T>) {
             return RotationT::Identity();
         }
         return RotationT(v.normalized(), v.length());

@@ -106,7 +106,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
     // Compute projection matrix.
     params.isPerspective = isPerspective();
     if(params.isPerspective) {
-        if(bb.minc.z() < -FLOATTYPE_EPSILON) {
+        if(bb.minc.z() < -Ovito::epsilon_v<FloatType>) {
             params.zfar = -bb.minc.z();
             params.znear = std::max(-bb.maxc.z(), params.zfar * FloatType(1e-4));
         }
@@ -117,7 +117,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
 
         // Get the camera angle.
-        params.fieldOfView = qBound(FLOATTYPE_EPSILON, fov(), FLOATTYPE_PI - FLOATTYPE_EPSILON);
+        params.fieldOfView = qBound(Ovito::epsilon_v<FloatType>, fov(), FLOATTYPE_PI - Ovito::epsilon_v<FloatType>);
 
         params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
     }
@@ -132,7 +132,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         }
 
         // Get the camera zoom.
-        params.fieldOfView = qMax(FLOATTYPE_EPSILON, zoom());
+        params.fieldOfView = qMax(Ovito::epsilon_v<FloatType>, zoom());
 
         params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
                             -params.fieldOfView, params.fieldOfView, params.znear, params.zfar);

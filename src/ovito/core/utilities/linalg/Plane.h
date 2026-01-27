@@ -132,7 +132,7 @@ public:
         OVITO_ASSERT_MSG(len != T(0), "Plane_3::normalizePlane()", "The normal vector of the plane must not be the null vector.");
         dist /= len;
         normal /= len;
-        OVITO_ASSERT(std::abs(normal.squaredLength() - T(1)) <= FloatTypeEpsilon<T>());
+        OVITO_ASSERT(std::abs(normal.squaredLength() - T(1)) <= Ovito::epsilon_v<T>);
     }
 
     ////////////////////////////////// operators /////////////////////////////////
@@ -153,7 +153,8 @@ public:
     /// \return 1 if \a p is on the POSITIVE side of the plane,
     ///         -1 if \a p is on the NEGATIVE side, or 0 if \a p is ON the plane within the given tolerance.
     /// \sa pointDistance()
-    constexpr int classifyPoint(const Point_3<T>& p, const T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr int classifyPoint(const Point_3<T>& p, const T tolerance = Ovito::epsilon_v<T>) const
+    {
         OVITO_ASSERT_MSG(tolerance >= 0, "Plane_3::classifyPoint()", "Tolerance value must be non-negative.");
         T d = pointDistance(p);
         if(d < -tolerance) return -1;
@@ -197,7 +198,7 @@ public:
     /// \sa intersection()
     constexpr T intersectionT(const Ray3& ray, T epsilon = T(0)) const {
         // The plane's normal vector should be normalized.
-        OVITO_ASSERT(std::abs(normal.squaredLength() - T(1)) <= FloatTypeEpsilon<T>());
+        OVITO_ASSERT(std::abs(normal.squaredLength() - T(1)) <= Ovito::epsilon_v<T>);
         T dot = normal.dot(ray.dir);
         if(std::abs(dot) <= epsilon) return std::numeric_limits<T>::max();
         return -pointDistance(ray.base) / dot;

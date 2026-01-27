@@ -217,7 +217,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     const SimulationCell* inputCell = state.getObject<SimulationCell>();
     if(!inputCell)
         throw Exception(tr("No simulation cell defined. The spatial correlation function cannot be computed without a simulation cell."));
-    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
+    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < Ovito::epsilon_v<FloatType>)
         throw Exception(tr("Simulation cell is degenerate. Cannot compute spatial correlation function."));
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -616,7 +616,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
     size_t vecComponent2 = _vecComponent2;
-    FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
+    FloatType gridSpacing = (neighCutoff() + Ovito::epsilon_v<FloatType>) / neighCorrelation()->size();
     EnumerableThreadSpecific<std::vector<FloatType>> threadLocalCorrelations;
     EnumerableThreadSpecific<std::vector<int64_t>> threadLocalRDFs;
     parallelForInnerOuter(particleCount, 4096, *this, [&](auto&& iterate) {

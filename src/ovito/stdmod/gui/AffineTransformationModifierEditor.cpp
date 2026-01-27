@@ -297,8 +297,7 @@ void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
         tm.translation() = tm * (cell->matrix() * tm.translation());
     }
     for(size_t dim = 0; dim < 3; dim++)
-        if(std::abs(tm.translation()[dim]) < FLOATTYPE_EPSILON)
-            tm.translation()[dim] = 0;
+        if(std::abs(tm.translation()[dim]) < Ovito::epsilon_v<FloatType>) tm.translation()[dim] = 0;
 
     mod->setTransformationTM(tm);
 }
@@ -406,7 +405,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
             p2.normalizePlane();
             FloatType d = p1.normal.dot(p2.normal);
             FloatType denom = (FloatType(1) - d*d);
-            if(std::abs(denom) > FLOATTYPE_EPSILON) {
+            if(std::abs(denom) > Ovito::epsilon_v<FloatType>) {
                 FloatType c1 = (p1.dist  - p2.dist * d) / denom;
                 FloatType c2 = (p2.dist  - p1.dist * d) / denom;
                 Vector3 center = c1 * p1.normal + c2 * p2.normal;

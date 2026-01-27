@@ -180,7 +180,8 @@ public:
     /// \param p The input point.
     /// \param epsilon This threshold is used to test whether the point is on the boundary of the box.
     /// \return -1 if \a p is outside the box; 0 if \a p is on the boundary of the box within the specified tolerance; +1 if inside the box.
-    int classifyPoint(const Point_3<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
+    int classifyPoint(const Point_3<T>& p, T epsilon = Ovito::epsilon_v<T>) const
+    {
         if(p.x() > maxc.x() + epsilon || p.y() > maxc.y() + epsilon || p.z() > maxc.z() + epsilon) return -1;
         if(p.x() < minc.x() - epsilon || p.y() < minc.y() - epsilon || p.z() < minc.z() - epsilon) return -1;
         if(p.x() < maxc.x() - epsilon && p.x() > minc.x() + epsilon &&

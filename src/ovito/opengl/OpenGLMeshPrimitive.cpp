@@ -166,8 +166,8 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         float maxValue = primitive.pseudoColorMapping().maxValue();
         // Avoid division by zero due to degenerate value interval.
         if(minValue == maxValue) {
-            minValue = std::min(minValue - FloatTypeEpsilon<float>(), std::nextafter(minValue, std::numeric_limits<float>::lowest()));
-            maxValue = std::max(maxValue + FloatTypeEpsilon<float>(), std::nextafter(maxValue, std::numeric_limits<float>::max()));
+            minValue = std::min(minValue - Ovito::epsilon_v<float>, std::nextafter(minValue, std::numeric_limits<float>::lowest()));
+            maxValue = std::max(maxValue + Ovito::epsilon_v<float>, std::nextafter(maxValue, std::numeric_limits<float>::max()));
         }
         shader.setUniformValue("color_range_min", minValue);
         shader.setUniformValue("color_range_max", maxValue);
