@@ -505,6 +505,7 @@ RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr SceneNode::
             return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numChildren;
                 stream >> numChildren;
+                static_object_cast<SceneNode>(&owner)->_children.clear(&owner, PROPERTY_FIELD(SceneNode::children));
                 for(qint32 i = 0; i < numChildren; i++) {
                     static_object_cast<SceneNode>(&owner)->_children.insert(&owner, PROPERTY_FIELD(SceneNode::children), i, stream.loadObject<Pipeline>()->deserializationSceneNode());
                 }

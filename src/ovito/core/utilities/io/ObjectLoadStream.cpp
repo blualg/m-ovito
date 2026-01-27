@@ -324,9 +324,13 @@ OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTar
             throw Exception(tr("Tried to deserialize an object of type '%1' that is no longer available in this version of OVITO.")
                 .arg(QString::fromLatin1(record.classRecord->name)));
         }
-        else if(existingObject && &existingObject->getOOClass() == record.classRecord->clazz) {
+        else if(existingObject && &existingObject->getOOClass() == record.classRecord->clazz && !existingObject->isBeingLoaded()) {
             // Use the provided existing object instance.
             record.object = existingObject;
+
+            // Mark the object as being loaded.
+            record.object->_flags.setFlag(OvitoObject::BeingLoaded, true);
+
             // Schedule the object for later deserialization.
             _objectsToLoad.push_back(objectId);
 
@@ -341,6 +345,9 @@ OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTar
 
             // Create an instance of the object class.
             record.object = static_object_cast<RefTarget>(record.classRecord->clazz->createInstance());
+
+            // Mark the object as being loaded.
+            record.object->_flags.setFlag(OvitoObject::BeingLoaded, true);
 
             // Schedule the object for later deserialization.
             _objectsToLoad.push_back(objectId);
@@ -370,58 +377,56 @@ void ObjectLoadStream::close()
 {
     // This prevents re-entrance in case of an exception.
     if(!_currentObjectRecord) {
+        try {
+            // Note: Not using range-based for-loop here, because new objects may be appended to the list at any time.
+            for(int i = 0; i < _objectsToLoad.size(); i++) { // NOLINT(modernize-loop-convert)
+                quint32 objectId = _objectsToLoad[i];
+                _currentObjectRecord = _objectMap[objectId];
+                RefTarget* currentObject = _currentObjectRecord->object.get();
+                OVITO_ASSERT(currentObject != nullptr);
+                OVITO_ASSERT(currentObject->isBeingLoaded());
 
-        // Temporarily establish a non-interactive context to always initialize
-        // object parameters to factory default settings. This is necessary to
-        // ensure that the loaded objects are in a consistent state even if parameters have
-        // been added to the objects in newer OVITO versions since the session state file was written.
-        NoninteractiveContext noninteractiveContext;
+                // Seek to object data.
+                setFilePosition(_currentObjectRecord->fileOffset);
 
-        // Note: Not using range-based for-loop here, because new objects may be appended to the list at any time.
-        for(int i = 0; i < _objectsToLoad.size(); i++) { // NOLINT(modernize-loop-convert)
-            quint32 objectId = _objectsToLoad[i];
-            _currentObjectRecord = _objectMap[objectId];
-            RefTarget* currentObject = _currentObjectRecord->object.get();
-            OVITO_ASSERT(currentObject != nullptr);
-
-            // Seek to object data.
-            setFilePosition(_currentObjectRecord->fileOffset);
-
-            // Load class contents.
-            try {
-                OVITO_ASSERT(currentObject->isBeingLoaded() == false);
-                currentObject->_flags.setFlag(OvitoObject::BeingLoaded, true);
-
-                // Let the object load its internal state.
-                currentObject->loadFromStream(*this);
-            }
-            catch(Exception& ex) {
-                // Reset the is-being-loaded flag of all objects.
-                for(const ObjectRecord& record : _objects) {
-                    if(record.object)
-                        record.object->_flags.setFlag(OvitoObject::BeingLoaded, false);
+                // Load class contents.
+                try {
+                    // Let the object load its internal state.
+                    currentObject->loadFromStream(*this);
                 }
-                throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(currentObject->getOOClass().name()));
+                catch(Exception& ex) {
+                    throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(currentObject->getOOClass().name()));
+                }
+            }
+
+            // Now that all references are in place, call post-processing function on each loaded object.
+            for(const ObjectRecord& record : _objects) {
+                if(record.object)
+                    record.object->loadFromStreamComplete(*this);
+            }
+
+            // Call post-load callbacks.
+            for(auto& callback : _postLoadCallbacks)
+                std::move(callback)();
+            _postLoadCallbacks.clear();
+
+            // Reset the is-being-loaded flag of all objects.
+            for(const ObjectRecord& record : _objects) {
+                if(record.object) {
+                    OVITO_ASSERT(record.object->isBeingLoaded());
+                    record.object->_flags.setFlag(OvitoObject::BeingLoaded, false);
+                }
             }
         }
-
-        // Now that all references are in place, call post-processing function on each loaded object.
-        for(const ObjectRecord& record : _objects) {
-            if(record.object)
-                record.object->loadFromStreamComplete(*this);
-        }
-
-        // Call post-load callbacks.
-        for(auto& callback : _postLoadCallbacks)
-            std::move(callback)();
-        _postLoadCallbacks.clear();
-
-        // Reset the is-being-loaded flag of all objects.
-        for(const ObjectRecord& record : _objects) {
-            if(record.object) {
-                OVITO_ASSERT(record.object->isBeingLoaded());
-                record.object->_flags.setFlag(OvitoObject::BeingLoaded, false);
+        catch(...) {
+            // Clean up by resetting the is-being-loaded flag of all objects.
+            for(const ObjectRecord& record : _objects) {
+                if(record.object) {
+                    OVITO_ASSERT(record.object->isBeingLoaded());
+                    record.object->_flags.setFlag(OvitoObject::BeingLoaded, false);
+                }
             }
+            throw;
         }
     }
 
@@ -504,7 +509,7 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
             }
             else {
 #if 0
-                qDebug() << "  Reference field" << fieldEntry.identifier << " no longer exists.";
+                qDebug() << "  Reference field" << fieldRecord.identifier << " no longer exists.";
 #endif
                 // The serialized reference field no longer exists in the current program version.
                 // Deserialize dead object and then release it immediately.
