@@ -83,6 +83,12 @@ protected Q_SLOTS:
     /// This called when the user double clicks on an item in the modifier stack.
     void onModifierStackDoubleClicked(const QModelIndex& index);
 
+    /// Is called when the user triggers the "Export as Snippet..." action.
+    void onExportModifierSnippet();
+
+    /// Is called when the user triggers the "Import from Snippet..." action.
+    void onImportModifierSnippet();
+
 private:
 
     /// Creates the rollout panel that shows information about the application whenever no object is selected.

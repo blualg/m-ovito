@@ -38,6 +38,8 @@
 #include <ovito/gui/desktop/widgets/general/InfoItemDelegate.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
 #include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
+#include <ovito/gui/desktop/dialogs/ExportObjectSnippetDialog.h>
+#include <ovito/gui/desktop/dialogs/ImportObjectSnippetDialog.h>
 #include "CommandPanel.h"
 #include "ModifyCommandPage.h"
 
@@ -141,6 +143,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_COPY_ITEM));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_MODIFIER_EXPORT_SNIPPET));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_MODIFIER_IMPORT_SNIPPET));
+    separator = new QAction(_pipelineWidget);
+    separator->setSeparator(true);
+    _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
     separator = new QAction(_pipelineWidget);
@@ -198,6 +205,9 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
             dlg.exec();
         }
     });
+
+    connect(actionManager()->getAction(ACTION_MODIFIER_EXPORT_SNIPPET), &QAction::triggered, this, &ModifyCommandPage::onExportModifierSnippet);
+    connect(actionManager()->getAction(ACTION_MODIFIER_IMPORT_SNIPPET), &QAction::triggered, this, &ModifyCommandPage::onImportModifierSnippet);
 
     layout->addWidget(_splitter, 2, 0, 1, 2);
     layout->setRowStretch(2, 1);
@@ -291,6 +301,88 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
             vis->setEnabled(!vis->isEnabled());
         });
     }
+}
+
+/******************************************************************************
+* Is called when the user triggers the "Export as Snippet..." action.
+******************************************************************************/
+void ModifyCommandPage::onExportModifierSnippet()
+{
+    handleExceptions([&]() {
+        // Collect all currently selected modifiers.
+        std::vector<OORef<RefTarget>> objects;
+        QStringList descriptions;
+        auto addModificationNode = [&](ModificationNode* modNode) {
+            QString description = modNode->objectTitle();
+            if(_pipelineListModel->selectedSceneNode()) {
+                QString shortInfo = modNode->getPipelineEditorShortInfo(_pipelineListModel->selectedSceneNode()->scene()).toString();
+                if(!shortInfo.isEmpty())
+                    description += " (" + shortInfo + ")";
+            }
+            descriptions.push_back(description);
+            objects.push_back(modNode->modifier());
+        };
+        for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
+                addModificationNode(modNode);
+            }
+            else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
+                if(!group->isCollapsed())
+                    continue;
+                for(ModificationNode* modNode : group->nodes()) {
+                    addModificationNode(modNode);
+                }
+            }
+        }
+        std::ranges::reverse(descriptions);
+        if(objects.empty())
+            throw Exception(tr("No modifiers selected. Please select at least one modifier to export."));
+        ExportObjectSnippetDialog(objects,
+            tr("OVITO Modifier Snippet: %1").arg(descriptions.join(" | ")), tr(
+            "The following text snippet represents the selected OVITO modifier(s). "
+            "You can save it to a file for later reuse, copy it to the clipboard, or share it with others. "
+            "The snippet can be imported back into OVITO to exactly recreate the modifier(s)."), this->ui(), this).exec();
+    });
+}
+
+/******************************************************************************
+* Is called when the user triggers the "Import from Snippet..." action.
+******************************************************************************/
+void ModifyCommandPage::onImportModifierSnippet()
+{
+    handleExceptions([&]() {
+        Pipeline* pipeline = _pipelineListModel->selectedPipeline();
+        if(!pipeline)
+            throw Exception(tr("No modification pipeline selected. Please select a scene node with a modification pipeline into which the imported modifier(s) should be inserted."));
+
+        // Open the import dialog.
+        ImportObjectSnippetDialog dialog(tr("modifier"), this->ui(), this);
+        if(dialog.exec() != QDialog::Accepted)
+            return;
+
+        // Cast the imported objects to Modifier instances.
+        QVector<OORef<Modifier>> modifiers;
+        for(const auto& obj : dialog.objects()) {
+            if(Modifier* modifier = dynamic_object_cast<Modifier>(obj.get())) {
+                modifiers.push_back(modifier);
+            }
+        }
+
+        if(modifiers.empty())
+            throw Exception(tr("No valid modifiers found in the imported snippet."));
+
+        // Insert the modifiers into the pipeline.
+        performTransaction(tr("Import modifiers from snippet"), [&]() {
+            // Put the modifiers into a group if there are two or more.
+            OORef<ModifierGroup> modifierGroup;
+            if(modifiers.size() >= 2) {
+                modifierGroup = OORef<ModifierGroup>::create();
+                modifierGroup->setCollapsed(true);
+                modifierGroup->setTitle(tr("Imported modifiers"));
+            }
+            _pipelineListModel->applyModifiers(modifiers, modifierGroup);
+        });
+    });
 }
 
 /******************************************************************************

@@ -125,7 +125,7 @@ Copying modifiers between existing pipelines
   :width: 35%
   :align: right
 
-To copy a modifier between pipelines, right-click and select :guilabel:`Copy to...`. A dialog box lets you choose:
+To copy a modifier between pipelines, right-click and select :guilabel:`Copy To Pipeline...`. A dialog box lets you choose:
 
   1. The destination pipeline: This can be any pipeline in the scene, including the original pipeline.
   2. The insertion position: Choose whether to insert the copied modifier at the beginning or the end of the destination pipeline.

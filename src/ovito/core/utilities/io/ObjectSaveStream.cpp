@@ -47,7 +47,7 @@ ObjectSaveStream::~ObjectSaveStream()
 /******************************************************************************
 * Registers an object instance to be written to the stream.
 ******************************************************************************/
-quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool excludeRecomputableData, const RefTarget* deltaReferenceObject)
+quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool excludeRecomputableData, bool neverSkipObject, const RefTarget* deltaReferenceObject)
 {
     OVITO_ASSERT(_saveOnlyModifiedObjects || deltaReferenceObject == nullptr);
 
@@ -68,7 +68,7 @@ quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool e
         // while we are already in the process of serializing objects.
         OVITO_ASSERT(!_saveOnlyModifiedObjects || !_currentObjectRecord);
         if(_saveOnlyModifiedObjects && _currentObjectRecord)
-            throw Exception("Cannot register another object instances for serialization while objects are already being serialized.");
+            throw Exception(tr("Cannot register another object instances for serialization while objects are already being serialized."));
 
         // To serialize only changed parameters, create a default-constructed object instance as reference to compare against.
         OORef<const RefTarget> defaultConstructedObject = deltaReferenceObject;
@@ -85,8 +85,14 @@ quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool e
 
         // Determine whether the object completely matches the provided reference object state
         // and recursively gather all sub-objects for serialization.
-        if(_saveOnlyModifiedObjects)
+        if(_saveOnlyModifiedObjects) {
             gatherSubObjectsAndDetectInitialState(id);
+
+            // Ensure object is always serialized if requested explicitly even if
+            // it is in its default state.
+            if(neverSkipObject)
+                _objects[id - 1].canBeSkipped = false;
+        }
     }
     else if(!_saveOnlyModifiedObjects || !_currentObjectRecord) {
         // Object has already been registered for serialization before.
@@ -99,6 +105,11 @@ quint32 ObjectSaveStream::registerObjectInstance(const RefTarget* object, bool e
         if(!excludeRecomputableData) {
             record.excludeRecomputableData = false;
         }
+
+        // Ensure object is always serialized if requested by the caller,
+        // even if it was considered skippable before.
+        if(neverSkipObject)
+            record.canBeSkipped = false;
 
         // If not the same delta reference object is used for all registrations,
         // the object must be serialized.
@@ -119,7 +130,7 @@ void ObjectSaveStream::saveObject(const RefTarget* object, bool excludeRecomputa
     OVITO_ASSERT(!_saveOnlyModifiedObjects || _currentObjectRecord == nullptr);
 
     // Register object and write its unique serialization ID to the stream.
-    *this << registerObjectInstance(object, excludeRecomputableData);
+    *this << registerObjectInstance(object, excludeRecomputableData, true);
 }
 
 /******************************************************************************
@@ -153,7 +164,7 @@ void ObjectSaveStream::gatherSubObjectsAndDetectInitialState(quint32 objectId)
                 }
 
                 // Process the referenced sub-object.
-                if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), refTarget)) {
+                if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), false, refTarget)) {
                     allParametersMatch &= _objects[subobjectId - 1].canBeSkipped;
                 }
             }
@@ -178,7 +189,7 @@ void ObjectSaveStream::gatherSubObjectsAndDetectInitialState(quint32 objectId)
                     }
 
                     // Process the referenced sub-object.
-                    if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), refTarget)) {
+                    if(quint32 subobjectId = registerObjectInstance(target, excludeRecomputableData || field->dontSaveRecomputableData(), false, refTarget)) {
                         allParametersMatch &= _objects[subobjectId - 1].canBeSkipped;
                     }
                 }
@@ -287,8 +298,9 @@ void ObjectSaveStream::close()
             beginChunk(0x100);
             for(size_t i = 0; i < _objects.size(); i++) { // NOLINT(modernize-loop-convert)
                 ObjectRecord& record = _objects[i];
-                if(record.canBeSkipped)
+                if(record.canBeSkipped) {
                     continue; // Omit object from file that match their reference state.
+                }
 
                 OVITO_CHECK_OBJECT_POINTER(record.object);
                 record.byteOffset = filePosition();
@@ -420,7 +432,7 @@ void ObjectSaveStream::serializeParameterFieldValues(const RefTarget* object)
     const RefTarget* refObject = record.deltaReferenceObject.get();
 
 #if 0
-    qDebug() << "Saving object" << object;
+    qDebug() << "Saving object" << object << "(ID" << _objectMap[object] << ")";
 #endif
 
     // Iterate over all property fields in the class hierarchy.

@@ -95,34 +95,38 @@ namespace Ovito {
 #define ACTION_CONFIGURE_VIEWPORT_GRAPHICS          "ConfigureViewportGraphics"
 
 /// This action deletes the currently selected modifier from the modifier stack.
-#define ACTION_MODIFIER_DELETE              "ModifierDelete"
+#define ACTION_MODIFIER_DELETE                    "ModifierDelete"
 /// This action moves the currently selected modifier up one entry in the modifier stack.
-#define ACTION_MODIFIER_MOVE_UP             "ModifierMoveUp"
+#define ACTION_MODIFIER_MOVE_UP                   "ModifierMoveUp"
 /// This action moves the currently selected modifier down one entry in the modifier stack.
-#define ACTION_MODIFIER_MOVE_DOWN           "ModifierMoveDown"
+#define ACTION_MODIFIER_MOVE_DOWN                 "ModifierMoveDown"
 /// This action opens the dialog box for managing modifier templates.
-#define ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES    "ModifierManageTemplates"
+#define ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES "ModifierManageTemplates"
 /// This action creates a unique copy of the selected pipeline item.
-#define ACTION_PIPELINE_MAKE_INDEPENDENT    "PipelineMakeUnique"
+#define ACTION_PIPELINE_MAKE_INDEPENDENT          "PipelineMakeUnique"
 /// This action creates or dissolves a modifier group in the pipeline editor.
-#define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP   "PipelineToggleModifierGroup"
+#define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP     "PipelineToggleModifierGroup"
 /// This action renames the selected entry in the pipeline editor.
-#define ACTION_PIPELINE_RENAME_ITEM         "PipelineItemRename"
+#define ACTION_PIPELINE_RENAME_ITEM               "PipelineItemRename"
 /// Copies/clones a modifier or source from one pipeline to another.
-#define ACTION_PIPELINE_COPY_ITEM           "PipelineItemCopyTo"
+#define ACTION_PIPELINE_COPY_ITEM                 "PipelineItemCopyTo"
 /// Unites several compatible visual elements into one element.
-#define ACTION_PIPELINE_GROUP_VIS_ELEMENTS  "PipelineGroupVisElements"
+#define ACTION_PIPELINE_GROUP_VIS_ELEMENTS        "PipelineGroupVisElements"
+/// Exports the selected modifier(s) as text snippet.
+#define ACTION_MODIFIER_EXPORT_SNIPPET            "ModifierExportSnippet"
+/// Imports one or more modifiers from a text snippet.
+#define ACTION_MODIFIER_IMPORT_SNIPPET            "ModifierImportSnippet"
 
 /// This action deletes the currently selected viewport layer.
-#define ACTION_VIEWPORT_LAYER_DELETE            "ViewportLayerDelete"
+#define ACTION_VIEWPORT_LAYER_DELETE             "ViewportLayerDelete"
 /// This action moves the currently selected viewport layer up one entry in the stack.
-#define ACTION_VIEWPORT_LAYER_MOVE_UP           "ViewportLayerMoveUp"
+#define ACTION_VIEWPORT_LAYER_MOVE_UP            "ViewportLayerMoveUp"
 /// This action moves the currently selected viewport layer down one entry in the stack.
-#define ACTION_VIEWPORT_LAYER_MOVE_DOWN         "ViewportLayerMoveDown"
+#define ACTION_VIEWPORT_LAYER_MOVE_DOWN          "ViewportLayerMoveDown"
 /// This action renames the currently selected viewport layer.
-#define ACTION_VIEWPORT_LAYER_RENAME            "ViewportLayerRename"
+#define ACTION_VIEWPORT_LAYER_RENAME             "ViewportLayerRename"
 /// This action opens the dialog box for managing viewport layer templates.
-#define ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES    "ViewportLayerManageTemplates"
+#define ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES "ViewportLayerManageTemplates"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION      "AnimationGotoStart"

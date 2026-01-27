@@ -328,6 +328,12 @@ private:
 
     /// Action that groups or splits selected visual elements.
     QAction* _shareOrSplitVisualElementsAction;
+
+    /// Action that exports the selected modifier(s) as text snippet.
+    QAction* _exportModifierSnippetAction;
+
+    /// Action that imports modifier(s) from a text snippet.
+    QAction* _importModifierSnippetAction;
 };
 
 }   // End of namespace

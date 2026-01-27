@@ -63,7 +63,7 @@ public:
 
     /// \brief Registers an object instance to be written to the stream.
     /// \return The unique serialization ID assigned to the object instance.
-    quint32 registerObjectInstance(const RefTarget* object, bool excludeRecomputableData = false, const RefTarget* deltaReferenceObject = nullptr);
+    quint32 registerObjectInstance(const RefTarget* object, bool excludeRecomputableData = false, bool neverSkipObject = false, const RefTarget* deltaReferenceObject = nullptr);
 
     /// \brief Serializes an object and writes its data to the output stream.
     /// \throw Exception if an I/O error has occurred.

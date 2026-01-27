@@ -67,6 +67,8 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/ModalPropertiesEditorDialog.cpp
         dialogs/UpdateNotificationDialog.cpp
         dialogs/SystemInformationDialog.cpp
+        dialogs/ExportObjectSnippetDialog.cpp
+        dialogs/ImportObjectSnippetDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp

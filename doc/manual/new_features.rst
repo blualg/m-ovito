@@ -5,7 +5,7 @@ Changelog
 =========
 
 ----------------------------
-Version 3.15.0 (dd-mm-2025)
+Version 3.15.0 (dd-mm-2026)
 ----------------------------
 
 - Add MOL/SDF file importer
@@ -27,7 +27,10 @@ Version 3.15.0 (dd-mm-2025)
 - Warn if user tries to export an empty scene to a glTF file via export_file()
 - ANARI progress refinement rendering in interactive Viewports
 - VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
+- VisRTX renderer: Support progressive refinement rendering in interactive viewports
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
+- Import/export modifiers as text snippets via context menu in the pipeline editor
+- Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
 
 .. sidebar::
 
@@ -1223,7 +1226,7 @@ Version 3.7.10 (09-Oct-2022)
 
 * Optimization of main window UI widgets to improve rapid animation playback at high frame rates.
 * Enhancements to the pipeline editor: Brief information display for some modifiers.
-* New right-click context menu in pipeline editor: :ref:`clone_pipeline` Added 'Copy to...' function for copying modifiers within and across pipelines.
+* New right-click context menu in pipeline editor: :ref:`clone_pipeline` Added 'Copy to pipeline...' function for copying modifiers within and across pipelines.
 * |ovito-pro| Standalone Python module: Run in headless mode by default. OVITO_GUI_MODE env variable requests :ref:`rendering.opengl_renderer` support.
 * |ovito-pro| PyPI package on Linux: Switched back to PySide6 version 6.2.4 for better backward compatibility with older Ubuntu distros.
 * |ovito-pro| Fixed loading of files opened via double click in case license validation dialog pops up.

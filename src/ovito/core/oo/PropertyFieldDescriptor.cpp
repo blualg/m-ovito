@@ -58,8 +58,8 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
         this->_next = definingClass->_firstPropertyField;
         definingClass->_firstPropertyField = this;
     }
-    OVITO_ASSERT(_propertyStorageSaveFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE));
-    OVITO_ASSERT(_propertyStorageLoadFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE));
+    OVITO_ASSERT(_propertyStorageSaveFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE) || flags.testFlag(PROPERTY_FIELD_DONT_REGISTER_IN_CLASS));
+    OVITO_ASSERT(_propertyStorageLoadFunc != nullptr || flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE) || flags.testFlag(PROPERTY_FIELD_DONT_REGISTER_IN_CLASS));
 }
 
 /// Constructor for a property field that stores a single reference to a RefTarget.
