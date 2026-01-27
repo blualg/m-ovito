@@ -49,7 +49,7 @@ OVITO_CLASSINFO(RadialDistributionFunctionModifier, "ClassNameAlias", "Coordinat
 OVITO_CLASSINFO(RadialDistributionFunctionModifier,
                 "Description",
                 "Determine number of neighbors (coordination number) and compute the RDF.");
-OVITO_CLASSINFO(RadialDistributionFunctionModifier, "DisplayName", "Radial Distribution Function (RDF)");
+OVITO_CLASSINFO(RadialDistributionFunctionModifier, "DisplayName", "Radial distribution function (RDF)");
 OVITO_CLASSINFO(RadialDistributionFunctionModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(RadialDistributionFunctionModifier, cutoff);
 DEFINE_PROPERTY_FIELD(RadialDistributionFunctionModifier, numberOfBins);

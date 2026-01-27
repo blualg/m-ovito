@@ -16,8 +16,8 @@ Version 3.15.0 (dd-mm-2026)
 - New modifier: :ref:`particles.modifiers.edit_types`
 - New modifier :ref:`particles.modifiers.edit_simulation_cell`
 - New modifier :ref:`particles.modifiers.bond_order`
-- Split :ref:`particles.modifiers.bond_analysis` modifier functionality in :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers. 
-  The old :ref:`particles.modifiers.bond_analysis` modifier will remain available for backwards compatibility.
+- Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
+  The old modifier will remain available for backwards compatibility.
 - Implement :ref:`particles.modifiers.assign_color` modifier for lines
 - Rename Coordination Analysis Modifier to :ref:`particles.modifiers.radial_distribution_function` - maintaining backwards compatibility
 - New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
@@ -34,6 +34,7 @@ Version 3.15.0 (dd-mm-2026)
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
 - Import/export modifiers as text snippets via context menu in the pipeline editor
 - Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
+- Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
 
 .. sidebar::
 

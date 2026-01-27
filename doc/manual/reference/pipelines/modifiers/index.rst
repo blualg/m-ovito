@@ -149,7 +149,6 @@ combine several modifiers to accomplish more complex tasks.
   ambient_occlusion
   assign_color
   atomic_strain
-  bond_analysis
   bond_angle_distribution
   bond_length_distribution
   bond_order
@@ -164,7 +163,6 @@ combine several modifiers to accomplish more complex tasks.
   common_neighbor_analysis
   compute_property
   construct_surface_mesh
-  radial_distribution_function
   coordination_polyhedra
   create_bonds
   create_isosurface
@@ -189,6 +187,7 @@ combine several modifiers to accomplish more complex tasks.
   manual_selection
   polyhedral_template_matching
   python_script
+  radial_distribution_function
   render_lammps_regions
   show_periodic_images
   scatter_plot

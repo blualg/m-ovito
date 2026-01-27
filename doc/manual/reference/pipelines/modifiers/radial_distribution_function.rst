@@ -1,6 +1,6 @@
 .. _particles.modifiers.radial_distribution_function:
 
-Radial Distribution Function (RDF)
+Radial distribution function (RDF)
 ----------------------------------
 
 .. image:: /images/modifiers/coordination_analysis_panel.png
@@ -81,8 +81,7 @@ Bond length distribution
 """"""""""""""""""""""""
 
 Furthermore, OVITO provides another analysis tool for computing the bond length distribution specifically
-for *bonded* pairs of particles: the :ref:`particles.modifiers.bond_analysis` modifier.
-This modifier can additionally compute the distribution of bond angles formed by triplets of particles.
+for *bonded* pairs of particles: the :ref:`particles.modifiers.bond_length_distribution` modifier.
 
 .. seealso::
 
