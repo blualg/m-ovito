@@ -43,7 +43,7 @@ On the other hand, a large cutoff radius will yield slowly varying (smooth) defo
 
 A typical choice for the cutoff radius parameter is to use the first minimum of the pair distribution function, i.e. placing
 the cutoff halfway between the first and the second shell of neighbors in the system at hand. You can calculate the pair distribution
-function for the current system using OVITO's :ref:`particles.modifiers.coordination_analysis` modifier.
+function for the current system using OVITO's :ref:`particles.modifiers.radial_distribution_function` modifier.
 
 Since the deformation gradient at each site is calculated from the relative motion of neighboring particles, it is important to ensure that sufficient
 neighbors are within the given cutoff range (in the undeformed configuration). This puts a lower limit on the

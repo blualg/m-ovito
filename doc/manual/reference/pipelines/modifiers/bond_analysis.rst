@@ -16,7 +16,7 @@ The modifier only includes :ref:`bonded <scene_objects.bonds>` particles in thes
 whereas non-bonded pairs will be ignored. Typically, the bond topology is read from the 
 input simulation file or it needs to be generated within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
 For computing the radial distribution function (RDF) of a system (histogram of the distances between pairs of
-particles, including non-bonded ones) you can use the :ref:`particles.modifiers.coordination_analysis` modifier instead.
+particles, including non-bonded ones) you can use the :ref:`particles.modifiers.radial_distribution_function` modifier instead.
 
 Bond angle distribution
 """""""""""""""""""""""
