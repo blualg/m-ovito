@@ -52,49 +52,44 @@ namespace Ovito {
 
 #endif
 
-    /// Low-precision floating-point type used for graphics data.
-    using GraphicsFloatType = float;
+/// Low-precision floating-point type used for graphics data.
+using GraphicsFloatType = float;
 
-    /// The constant PI.
-    template<std::floating_point T>
-    inline constexpr T pi_v = std::numbers::pi_v<T>;
-    inline constexpr FloatType pi = pi_v<FloatType>;
-    // Legacy macros for backward compatibility:
-    inline constexpr FloatType FLOATTYPE_PI = Ovito::pi_v<FloatType>;
+/// The constant number pi.
+template<std::floating_point T>
+inline constexpr T pi_v = std::numbers::pi_v<T>;
+// Pi for our default floating-point type:
+inline constexpr FloatType pi = pi_v<FloatType>;
+// Legacy constant for backward compatibility:
+inline constexpr FloatType FLOATTYPE_PI = Ovito::pi_v<FloatType>;
 
-    /// A concept for numeric types.
-    template<class T>
-    concept Numeric = std::integral<T> || std::floating_point<T>;
-    /// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-    /// This function template returns a type dependent epsilon value (for single and double precision types).
-    template<Numeric T>
-    inline constexpr T epsilon_v = (T)0;
-    template<>
-    inline constexpr double epsilon_v<double> = 1e-12;
-    template<>
-    inline constexpr float epsilon_v<float> = 1e-6F;
-    inline constexpr FloatType epsilon = epsilon_v<FloatType>;
-    // Legacy macros for backward compatibility:
-    inline constexpr FloatType FLOATTYPE_EPSILON = Ovito::epsilon_v<FloatType>;
+/// A small epsilon, which is used in OVITO to test if a number is (almost) zero:
+template<typename T> requires (std::integral<T> || std::floating_point<T>)
+inline constexpr T epsilon_v = (T)0;
+template<>
+inline constexpr double epsilon_v<double> = 1e-12;
+template<>
+inline constexpr float epsilon_v<float> = 1e-6f;
+// Epsilon for our default floating-point type:
+inline constexpr FloatType epsilon = epsilon_v<FloatType>;
+// Legacy constants for backward compatibility:
+inline constexpr FloatType FLOATTYPE_EPSILON = Ovito::epsilon_v<FloatType>;
+inline constexpr GraphicsFloatType GRAPHICS_FLOATTYPE_EPSILON = (GraphicsFloatType)1e-12;
 
-    /// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-    // Legacy macros for backward compatibility:
-    inline constexpr GraphicsFloatType GRAPHICS_FLOATTYPE_EPSILON = (GraphicsFloatType)1e-12;
+/// The maximum value for floating-point variables of type Ovito::FloatType.
+inline constexpr FloatType FLOATTYPE_MAX = std::numeric_limits<FloatType>::max();
 
-    /// The maximum value for floating-point variables of type Ovito::FloatType.
-    inline constexpr FloatType FLOATTYPE_MAX = std::numeric_limits<FloatType>::max();
+/// The lowest value for floating-point variables of type Ovito::FloatType.
+inline constexpr FloatType FLOATTYPE_MIN = std::numeric_limits<FloatType>::lowest();
 
-    /// The lowest value for floating-point variables of type Ovito::FloatType.
-    inline constexpr FloatType FLOATTYPE_MIN = std::numeric_limits<FloatType>::lowest();
-
-    /// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type
-    /// Ovito::GraphicsFloatType.
+/// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type
+/// Ovito::GraphicsFloatType.
 #define GRAPHICS_FLOATTYPE_SCANF_STRING "%g"
 
-    /// Data type used for storing unique identifiers.
-    using IdentifierIntType = int64_t;
+/// Data type used for storing unique identifiers.
+using IdentifierIntType = int64_t;
 
-    /// Data type used for storing element selections.
-    using SelectionIntType = int8_t;
+/// Data type used for storing element selections.
+using SelectionIntType = int8_t;
 
 }   // End of namespace
