@@ -29,6 +29,8 @@
 
 #include <cstdint>
 #include <concepts>
+#include <numbers>
+#include <limits>
 
 namespace Ovito {
 
@@ -60,10 +62,13 @@ namespace Ovito {
     // Legacy macros for backward compatibility:
     inline constexpr FloatType FLOATTYPE_PI = Ovito::pi_v<FloatType>;
 
+    /// A concept for numeric types.
+    template<class T>
+    concept Numeric = std::integral<T> || std::floating_point<T>;
     /// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
     /// This function template returns a type dependent epsilon value (for single and double precision types).
-    template<std::floating_point T>
-    inline constexpr T epsilon_v;
+    template<Numeric T>
+    inline constexpr T epsilon_v = (T)0;
     template<>
     inline constexpr double epsilon_v<double> = 1e-12;
     template<>
