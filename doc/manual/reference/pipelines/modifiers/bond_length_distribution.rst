@@ -1,37 +1,27 @@
-.. _particles.modifiers.bond_analysis:
+.. _particles.modifiers.bond_length_distribution:
 
-Bond analysis |ovito-pro|
--------------------------
+Bond length distribution |ovito-pro|
+------------------------------------
 
-.. warning::
-
-    This modifier has been depreciated as of OVITO 3.15.0. The functionality has been integrated into the 
-    :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifiers.
+.. versionadded:: 3.15.0
 
 .. image:: /images/modifiers/bond_analysis_panel.png
   :width: 35%
   :align: right
 
-This modifier computes two histograms for a system of particles with :ref:`bonds <scene_objects.bonds>`:
+This modifier computes the distribution of the **bond lengths**, i.e. the histogram of distances between pairs of 
+particles connected by :ref:`bonds <scene_objects.bonds>`.
 
-  1. The distribution of the **bond lengths**, i.e. the histogram of distances between pairs of particles connected by bonds.
-  2. The distribution of the **bond angles** formed by pairs of bonds meeting at the same particle.
-
-The modifier only includes :ref:`bonded <scene_objects.bonds>` particles in these distributions,
+The modifier only includes :ref:`bonded <scene_objects.bonds>` particles in the distribution,
 whereas non-bonded pairs will be ignored. Typically, the bond topology is read from the 
 input simulation file or it needs to be generated within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
 For computing the radial distribution function (RDF) of a system (histogram of the distances between pairs of
 particles, including non-bonded ones) you can use the :ref:`particles.modifiers.radial_distribution_function` modifier instead.
 
-Bond angle distribution
-"""""""""""""""""""""""
+.. note::
 
-The computed histogram counts in equisized bins the angles formed by pairs of bonds meeting at the same particle. 
-Bond angles :math:`\theta` may range from 0 to 180 degrees. The modifier option :guilabel:`Use cosines of angles` switches the 
-x-axis of the histogram to the range [-1, +1], now computing the distribution of :math:`\cos{\theta}` values in the system.
-
-The modifier outputs the bond angle histogram as a :ref:`data table <scene_objects.data_table>`, which can be opened in the 
-pipeline data inspector using the button :guilabel:`Show in data inspector`.
+    This modifier partially replaces the functionality of the "Bond Analysis" modifier in OVITO 3.14 and earlier. See 
+    :ref:`particles.modifiers.bond_angle_distribution` for bond angle analysis.
 
 Bond length distribution
 """"""""""""""""""""""""
@@ -78,3 +68,7 @@ The *Bond analysis* modifier calculates the instantaneous bond length and angle 
 just one simulation frame at a time. You can subsequently apply the :ref:`particles.modifiers.time_averaging` modifier to reduce 
 the instantaneous distributions to a single mean distribution by averaging the 
 output :ref:`data table <scene_objects.data_table>` over all frames of the loaded MD trajectory.
+
+.. seealso::
+
+  :py:class:`ovito.modifiers.BondLengthDistributionModifier` (Python API)

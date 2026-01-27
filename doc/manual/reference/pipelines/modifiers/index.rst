@@ -17,10 +17,11 @@ combine several modifiers to accomplish more complex tasks.
   Analysis
   ================================================================= ==========================================================
   :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
-  :ref:`particles.modifiers.bond_order` |ovito-pro|          Assign bond order to existing bonds.
-  :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
+  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assign bond order to existing bonds.
+  :ref:`particles.modifiers.bond_angle_distribution` |ovito-pro|    Computes bond angle distributions.
+  :ref:`particles.modifiers.bond_length_distribution` |ovito-pro|   Computes bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
-  :ref:`particles.modifiers.radial_distribution_function`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
+  :ref:`particles.modifiers.radial_distribution_function`           Determines the number of neighbors of each particle and computes the radial distribution function for the system.
   :ref:`particles.modifiers.difference_between_frames` |ovito-pro|  Calculates differences (delta values) between two simulation trajectory frames.
   :ref:`particles.modifiers.dislocation_analysis`                   Identifies dislocation defects in a crystal.
   :ref:`particles.modifiers.displacement_vectors`                   Calculates the displacements of particles based on an initial and a deformed configuration.
@@ -149,6 +150,8 @@ combine several modifiers to accomplish more complex tasks.
   assign_color
   atomic_strain
   bond_analysis
+  bond_angle_distribution
+  bond_length_distribution
   bond_order
   calculate_local_entropy
   centrosymmetry
