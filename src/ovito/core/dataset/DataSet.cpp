@@ -205,6 +205,11 @@ void DataSet::loadFromFile(const QString& filePath)
     if(stream.applicationName() != QStringLiteral("OVITO Pro"))
         throw Exception(tr("This function can only load session states written by OVITO Pro or the OVITO Python package. Files created with OVITO Basic are no longer supported."));
 
+    // Before loading the new contents, discard existing contents of DataSet.
+    _globalObjects.clear(this, PROPERTY_FIELD(globalObjects));
+    setRenderSettings(nullptr);
+    setViewportConfig(nullptr);
+
     stream.loadObject<DataSet>(this);
     stream.close();
 

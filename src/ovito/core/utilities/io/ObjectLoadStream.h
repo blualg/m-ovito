@@ -59,7 +59,7 @@ public:
     ///       The object's contents are loaded later when close() is called.
     template<class T>
     OORef<T> lookupObject(quint32 objectId, T* existingObject = nullptr) {
-        OORef<RefTarget> ptr = lookupObjectInternal(objectId, existingObject);
+        OORef<RefTarget> ptr = lookupObjectInternal(objectId, existingObject, true);
         OVITO_ASSERT(!ptr || ptr->getOOClass().isDerivedFrom(T::OOClass()));
         if(ptr && !ptr->getOOClass().isDerivedFrom(T::OOClass()))
             throw Exception(tr("Class hierarchy mismatch in file. The object class '%1' is not derived from '%2'.").arg(ptr->getOOClass().name()).arg(T::OOClass().name()));
@@ -97,7 +97,7 @@ public:
 private:
 
     /// Loads an object with runtime type information from the stream.
-    OORef<RefTarget> lookupObjectInternal(quint32 objectId, RefTarget* existingObject);
+    OORef<RefTarget> lookupObjectInternal(quint32 objectId, RefTarget* existingObject, bool resetExistingObject = false);
 
     /// Metadata for a parameter field loaded from the stream.
     struct FieldRecord : RefTarget::SerializedPropertyField
@@ -140,8 +140,11 @@ private:
         /// The serialized class information.
         const ClassRecord* classRecord = nullptr;
 
-        /// The byte offset at which the object's internal data is stored in the file.
+        /// The byte offset at which the object's serialized data is stored in the file.
         qint64 fileOffset;
+
+        /// Indicates whether existing sub-objects of this object should be reused during deserialization.
+        bool reuseExistingSubobjects = true;
     };
 
     /// Reads a reference to a class definition from the stream.

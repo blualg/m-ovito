@@ -303,7 +303,7 @@ void ObjectLoadStream::registerParameterFieldHandlers(ClassRecord& classRecord)
 * The method returns a pointer to the object but this object will be
 * in an uninitialized state until it is loaded at a later time.
 ******************************************************************************/
-OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTarget* existingObject)
+OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTarget* existingObject, bool resetExistingObject)
 {
     if(objectId == 0) {
         return {};
@@ -327,6 +327,7 @@ OORef<RefTarget> ObjectLoadStream::lookupObjectInternal(quint32 objectId, RefTar
         else if(existingObject && &existingObject->getOOClass() == record.classRecord->clazz && !existingObject->isBeingLoaded()) {
             // Use the provided existing object instance.
             record.object = existingObject;
+            record.reuseExistingSubobjects = !resetExistingObject;
 
             // Mark the object as being loaded.
             record.object->_flags.setFlag(OvitoObject::BeingLoaded, true);
@@ -444,7 +445,7 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
     OVITO_ASSERT(!object->isUndoRecording());
 
 #if 0
-    qDebug() << "Loading object" << object;
+    qDebug() << "Loading object" << object << "with reuseExistingSubobjects=" << _currentObjectRecord->reuseExistingSubobjects;
 #endif
 
     // Helper function that deserializes the value of a single reference or property field.
@@ -461,7 +462,9 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 OVITO_ASSERT(field->isVector() == field->flags().testFlag(PROPERTY_FIELD_VECTOR));
                 OVITO_ASSERT(fieldRecord.targetClass->isDerivedFrom(*field->targetClass()));
                 if(!field->isVector()) {
-                    OORef<RefTarget> target = loadObject<RefTarget>(object->getReferenceFieldTarget(field));
+                    quint32 objectId;
+                    (*this) >> objectId;
+                    OORef<RefTarget> target = lookupObjectInternal(objectId, _currentObjectRecord->reuseExistingSubobjects ? object->getReferenceFieldTarget(field) : nullptr);
                     if(target && !target->getOOClass().isDerivedFrom(*fieldRecord.targetClass)) {
                         throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
                             .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name()).arg(fieldRecord.targetClass->name()).arg(target->getOOClass().name()));
@@ -481,7 +484,7 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                         quint32 subobjectId;
                         *this >> subobjectId;
                         if(subobjectId != std::numeric_limits<quint32>::max()) {
-                            OORef<RefTarget> target = lookupObject<RefTarget>(subobjectId, (i < oldCount) ? object->getVectorReferenceFieldTarget(field, i) : nullptr);
+                            OORef<RefTarget> target = lookupObjectInternal(subobjectId, (i < oldCount && _currentObjectRecord->reuseExistingSubobjects) ? object->getVectorReferenceFieldTarget(field, i) : nullptr);
                             if(target && !target->getOOClass().isDerivedFrom(*fieldRecord.targetClass)) {
                                 throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
                                     .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name(), fieldRecord.targetClass->name(), target->getOOClass().name()));
@@ -512,15 +515,18 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 qDebug() << "  Reference field" << fieldRecord.identifier << " no longer exists.";
 #endif
                 // The serialized reference field no longer exists in the current program version.
-                // Deserialize dead object and then release it immediately.
+                // Don't deserialize dead object(s).
                 if(fieldRecord.flags & PROPERTY_FIELD_VECTOR) {
                     qint32 numEntries;
                     *this >> numEntries;
-                    for(qint32 i = 0; i < numEntries; i++)
-                        loadObject<RefTarget>();
+                    for(qint32 i = 0; i < numEntries; i++) {
+                        quint32 subobjectId;
+                        *this >> subobjectId;
+                    }
                 }
                 else {
-                    loadObject<RefTarget>();
+                    quint32 objectId;
+                    *this >> objectId;
                 }
             }
         }
@@ -530,6 +536,9 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 // For backward compatibility with OVITO 3.14.x and earlier:
                 // Skip loading of runtime property fields that have been converted to regular property fields in OVITO 3.15.0.
                 if(!field->flags().testFlag(PROPERTY_FIELD_WAS_RUNTIME_PROPERTY_FIELD) || formatVersion() >= 30016) {
+#if 0
+                    qDebug() << "  Loading parameter field" << fieldRecord.identifier;
+#endif
                     // Call the property field's deserialization function.
                     OVITO_ASSERT(field->_propertyStorageLoadFunc);
                     field->_propertyStorageLoadFunc(object, field, *this);
