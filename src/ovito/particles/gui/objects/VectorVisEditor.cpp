@@ -116,6 +116,7 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
     // Open a sub-editor for the property color mapping.
     _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VectorVis::colorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI->setEnabled(false);
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.
