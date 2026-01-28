@@ -119,7 +119,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Van der Waals mode.
     auto* vBoxLayout = new QVBoxLayout(vdwRadiiParamsWidget);
-    vBoxLayout->setContentsMargins(26, 0, 0, 0);
+    vBoxLayout->setContentsMargins(0, 0, 0, 0);
     BooleanParameterUI* skipHydrogenHydrogenBondsUI =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
     vBoxLayout->addWidget(skipHydrogenHydrogenBondsUI->checkBox());
@@ -135,7 +135,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Pair-wise cutoff mode.
     vBoxLayout = new QVBoxLayout(pairCutoffParamsWidget);
-    vBoxLayout->setContentsMargins(26, 0, 0, 0);
+    vBoxLayout->setContentsMargins(0, 0, 0, 0);
 
     _pairCutoffTable = new QTableView();
     _pairCutoffTable->verticalHeader()->setVisible(false);
