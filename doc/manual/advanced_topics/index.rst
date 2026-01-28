@@ -18,3 +18,4 @@ Advanced topics
   code_generation
   python_extensions
   customize_init_state
+  modifier_snippets

@@ -45,7 +45,7 @@ ExportObjectSnippetDialog::ExportObjectSnippetDialog(const std::vector<OORef<Ref
     layout->addWidget(label);
     QTextEdit* textEdit = new QTextEdit(this);
     textEdit->setReadOnly(true);
-    textEdit->setMinimumSize(QSize(600, 200));
+    textEdit->setMinimumWidth(500);
     textEdit->setWordWrapMode(QTextOption::WrapAnywhere);
     textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     layout->addWidget(textEdit);

@@ -32,7 +32,7 @@ Version 3.15.0 (dd-mm-2026)
 - VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
 - VisRTX renderer: Support progressive refinement rendering in interactive viewports
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
-- Import/export modifiers as text snippets via context menu in the pipeline editor
+- :ref:`Import/export modifiers as text snippets <modifier_snippets>` via context menu in the pipeline editor
 - Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
 - Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
 

@@ -71,7 +71,6 @@ ImportObjectSnippetDialog::ImportObjectSnippetDialog(const QString& objectType, 
 
     // Properties panel for displaying selected object's parameters (on the right).
     _propertiesPanel = new PropertiesPanel(ui, this);
-    _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
     splitter->addWidget(_propertiesPanel);
     splitter->setStretchFactor(1, 1);
 
