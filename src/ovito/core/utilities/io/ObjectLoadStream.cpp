@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
+ObjectLoadStream::ObjectLoadStream(QDataStream& source, bool untrustedContents) : LoadStream(source), _untrustedContents(untrustedContents)
 {
     qint64 oldPos = filePosition();
 

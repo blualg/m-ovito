@@ -31,14 +31,14 @@ namespace Ovito {
  * This dialog box generates a text representation of one or more OVITO objects (e.g. modifiers),
  * which can be copied to the clipboard or saved to a file for later reuse and sharing with others.
  */
-class ExportObjectSnippetDialog : public QDialog
+class ExportObjectSnippetDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit ExportObjectSnippetDialog(const std::vector<OORef<RefTarget>>& objects, const QString& snippetDescription, const QString& usageNotice, UserInterface& userInterface, QWidget* parentWindow = nullptr);
+    explicit ExportObjectSnippetDialog(const std::vector<OORef<RefTarget>>& objects, const QString& snippetDescription, const QString& usageNotice, MainWindowUI& ui, QWidget* parentWindow = nullptr);
 
 private:
 

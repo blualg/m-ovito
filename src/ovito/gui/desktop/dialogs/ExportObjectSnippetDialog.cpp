@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include "ExportObjectSnippetDialog.h"
 
 #include <QJsonDocument>
@@ -32,7 +34,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ExportObjectSnippetDialog::ExportObjectSnippetDialog(const std::vector<OORef<RefTarget>>& objects, const QString& snippetDescription, const QString& usageNotice, UserInterface& userInterface, QWidget* parent) : QDialog(parent)
+ExportObjectSnippetDialog::ExportObjectSnippetDialog(const std::vector<OORef<RefTarget>>& objects, const QString& snippetDescription, const QString& usageNotice, MainWindowUI& ui, QWidget* parent) :
+    QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setWindowTitle(tr("Export as Snippet"));
 
@@ -46,9 +49,14 @@ ExportObjectSnippetDialog::ExportObjectSnippetDialog(const std::vector<OORef<Ref
     textEdit->setWordWrapMode(QTextOption::WrapAnywhere);
     textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     layout->addWidget(textEdit);
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, this);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::accept);
-    connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() {
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
+        actionManager()->openHelpTopic("manual:object_snippets.export_snippet_dialog");
+    });
+    QPushButton* copyToClipboardBtn = buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole);
+    copyToClipboardBtn->setDefault(true);
+    connect(copyToClipboardBtn, &QPushButton::clicked, [textEdit]() {
         QApplication::clipboard()->setText(textEdit->toPlainText());
     });
     layout->addWidget(buttonBox);
@@ -64,25 +72,30 @@ QString ExportObjectSnippetDialog::generateObjectSnippet(const std::vector<OORef
     if(objects.empty())
         return {};
 
-    QByteArray buffer;
-    QDataStream dstream(&buffer, QIODevice::WriteOnly);
-    ObjectSaveStream stream(dstream, true);
-    stream.writeSizeT(objects.size());
-    for(const auto& obj : objects) {
-        stream.saveObject(obj, true);
+    try {
+        QByteArray buffer;
+        QDataStream dstream(&buffer, QIODevice::WriteOnly);
+        ObjectSaveStream stream(dstream, true);
+        stream.writeSizeT(objects.size());
+        for(const auto& obj : objects) {
+            stream.saveObject(obj, true);
+        }
+        stream.close();
+
+        QByteArray compressed = qCompress(buffer, 9);
+        QByteArray formatted = compressed.toBase64();
+
+        QJsonObject dict;
+        dict.insert(QStringLiteral("description"), QJsonValue(snippetDescription));
+        dict.insert(QStringLiteral("payload"), QJsonValue(QString::fromLatin1(formatted)));
+        QString snippet = QJsonDocument(dict).toJson(QJsonDocument::Compact);
+        snippet.replace(QStringLiteral("\"description\":\""), QStringLiteral("\"description\": \"")); // insert spaces for better word-wrapping
+        snippet.replace(QStringLiteral("\",\"payload\":"), QStringLiteral("\", \"payload\": ")); // insert spaces for better word-wrapping
+        return snippet;
     }
-    stream.close();
-
-    QByteArray compressed = qCompress(buffer, 9);
-    QByteArray formatted = compressed.toBase64();
-
-    QJsonObject dict;
-    dict.insert(QStringLiteral("description"), QJsonValue(snippetDescription));
-    dict.insert(QStringLiteral("payload"), QJsonValue(QString::fromLatin1(formatted)));
-    QString snippet = QJsonDocument(dict).toJson(QJsonDocument::Compact);
-    snippet.replace(QStringLiteral("\"description\":\""), QStringLiteral("\"description\": \"")); // insert spaces for better word-wrapping
-    snippet.replace(QStringLiteral("\",\"payload\":"), QStringLiteral("\", \"payload\": ")); // insert spaces for better word-wrapping
-    return snippet;
+    catch(const Exception& ex) {
+        return tr("Warning - Could not generate object snippet:\n%1").arg(ex.messages().join(QStringLiteral("\n")));
+    }
 }
 
 }   // End of namespace

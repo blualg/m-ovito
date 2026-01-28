@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindowUI.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "ImportObjectSnippetDialog.h"
@@ -75,11 +76,14 @@ ImportObjectSnippetDialog::ImportObjectSnippetDialog(const QString& objectType, 
     splitter->setStretchFactor(1, 1);
 
     // Button box.
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     _importButton = buttonBox->addButton(tr("Import"), QDialogButtonBox::AcceptRole);
     _importButton->setEnabled(false);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ImportObjectSnippetDialog::onImport);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
+        actionManager()->openHelpTopic("manual:object_snippets.import_snippet_dialog");
+    });
     mainLayout->addWidget(buttonBox);
 
     // Connect signals.
@@ -155,7 +159,7 @@ void ImportObjectSnippetDialog::parseSnippet(const QString& snippetText)
 
         // Deserialize objects.
         QDataStream dstream(&buffer, QIODevice::ReadOnly);
-        ObjectLoadStream stream(dstream);
+        ObjectLoadStream stream(dstream, true); // Open stream in secure mode to prevent execution of untrusted code.
 
         size_t objectCount;
         stream.readSizeT(objectCount);
@@ -194,7 +198,7 @@ void ImportObjectSnippetDialog::parseSnippet(const QString& snippetText)
         }
     }
     catch(const Exception& ex) {
-        _statusWidget->setStatus(PipelineStatus(PipelineStatus::Error, ex.message()));
+        _statusWidget->setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QStringLiteral("\n"))));
     }
 }
 

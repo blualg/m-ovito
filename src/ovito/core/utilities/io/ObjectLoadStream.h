@@ -46,7 +46,7 @@ public:
     /// \brief Initializes the ObjectLoadStream.
     /// \param source The Qt data stream from which the data is read. This stream must support random access.
     /// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-    explicit ObjectLoadStream(QDataStream& source);
+    explicit ObjectLoadStream(QDataStream& source, bool untrustedContents = false);
 
     // Calls close() to close the ObjectLoadStream.
     virtual ~ObjectLoadStream() { ObjectLoadStream::close(); }
@@ -93,6 +93,10 @@ public:
 
     /// \brief Returns the DataSet object that is currently being loaded from the stream, if any.
     DataSet* datasetBeingLoaded() const;
+
+    /// Indicates whether the program should treat the contents of the file as untrusted
+    /// and block execution of any scripts stored in it.
+    bool untrustedContents() const { return _untrustedContents; }
 
 private:
 
@@ -190,6 +194,10 @@ private:
 
     /// List of callbacks that are executed after the object graph has been completely loaded.
     std::vector<fu2::unique_function<void()>> _postLoadCallbacks;
+
+    /// Indicates whether the program should treat the contents of the file as untrusted
+    /// and block execution of any scripts stored in it.
+    bool _untrustedContents = false;
 
     friend class RefTarget; // for access to deserializeParameterFieldValues()
 };

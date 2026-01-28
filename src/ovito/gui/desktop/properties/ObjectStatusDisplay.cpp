@@ -79,12 +79,10 @@ void ObjectStatusDisplay::resetUI()
 
     if(statusWidget()) {
         if(activeObject) {
-            statusWidget()->setEnabled(isEnabled());
             statusWidget()->setStatus(activeObject->status());
         }
         else {
             statusWidget()->clearStatus();
-            statusWidget()->setEnabled(false);
         }
     }
 }
