@@ -57,6 +57,7 @@ SET(SourceFiles
     modifier/analysis/ptm/PTMAlgorithm.cpp
     modifier/analysis/surface/ConstructSurfaceModifier.cpp
     modifier/selection/ExpandSelectionModifier.cpp
+    modifier/selection/SelectOverlappingAtomsModifier.cpp
     modifier/properties/SmoothTrajectoryModifier.cpp
     modifier/properties/GenerateTrajectoryLinesModifier.cpp
     import/ParticleImporter.cpp

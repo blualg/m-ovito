@@ -16,6 +16,7 @@ Version 3.15.0 (dd-mm-2026)
 - New modifier: :ref:`particles.modifiers.edit_types`
 - New modifier :ref:`particles.modifiers.edit_simulation_cell`
 - New modifier :ref:`particles.modifiers.bond_order`
+- New modifier :ref:`particles.modifiers.select_overlapping_atoms`
 - Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
   The old modifier will remain available for backwards compatibility.
 - Implement :ref:`particles.modifiers.assign_color` modifier for lines
