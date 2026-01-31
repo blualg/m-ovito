@@ -36,6 +36,7 @@ Version 3.15.0 (dd-mm-2026)
 - :ref:`Import/export modifiers as text snippets <modifier_snippets>` via context menu in the pipeline editor
 - Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
 - Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
+- New modifier selector widget with improved usability and UI design
 
 .. sidebar::
 

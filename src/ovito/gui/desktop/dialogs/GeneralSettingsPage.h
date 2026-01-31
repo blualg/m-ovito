@@ -53,6 +53,7 @@ private:
 
     QCheckBox* _keepDirHistory;
     QCheckBox* _sortModifiersByCategory;
+    QCheckBox* _useCardPopup;
     QCheckBox* _enableAutomaticDarkMode;
     QButtonGroup* _importMultipleFilesBehavior;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)

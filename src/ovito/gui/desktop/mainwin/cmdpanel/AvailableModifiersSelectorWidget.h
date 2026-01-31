@@ -28,7 +28,9 @@
 
 namespace Ovito {
 
-class PipelineListModel;  // Defined in PipelineListModel.h
+class PipelineListModel;      // Defined in PipelineListModel.h
+class ModifierGalleryPopup;   // Defined in ModifierGalleryPopup.h
+class ModifierAction;         // Defined in AvailableModifiersModel.h
 
 /**
  * A combo box widget that displays the list of available modifiers and allows the user
@@ -49,6 +51,12 @@ public:
     /// Returns the list model that presents the available modifiers in flat list format.
     AvailableModifiersListModel* availableModifiersListModel() const;
 
+    /// Returns whether the card popup mode is enabled globally.
+    static bool useCardPopupGlobal();
+
+    /// Sets whether the card popup mode is enabled globally.
+    static void setUseCardPopupGlobal(bool on);
+
 protected:
 
     /// Called when the popup menu is about to be shown.
@@ -56,16 +64,22 @@ protected:
 
 private Q_SLOTS:
 
-    /// Handles selection of a modifier from the drop-down list.
-    void onModifierSelected(int index);
-
     /// Updates the enabled state of this widget based on the current pipeline selection.
     void onPipelineSelectionChanged();
+
+    /// Handles selection of a modifier.
+    void onModifierSelected(ModifierAction* action);
+
+    /// Handles click on "Get more modifiers..." button.
+    void onGetMoreModifiersFromPopup();
 
 private:
 
     /// The pipeline list model used to determine the enabled state.
     PipelineListModel* _pipelineListModel;
+
+    /// The card-based popup widget (lazy initialized).
+    ModifierGalleryPopup* _cardPopup = nullptr;
 };
 
 }   // End of namespace

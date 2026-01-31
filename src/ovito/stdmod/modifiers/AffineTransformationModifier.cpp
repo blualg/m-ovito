@@ -35,7 +35,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AffineTransformationModifier);
 OVITO_CLASSINFO(AffineTransformationModifier, "DisplayName", "Affine transformation");
-OVITO_CLASSINFO(AffineTransformationModifier, "Description", "Apply an affine transformation to the dataset.");
+OVITO_CLASSINFO(AffineTransformationModifier, "Description", "Apply an affine transformation to particles and other objects.");
 OVITO_CLASSINFO(AffineTransformationModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, transformationTM);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, selectionOnly);

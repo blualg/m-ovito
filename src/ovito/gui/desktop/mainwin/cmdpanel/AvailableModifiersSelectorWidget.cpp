@@ -24,6 +24,7 @@
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include "AvailableModifiersSelectorWidget.h"
+#include "ModifierGalleryPopup.h"
 
 namespace Ovito {
 
@@ -36,7 +37,16 @@ AvailableModifiersSelectorWidget::AvailableModifiersSelectorWidget(QWidget* pare
     setSizeAdjustPolicy(QComboBox::AdjustToContents);
     setModel(new AvailableModifiersListModel(new AvailableModifiersModel(this, ui, pipelineListModel), this));
     setMaxVisibleItems(0xFFFF);
-    connect(this, qOverload<int>(&QComboBox::activated), this, &AvailableModifiersSelectorWidget::onModifierSelected);
+    connect(this, qOverload<int>(&QComboBox::activated), this, [this](int index) {
+        if(index == availableModifiersListModel()->getMoreExtensionsItemIndex()) {
+            // Open the extensions gallery or website.
+            onGetMoreModifiersFromPopup();
+        }
+        else {
+            // Insert the selected modifier into the pipeline.
+            onModifierSelected(availableModifiersListModel()->actionFromIndex(index));
+        }
+    });
 
     // Update enabled state when the pipeline selection changes.
     connect(pipelineListModel, &PipelineListModel::selectedItemChanged, this, &AvailableModifiersSelectorWidget::onPipelineSelectionChanged);
@@ -67,27 +77,20 @@ AvailableModifiersListModel* AvailableModifiersSelectorWidget::availableModifier
 void AvailableModifiersSelectorWidget::showPopup()
 {
     availableModifiersListModel()->updateActionState();
-    QComboBox::showPopup();
-}
 
-/******************************************************************************
-* Handles selection of a modifier from the drop-down list.
-******************************************************************************/
-void AvailableModifiersSelectorWidget::onModifierSelected(int index)
-{
-    if(index == availableModifiersListModel()->getMoreExtensionsItemIndex()) {
-        // Open the extensions gallery or website.
-        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
-            action->trigger();
-        else
-            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+    if(useCardPopupGlobal()) {
+        // Lazy create the card popup
+        if(!_cardPopup) {
+            _cardPopup = new ModifierGalleryPopup(availableModifiersModel(), this);
+            connect(_cardPopup, &ModifierGalleryPopup::modifierSelected, this, &AvailableModifiersSelectorWidget::onModifierSelected);
+            connect(_cardPopup, &ModifierGalleryPopup::getMoreModifiersClicked, this, &AvailableModifiersSelectorWidget::onGetMoreModifiersFromPopup);
+        }
+        _cardPopup->updateContent();
+        _cardPopup->showBelow(this);
     }
     else {
-        // Insert the selected modifier into the pipeline.
-        availableModifiersListModel()->insertModifierByIndex(index);
+        QComboBox::showPopup();
     }
-    // Reset the combo box to the default item.
-    setCurrentIndex(0);
 }
 
 /******************************************************************************
@@ -96,6 +99,58 @@ void AvailableModifiersSelectorWidget::onModifierSelected(int index)
 void AvailableModifiersSelectorWidget::onPipelineSelectionChanged()
 {
     setEnabled(_pipelineListModel->selectedPipeline() != nullptr);
+}
+
+/******************************************************************************
+* Handles selection of a modifier.
+******************************************************************************/
+void AvailableModifiersSelectorWidget::onModifierSelected(ModifierAction* action)
+{
+    if(action) {
+        // Trigger the action to insert the modifier into the pipeline.
+        action->trigger();
+    }
+
+    // Reset the combo box to the default item.
+    setCurrentIndex(0);
+}
+
+/******************************************************************************
+* Handles click on "Get more modifiers..." button.
+******************************************************************************/
+void AvailableModifiersSelectorWidget::onGetMoreModifiersFromPopup()
+{
+    // Open the extensions gallery or website.
+    if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
+        action->trigger();
+    else
+        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+}
+
+/******************************************************************************
+* Returns whether the card popup mode is enabled globally.
+******************************************************************************/
+bool AvailableModifiersSelectorWidget::useCardPopupGlobal()
+{
+#ifndef OVITO_DISABLE_QSETTINGS
+    QSettings settings;
+    return settings.value("modifiers/use_card_popup", true).toBool();
+#else
+    return true;
+#endif
+}
+
+/******************************************************************************
+* Sets whether the card popup mode is enabled globally.
+******************************************************************************/
+void AvailableModifiersSelectorWidget::setUseCardPopupGlobal(bool on)
+{
+#ifndef OVITO_DISABLE_QSETTINGS
+    if(on != useCardPopupGlobal()) {
+        QSettings settings;
+        settings.setValue("modifiers/use_card_popup", on);
+    }
+#endif
 }
 
 }   // End of namespace

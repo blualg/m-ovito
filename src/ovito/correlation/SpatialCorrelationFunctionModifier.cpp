@@ -39,6 +39,7 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ClassNameAlias", "CorrelationFunctionModifier");
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "DisplayName", "Spatial correlation function");
+OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "Description", "Compute spatial correlation functions for particle properties.");
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty2);

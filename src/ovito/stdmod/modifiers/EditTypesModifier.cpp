@@ -31,7 +31,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(EditTypesModifier);
 OVITO_CLASSINFO(EditTypesModifier, "DisplayName", "Edit types");
-OVITO_CLASSINFO(EditTypesModifier, "Description", "Edit the list of particle or bond types.");
+OVITO_CLASSINFO(EditTypesModifier, "Description", "Edit the list of particle types and bond types.");
 OVITO_CLASSINFO(EditTypesModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(EditTypesModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(EditTypesModifier, deletedTypeIDs);

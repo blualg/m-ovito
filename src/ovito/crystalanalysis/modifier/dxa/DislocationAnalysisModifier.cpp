@@ -35,6 +35,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationAnalysisModifier);
 OVITO_CLASSINFO(DislocationAnalysisModifier, "DisplayName", "Dislocation analysis (DXA)");
+OVITO_CLASSINFO(DislocationAnalysisModifier, "Description", "Find and characterize dislocation lines in crystals.");
 OVITO_CLASSINFO(DislocationAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, maxTrialCircuitSize);
