@@ -48,7 +48,7 @@ int ObjectTemplates::createTemplate(const QString& templateName, const QVector<O
 
     QByteArray buffer;
     QDataStream dstream(&buffer, QIODevice::WriteOnly);
-    ObjectSaveStream stream(dstream, true);
+    ObjectSaveStream stream(dstream);
 
     // Serialize objects.
     for(RefTarget* obj : objects) {
@@ -61,15 +61,6 @@ int ObjectTemplates::createTemplate(const QString& templateName, const QVector<O
     stream.beginChunk(0x00);
     stream.endChunk();
     stream.close();
-
-#if 1
-    qDebug() << "Created" << _objectName << "template" << templateName << "with size" << buffer.size();
-    QByteArray compressed = qCompress(buffer, 9);
-    qDebug() << "Compressed size:" << compressed.size();
-    QByteArray formatted = compressed.toBase64();
-    qDebug() << "Formatted size:" << formatted.size();
-    qDebug() << formatted;
-#endif
 
     return restoreTemplate(templateName, std::move(buffer));
 }
