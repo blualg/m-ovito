@@ -84,16 +84,9 @@ OverlayAction* OverlayAction::createForTemplate(const QString& templateName)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& ui, OverlayListModel* overlayListModel) : QAbstractListModel(parent), UserInterfaceComponent<UserInterface>(ui), _overlayListModel(overlayListModel)
+AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& ui, OverlayListModel* overlayListModel) : QAbstractItemModel(parent), UserInterfaceComponent<UserInterface>(ui), _overlayListModel(overlayListModel)
 {
     OVITO_ASSERT(actionManager());
-
-    // Initialize UI colors.
-    updateColorPalette(QGuiApplication::palette());
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
-    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableOverlaysModel::updateColorPalette);
-QT_WARNING_POP
 
     // Enumerate all built-in viewport layer classes.
     for(auto clazz : PluginManager::instance().metaclassMembers<ViewportOverlay>()) {
@@ -163,118 +156,123 @@ QT_WARNING_POP
 
     // Extend the list when a new Python extension is being registered at runtime.
     connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, this, &AvailableOverlaysModel::extensionClassAdded);
-
-    // Define fonts, colors, etc.
-    _categoryFont = QGuiApplication::font();
-    _categoryFont.setBold(true);
-#ifndef Q_OS_WIN
-    if(_categoryFont.pixelSize() < 0)
-        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
-    else
-        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
-#endif
-    _getMoreExtensionsFont = QGuiApplication::font();
-
-    // Generate list items.
-    updateModelLists();
 }
 
 /******************************************************************************
-* Updates the color brushes of the model.
+* Returns the model index for the item at the given row and column.
 ******************************************************************************/
-void AvailableOverlaysModel::updateColorPalette(const QPalette& palette)
+QModelIndex AvailableOverlaysModel::index(int row, int column, const QModelIndex& parent) const
 {
-    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
-#ifndef Q_OS_LINUX
-    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#else
-    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#endif
-    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
-    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
-}
+    if(column != 0)
+        return {};
 
-/******************************************************************************
-* Rebuilds the internal list of model items.
-******************************************************************************/
-void AvailableOverlaysModel::updateModelLists()
-{
-    beginResetModel();
-    _modelStrings.clear();
-    _modelStrings.push_back(tr("Add layer..."));
-    _modelActions.clear();
-    _modelActions.push_back(nullptr);
-    _getMoreExtensionsItemIndex = -1;
-    int categoryIndex = 0;
-    for(const auto& categoryActions : _actionsPerCategory) {
-        if(!categoryActions.empty()) {
-            _modelActions.push_back(nullptr);
-            _modelStrings.push_back(_categoryNames[categoryIndex]);
-            for(OverlayAction* action : categoryActions) {
-                _modelActions.push_back(action);
-                _modelStrings.push_back(action->text());
-            }
-#ifndef OVITO_BUILD_BASIC
-            if(_categoryNames[categoryIndex] == tr("Python layers")) {
-#else
-            if(_categoryNames[categoryIndex] == tr("Python layers (Pro)")) {
-#endif
-                _getMoreExtensionsItemIndex = _modelStrings.size();
-                _modelActions.push_back(nullptr);
-                _modelStrings.push_back(tr("Get more layers..."));
-            }
+    if(!parent.isValid()) {
+        // Root level: categories
+        if(row >= 0 && row < (int)_categoryNames.size())
+            return createIndex(row, 0, quintptr(-1));
+    }
+    else if(parent.internalId() == quintptr(-1)) {
+        // Child level: overlays within a category
+        int categoryIndex = parent.row();
+        if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size()) {
+            if(row >= 0 && row < (int)_actionsPerCategory[categoryIndex].size())
+                return createIndex(row, 0, quintptr(categoryIndex));
         }
-        categoryIndex++;
     }
-    if(_getMoreExtensionsItemIndex == -1) {
-        _getMoreExtensionsItemIndex = _modelStrings.size();
-        _modelActions.push_back(nullptr);
-        _modelStrings.push_back(tr("Get more layers..."));
-    }
-
-    endResetModel();
+    return {};
 }
 
 /******************************************************************************
-* Returns the number of rows in the model.
+* Returns the parent of the model item with the given index.
+******************************************************************************/
+QModelIndex AvailableOverlaysModel::parent(const QModelIndex& index) const
+{
+    if(!index.isValid())
+        return {};
+
+    quintptr id = index.internalId();
+    if(id == quintptr(-1)) {
+        // This is a category item at the root level.
+        return {};
+    }
+    else {
+        // This is an overlay item; its parent is the category.
+        int categoryIndex = (int)id;
+        return createIndex(categoryIndex, 0, quintptr(-1));
+    }
+}
+
+/******************************************************************************
+* Returns the number of rows under the given parent.
 ******************************************************************************/
 int AvailableOverlaysModel::rowCount(const QModelIndex& parent) const
 {
-    return _modelStrings.size();
+    if(!parent.isValid()) {
+        // Root level: number of categories
+        return (int)_categoryNames.size();
+    }
+    else if(parent.internalId() == quintptr(-1)) {
+        // Category level: number of overlays in this category
+        int categoryIndex = parent.row();
+        if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size())
+            return (int)_actionsPerCategory[categoryIndex].size();
+    }
+    // Overlays don't have children.
+    return 0;
 }
 
 /******************************************************************************
-* Returns the data associated with a list item.
+* Returns the number of columns for the children of the given parent.
+******************************************************************************/
+int AvailableOverlaysModel::columnCount(const QModelIndex& parent) const
+{
+    return 1;
+}
+
+/******************************************************************************
+* Returns the model's role names.
+******************************************************************************/
+QHash<int, QByteArray> AvailableOverlaysModel::roleNames() const
+{
+    return {
+        { Qt::DisplayRole, "title" },
+        { Qt::UserRole, "iscategory" }
+    };
+}
+
+/******************************************************************************
+* Returns the data associated with an item.
 ******************************************************************************/
 QVariant AvailableOverlaysModel::data(const QModelIndex& index, int role) const
 {
-    if(role == Qt::DisplayRole) {
-        if(index.row() >= 0 && index.row() < _modelStrings.size())
-            return _modelStrings[index.row()];
+    if(!index.isValid())
+        return {};
+
+    if(index.internalId() == quintptr(-1)) {
+        // Category item.
+        int categoryIndex = index.row();
+        if(categoryIndex < 0 || categoryIndex >= (int)_categoryNames.size())
+            return {};
+
+        if(role == Qt::DisplayRole)
+            return _categoryNames[categoryIndex];
+        else if(role == Qt::UserRole)
+            return true; // Is a category
     }
-    else if(role == Qt::FontRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsFont;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryFont;
-    }
-    else if(role == Qt::ForegroundRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsForegroundBrush;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryForegroundBrush;
-    }
-    else if(role == Qt::BackgroundRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return _categoryBackgroundBrush;
-    }
-    else if(role == Qt::TextAlignmentRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return Qt::AlignCenter;
+    else {
+        // Overlay item.
+        int categoryIndex = (int)index.internalId();
+        int overlayIndex = index.row();
+        if(categoryIndex < 0 || categoryIndex >= (int)_actionsPerCategory.size())
+            return {};
+        if(overlayIndex < 0 || overlayIndex >= (int)_actionsPerCategory[categoryIndex].size())
+            return {};
+
+        OverlayAction* action = _actionsPerCategory[categoryIndex][overlayIndex];
+        if(role == Qt::DisplayRole)
+            return action->text();
+        else if(role == Qt::UserRole)
+            return false; // Not a category
     }
     return {};
 }
@@ -284,15 +282,54 @@ QVariant AvailableOverlaysModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags AvailableOverlaysModel::flags(const QModelIndex& index) const
 {
-    if(index.row() > 0 && index.row() < _modelActions.size()) {
-        if(_modelActions[index.row()])
-            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
-        else if(index.row() == _getMoreExtensionsItemIndex)
-            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        else
-            return Qt::ItemIsEnabled;
+    if(!index.isValid())
+        return Qt::NoItemFlags;
+
+    if(index.internalId() == quintptr(-1)) {
+        // Category item: enabled but not selectable.
+        return Qt::ItemIsEnabled;
     }
-    return QAbstractListModel::flags(index);
+    else {
+        // Overlay item.
+        OverlayAction* action = actionFromIndex(index);
+        if(action)
+            return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+    }
+    return Qt::NoItemFlags;
+}
+
+/******************************************************************************
+* Returns the action for an overlay at a given category and row.
+******************************************************************************/
+OverlayAction* AvailableOverlaysModel::actionAt(int categoryIndex, int overlayIndex) const
+{
+    if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size()) {
+        if(overlayIndex >= 0 && overlayIndex < (int)_actionsPerCategory[categoryIndex].size())
+            return _actionsPerCategory[categoryIndex][overlayIndex];
+    }
+    return nullptr;
+}
+
+/******************************************************************************
+* Returns the action for an overlay from a model index.
+******************************************************************************/
+OverlayAction* AvailableOverlaysModel::actionFromIndex(const QModelIndex& index) const
+{
+    if(!index.isValid() || index.internalId() == quintptr(-1))
+        return nullptr;
+
+    int categoryIndex = (int)index.internalId();
+    int overlayIndex = index.row();
+    return actionAt(categoryIndex, overlayIndex);
+}
+
+/******************************************************************************
+* Inserts the overlay from the given model index into the current viewport.
+******************************************************************************/
+void AvailableOverlaysModel::insertOverlayByIndex(const QModelIndex& index)
+{
+    if(OverlayAction* action = actionFromIndex(index))
+        action->trigger();
 }
 
 /******************************************************************************
@@ -336,8 +373,9 @@ void AvailableOverlaysModel::refreshTemplates()
     // Sort complete list of actions by name.
     std::sort(_actions.begin(), _actions.end(), [](const OverlayAction* a, const OverlayAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
 
-    // Regenerate list items.
-    updateModelLists();
+    // Notify views that the model has been reset.
+    beginResetModel();
+    endResetModel();
 }
 
 /******************************************************************************
@@ -435,8 +473,208 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     }
     _actionsPerCategory[categoryIndex].push_back(action);
 
-    // Regenerate list model items.
+    // Notify views that the model has been reset.
+    beginResetModel();
+    endResetModel();
+}
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+AvailableOverlaysListModel::AvailableOverlaysListModel(AvailableOverlaysModel* sourceModel, QObject* parent)
+    : QAbstractListModel(parent), _sourceModel(sourceModel)
+{
+    // Initialize UI colors.
+    updateColorPalette(QGuiApplication::palette());
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableOverlaysListModel::updateColorPalette);
+QT_WARNING_POP
+
+    // Connect to source model signals.
+    connect(_sourceModel, &QAbstractItemModel::modelAboutToBeReset, this, &AvailableOverlaysListModel::onSourceModelAboutToBeReset);
+    connect(_sourceModel, &QAbstractItemModel::modelReset, this, &AvailableOverlaysListModel::onSourceModelReset);
+
+    // Define fonts, colors, etc.
+    _categoryFont = QGuiApplication::font();
+    _categoryFont.setBold(true);
+#ifndef Q_OS_WIN
+    if(_categoryFont.pixelSize() < 0)
+        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
+    else
+        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
+#endif
+    _getMoreExtensionsFont = QGuiApplication::font();
+
+    // Generate list items.
     updateModelLists();
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void AvailableOverlaysListModel::updateColorPalette(const QPalette& palette)
+{
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+#ifndef Q_OS_LINUX
+    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#else
+    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#endif
+    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
+}
+
+/******************************************************************************
+* Called when the source model is about to be reset.
+******************************************************************************/
+void AvailableOverlaysListModel::onSourceModelAboutToBeReset()
+{
+    beginResetModel();
+}
+
+/******************************************************************************
+* Called when the source model has been reset.
+******************************************************************************/
+void AvailableOverlaysListModel::onSourceModelReset()
+{
+    updateModelLists();
+    endResetModel();
+}
+
+/******************************************************************************
+* Returns the number of rows in the model.
+******************************************************************************/
+int AvailableOverlaysListModel::rowCount(const QModelIndex& parent) const
+{
+    return _modelStrings.size();
+}
+
+/******************************************************************************
+* Returns the model's role names.
+******************************************************************************/
+QHash<int, QByteArray> AvailableOverlaysListModel::roleNames() const
+{
+    return {
+        { Qt::DisplayRole, "title" },
+        { Qt::UserRole, "isheader" },
+        { Qt::FontRole, "font" }
+    };
+}
+
+/******************************************************************************
+* Rebuilds the internal list of model items.
+******************************************************************************/
+void AvailableOverlaysListModel::updateModelLists()
+{
+    _modelStrings.clear();
+    _modelStrings.push_back(tr("Add layer..."));
+    _modelActions.clear();
+    _modelActions.push_back(nullptr);
+    _getMoreExtensionsItemIndex = -1;
+
+    for(int categoryIndex = 0; categoryIndex < _sourceModel->categoryCount(); categoryIndex++) {
+        const std::vector<OverlayAction*>& categoryActions = _sourceModel->categoryActions(categoryIndex);
+        if(!categoryActions.empty()) {
+            _modelActions.push_back(nullptr);
+            _modelStrings.push_back(_sourceModel->categoryName(categoryIndex));
+            for(OverlayAction* action : categoryActions) {
+                _modelActions.push_back(action);
+                _modelStrings.push_back(action->text());
+            }
+#ifndef OVITO_BUILD_BASIC
+            if(_sourceModel->categoryName(categoryIndex) == tr("Python layers")) {
+#else
+            if(_sourceModel->categoryName(categoryIndex) == tr("Python layers (Pro)")) {
+#endif
+                _getMoreExtensionsItemIndex = _modelStrings.size();
+                _modelActions.push_back(nullptr);
+                _modelStrings.push_back(tr("Get more layers..."));
+            }
+        }
+    }
+
+    if(_getMoreExtensionsItemIndex == -1) {
+        _getMoreExtensionsItemIndex = _modelStrings.size();
+        _modelActions.push_back(nullptr);
+        _modelStrings.push_back(tr("Get more layers..."));
+    }
+}
+
+/******************************************************************************
+* Returns the data associated with a list item.
+******************************************************************************/
+QVariant AvailableOverlaysListModel::data(const QModelIndex& index, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(index.row() >= 0 && index.row() < (int)_modelStrings.size())
+            return _modelStrings[index.row()];
+    }
+    else if(role == Qt::UserRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return true;
+        else
+            return false;
+    }
+    else if(role == Qt::FontRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsFont;
+        // Is it a category header?
+        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
+            return _categoryFont;
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsForegroundBrush;
+        // Is it a category header?
+        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
+            return _categoryForegroundBrush;
+    }
+    else if(role == Qt::BackgroundRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return _categoryBackgroundBrush;
+    }
+    else if(role == Qt::TextAlignmentRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return Qt::AlignCenter;
+    }
+    return {};
+}
+
+/******************************************************************************
+* Returns the flags for an item.
+******************************************************************************/
+Qt::ItemFlags AvailableOverlaysListModel::flags(const QModelIndex& index) const
+{
+    if(index.row() > 0 && index.row() < (int)_modelActions.size()) {
+        if(_modelActions[index.row()])
+            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+        else if(index.row() == _getMoreExtensionsItemIndex)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        else
+            return Qt::ItemIsEnabled;
+    }
+    return QAbstractListModel::flags(index);
+}
+
+/******************************************************************************
+* Returns the action that belongs to the given model index.
+******************************************************************************/
+OverlayAction* AvailableOverlaysListModel::actionFromIndex(int index) const
+{
+    return (index >= 0 && index < (int)_modelActions.size()) ? _modelActions[index] : nullptr;
+}
+
+/******************************************************************************
+* Inserts the i-th overlay from this model into the current viewport.
+******************************************************************************/
+void AvailableOverlaysListModel::insertOverlayByIndex(int index)
+{
+    if(OverlayAction* action = actionFromIndex(index))
+        action->trigger();
 }
 
 }   // End of namespace

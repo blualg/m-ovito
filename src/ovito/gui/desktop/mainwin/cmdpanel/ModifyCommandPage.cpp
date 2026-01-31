@@ -42,6 +42,7 @@
 #include <ovito/gui/desktop/dialogs/ImportObjectSnippetDialog.h>
 #include "CommandPanel.h"
 #include "ModifyCommandPage.h"
+#include "AvailableModifiersSelectorWidget.h"
 
 namespace Ovito {
 
@@ -56,20 +57,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     layout->setColumnStretch(0,1);
 
     _pipelineListModel = new PipelineListModel(ui, this);
-    class ModifierListBox : public QComboBox {
-    public:
-        using QComboBox::QComboBox;
-        virtual void showPopup() override {
-            static_cast<AvailableModifiersModel*>(model())->updateActionState();
-            QComboBox::showPopup();
-        }
-    };
-    _modifierSelector = new ModifierListBox(this);
-    layout->addWidget(_modifierSelector, 1, 0, 1, 1);
-    _modifierSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _modifierSelector->setModel(new AvailableModifiersModel(this, ui, _pipelineListModel));
-    _modifierSelector->setMaxVisibleItems(0xFFFF);
-    connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, &ModifyCommandPage::onInsertNewModifier);
+    layout->addWidget(new AvailableModifiersSelectorWidget(this, ui, _pipelineListModel), 1, 0, 1, 1);
 
     class PipelineListView : public QListView {
     public:
@@ -248,29 +236,11 @@ void ModifyCommandPage::saveLayout()
 }
 
 /******************************************************************************
-* Is called when the user has selected a modifier from drop-down list of available modifiers.
-******************************************************************************/
-void ModifyCommandPage::onInsertNewModifier(int index)
-{
-    if(index == availableModifiersModel()->getMoreExtensionsItemIndex()) {
-        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
-            action->trigger();
-        else
-            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
-    }
-    else {
-        availableModifiersModel()->insertModifierByIndex(index);
-    }
-    _modifierSelector->setCurrentIndex(0);
-}
-
-/******************************************************************************
 * Is called when a new modification list item has been selected, or if the currently
 * selected item has changed.
 ******************************************************************************/
 void ModifyCommandPage::onSelectedItemChanged()
 {
-    _modifierSelector->setEnabled(pipelineListModel()->selectedPipeline() != nullptr);
     _propertiesPanel->setEditObject(pipelineListModel()->selectedObject());
 
     // Whenever no object is selected, show information about the program.

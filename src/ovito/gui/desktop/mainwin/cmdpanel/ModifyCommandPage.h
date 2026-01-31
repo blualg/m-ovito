@@ -27,7 +27,6 @@
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/mainwin/AvailableModifiersModel.h>
 #include <ovito/core/oo/RefTargetListener.h>
 
 namespace Ovito {
@@ -56,9 +55,6 @@ public:
     /// Returns the list model that encapsulates the modification pipeline of the selected node(s).
     PipelineListModel* pipelineListModel() const { return _pipelineListModel; }
 
-    /// Returns the list model that lists the available modifiers.
-    AvailableModifiersModel* availableModifiersModel() const { return static_cast<AvailableModifiersModel*>(_modifierSelector->model()); }
-
     /// Loads the layout of the widgets from the settings store.
     void restoreLayout();
 
@@ -72,9 +68,6 @@ public:
     PropertiesEditor* startEditingPipelineNode(PipelineNode* node);
 
 protected Q_SLOTS:
-
-    /// Is called when the user has selected a modifier from drop-down list of available modifiers.
-    void onInsertNewModifier(int index);
 
     /// Is called when a new modification list item has been selected, or if the currently
     /// selected item has changed.
@@ -101,9 +94,6 @@ private:
 
     /// The Qt model for the data pipeline of the selected node(s).
     PipelineListModel* _pipelineListModel;
-
-    /// This widget displays the list of available modifiers and allows the user to insert a modifier into the pipeline.
-    QComboBox* _modifierSelector;
 
     /// This panel shows the properties of the selected modifier stack entry
     PropertiesPanel* _propertiesPanel;

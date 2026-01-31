@@ -33,6 +33,7 @@
 namespace Ovito {
 
 QVector<AvailableModifiersModel*> AvailableModifiersModel::_allModels;
+QVector<AvailableModifiersListModel*> AvailableModifiersListModel::_allListModels;
 
 /******************************************************************************
 * Constructs an action for a built-in modifier class.
@@ -104,7 +105,7 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface& ui, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), UserInterfaceComponent<UserInterface>(ui), _pipelineListModel(pipelineListModel)
+AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface& ui, PipelineListModel* pipelineListModel) : QAbstractItemModel(parent), UserInterfaceComponent<UserInterface>(ui), _pipelineListModel(pipelineListModel)
 {
     OVITO_ASSERT(actionManager());
 
@@ -113,13 +114,6 @@ AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface&
 
     // Update the state of this model's actions whenever the ActionManager requests it.
     connect(actionManager(), &ActionManager::actionUpdateRequested, this, &AvailableModifiersModel::updateActionState);
-
-    // Initialize UI colors.
-    updateColorPalette(QGuiApplication::palette());
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
-    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableModifiersModel::updateColorPalette);
-QT_WARNING_POP
 
     // Enumerate all registered modifier classes.
     for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
@@ -188,43 +182,77 @@ QT_WARNING_POP
 
     // Extend the list when a new Python extension is being registered at runtime.
     connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, this, &AvailableModifiersModel::extensionClassAdded);
-
-    // Define fonts, colors, etc.
-    _categoryFont = QGuiApplication::font();
-    _categoryFont.setBold(true);
-#ifndef Q_OS_WIN
-    if(_categoryFont.pixelSize() < 0)
-        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
-    else
-        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
-#endif
-    _getMoreExtensionsFont = QGuiApplication::font();
-
-    // Generate list items.
-    updateModelLists();
 }
 
 /******************************************************************************
-* Updates the color brushes of the model.
+* Returns the model index for the item at the given row and column.
 ******************************************************************************/
-void AvailableModifiersModel::updateColorPalette(const QPalette& palette)
+QModelIndex AvailableModifiersModel::index(int row, int column, const QModelIndex& parent) const
 {
-    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
-#ifndef Q_OS_LINUX
-    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#else
-    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#endif
-    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
-    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
+    if(column != 0)
+        return {};
+
+    if(!parent.isValid()) {
+        // Root level: categories
+        if(row >= 0 && row < (int)_categoryNames.size())
+            return createIndex(row, 0, quintptr(-1));
+    }
+    else if(parent.internalId() == quintptr(-1)) {
+        // Child level: modifiers within a category
+        int categoryIndex = parent.row();
+        if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size()) {
+            if(row >= 0 && row < (int)_actionsPerCategory[categoryIndex].size())
+                return createIndex(row, 0, quintptr(categoryIndex));
+        }
+    }
+    return {};
 }
 
 /******************************************************************************
-* Returns the number of rows in the model.
+* Returns the parent of the model item with the given index.
+******************************************************************************/
+QModelIndex AvailableModifiersModel::parent(const QModelIndex& index) const
+{
+    if(!index.isValid())
+        return {};
+
+    quintptr id = index.internalId();
+    if(id == quintptr(-1)) {
+        // This is a category item at the root level.
+        return {};
+    }
+    else {
+        // This is a modifier item; its parent is the category.
+        int categoryIndex = (int)id;
+        return createIndex(categoryIndex, 0, quintptr(-1));
+    }
+}
+
+/******************************************************************************
+* Returns the number of rows under the given parent.
 ******************************************************************************/
 int AvailableModifiersModel::rowCount(const QModelIndex& parent) const
 {
-    return _modelStrings.size();
+    if(!parent.isValid()) {
+        // Root level: number of categories
+        return (int)_categoryNames.size();
+    }
+    else if(parent.internalId() == quintptr(-1)) {
+        // Category level: number of modifiers in this category
+        int categoryIndex = parent.row();
+        if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size())
+            return (int)_actionsPerCategory[categoryIndex].size();
+    }
+    // Modifiers don't have children.
+    return 0;
+}
+
+/******************************************************************************
+* Returns the number of columns for the children of the given parent.
+******************************************************************************/
+int AvailableModifiersModel::columnCount(const QModelIndex& parent) const
+{
+    return 1;
 }
 
 /******************************************************************************
@@ -234,99 +262,43 @@ QHash<int, QByteArray> AvailableModifiersModel::roleNames() const
 {
     return {
         { Qt::DisplayRole, "title" },
-        { Qt::UserRole, "isheader" },
-        { Qt::FontRole, "font" }
+        { Qt::UserRole, "iscategory" }
     };
 }
 
 /******************************************************************************
-* Rebuilds the internal list of model items.
-******************************************************************************/
-void AvailableModifiersModel::updateModelLists()
-{
-    beginResetModel();
-    _modelStrings.clear();
-    _modelStrings.push_back(tr("Add modification..."));
-    _modelActions.clear();
-    _modelActions.push_back(nullptr);
-    _getMoreExtensionsItemIndex = -1;
-    if(_useCategories) {
-        int categoryIndex = 0;
-        for(const auto& categoryActions : _actionsPerCategory) {
-            if(!categoryActions.empty()) {
-                _modelActions.push_back(nullptr);
-                _modelStrings.push_back(_categoryNames[categoryIndex]);
-                for(ModifierAction* action : categoryActions) {
-                    _modelActions.push_back(action);
-                    _modelStrings.push_back(action->text());
-                }
-#ifndef OVITO_BUILD_BASIC
-                if(_categoryNames[categoryIndex] == tr("Python modifiers")) {
-#else
-                if(_categoryNames[categoryIndex] == tr("Python modifiers (Pro)")) {
-#endif
-                    _getMoreExtensionsItemIndex = _modelStrings.size();
-                    _modelActions.push_back(nullptr);
-                    _modelStrings.push_back(tr("Get more modifiers..."));
-                }
-            }
-            categoryIndex++;
-        }
-    }
-    else {
-        _modelActions.insert(_modelActions.end(), _actions.begin(), _actions.end());
-        _modelStrings.reserve(_modelActions.size());
-        for(ModifierAction* action : _actions)
-            _modelStrings.push_back(action->text());
-    }
-    if(_getMoreExtensionsItemIndex == -1) {
-        _getMoreExtensionsItemIndex = _modelStrings.size();
-        _modelActions.push_back(nullptr);
-        _modelStrings.push_back(tr("Get more modifiers..."));
-    }
-
-    endResetModel();
-}
-
-/******************************************************************************
-* Returns the data associated with a list item.
+* Returns the data associated with an item.
 ******************************************************************************/
 QVariant AvailableModifiersModel::data(const QModelIndex& index, int role) const
 {
-    if(role == Qt::DisplayRole) {
-        if(index.row() >= 0 && index.row() < _modelStrings.size())
-            return _modelStrings[index.row()];
+    if(!index.isValid())
+        return {};
+
+    if(index.internalId() == quintptr(-1)) {
+        // Category item.
+        int categoryIndex = index.row();
+        if(categoryIndex < 0 || categoryIndex >= (int)_categoryNames.size())
+            return {};
+
+        if(role == Qt::DisplayRole)
+            return _categoryNames[categoryIndex];
+        else if(role == Qt::UserRole)
+            return true; // Is a category
     }
-    else if(role == Qt::UserRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return true;
-        else
-            return false;
-    }
-    else if(role == Qt::FontRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsFont;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryFont;
-    }
-    else if(role == Qt::ForegroundRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsForegroundBrush;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryForegroundBrush;
-    }
-    else if(role == Qt::BackgroundRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return _categoryBackgroundBrush;
-    }
-    else if(role == Qt::TextAlignmentRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return Qt::AlignCenter;
+    else {
+        // Modifier item.
+        int categoryIndex = (int)index.internalId();
+        int modifierIndex = index.row();
+        if(categoryIndex < 0 || categoryIndex >= (int)_actionsPerCategory.size())
+            return {};
+        if(modifierIndex < 0 || modifierIndex >= (int)_actionsPerCategory[categoryIndex].size())
+            return {};
+
+        ModifierAction* action = _actionsPerCategory[categoryIndex][modifierIndex];
+        if(role == Qt::DisplayRole)
+            return action->text();
+        else if(role == Qt::UserRole)
+            return false; // Not a category
     }
     return {};
 }
@@ -336,15 +308,45 @@ QVariant AvailableModifiersModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags AvailableModifiersModel::flags(const QModelIndex& index) const
 {
-    if(index.row() > 0 && index.row() < _modelActions.size()) {
-        if(_modelActions[index.row()])
-            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
-        else if(index.row() == _getMoreExtensionsItemIndex)
-            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        else
-            return Qt::ItemIsEnabled;
+    if(!index.isValid())
+        return Qt::NoItemFlags;
+
+    if(index.internalId() == quintptr(-1)) {
+        // Category item: enabled but not selectable.
+        return Qt::ItemIsEnabled;
     }
-    return QAbstractListModel::flags(index);
+    else {
+        // Modifier item.
+        ModifierAction* action = actionFromIndex(index);
+        if(action)
+            return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+    }
+    return Qt::NoItemFlags;
+}
+
+/******************************************************************************
+* Returns the action for a modifier at a given category and row.
+******************************************************************************/
+ModifierAction* AvailableModifiersModel::actionAt(int categoryIndex, int modifierIndex) const
+{
+    if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size()) {
+        if(modifierIndex >= 0 && modifierIndex < (int)_actionsPerCategory[categoryIndex].size())
+            return _actionsPerCategory[categoryIndex][modifierIndex];
+    }
+    return nullptr;
+}
+
+/******************************************************************************
+* Returns the action for a modifier from a model index.
+******************************************************************************/
+ModifierAction* AvailableModifiersModel::actionFromIndex(const QModelIndex& index) const
+{
+    if(!index.isValid() || index.internalId() == quintptr(-1))
+        return nullptr;
+
+    int categoryIndex = (int)index.internalId();
+    int modifierIndex = index.row();
+    return actionAt(categoryIndex, modifierIndex);
 }
 
 /******************************************************************************
@@ -385,11 +387,11 @@ void AvailableModifiersModel::insertModifier()
 }
 
 /******************************************************************************
-* Inserts the i-th modifier from this model into the current pipeline.
+* Inserts the modifier from the given model index into the current pipeline.
 ******************************************************************************/
-void AvailableModifiersModel::insertModifierByIndex(int index)
+void AvailableModifiersModel::insertModifierByIndex(const QModelIndex& index)
 {
-    if(QAction* action = actionFromIndex(index))
+    if(ModifierAction* action = actionFromIndex(index))
         action->trigger();
 }
 
@@ -434,8 +436,9 @@ void AvailableModifiersModel::refreshTemplates()
     // Sort complete list of actions by name.
     std::sort(_actions.begin(), _actions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
 
-    // Regenerate list items.
-    updateModelLists();
+    // Notify views that the model has been reset.
+    beginResetModel();
+    endResetModel();
 }
 
 /******************************************************************************
@@ -462,50 +465,15 @@ void AvailableModifiersModel::updateActionState()
     }
 
     // Update the actions.
-    for(int row = 1; row < _modelActions.size(); row++) {
-        if(_modelActions[row] && _modelActions[row]->updateState(inputState))
-            Q_EMIT dataChanged(index(row), index(row));
+    for(int categoryIndex = 0; categoryIndex < (int)_actionsPerCategory.size(); categoryIndex++) {
+        for(int modifierIndex = 0; modifierIndex < (int)_actionsPerCategory[categoryIndex].size(); modifierIndex++) {
+            ModifierAction* action = _actionsPerCategory[categoryIndex][modifierIndex];
+            if(action->updateState(inputState)) {
+                QModelIndex idx = index(modifierIndex, 0, index(categoryIndex, 0));
+                Q_EMIT dataChanged(idx, idx);
+            }
+        }
     }
-}
-
-/******************************************************************************
-* Sets whether available modifiers are sorted by category instead of name.
-******************************************************************************/
-void AvailableModifiersModel::setUseCategories(bool on)
-{
-    if(on != _useCategories) {
-        _useCategories = on;
-        updateModelLists();
-    }
-}
-
-/******************************************************************************
-* Returns whether sorting of available modifiers into categories is enabled globally for the application.
-******************************************************************************/
-bool AvailableModifiersModel::useCategoriesGlobal()
-{
-#ifndef OVITO_DISABLE_QSETTINGS
-    QSettings settings;
-    return settings.value("modifiers/sort_by_category", true).toBool();
-#else
-    return true;
-#endif
-}
-
-/******************************************************************************
-* Sets whether available modifiers are sorted by category globally for the application.
-******************************************************************************/
-void AvailableModifiersModel::setUseCategoriesGlobal(bool on)
-{
-#ifndef OVITO_DISABLE_QSETTINGS
-    if(on != useCategoriesGlobal()) {
-        QSettings settings;
-        settings.setValue("modifiers/sort_by_category", on);
-    }
-
-    for(AvailableModifiersModel* model : _allModels)
-        model->setUseCategories(on);
-#endif
 }
 
 /******************************************************************************
@@ -546,8 +514,274 @@ void AvailableModifiersModel::extensionClassAdded(OvitoClassPtr cls)
     }
     _actionsPerCategory[categoryIndex].push_back(action);
 
-    // Regenerate list model items.
+    // Notify views that the model has been reset.
+    beginResetModel();
+    endResetModel();
+}
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+AvailableModifiersListModel::AvailableModifiersListModel(AvailableModifiersModel* sourceModel, QObject* parent)
+    : QAbstractListModel(parent), _sourceModel(sourceModel)
+{
+    // Register this instance.
+    _allListModels.push_back(this);
+
+    // Initialize UI colors.
+    updateColorPalette(QGuiApplication::palette());
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableModifiersListModel::updateColorPalette);
+QT_WARNING_POP
+
+    // Connect to source model signals.
+    connect(_sourceModel, &QAbstractItemModel::modelAboutToBeReset, this, &AvailableModifiersListModel::onSourceModelAboutToBeReset);
+    connect(_sourceModel, &QAbstractItemModel::modelReset, this, &AvailableModifiersListModel::onSourceModelReset);
+    connect(_sourceModel, &QAbstractItemModel::dataChanged, this, &AvailableModifiersListModel::onSourceDataChanged);
+
+    // Define fonts, colors, etc.
+    _categoryFont = QGuiApplication::font();
+    _categoryFont.setBold(true);
+#ifndef Q_OS_WIN
+    if(_categoryFont.pixelSize() < 0)
+        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
+    else
+        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
+#endif
+    _getMoreExtensionsFont = QGuiApplication::font();
+
+    // Generate list items.
     updateModelLists();
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void AvailableModifiersListModel::updateColorPalette(const QPalette& palette)
+{
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+#ifndef Q_OS_LINUX
+    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#else
+    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+#endif
+    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
+}
+
+/******************************************************************************
+* Called when the source model is about to be reset.
+******************************************************************************/
+void AvailableModifiersListModel::onSourceModelAboutToBeReset()
+{
+    beginResetModel();
+}
+
+/******************************************************************************
+* Called when the source model has been reset.
+******************************************************************************/
+void AvailableModifiersListModel::onSourceModelReset()
+{
+    updateModelLists();
+    endResetModel();
+}
+
+/******************************************************************************
+* Called when data in the source model changes.
+******************************************************************************/
+void AvailableModifiersListModel::onSourceDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QList<int>& roles)
+{
+    // Find the corresponding rows in our flat list and emit dataChanged.
+    // For simplicity, we'll emit dataChanged for the entire model.
+    if(!_modelActions.empty())
+        Q_EMIT dataChanged(index(0), index((int)_modelActions.size() - 1));
+}
+
+/******************************************************************************
+* Returns the number of rows in the model.
+******************************************************************************/
+int AvailableModifiersListModel::rowCount(const QModelIndex& parent) const
+{
+    return _modelStrings.size();
+}
+
+/******************************************************************************
+* Returns the model's role names.
+******************************************************************************/
+QHash<int, QByteArray> AvailableModifiersListModel::roleNames() const
+{
+    return {
+        { Qt::DisplayRole, "title" },
+        { Qt::UserRole, "isheader" },
+        { Qt::FontRole, "font" }
+    };
+}
+
+/******************************************************************************
+* Rebuilds the internal list of model items.
+******************************************************************************/
+void AvailableModifiersListModel::updateModelLists()
+{
+    _modelStrings.clear();
+    _modelStrings.push_back(tr("Add modification..."));
+    _modelActions.clear();
+    _modelActions.push_back(nullptr);
+    _getMoreExtensionsItemIndex = -1;
+
+    if(_useCategories) {
+        for(int categoryIndex = 0; categoryIndex < _sourceModel->categoryCount(); categoryIndex++) {
+            const std::vector<ModifierAction*>& categoryActions = _sourceModel->categoryActions(categoryIndex);
+            if(!categoryActions.empty()) {
+                _modelActions.push_back(nullptr);
+                _modelStrings.push_back(_sourceModel->categoryName(categoryIndex));
+                for(ModifierAction* action : categoryActions) {
+                    _modelActions.push_back(action);
+                    _modelStrings.push_back(action->text());
+                }
+#ifndef OVITO_BUILD_BASIC
+                if(_sourceModel->categoryName(categoryIndex) == tr("Python modifiers")) {
+#else
+                if(_sourceModel->categoryName(categoryIndex) == tr("Python modifiers (Pro)")) {
+#endif
+                    _getMoreExtensionsItemIndex = _modelStrings.size();
+                    _modelActions.push_back(nullptr);
+                    _modelStrings.push_back(tr("Get more modifiers..."));
+                }
+            }
+        }
+    }
+    else {
+        const std::vector<ModifierAction*>& allActions = _sourceModel->allActions();
+        _modelActions.insert(_modelActions.end(), allActions.begin(), allActions.end());
+        _modelStrings.reserve(_modelActions.size());
+        for(ModifierAction* action : allActions)
+            _modelStrings.push_back(action->text());
+    }
+
+    if(_getMoreExtensionsItemIndex == -1) {
+        _getMoreExtensionsItemIndex = _modelStrings.size();
+        _modelActions.push_back(nullptr);
+        _modelStrings.push_back(tr("Get more modifiers..."));
+    }
+}
+
+/******************************************************************************
+* Returns the data associated with a list item.
+******************************************************************************/
+QVariant AvailableModifiersListModel::data(const QModelIndex& index, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(index.row() >= 0 && index.row() < (int)_modelStrings.size())
+            return _modelStrings[index.row()];
+    }
+    else if(role == Qt::UserRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return true;
+        else
+            return false;
+    }
+    else if(role == Qt::FontRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsFont;
+        // Is it a category header?
+        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
+            return _categoryFont;
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsForegroundBrush;
+        // Is it a category header?
+        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
+            return _categoryForegroundBrush;
+    }
+    else if(role == Qt::BackgroundRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return _categoryBackgroundBrush;
+    }
+    else if(role == Qt::TextAlignmentRole) {
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+            return Qt::AlignCenter;
+    }
+    return {};
+}
+
+/******************************************************************************
+* Returns the flags for an item.
+******************************************************************************/
+Qt::ItemFlags AvailableModifiersListModel::flags(const QModelIndex& index) const
+{
+    if(index.row() > 0 && index.row() < (int)_modelActions.size()) {
+        if(_modelActions[index.row()])
+            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+        else if(index.row() == _getMoreExtensionsItemIndex)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        else
+            return Qt::ItemIsEnabled;
+    }
+    return QAbstractListModel::flags(index);
+}
+
+/******************************************************************************
+* Returns the action that belongs to the given model index.
+******************************************************************************/
+ModifierAction* AvailableModifiersListModel::actionFromIndex(int index) const
+{
+    return (index >= 0 && index < (int)_modelActions.size()) ? _modelActions[index] : nullptr;
+}
+
+/******************************************************************************
+* Sets whether available modifiers are sorted by category instead of name.
+******************************************************************************/
+void AvailableModifiersListModel::setUseCategories(bool on)
+{
+    if(on != _useCategories) {
+        _useCategories = on;
+        beginResetModel();
+        updateModelLists();
+        endResetModel();
+    }
+}
+
+/******************************************************************************
+* Inserts the i-th modifier from this model into the current pipeline.
+******************************************************************************/
+void AvailableModifiersListModel::insertModifierByIndex(int index)
+{
+    if(ModifierAction* action = actionFromIndex(index))
+        action->trigger();
+}
+
+/******************************************************************************
+* Returns whether sorting of available modifiers into categories is enabled globally for the application.
+******************************************************************************/
+bool AvailableModifiersListModel::useCategoriesGlobal()
+{
+#ifndef OVITO_DISABLE_QSETTINGS
+    QSettings settings;
+    return settings.value("modifiers/sort_by_category", true).toBool();
+#else
+    return true;
+#endif
+}
+
+/******************************************************************************
+* Sets whether available modifiers are sorted by category globally for the application.
+******************************************************************************/
+void AvailableModifiersListModel::setUseCategoriesGlobal(bool on)
+{
+#ifndef OVITO_DISABLE_QSETTINGS
+    if(on != useCategoriesGlobal()) {
+        QSettings settings;
+        settings.setValue("modifiers/sort_by_category", on);
+    }
+
+    for(AvailableModifiersListModel* listModel : _allListModels)
+        listModel->setUseCategories(on);
+#endif
 }
 
 }   // End of namespace

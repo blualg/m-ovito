@@ -56,9 +56,6 @@ public:
 
 protected Q_SLOTS:
 
-    /// Is called when the user has selected an overlay type from drop-down list of available overlays.
-    void onInsertNewOverlay(int index);
-
     /// This is called when another viewport became active.
     void onActiveViewportChanged(Viewport* activeViewport);
 
@@ -81,9 +78,6 @@ private:
 
     /// Returns the selected viewport layer.
     ViewportOverlay* selectedLayer() const;
-
-    /// Contains the list of available layer types.
-    QComboBox* _newLayerBox;
 
     /// The Qt model for the list of overlays of the active viewport.
     OverlayListModel* _overlayListModel;
