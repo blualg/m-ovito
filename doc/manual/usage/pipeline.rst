@@ -59,7 +59,7 @@ Data source
 When you first import a dataset, the pipeline contains no modifiers yet, and the *Modifications* section is hidden.
 Selecting an item in the pipeline editor opens a corresponding parameter panel where you can adjust its settings.
 
-To add a modifier, use the :guilabel:`Add modification...` dropdown above the pipeline editor.
+To add a modifier, use the :guilabel:`Add modification...` widget above the pipeline editor.
 The new modifier is inserted above the currently selected pipeline item.
 Note that the pipeline follows a *bottom-up* order — modifiers at the bottom act first on the data.
 For example, in the screenshot, the pipeline first computes displacement vectors,

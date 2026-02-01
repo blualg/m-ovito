@@ -24,7 +24,7 @@
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include "AvailableModifiersSelectorWidget.h"
-#include "ModifierGalleryPopup.h"
+#include "ActionCardsPopup.h"
 
 namespace Ovito {
 
@@ -34,19 +34,11 @@ namespace Ovito {
 AvailableModifiersSelectorWidget::AvailableModifiersSelectorWidget(QWidget* parent, MainWindowUI& ui, PipelineListModel* pipelineListModel)
     : QComboBox(parent), UserInterfaceComponent<MainWindowUI>(ui), _pipelineListModel(pipelineListModel)
 {
-    setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    setModel(new AvailableModifiersListModel(new AvailableModifiersModel(this, ui, pipelineListModel), this));
-    setMaxVisibleItems(0xFFFF);
-    connect(this, qOverload<int>(&QComboBox::activated), this, [this](int index) {
-        if(index == availableModifiersListModel()->getMoreExtensionsItemIndex()) {
-            // Open the extensions gallery or website.
-            onGetMoreModifiersFromPopup();
-        }
-        else {
-            // Insert the selected modifier into the pipeline.
-            onModifierSelected(availableModifiersListModel()->actionFromIndex(index));
-        }
-    });
+    // Fill combo box with a dummy item.
+    addItem(tr("Add modification..."));
+
+    // Create the available modifiers model.
+    _availableModifiersModel = new AvailableModifiersModel(this, ui, pipelineListModel);
 
     // Update enabled state when the pipeline selection changes.
     connect(pipelineListModel, &PipelineListModel::selectedItemChanged, this, &AvailableModifiersSelectorWidget::onPipelineSelectionChanged);
@@ -56,41 +48,19 @@ AvailableModifiersSelectorWidget::AvailableModifiersSelectorWidget(QWidget* pare
 }
 
 /******************************************************************************
-* Returns the tree model that organizes all available modifiers by category.
-******************************************************************************/
-AvailableModifiersModel* AvailableModifiersSelectorWidget::availableModifiersModel() const
-{
-    return availableModifiersListModel()->sourceModel();
-}
-
-/******************************************************************************
-* Returns the list model that presents the available modifiers in flat list format.
-******************************************************************************/
-AvailableModifiersListModel* AvailableModifiersSelectorWidget::availableModifiersListModel() const
-{
-    return static_cast<AvailableModifiersListModel*>(model());
-}
-
-/******************************************************************************
 * Called when the popup menu is about to be shown.
 ******************************************************************************/
 void AvailableModifiersSelectorWidget::showPopup()
 {
-    availableModifiersListModel()->updateActionState();
+    availableModifiersModel()->updateActionState();
 
-    if(useCardPopupGlobal()) {
-        // Lazy create the card popup
-        if(!_cardPopup) {
-            _cardPopup = new ModifierGalleryPopup(availableModifiersModel(), this);
-            connect(_cardPopup, &ModifierGalleryPopup::modifierSelected, this, &AvailableModifiersSelectorWidget::onModifierSelected);
-            connect(_cardPopup, &ModifierGalleryPopup::getMoreModifiersClicked, this, &AvailableModifiersSelectorWidget::onGetMoreModifiersFromPopup);
-        }
-        _cardPopup->updateContent();
-        _cardPopup->showBelow(this);
+    // Lazy create the card popup
+    if(!_cardPopup) {
+        _cardPopup = new ActionCardsPopup(availableModifiersModel(), tr("Get more modifiers..."), this);
+        connect(_cardPopup, &ActionCardsPopup::getMoreActionsClicked, this, &AvailableModifiersSelectorWidget::onGetMoreModifiersFromPopup);
     }
-    else {
-        QComboBox::showPopup();
-    }
+    _cardPopup->updateContent();
+    _cardPopup->showBelow(this);
 }
 
 /******************************************************************************
@@ -99,20 +69,6 @@ void AvailableModifiersSelectorWidget::showPopup()
 void AvailableModifiersSelectorWidget::onPipelineSelectionChanged()
 {
     setEnabled(_pipelineListModel->selectedPipeline() != nullptr);
-}
-
-/******************************************************************************
-* Handles selection of a modifier.
-******************************************************************************/
-void AvailableModifiersSelectorWidget::onModifierSelected(ModifierAction* action)
-{
-    if(action) {
-        // Trigger the action to insert the modifier into the pipeline.
-        action->trigger();
-    }
-
-    // Reset the combo box to the default item.
-    setCurrentIndex(0);
 }
 
 /******************************************************************************
@@ -125,32 +81,6 @@ void AvailableModifiersSelectorWidget::onGetMoreModifiersFromPopup()
         action->trigger();
     else
         QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
-}
-
-/******************************************************************************
-* Returns whether the card popup mode is enabled globally.
-******************************************************************************/
-bool AvailableModifiersSelectorWidget::useCardPopupGlobal()
-{
-#ifndef OVITO_DISABLE_QSETTINGS
-    QSettings settings;
-    return settings.value("modifiers/use_card_popup", true).toBool();
-#else
-    return true;
-#endif
-}
-
-/******************************************************************************
-* Sets whether the card popup mode is enabled globally.
-******************************************************************************/
-void AvailableModifiersSelectorWidget::setUseCardPopupGlobal(bool on)
-{
-#ifndef OVITO_DISABLE_QSETTINGS
-    if(on != useCardPopupGlobal()) {
-        QSettings settings;
-        settings.setValue("modifiers/use_card_popup", on);
-    }
-#endif
 }
 
 }   // End of namespace

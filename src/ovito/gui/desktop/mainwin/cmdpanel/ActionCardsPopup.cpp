@@ -22,14 +22,15 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/base/mainwin/AvailableModifiersModel.h>
-#include "ModifierGalleryPopup.h"
+#include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
+#include "ActionCardsPopup.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Constructor for ClickableModifierLabel.
+* Constructor for ClickableActionLabel.
 ******************************************************************************/
-ClickableModifierLabel::ClickableModifierLabel(ModifierAction* action, QWidget* parent)
+ClickableActionLabel::ClickableActionLabel(QAction* action, QWidget* parent)
     : QWidget(parent), _action(action)
 {
     setMouseTracking(true);
@@ -44,9 +45,9 @@ ClickableModifierLabel::ClickableModifierLabel(ModifierAction* action, QWidget* 
 /******************************************************************************
 * Returns the preferred size for this widget.
 ******************************************************************************/
-QSize ClickableModifierLabel::sizeHint() const
+QSize ClickableActionLabel::sizeHint() const
 {
-    QFontMetrics fm(font());
+    QFontMetrics fm(_action ? _action->font() : font());
     QMargins m = contentsMargins();
     QString text = _action ? _action->text() : QString();
     return QSize(fm.horizontalAdvance(text) + m.left() + m.right(),
@@ -56,7 +57,7 @@ QSize ClickableModifierLabel::sizeHint() const
 /******************************************************************************
 * Paints the label with optional hover highlighting.
 ******************************************************************************/
-void ClickableModifierLabel::paintEvent(QPaintEvent*)
+void ClickableActionLabel::paintEvent(QPaintEvent*)
 {
     // Safety check: action may have been destroyed.
     if(!_action) return;
@@ -77,6 +78,7 @@ void ClickableModifierLabel::paintEvent(QPaintEvent*)
     else {
         p.setPen(palette().text().color());
     }
+    p.setFont(_action->font());
 
     p.drawText(rect().adjusted(m.left(), m.top(), -m.right(), -m.bottom()),
                Qt::AlignLeft | Qt::AlignVCenter, _action->text());
@@ -85,7 +87,7 @@ void ClickableModifierLabel::paintEvent(QPaintEvent*)
 /******************************************************************************
 * Called when the mouse enters the widget area.
 ******************************************************************************/
-void ClickableModifierLabel::enterEvent(QEnterEvent*)
+void ClickableActionLabel::enterEvent(QEnterEvent*)
 {
     _hovered = true;
     update();
@@ -95,7 +97,7 @@ void ClickableModifierLabel::enterEvent(QEnterEvent*)
 /******************************************************************************
 * Called when the mouse leaves the widget area.
 ******************************************************************************/
-void ClickableModifierLabel::leaveEvent(QEvent*)
+void ClickableActionLabel::leaveEvent(QEvent*)
 {
     _hovered = false;
     update();
@@ -105,7 +107,7 @@ void ClickableModifierLabel::leaveEvent(QEvent*)
 /******************************************************************************
 * Called when the mouse button is pressed.
 ******************************************************************************/
-void ClickableModifierLabel::mousePressEvent(QMouseEvent* event)
+void ClickableActionLabel::mousePressEvent(QMouseEvent* event)
 {
     if(_action && _action->isEnabled()) {
         Q_EMIT clicked(_action);
@@ -114,9 +116,9 @@ void ClickableModifierLabel::mousePressEvent(QMouseEvent* event)
 }
 
 /******************************************************************************
-* Constructor for ModifierGalleryPopup.
+* Constructor for ActionCardsPopup.
 ******************************************************************************/
-ModifierGalleryPopup::ModifierGalleryPopup(AvailableModifiersModel* model, QWidget* parent)
+ActionCardsPopup::ActionCardsPopup(QAbstractItemModel* model, const QString& getMoreButtonText, QWidget* parent)
     : QFrame(parent, Qt::Popup), _model(model)
 {
     setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
@@ -139,14 +141,15 @@ ModifierGalleryPopup::ModifierGalleryPopup(AvailableModifiersModel* model, QWidg
     QHBoxLayout* bottomLayout = new QHBoxLayout();
     bottomLayout->setContentsMargins(0, 4, 0, 0);
 
-    _statusLabel = new QLabel(this);
+    _statusLabel = new ElidedTextLabel(Qt::ElideRight, this);
     _statusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    _statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     bottomLayout->addWidget(_statusLabel, 1);
 
-    _getMoreButton = new QPushButton(tr("Get more modifiers..."), this);
+    _getMoreButton = new QPushButton(getMoreButtonText, this);
     connect(_getMoreButton, &QPushButton::clicked, this, [this]() {
         hide();
-        Q_EMIT getMoreModifiersClicked();
+        Q_EMIT getMoreActionsClicked();
     });
     _getMoreButton->installEventFilter(this);
     bottomLayout->addWidget(_getMoreButton);
@@ -160,7 +163,7 @@ ModifierGalleryPopup::ModifierGalleryPopup(AvailableModifiersModel* model, QWidg
 /******************************************************************************
 * Positions the popup below the given anchor widget and shows it.
 ******************************************************************************/
-void ModifierGalleryPopup::showBelow(QWidget* anchor)
+void ActionCardsPopup::showBelow(QWidget* anchor)
 {
     adjustSize();
 
@@ -198,7 +201,7 @@ void ModifierGalleryPopup::showBelow(QWidget* anchor)
 /******************************************************************************
 * Updates the popup content from the model.
 ******************************************************************************/
-void ModifierGalleryPopup::updateContent()
+void ActionCardsPopup::updateContent()
 {
     populateCards();
     adjustSize();
@@ -207,7 +210,7 @@ void ModifierGalleryPopup::updateContent()
 /******************************************************************************
 * Rebuilds the card layout from the model data.
 ******************************************************************************/
-void ModifierGalleryPopup::populateCards()
+void ActionCardsPopup::populateCards()
 {
     // Clear existing layout
     if(_cardsContainer->layout()) {
@@ -220,13 +223,15 @@ void ModifierGalleryPopup::populateCards()
         delete _cardsContainer->layout();
     }
 
-    int numCategories = _model->categoryCount();
+    int numCategories = _model->rowCount();
     if(numCategories == 0) return;
 
     // Determine number of columns based on category count
     int numColumns;
-    if(numCategories <= 4)
+    if(numCategories <= 1)
         numColumns = numCategories;
+    else if(numCategories <= 4)
+        numColumns = 2;
     else if(numCategories <= 7)
         numColumns = 3;
     else
@@ -252,17 +257,30 @@ void ModifierGalleryPopup::populateCards()
         hLayout->addWidget(columns[c], 0, Qt::AlignTop);
     }
 
+    // Get category sizes and sort them.
+    std::vector<int> actionsPerCategory(numCategories);
+    for(int i = 0; i < numCategories; ++i) {
+        actionsPerCategory[i] = _model->rowCount(_model->index(i, 0));
+    }
+
     // Sort categories by size (descending) for better column balancing
     std::vector<int> order(numCategories);
     std::iota(order.begin(), order.end(), 0);
-    std::sort(order.begin(), order.end(), [this](int a, int b) {
-        return _model->categoryActions(a).size() > _model->categoryActions(b).size();
+    std::sort(order.begin(), order.end(), [&](int a, int b) {
+        return actionsPerCategory[a] > actionsPerCategory[b];
     });
 
     // Assign each category to the shortest column
     for(int idx : order) {
-        const std::vector<ModifierAction*>& categoryActions = _model->categoryActions(idx);
-        if(categoryActions.empty()) continue;
+        if(actionsPerCategory[idx] == 0)
+            continue;
+
+        std::vector<QAction*> categoryActions(actionsPerCategory[idx]);
+        for(int row = 0; row < actionsPerCategory[idx]; ++row) {
+            QModelIndex actionIdx = _model->index(row, 0, _model->index(idx, 0));
+            categoryActions[row] = _model->data(actionIdx, Qt::UserRole).value<QAction*>();
+            OVITO_ASSERT(categoryActions[row] != nullptr);
+        }
 
         // Find column with minimum height
         int minCol = 0;
@@ -293,7 +311,7 @@ void ModifierGalleryPopup::populateCards()
         cardLayout->setContentsMargins(1, 1, 1, 4);  // 1px inner margin to avoid overlap with card border
 
         // Category header with rounded top corners and bottom border for separation
-        QLabel* header = new QLabel(_model->categoryName(idx));
+        QLabel* header = new QLabel(_model->data(_model->index(idx, 0), Qt::DisplayRole).toString());
         QFont headerFont = header->font();
         headerFont.setBold(true);
         header->setFont(headerFont);
@@ -303,14 +321,14 @@ void ModifierGalleryPopup::populateCards()
             .arg(headerBg.name()));
         cardLayout->addWidget(header);
 
-        // Modifier items
-        for(ModifierAction* action : categoryActions) {
-            ClickableModifierLabel* itemLabel = new ClickableModifierLabel(action, card);
-            connect(itemLabel, &ClickableModifierLabel::clicked, this, [this](ModifierAction* action) {
+        // Action items
+        for(QAction* action : categoryActions) {
+            ClickableActionLabel* itemLabel = new ClickableActionLabel(action, card);
+            connect(itemLabel, &ClickableActionLabel::clicked, this, [this](QAction* action) {
                 hide();
-                Q_EMIT modifierSelected(action);
+                action->trigger();
             });
-            connect(itemLabel, &ClickableModifierLabel::hovered, this, &ModifierGalleryPopup::onModifierHovered);
+            connect(itemLabel, &ClickableActionLabel::hovered, this, &ActionCardsPopup::onActionHovered);
             cardLayout->addWidget(itemLabel);
         }
 
@@ -325,9 +343,9 @@ void ModifierGalleryPopup::populateCards()
 }
 
 /******************************************************************************
-* Updates the status label when a modifier is hovered.
+* Updates the status label when an action is hovered.
 ******************************************************************************/
-void ModifierGalleryPopup::onModifierHovered(ModifierAction* action)
+void ActionCardsPopup::onActionHovered(QAction* action)
 {
     if(action)
         _statusLabel->setText(action->statusTip());
@@ -336,13 +354,13 @@ void ModifierGalleryPopup::onModifierHovered(ModifierAction* action)
 }
 
 /******************************************************************************
-* Handles hover events for the "Get more modifiers..." button.
+* Handles hover events for the "Get more XXX..." button.
 ******************************************************************************/
-bool ModifierGalleryPopup::eventFilter(QObject* watched, QEvent* event)
+bool ActionCardsPopup::eventFilter(QObject* watched, QEvent* event)
 {
     if(watched == _getMoreButton) {
         if(event->type() == QEvent::Enter) {
-            _statusLabel->setText(tr("Browse and install additional modifiers from the OVITO extensions repository."));
+            _statusLabel->setText(tr("Browse and install additional extensions from the OVITO extensions repository."));
         }
         else if(event->type() == QEvent::Leave) {
             _statusLabel->clear();

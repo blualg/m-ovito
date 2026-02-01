@@ -25,11 +25,6 @@ Use separate working directories for data import/export and session states
   When off, the global working directory is used as initial choice in all file selection dialogs.
   It typically depends on where OVITO was launched from (on the command line).
 
-Sort list of available modifiers by category
-  If turned on, the :ref:`list of available modifiers <particles.modifiers>` displayed by OVITO
-  is sub-divided into functional groups. If turned off, modifiers are offered in the form of a single, alphabetically
-  ordered list.
-
 Data import options
 """""""""""""""""""
 

@@ -98,7 +98,6 @@ AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& u
 
         // Create action for the viewport layer class.
         OverlayAction* action = OverlayAction::createForClass(clazz);
-        _actions.push_back(action);
 
         // Register it with the global ActionManager.
         actionManager()->addAction(action);
@@ -106,24 +105,22 @@ AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& u
 
         // Handle the insertion action.
         connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
-    }
 
-    // Order actions list by category name.
-    std::sort(_actions.begin(), _actions.end(), [](OverlayAction* a, OverlayAction* b) { return QString::localeAwareCompare(a->category(), b->category()) < 0; });
-
-    // Sort actions into categories.
-    for(OverlayAction* action : _actions) {
+        // Sort action into categories.
         const QString& category = !action->category().isEmpty() ? action->category() : tr("Standard layers");
-        if(_categoryNames.empty() || _categoryNames.back() != category) {
+        auto categoryIter = std::ranges::find(_categoryNames, category);
+        int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
+        if(categoryIter == _categoryNames.end()) {
+            // New category.
             _categoryNames.push_back(category);
             _actionsPerCategory.emplace_back();
         }
-        _actionsPerCategory.back().push_back(action);
+        _actionsPerCategory[categoryIndex].push_back(action);
     }
 
     // Sort actions by name within each category.
-    for(std::vector<OverlayAction*>& categoryActions : _actionsPerCategory) {
-        std::sort(categoryActions.begin(), categoryActions.end(), [](OverlayAction* a, OverlayAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
+    for(std::vector<QAction*>& categoryActions : _actionsPerCategory) {
+        std::sort(categoryActions.begin(), categoryActions.end(), [](QAction* a, QAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
     }
 
     // Create category for viewport layer templates.
@@ -140,13 +137,21 @@ AvailableOverlaysModel::AvailableOverlaysModel(QObject* parent, UserInterface& u
 
         // Handle the action.
         connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
-
-        // Insert action into complete list.
-        _actions.push_back(action);
     }
 
-    // Sort complete list of actions by name.
-    std::sort(_actions.begin(), _actions.end(), [](const OverlayAction* a, const OverlayAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    // Create "Manage templates..." action for later templates, which wraps the global one.
+    // This is done to override the global action's text.
+    QAction* manageTemplatesAction = actionManager()->getAction(ACTION_VIEWPORT_MANAGE_OVERLAY_TEMPLATES);
+    _manageTemplatesAction = new QAction(this);
+    _manageTemplatesAction->setText(tr("Manage templates..."));
+    _manageTemplatesAction->setStatusTip(manageTemplatesAction->statusTip());
+    _manageTemplatesAction->setIcon(manageTemplatesAction->icon());
+    // Give this action an italic font to visually distinguish it.
+    QFont font = manageTemplatesAction->font();
+    font.setItalic(true);
+    _manageTemplatesAction->setFont(font);
+    connect(_manageTemplatesAction, &QAction::triggered, manageTemplatesAction, &QAction::trigger);
+    _actionsPerCategory.back().push_back(_manageTemplatesAction);
 
     // Listen for changes to the underlying modifier template list.
     connect(OverlayTemplates::get(), &QAbstractItemModel::rowsInserted, this, &AvailableOverlaysModel::refreshTemplates);
@@ -230,17 +235,6 @@ int AvailableOverlaysModel::columnCount(const QModelIndex& parent) const
 }
 
 /******************************************************************************
-* Returns the model's role names.
-******************************************************************************/
-QHash<int, QByteArray> AvailableOverlaysModel::roleNames() const
-{
-    return {
-        { Qt::DisplayRole, "title" },
-        { Qt::UserRole, "iscategory" }
-    };
-}
-
-/******************************************************************************
 * Returns the data associated with an item.
 ******************************************************************************/
 QVariant AvailableOverlaysModel::data(const QModelIndex& index, int role) const
@@ -256,8 +250,6 @@ QVariant AvailableOverlaysModel::data(const QModelIndex& index, int role) const
 
         if(role == Qt::DisplayRole)
             return _categoryNames[categoryIndex];
-        else if(role == Qt::UserRole)
-            return true; // Is a category
     }
     else {
         // Overlay item.
@@ -268,11 +260,11 @@ QVariant AvailableOverlaysModel::data(const QModelIndex& index, int role) const
         if(overlayIndex < 0 || overlayIndex >= (int)_actionsPerCategory[categoryIndex].size())
             return {};
 
-        OverlayAction* action = _actionsPerCategory[categoryIndex][overlayIndex];
+        QAction* action = _actionsPerCategory[categoryIndex][overlayIndex];
         if(role == Qt::DisplayRole)
             return action->text();
         else if(role == Qt::UserRole)
-            return false; // Not a category
+            return QVariant::fromValue(static_cast<QObject*>(action));
     }
     return {};
 }
@@ -291,7 +283,7 @@ Qt::ItemFlags AvailableOverlaysModel::flags(const QModelIndex& index) const
     }
     else {
         // Overlay item.
-        OverlayAction* action = actionFromIndex(index);
+        QAction* action = actionFromIndex(index);
         if(action)
             return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
     }
@@ -301,7 +293,7 @@ Qt::ItemFlags AvailableOverlaysModel::flags(const QModelIndex& index) const
 /******************************************************************************
 * Returns the action for an overlay at a given category and row.
 ******************************************************************************/
-OverlayAction* AvailableOverlaysModel::actionAt(int categoryIndex, int overlayIndex) const
+QAction* AvailableOverlaysModel::actionAt(int categoryIndex, int overlayIndex) const
 {
     if(categoryIndex >= 0 && categoryIndex < (int)_actionsPerCategory.size()) {
         if(overlayIndex >= 0 && overlayIndex < (int)_actionsPerCategory[categoryIndex].size())
@@ -313,7 +305,7 @@ OverlayAction* AvailableOverlaysModel::actionAt(int categoryIndex, int overlayIn
 /******************************************************************************
 * Returns the action for an overlay from a model index.
 ******************************************************************************/
-OverlayAction* AvailableOverlaysModel::actionFromIndex(const QModelIndex& index) const
+QAction* AvailableOverlaysModel::actionFromIndex(const QModelIndex& index) const
 {
     if(!index.isValid() || index.internalId() == quintptr(-1))
         return nullptr;
@@ -324,28 +316,18 @@ OverlayAction* AvailableOverlaysModel::actionFromIndex(const QModelIndex& index)
 }
 
 /******************************************************************************
-* Inserts the overlay from the given model index into the current viewport.
-******************************************************************************/
-void AvailableOverlaysModel::insertOverlayByIndex(const QModelIndex& index)
-{
-    if(OverlayAction* action = actionFromIndex(index))
-        action->trigger();
-}
-
-/******************************************************************************
 * Rebuilds the list of actions for the viewport layer templates.
 ******************************************************************************/
 void AvailableOverlaysModel::refreshTemplates()
 {
-    std::vector<OverlayAction*>& templateActions = _actionsPerCategory[templatesCategory()];
+    std::vector<QAction*>& templateActions = _actionsPerCategory[templatesCategory()];
 
     // Discard old list of actions.
     if(!templateActions.empty()) {
-        for(OverlayAction* action : templateActions) {
-            auto iter = std::find(_actions.begin(), _actions.end(), action);
-            OVITO_ASSERT(iter != _actions.end());
-            _actions.erase(iter);
-            actionManager()->deleteAction(action);
+        for(QAction* action : templateActions) {
+            if(OverlayAction* overlayAction = qobject_cast<OverlayAction*>(action)) {
+                actionManager()->deleteAction(overlayAction);
+            }
         }
         templateActions.clear();
     }
@@ -364,14 +346,9 @@ void AvailableOverlaysModel::refreshTemplates()
 
             // Handle the action.
             connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
-
-            // Append action to flat list.
-            _actions.push_back(action);
         }
     }
-
-    // Sort complete list of actions by name.
-    std::sort(_actions.begin(), _actions.end(), [](const OverlayAction* a, const OverlayAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    templateActions.push_back(_manageTemplatesAction);
 
     // Notify views that the model has been reset.
     beginResetModel();
@@ -459,11 +436,6 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     // Handle the insertion action.
     connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
 
-    // Insert action into the list, which is sorted by name.
-    auto iter = std::lower_bound(_actions.begin(), _actions.end(), action,
-        [](const OverlayAction* a, const OverlayAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-    _actions.insert(iter, action);
-
     // Insert action into the right category. Or create a new category if necessary.
     auto categoryIter = std::ranges::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
@@ -476,205 +448,6 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     // Notify views that the model has been reset.
     beginResetModel();
     endResetModel();
-}
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-AvailableOverlaysListModel::AvailableOverlaysListModel(AvailableOverlaysModel* sourceModel, QObject* parent)
-    : QAbstractListModel(parent), _sourceModel(sourceModel)
-{
-    // Initialize UI colors.
-    updateColorPalette(QGuiApplication::palette());
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
-    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableOverlaysListModel::updateColorPalette);
-QT_WARNING_POP
-
-    // Connect to source model signals.
-    connect(_sourceModel, &QAbstractItemModel::modelAboutToBeReset, this, &AvailableOverlaysListModel::onSourceModelAboutToBeReset);
-    connect(_sourceModel, &QAbstractItemModel::modelReset, this, &AvailableOverlaysListModel::onSourceModelReset);
-
-    // Define fonts, colors, etc.
-    _categoryFont = QGuiApplication::font();
-    _categoryFont.setBold(true);
-#ifndef Q_OS_WIN
-    if(_categoryFont.pixelSize() < 0)
-        _categoryFont.setPointSize(_categoryFont.pointSize() * 4 / 5);
-    else
-        _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
-#endif
-    _getMoreExtensionsFont = QGuiApplication::font();
-
-    // Generate list items.
-    updateModelLists();
-}
-
-/******************************************************************************
-* Updates the color brushes of the model.
-******************************************************************************/
-void AvailableOverlaysListModel::updateColorPalette(const QPalette& palette)
-{
-    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
-#ifndef Q_OS_LINUX
-    _categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#else
-    _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
-#endif
-    _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
-    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
-}
-
-/******************************************************************************
-* Called when the source model is about to be reset.
-******************************************************************************/
-void AvailableOverlaysListModel::onSourceModelAboutToBeReset()
-{
-    beginResetModel();
-}
-
-/******************************************************************************
-* Called when the source model has been reset.
-******************************************************************************/
-void AvailableOverlaysListModel::onSourceModelReset()
-{
-    updateModelLists();
-    endResetModel();
-}
-
-/******************************************************************************
-* Returns the number of rows in the model.
-******************************************************************************/
-int AvailableOverlaysListModel::rowCount(const QModelIndex& parent) const
-{
-    return _modelStrings.size();
-}
-
-/******************************************************************************
-* Returns the model's role names.
-******************************************************************************/
-QHash<int, QByteArray> AvailableOverlaysListModel::roleNames() const
-{
-    return {
-        { Qt::DisplayRole, "title" },
-        { Qt::UserRole, "isheader" },
-        { Qt::FontRole, "font" }
-    };
-}
-
-/******************************************************************************
-* Rebuilds the internal list of model items.
-******************************************************************************/
-void AvailableOverlaysListModel::updateModelLists()
-{
-    _modelStrings.clear();
-    _modelStrings.push_back(tr("Add layer..."));
-    _modelActions.clear();
-    _modelActions.push_back(nullptr);
-    _getMoreExtensionsItemIndex = -1;
-
-    for(int categoryIndex = 0; categoryIndex < _sourceModel->categoryCount(); categoryIndex++) {
-        const std::vector<OverlayAction*>& categoryActions = _sourceModel->categoryActions(categoryIndex);
-        if(!categoryActions.empty()) {
-            _modelActions.push_back(nullptr);
-            _modelStrings.push_back(_sourceModel->categoryName(categoryIndex));
-            for(OverlayAction* action : categoryActions) {
-                _modelActions.push_back(action);
-                _modelStrings.push_back(action->text());
-            }
-#ifndef OVITO_BUILD_BASIC
-            if(_sourceModel->categoryName(categoryIndex) == tr("Python layers")) {
-#else
-            if(_sourceModel->categoryName(categoryIndex) == tr("Python layers (Pro)")) {
-#endif
-                _getMoreExtensionsItemIndex = _modelStrings.size();
-                _modelActions.push_back(nullptr);
-                _modelStrings.push_back(tr("Get more layers..."));
-            }
-        }
-    }
-
-    if(_getMoreExtensionsItemIndex == -1) {
-        _getMoreExtensionsItemIndex = _modelStrings.size();
-        _modelActions.push_back(nullptr);
-        _modelStrings.push_back(tr("Get more layers..."));
-    }
-}
-
-/******************************************************************************
-* Returns the data associated with a list item.
-******************************************************************************/
-QVariant AvailableOverlaysListModel::data(const QModelIndex& index, int role) const
-{
-    if(role == Qt::DisplayRole) {
-        if(index.row() >= 0 && index.row() < (int)_modelStrings.size())
-            return _modelStrings[index.row()];
-    }
-    else if(role == Qt::UserRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return true;
-        else
-            return false;
-    }
-    else if(role == Qt::FontRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsFont;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryFont;
-    }
-    else if(role == Qt::ForegroundRole) {
-        if(index.row() == getMoreExtensionsItemIndex())
-            return _getMoreExtensionsForegroundBrush;
-        // Is it a category header?
-        else if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr)
-            return _categoryForegroundBrush;
-    }
-    else if(role == Qt::BackgroundRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return _categoryBackgroundBrush;
-    }
-    else if(role == Qt::TextAlignmentRole) {
-        // Is it a category header?
-        if(index.row() > 0 && index.row() < (int)_modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
-            return Qt::AlignCenter;
-    }
-    return {};
-}
-
-/******************************************************************************
-* Returns the flags for an item.
-******************************************************************************/
-Qt::ItemFlags AvailableOverlaysListModel::flags(const QModelIndex& index) const
-{
-    if(index.row() > 0 && index.row() < (int)_modelActions.size()) {
-        if(_modelActions[index.row()])
-            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
-        else if(index.row() == _getMoreExtensionsItemIndex)
-            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        else
-            return Qt::ItemIsEnabled;
-    }
-    return QAbstractListModel::flags(index);
-}
-
-/******************************************************************************
-* Returns the action that belongs to the given model index.
-******************************************************************************/
-OverlayAction* AvailableOverlaysListModel::actionFromIndex(int index) const
-{
-    return (index >= 0 && index < (int)_modelActions.size()) ? _modelActions[index] : nullptr;
-}
-
-/******************************************************************************
-* Inserts the i-th overlay from this model into the current viewport.
-******************************************************************************/
-void AvailableOverlaysListModel::insertOverlayByIndex(int index)
-{
-    if(OverlayAction* action = actionFromIndex(index))
-        action->trigger();
 }
 
 }   // End of namespace

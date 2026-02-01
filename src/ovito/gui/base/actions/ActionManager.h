@@ -126,7 +126,7 @@ namespace Ovito {
 /// This action renames the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_RENAME             "ViewportLayerRename"
 /// This action opens the dialog box for managing viewport layer templates.
-#define ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES "ViewportLayerManageTemplates"
+#define ACTION_VIEWPORT_MANAGE_OVERLAY_TEMPLATES "ViewportLayerManageTemplates"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION      "AnimationGotoStart"

@@ -32,6 +32,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TextLabelOverlay);
 OVITO_CLASSINFO(TextLabelOverlay, "DisplayName", "Text label");
+OVITO_CLASSINFO(TextLabelOverlay, "Description", "A customizable text label.");
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, alignment);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, font);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, fontSize);

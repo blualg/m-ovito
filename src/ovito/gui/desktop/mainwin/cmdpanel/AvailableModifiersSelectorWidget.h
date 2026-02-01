@@ -29,8 +29,7 @@
 namespace Ovito {
 
 class PipelineListModel;      // Defined in PipelineListModel.h
-class ModifierGalleryPopup;   // Defined in ModifierGalleryPopup.h
-class ModifierAction;         // Defined in AvailableModifiersModel.h
+class ActionCardsPopup;       // Defined in ActionCardsPopup.h
 
 /**
  * A combo box widget that displays the list of available modifiers and allows the user
@@ -46,16 +45,7 @@ public:
     AvailableModifiersSelectorWidget(QWidget* parent, MainWindowUI& ui, PipelineListModel* pipelineListModel);
 
     /// Returns the tree model that organizes all available modifiers by category.
-    AvailableModifiersModel* availableModifiersModel() const;
-
-    /// Returns the list model that presents the available modifiers in flat list format.
-    AvailableModifiersListModel* availableModifiersListModel() const;
-
-    /// Returns whether the card popup mode is enabled globally.
-    static bool useCardPopupGlobal();
-
-    /// Sets whether the card popup mode is enabled globally.
-    static void setUseCardPopupGlobal(bool on);
+    AvailableModifiersModel* availableModifiersModel() const { return _availableModifiersModel; }
 
 protected:
 
@@ -67,19 +57,19 @@ private Q_SLOTS:
     /// Updates the enabled state of this widget based on the current pipeline selection.
     void onPipelineSelectionChanged();
 
-    /// Handles selection of a modifier.
-    void onModifierSelected(ModifierAction* action);
-
     /// Handles click on "Get more modifiers..." button.
     void onGetMoreModifiersFromPopup();
 
 private:
 
+    /// The model providing the available modifiers.
+    AvailableModifiersModel* _availableModifiersModel;
+
     /// The pipeline list model used to determine the enabled state.
     PipelineListModel* _pipelineListModel;
 
     /// The card-based popup widget (lazy initialized).
-    ModifierGalleryPopup* _cardPopup = nullptr;
+    ActionCardsPopup* _cardPopup = nullptr;
 };
 
 }   // End of namespace

@@ -25,8 +25,6 @@
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
-#include <ovito/gui/base/mainwin/AvailableModifiersModel.h>
-#include <ovito/gui/desktop/mainwin/cmdpanel/AvailableModifiersSelectorWidget.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include "GeneralSettingsPage.h"
@@ -71,23 +69,6 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
             "<p>Maintain individual working directories for different types of file I/O operations.</p>"));
     layout2->addWidget(_keepDirHistory, 1, 0);
     _keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
-
-    _sortModifiersByCategory = new QCheckBox(tr("Sort list of available modifiers by category"));
-    _sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
-    layout2->addWidget(_sortModifiersByCategory, 2, 0);
-    _sortModifiersByCategory->setChecked(AvailableModifiersListModel::useCategoriesGlobal());
-
-    _useCardPopup = new QCheckBox(tr("Use card-based modifier gallery"));
-    _useCardPopup->setToolTip(tr("<p>Show available modifiers in a multi-column card layout grouped by category instead of a dropdown list.</p>"));
-    layout2->addWidget(_useCardPopup, 3, 0);
-    _useCardPopup->setChecked(AvailableModifiersSelectorWidget::useCardPopupGlobal());
-
-    // Card mode always uses categories, so disable the category sorting option when card mode is enabled.
-    connect(_useCardPopup, &QCheckBox::toggled, this, [this](bool checked) {
-        _sortModifiersByCategory->setEnabled(!checked);
-        if(checked) _sortModifiersByCategory->setChecked(true);
-    });
-    _sortModifiersByCategory->setEnabled(!_useCardPopup->isChecked());
 
     // Group "Data import":
     QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
@@ -135,8 +116,6 @@ void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     QSettings settings;
     HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
-    AvailableModifiersListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
-    AvailableModifiersSelectorWidget::setUseCardPopupGlobal(_useCardPopup->isChecked());
 #if !(defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if(_enableAutomaticDarkMode->isChecked())
         settings.setValue("ui/automatic_dark_mode", true);

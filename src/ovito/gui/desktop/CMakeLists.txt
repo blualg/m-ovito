@@ -39,7 +39,7 @@ OVITO_STANDARD_PLUGIN(Gui
         mainwin/cmdpanel/RenderCommandPage.cpp
         mainwin/cmdpanel/ModifyCommandPage.cpp
         mainwin/cmdpanel/AvailableModifiersSelectorWidget.cpp
-        mainwin/cmdpanel/ModifierGalleryPopup.cpp
+        mainwin/cmdpanel/ActionCardsPopup.cpp
         mainwin/cmdpanel/OverlayCommandPage.cpp
         mainwin/cmdpanel/AvailableOverlaysSelectorWidget.cpp
         mainwin/cmdpanel/UtilityCommandPage.cpp

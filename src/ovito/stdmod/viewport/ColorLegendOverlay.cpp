@@ -38,6 +38,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorLegendOverlay);
 OVITO_CLASSINFO(ColorLegendOverlay, "DisplayName", "Color legend");
+OVITO_CLASSINFO(ColorLegendOverlay, "Description", "Legend for color-mapped properties.");
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, orientation);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, legendSize);

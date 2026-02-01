@@ -26,21 +26,18 @@
 
 namespace Ovito {
 
-class AvailableModifiersModel;
-class ModifierAction;
-
 /**
- * A clickable label widget for modifier items in the card popup.
- * Displays the modifier name with hover highlighting.
+ * A clickable label widget for items in the card popup.
+ * Displays the action name with hover highlighting.
  */
-class ClickableModifierLabel : public QWidget
+class ClickableActionLabel : public QWidget
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    ClickableModifierLabel(ModifierAction* action, QWidget* parent = nullptr);
+    ClickableActionLabel(QAction* action, QWidget* parent = nullptr);
 
     /// Returns the preferred size for this widget.
     QSize sizeHint() const override;
@@ -48,10 +45,10 @@ public:
 Q_SIGNALS:
 
     /// Emitted when the label is clicked.
-    void clicked(ModifierAction* action);
+    void clicked(QAction* action);
 
     /// Emitted when the mouse enters/leaves this label.
-    void hovered(ModifierAction* action);
+    void hovered(QAction* action);
 
 protected:
 
@@ -69,25 +66,25 @@ protected:
 
 private:
 
-    /// The modifier action associated with this label.
-    QPointer<ModifierAction> _action;
+    /// The action associated with this label.
+    QPointer<QAction> _action;
 
     /// Whether the mouse is currently hovering over this label.
     bool _hovered = false;
 };
 
 /**
- * A popup widget that displays available modifiers in a multi-column card layout,
+ * A popup widget that displays a set of actions in a multi-column card layout,
  * grouped by category.
  */
-class ModifierGalleryPopup : public QFrame
+class ActionCardsPopup : public QFrame
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    ModifierGalleryPopup(AvailableModifiersModel* model, QWidget* parent = nullptr);
+    ActionCardsPopup(QAbstractItemModel* model, const QString& getMoreButtonText, QWidget* parent = nullptr);
 
     /// Positions the popup below the given anchor widget and shows it.
     void showBelow(QWidget* anchor);
@@ -97,37 +94,34 @@ public:
 
 protected:
 
-    /// Handles hover events for the "Get more modifiers..." button.
+    /// Handles hover events for the "Get more XXX..." button.
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 Q_SIGNALS:
 
-    /// Emitted when a modifier is selected.
-    void modifierSelected(ModifierAction* action);
-
-    /// Emitted when the "Get more modifiers..." button is clicked.
-    void getMoreModifiersClicked();
+    /// Emitted when the "Get more XXX..." button is clicked.
+    void getMoreActionsClicked();
 
 private Q_SLOTS:
 
-    /// Updates the status label when a modifier is hovered.
-    void onModifierHovered(ModifierAction* action);
+    /// Updates the status label when an action is hovered.
+    void onActionHovered(QAction* action);
 
 private:
 
     /// Rebuilds the card layout from the model data.
     void populateCards();
 
-    /// The model providing the available modifiers.
-    AvailableModifiersModel* _model;
+    /// The model providing the available actions.
+    QAbstractItemModel* _model;
 
     /// Container widget for the card columns.
     QWidget* _cardsContainer = nullptr;
 
-    /// Status label displaying the hovered modifier's description.
+    /// Status label displaying the hovered action's description.
     QLabel* _statusLabel = nullptr;
 
-    /// The "Get more modifiers..." button.
+    /// The "Get more XXX..." button.
     QPushButton* _getMoreButton = nullptr;
 };
 

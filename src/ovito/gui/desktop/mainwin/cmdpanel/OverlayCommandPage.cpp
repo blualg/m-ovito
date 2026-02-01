@@ -46,6 +46,12 @@ OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWid
     layout->setContentsMargins(2,2,2,2);
     layout->setSpacing(4);
 
+    QAction* manageOverlayTemplatesAction = actionManager()->createCommandAction(ACTION_VIEWPORT_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
+    connect(manageOverlayTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &OverlayTemplatesPage::OOClass());
+        dlg.exec();
+    });
+
     _overlayListModel = new OverlayListModel(this, ui);
     connect(_overlayListModel, &OverlayListModel::selectedItemChanged, this, &OverlayCommandPage::onItemSelectionChanged, Qt::QueuedConnection);
 
@@ -121,12 +127,6 @@ OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWid
     });
 
     editToolbar->addSeparator();
-
-    QAction* manageOverlayTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
-    connect(manageOverlayTemplatesAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(this->ui(), &OverlayTemplatesPage::OOClass());
-        dlg.exec();
-    });
     editToolbar->addAction(manageOverlayTemplatesAction);
 
     layout->addWidget(_splitter, 1);

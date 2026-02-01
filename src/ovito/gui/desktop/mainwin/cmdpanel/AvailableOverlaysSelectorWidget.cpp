@@ -25,6 +25,7 @@
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "AvailableOverlaysSelectorWidget.h"
+#include "ActionCardsPopup.h"
 
 namespace Ovito {
 
@@ -34,10 +35,11 @@ namespace Ovito {
 AvailableOverlaysSelectorWidget::AvailableOverlaysSelectorWidget(QWidget* parent, MainWindowUI& ui, OverlayListModel* overlayListModel)
     : QComboBox(parent), UserInterfaceComponent<MainWindowUI>(ui), _overlayListModel(overlayListModel)
 {
-    setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    setModel(new AvailableOverlaysListModel(new AvailableOverlaysModel(this, ui, overlayListModel), this));
-    setMaxVisibleItems(0xFFFF);
-    connect(this, qOverload<int>(&QComboBox::activated), this, &AvailableOverlaysSelectorWidget::onOverlaySelected);
+    // Fill combo box with a dummy item.
+    addItem(tr("Add layer..."));
+
+    // Create the available overlays model.
+    _availableOverlaysModel = new AvailableOverlaysModel(this, ui, overlayListModel);
 
     // Update enabled state when the active viewport changes.
     connect(&datasetContainer(), &DataSetContainer::activeViewportChanged, this, &AvailableOverlaysSelectorWidget::onActiveViewportChanged);
@@ -47,47 +49,37 @@ AvailableOverlaysSelectorWidget::AvailableOverlaysSelectorWidget(QWidget* parent
 }
 
 /******************************************************************************
-* Returns the tree model that organizes all available overlays by category.
-******************************************************************************/
-AvailableOverlaysModel* AvailableOverlaysSelectorWidget::availableOverlaysModel() const
-{
-    return availableOverlaysListModel()->sourceModel();
-}
-
-/******************************************************************************
-* Returns the list model that presents the available overlays in flat list format.
-******************************************************************************/
-AvailableOverlaysListModel* AvailableOverlaysSelectorWidget::availableOverlaysListModel() const
-{
-    return static_cast<AvailableOverlaysListModel*>(model());
-}
-
-/******************************************************************************
-* Handles selection of an overlay from the drop-down list.
-******************************************************************************/
-void AvailableOverlaysSelectorWidget::onOverlaySelected(int index)
-{
-    if(index == availableOverlaysListModel()->getMoreExtensionsItemIndex()) {
-        // Open the extensions gallery or website.
-        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
-            action->trigger();
-        else
-            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
-    }
-    else {
-        // Insert the selected overlay into the viewport.
-        availableOverlaysListModel()->insertOverlayByIndex(index);
-    }
-    // Reset the combo box to the default item.
-    setCurrentIndex(0);
-}
-
-/******************************************************************************
 * Updates the enabled state of this widget based on the current viewport.
 ******************************************************************************/
 void AvailableOverlaysSelectorWidget::onActiveViewportChanged(Viewport* activeViewport)
 {
-    setEnabled(activeViewport != nullptr && count() > 1);
+    setEnabled(activeViewport != nullptr);
+}
+
+/******************************************************************************
+* Called when the popup menu is about to be shown.
+******************************************************************************/
+void AvailableOverlaysSelectorWidget::showPopup()
+{
+    // Lazy create the card popup
+    if(!_cardPopup) {
+        _cardPopup = new ActionCardsPopup(availableOverlaysModel(), tr("Get more layers..."), this);
+        connect(_cardPopup, &ActionCardsPopup::getMoreActionsClicked, this, &AvailableOverlaysSelectorWidget::onGetMoreLayersFromPopup);
+    }
+    _cardPopup->updateContent();
+    _cardPopup->showBelow(this);
+}
+
+/******************************************************************************
+* Handles click on "Get more layers..." button.
+******************************************************************************/
+void AvailableOverlaysSelectorWidget::onGetMoreLayersFromPopup()
+{
+    // Open the extensions gallery or website.
+    if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
+        action->trigger();
+    else
+        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
 }
 
 }   // End of namespace

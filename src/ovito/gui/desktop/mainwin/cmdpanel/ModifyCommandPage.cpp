@@ -56,6 +56,12 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     layout->setSpacing(4);
     layout->setColumnStretch(0,1);
 
+    QAction* manageModifierTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
+    connect(manageModifierTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &ModifierTemplatesPage::OOClass());
+        dlg.exec();
+    });
+
     _pipelineListModel = new PipelineListModel(ui, this);
     layout->addWidget(new AvailableModifiersSelectorWidget(this, ui, _pipelineListModel), 1, 0, 1, 1);
 
@@ -162,11 +168,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     editToolbar->addSeparator();
     editToolbar->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
 
-    QAction* manageModifierTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
-    connect(manageModifierTemplatesAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(this->ui(), &ModifierTemplatesPage::OOClass());
-        dlg.exec();
-    });
     editToolbar->addAction(manageModifierTemplatesAction);
 
     connect(actionManager()->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
