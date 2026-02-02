@@ -97,6 +97,7 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     groupBoxLayout->addWidget(moleculeModeBtn);
 
     auto* settingsGroupBox = new QGroupBox(tr("General settings"));
+    settingsGroupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     layout->addWidget(settingsGroupBox);
 
     groupBoxLayout = new QVBoxLayout(settingsGroupBox);
