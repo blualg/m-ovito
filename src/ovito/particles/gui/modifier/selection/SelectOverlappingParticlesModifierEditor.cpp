@@ -38,7 +38,8 @@ SET_OVITO_OBJECT_EDITOR(SelectOverlappingParticlesModifier, SelectOverlappingPar
 void SelectOverlappingParticlesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("Select overlapping atoms"), rolloutParams, "manual:particles.modifiers.expand_selection");
+    QWidget* rollout =
+        createRollout(tr("Select overlapping atoms"), rolloutParams, "manual:particles.modifiers.select_overlapping_particles");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);
