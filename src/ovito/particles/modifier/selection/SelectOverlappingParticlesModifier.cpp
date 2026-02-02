@@ -92,8 +92,9 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
         rng.emplace(1323);
     }
 
+    progress.setMaximum(particles->elementCount());
     for(size_t particleIndex = 0; particleIndex < particles->elementCount(); particleIndex++) {
-        this_task::throwIfCanceled();
+        progress.incrementValue();
 
         // Skip particles that are not included in the analysis.
         if(selectionAcc && selectionAcc[particleIndex] == 0) continue;
