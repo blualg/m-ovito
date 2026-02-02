@@ -92,7 +92,7 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     groupBoxLayout->addWidget(bondModeBtn);
 
     // Create a radio button for the "Molecule" mode.
-    QRadioButton* moleculeModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::Molecule, tr("... part of the same molecule."));
+    QRadioButton* moleculeModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::Molecule, tr("... in the same molecule."));
     groupBoxLayout->addSpacing(8);
     groupBoxLayout->addWidget(moleculeModeBtn);
 
