@@ -276,19 +276,22 @@ void ExpandSelectionModifier::ExpandSelectionMoleculeEngine::expandSelection(Tas
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
 
+    // Loop over all particles twice
+    progress.setMaximum(2 * inputSelectionArray.size());
+
     // Molecule IDs
     BufferReadAccess<IdentifierIntType> moleculeIdArray(_moleculeIdProperty);
 
-    std::vector<IdentifierIntType> selectedMolecules;
-    progress.setMaximum(2 * inputSelectionArray.size());
-
+    // Collect all unique molecule IDs that are selected
+    std::vector<IdentifierIntType> selectedMolecules(10);
     for(size_t i = 0; i < inputSelectionArray.size(); i++) {
         progress.incrementValue();
-        if(inputSelectionArray[i] > 0) {
+        if(inputSelectionArray[i] > 0 && std::ranges::find(selectedMolecules, moleculeIdArray[i]) == selectedMolecules.end()) {
             selectedMolecules.push_back(moleculeIdArray[i]);
         }
     }
 
+    // Select all particles that have molecule IDs in the selectedMolecules list
     for(size_t i = 0; i < inputSelectionArray.size(); i++) {
         progress.incrementValue();
         if(std::ranges::find(selectedMolecules, moleculeIdArray[i]) != selectedMolecules.end()) {
