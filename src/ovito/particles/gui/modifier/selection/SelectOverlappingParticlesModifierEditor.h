@@ -28,11 +28,11 @@
 namespace Ovito {
 
 /**
- * \brief A properties editor for the SelectOverlappingAtomsModifier class.
+ * \brief A properties editor for the SelectOverlappingParticlesModifier class.
  */
-class SelectOverlappingAtomsModifierEditor : public PropertiesEditor
+class SelectOverlappingParticlesModifierEditor : public PropertiesEditor
 {
-    OVITO_CLASS(SelectOverlappingAtomsModifierEditor)
+    OVITO_CLASS(SelectOverlappingParticlesModifierEditor)
 
 protected:
     /// Creates the user interface controls for the editor.

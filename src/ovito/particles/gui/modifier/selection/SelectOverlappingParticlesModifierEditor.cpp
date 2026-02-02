@@ -24,18 +24,18 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/particles/modifier/selection/SelectOverlappingAtomsModifier.h>
-#include "SelectOverlappingAtomsModifierEditor.h"
+#include <ovito/particles/modifier/selection/SelectOverlappingParticlesModifier.h>
+#include "SelectOverlappingParticlesModifierEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingAtomsModifierEditor);
-SET_OVITO_OBJECT_EDITOR(SelectOverlappingAtomsModifier, SelectOverlappingAtomsModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingParticlesModifierEditor);
+SET_OVITO_OBJECT_EDITOR(SelectOverlappingParticlesModifier, SelectOverlappingParticlesModifierEditor);
 
 /******************************************************************************
  * Sets up the UI widgets of the editor.
  ******************************************************************************/
-void SelectOverlappingAtomsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void SelectOverlappingParticlesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
     QWidget* rollout = createRollout(tr("Select overlapping atoms"), rolloutParams, "manual:particles.modifiers.expand_selection");
@@ -46,7 +46,7 @@ void SelectOverlappingAtomsModifierEditor::createUI(const RolloutInsertionParame
     layout->setSpacing(6);
 
     // Overlap distance parameter.
-    auto* overlapDistancePUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SelectOverlappingAtomsModifier::overlapDistance));
+    auto* overlapDistancePUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SelectOverlappingParticlesModifier::overlapDistance));
     QHBoxLayout* sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0, 0, 0, 0);
     sublayout->addWidget(overlapDistancePUI->label());
@@ -54,11 +54,11 @@ void SelectOverlappingAtomsModifierEditor::createUI(const RolloutInsertionParame
     layout->addLayout(sublayout);
 
     // Apply to selection parameter.
-    auto* applyToSelectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingAtomsModifier::applyToSelection));
+    auto* applyToSelectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingParticlesModifier::applyToSelection));
     layout->addWidget(applyToSelectionUI->checkBox());
 
     // Apply to selection parameter.
-    auto* keepOneUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingAtomsModifier::keepOne));
+    auto* keepOneUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingParticlesModifier::keepOne));
     layout->addWidget(keepOneUI->checkBox());
 
     // Status label.

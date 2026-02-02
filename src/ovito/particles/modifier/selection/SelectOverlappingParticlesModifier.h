@@ -31,10 +31,10 @@ namespace Ovito {
 /**
  * \brief Modifier that removes overlapping
  */
-class OVITO_PARTICLES_EXPORT SelectOverlappingAtomsModifier : public Modifier
+class OVITO_PARTICLES_EXPORT SelectOverlappingParticlesModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OVITO_PARTICLES_EXPORT SelectOverlappingAtomsModifierClass : public Modifier::OOMetaClass
+    class OVITO_PARTICLES_EXPORT SelectOverlappingParticlesModifierClass : public Modifier::OOMetaClass
     {
     public:
         /// Inherit constructor from base metaclass.
@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT SelectOverlappingAtomsModifier : public Modifier
         [[nodiscard]] virtual bool isApplicableTo(const DataCollection& input) const override;
     };
 
-    OVITO_CLASS_META(SelectOverlappingAtomsModifier, SelectOverlappingAtomsModifierClass)
+    OVITO_CLASS_META(SelectOverlappingParticlesModifier, SelectOverlappingParticlesModifierClass)
 
 public:
     /// Modifies the input data.

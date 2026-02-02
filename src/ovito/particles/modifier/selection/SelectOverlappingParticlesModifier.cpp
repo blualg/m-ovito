@@ -20,29 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "SelectOverlappingAtomsModifier.h"
+#include "SelectOverlappingParticlesModifier.h"
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingAtomsModifier);
-OVITO_CLASSINFO(SelectOverlappingAtomsModifier, "DisplayName", "Select overlapping atoms");
-OVITO_CLASSINFO(SelectOverlappingAtomsModifier, "Description", "Deletes atoms that are closer than a specified distance.");
-OVITO_CLASSINFO(SelectOverlappingAtomsModifier, "ModifierCategory", "Selection");
+IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingParticlesModifier);
+OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "DisplayName", "Select overlapping atoms");
+OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "Description", "Deletes atoms that are closer than a specified distance.");
+OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "ModifierCategory", "Selection");
 
-DEFINE_PROPERTY_FIELD(SelectOverlappingAtomsModifier, overlapDistance);
-DEFINE_PROPERTY_FIELD(SelectOverlappingAtomsModifier, applyToSelection);
-DEFINE_PROPERTY_FIELD(SelectOverlappingAtomsModifier, keepOne);
+DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, overlapDistance);
+DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, applyToSelection);
+DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, keepOne);
 
-SET_PROPERTY_FIELD_LABEL(SelectOverlappingAtomsModifier, overlapDistance, "Overlap distance");
-SET_PROPERTY_FIELD_LABEL(SelectOverlappingAtomsModifier, applyToSelection, "Use only selected particles");
-SET_PROPERTY_FIELD_LABEL(SelectOverlappingAtomsModifier, keepOne, "On Overlap: Keep one");
+SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, overlapDistance, "Overlap distance");
+SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, applyToSelection, "Use only selected particles");
+SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, keepOne, "On Overlap: Keep one");
 
 /******************************************************************************
  * Asks the modifier whether it can be applied to the given input data.
  ******************************************************************************/
-bool SelectOverlappingAtomsModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
+bool SelectOverlappingParticlesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
     return input.containsObject<Particles>();
 }
@@ -50,8 +50,8 @@ bool SelectOverlappingAtomsModifier::OOMetaClass::isApplicableTo(const DataColle
 /******************************************************************************
  * Modifies the input data.
  ******************************************************************************/
-Future<PipelineFlowState> SelectOverlappingAtomsModifier::evaluateModifier(const ModifierEvaluationRequest& request,
-                                                                           PipelineFlowState&& state)
+Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(const ModifierEvaluationRequest& request,
+                                                                               PipelineFlowState&& state)
 {
     // Create local copies of co-routine input objects
     const ModifierEvaluationRequest request_l = request;
@@ -86,7 +86,7 @@ Future<PipelineFlowState> SelectOverlappingAtomsModifier::evaluateModifier(const
 
     std::vector<size_t> neighs(5);
 
-    std::optional<std::mt19937> rng;
+    std::optional<std::minstd_rand> rng;
     if(keepOne_l) {
         rng.emplace(1323);
     }

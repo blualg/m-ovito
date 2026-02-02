@@ -47,7 +47,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/ptm/PolyhedralTemplateMatchingModifierEditor.cpp
         modifier/analysis/surface/ConstructSurfaceModifierEditor.cpp
         modifier/selection/ExpandSelectionModifierEditor.cpp
-        modifier/selection/SelectOverlappingAtomsModifierEditor.cpp
+        modifier/selection/SelectOverlappingParticlesModifierEditor.cpp
         modifier/properties/SmoothTrajectoryModifierEditor.cpp
         modifier/properties/GenerateTrajectoryLinesModifierEditor.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegateEditor.cpp
