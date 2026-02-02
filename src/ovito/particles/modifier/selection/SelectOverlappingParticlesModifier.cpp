@@ -66,7 +66,7 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     particles->verifyIntegrity();
 
     // Get the required input properties.
-    const Property* selProperty = applyToSelection_l ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
+    ConstPropertyPtr selProperty = applyToSelection_l ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Perform the following in a worker thread.
     co_await ExecutorAwaiter(ThreadPoolExecutor());
@@ -75,10 +75,11 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     progress.setText(tr("Deleting overlapping atoms"));
 
     // Output mask / selection property
-    PropertyPtr maskBuffer =
-        Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), DataBuffer::Int8, 1, {});
+    Particles* mutableParticles = state_l.expectMutableObject<Particles>();
+    Property* mutableSelectionProperty = mutableParticles->createProperty(Particles::SelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> mutableSelectionPropertyAcc(mutableSelectionProperty);
+    std::ranges::fill(mutableSelectionPropertyAcc, 0);
 
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAcc(maskBuffer);
     BufferReadAccess<SelectionIntType> selectionAcc(selProperty);
 
     CutoffNeighborFinder neighborFinder(
@@ -92,16 +93,18 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     }
 
     for(size_t particleIndex = 0; particleIndex < particles->elementCount(); particleIndex++) {
+        this_task::throwIfCanceled();
+
         // Skip particles that are not included in the analysis.
         if(selectionAcc && selectionAcc[particleIndex] == 0) continue;
         // Skip particles that have already been marked for deletion.
-        if(maskAcc[particleIndex] != 0) continue;
+        if(mutableSelectionPropertyAcc[particleIndex] != 0) continue;
 
         neighs.clear();
         neighs.emplace_back(particleIndex);
         for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next()) {
             const size_t neighIndex = neighQuery.current();
-            if(maskAcc[neighIndex] == 0) {
+            if(mutableSelectionPropertyAcc[neighIndex] == 0) {
                 neighs.emplace_back(neighIndex);
             }
         }
@@ -110,29 +113,21 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
             std::ranges::shuffle(neighs, *rng);
             neighs.pop_back();
             for(size_t neigh : neighs) {
-                maskAcc[neigh] = 1;
+                mutableSelectionPropertyAcc[neigh] = 1;
             }
         }
         else {
             if(neighs.size() > 1) {
                 for(size_t neigh : neighs) {
-                    maskAcc[neigh] = 1;
+                    mutableSelectionPropertyAcc[neigh] = 1;
                 }
             }
         }
     }
-
-    Particles* mutableParticles = state_l.expectMutableObject<Particles>();
-    Property* mutableSelectionProperty = mutableParticles->createProperty(Particles::SelectionProperty);
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> mutableSelectionPropertyAcc(mutableSelectionProperty);
-
-    size_t selectedCount = 0;
-    for(size_t particleIndex = 0; particleIndex < particles->elementCount(); particleIndex++) {
-        mutableSelectionPropertyAcc[particleIndex] = maskAcc[particleIndex];
-        selectedCount += maskAcc[particleIndex] > 0;
-    }
-
-    state_l.addAttribute(QStringLiteral("SelectOverlappingAtoms.count"), QVariant::fromValue(selectedCount), request_l.modificationNode());
+    mutableSelectionPropertyAcc.reset();
+    const size_t selectedCount = mutableSelectionProperty->nonzeroCount();
+    state_l.addAttribute(
+        QStringLiteral("SelectOverlappingParticles.count"), QVariant::fromValue(selectedCount), request_l.modificationNode());
     state_l.setStatus(PipelineStatus(tr("%1 out of %2 elements selected (%3%)")
                                          .arg(selectedCount)
                                          .arg(particles->elementCount())
