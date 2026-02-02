@@ -115,6 +115,11 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
         particles->expectBonds()->verifyIntegrity();
         engine = std::make_unique<ExpandSelectionBondedEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
     }
+    else if(mode() == Molecule) {
+        // Get the current particle selection.
+        const Property* moleculeId = particles->expectProperty(Particles::MoleculeProperty);
+        engine = std::make_unique<ExpandSelectionMoleculeEngine>(request.modificationNode(), moleculeId, inputSelection);
+    }
     else {
         throw Exception(tr("Invalid selection expansion mode."));
     }
@@ -260,6 +265,36 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection(TaskP
             outputSelectionArray[neighQuery.current()] = 1;
         }
     });
+}
+
+/******************************************************************************
+ * Performs one iteration of the selection expansion.
+ ******************************************************************************/
+void ExpandSelectionModifier::ExpandSelectionMoleculeEngine::expandSelection(TaskProgress& progress)
+{
+    // Selections
+    BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
+    BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
+
+    // Molecule IDs
+    BufferReadAccess<IdentifierIntType> moleculeIdArray(_moleculeIdProperty);
+
+    std::vector<IdentifierIntType> selectedMolecules;
+    progress.setMaximum(2 * inputSelectionArray.size());
+
+    for(size_t i = 0; i < inputSelectionArray.size(); i++) {
+        progress.incrementValue();
+        if(inputSelectionArray[i] > 0) {
+            selectedMolecules.push_back(moleculeIdArray[i]);
+        }
+    }
+
+    for(size_t i = 0; i < inputSelectionArray.size(); i++) {
+        progress.incrementValue();
+        if(std::ranges::find(selectedMolecules, moleculeIdArray[i]) != selectedMolecules.end()) {
+            outputSelectionArray[i] = 1;
+        }
+    }
 }
 
 }   // End of namespace

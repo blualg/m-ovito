@@ -42,18 +42,24 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     QWidget* rollout = createRollout(tr("Expand selection"), rolloutParams, "manual:particles.modifiers.expand_selection");
 
     // Create the rollout contents.
-    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(6);
 
+    auto* modeGroupBox = new QGroupBox(tr("Expansion mode"));
+    layout->addWidget(modeGroupBox);
+
+    auto* groupBoxLayout = new QVBoxLayout(modeGroupBox);
+    groupBoxLayout->setContentsMargins(4, 4, 4, 4);
+
     QLabel* label = new QLabel(tr("Expand current selection to include particles that are..."));
     label->setWordWrap(true);
-    layout->addWidget(label);
+    groupBoxLayout->addWidget(label);
 
     IntegerRadioButtonParameterUI* modePUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::mode));
     QRadioButton* cutoffModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::CutoffRange, tr("... within the range:"));
-    layout->addSpacing(10);
-    layout->addWidget(cutoffModeBtn);
+    // groupBoxLayout->addSpacing(10);
+    groupBoxLayout->addWidget(cutoffModeBtn);
 
     // Cutoff parameter.
     FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::cutoffRange));
@@ -62,13 +68,13 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->addSpacing(20);
     sublayout->addWidget(cutoffRadiusPUI->label());
     sublayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 1);
-    layout->addLayout(sublayout);
+    groupBoxLayout->addLayout(sublayout);
     cutoffRadiusPUI->setEnabled(false);
     connect(cutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
 
     QRadioButton* nearestNeighborsModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::NearestNeighbors, tr("... among the N nearest neighbors:"));
-    layout->addSpacing(10);
-    layout->addWidget(nearestNeighborsModeBtn);
+    // groupBoxLayout->addSpacing(10);
+    groupBoxLayout->addWidget(nearestNeighborsModeBtn);
 
     // Number of nearest neighbors.
     IntegerParameterUI* numNearestNeighborsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::numNearestNeighbors));
@@ -77,24 +83,38 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->addSpacing(20);
     sublayout->addWidget(numNearestNeighborsPUI->label());
     sublayout->addLayout(numNearestNeighborsPUI->createFieldLayout(), 1);
-    layout->addLayout(sublayout);
+    groupBoxLayout->addLayout(sublayout);
     numNearestNeighborsPUI->setEnabled(false);
     connect(nearestNeighborsModeBtn, &QRadioButton::toggled, numNearestNeighborsPUI, &FloatParameterUI::setEnabled);
 
     QRadioButton* bondModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::BondedNeighbors, tr("... bonded to a selected particle."));
-    layout->addSpacing(10);
-    layout->addWidget(bondModeBtn);
+    // groupBoxLayout->addSpacing(10);
+    groupBoxLayout->addWidget(bondModeBtn);
 
-    layout->addSpacing(10);
+    // Create a radio button for the "Molecule" mode.
+    QRadioButton* moleculeModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::Molecule, tr("... part of a selected molecule."));
+    groupBoxLayout->addSpacing(8);
+    groupBoxLayout->addWidget(moleculeModeBtn);
+
+    auto* settingsGroupBox = new QGroupBox(tr("General settings"));
+    layout->addWidget(settingsGroupBox);
+
+    groupBoxLayout = new QVBoxLayout(settingsGroupBox);
+    groupBoxLayout->setContentsMargins(4, 4, 4, 4);
+    groupBoxLayout->setSpacing(0);
+
     IntegerParameterUI* numIterationsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::numberOfIterations));
     sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->addWidget(numIterationsPUI->label());
     sublayout->addLayout(numIterationsPUI->createFieldLayout(), 1);
-    layout->addLayout(sublayout);
+    groupBoxLayout->addLayout(sublayout);
+
+    // Disable the number of iterations parameter when the molecule mode is selected as it is unused.
+    connect(moleculeModeBtn, &QRadioButton::toggled, settingsGroupBox, &QGroupBox::setDisabled);
 
     // Status label.
-    layout->addSpacing(10);
+    layout->addSpacing(4);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
