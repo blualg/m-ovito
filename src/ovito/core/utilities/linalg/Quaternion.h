@@ -290,8 +290,8 @@ public:
     constexpr static QuaternionT interpolateSafely(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
         T q1dot = q1.dot(q1);
         T q2dot = q2.dot(q2);
-        if(q1dot > T(Ovito::epsilon_v<FloatType> * Ovito::epsilon_v<FloatType>) &&
-           q2dot > T(Ovito::epsilon_v<FloatType> * Ovito::epsilon_v<FloatType>)) {
+        if(q1dot > T(Ovito::epsilon * Ovito::epsilon) &&
+           q2dot > T(Ovito::epsilon * Ovito::epsilon)) {
             T q1norm = std::sqrt(q1dot);
             T q2norm = std::sqrt(q2dot);
             return interpolate(

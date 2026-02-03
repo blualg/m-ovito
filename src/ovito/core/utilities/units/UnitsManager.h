@@ -238,7 +238,7 @@ public:
     ///
     /// This implementation converts from radians to degrees.
     /// \sa userToNative()
-    virtual FloatType nativeToUser(FloatType nativeValue) override { return nativeValue * (FloatType(180) / FLOATTYPE_PI); }
+    virtual FloatType nativeToUser(FloatType nativeValue) override { return qRadiansToDegrees(nativeValue); }
 
     /// \brief Converts a value from user units to the native units used internally.
     /// \param userValue The value to be converted back to internal units.
@@ -246,7 +246,7 @@ public:
     ///
     /// This default implementation converts from degrees to radians.
     /// \sa nativeToUser()
-    virtual FloatType userToNative(FloatType userValue) override { return userValue * (FLOATTYPE_PI / FloatType(180)); }
+    virtual FloatType userToNative(FloatType userValue) override { return qDegreesToRadians(userValue); }
 
     /// \brief Converts the given string to a value.
     virtual FloatType parseString(const QString& valueString) override;

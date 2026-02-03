@@ -52,16 +52,13 @@ namespace Ovito {
 
 #endif
 
-/// Low-precision floating-point type used for graphics data.
+/// Low-precision floating-point type used for graphics-related data.
 using GraphicsFloatType = float;
 
 /// The constant number pi.
 template<std::floating_point T>
 inline constexpr T pi_v = std::numbers::pi_v<T>;
-// Pi for our default floating-point type:
-inline constexpr FloatType pi = pi_v<FloatType>;
-// Legacy constant for backward compatibility:
-inline constexpr FloatType FLOATTYPE_PI = Ovito::pi_v<FloatType>;
+inline constexpr FloatType pi = pi_v<FloatType>; // pi for our default floating-point type
 
 /// A small epsilon, which is used in OVITO to test if a number is (almost) zero:
 template<typename T> requires (std::integral<T> || std::floating_point<T>)
@@ -70,11 +67,7 @@ template<>
 inline constexpr double epsilon_v<double> = 1e-12;
 template<>
 inline constexpr float epsilon_v<float> = 1e-6f;
-// Epsilon for our default floating-point type:
-inline constexpr FloatType epsilon = epsilon_v<FloatType>;
-// Legacy constants for backward compatibility:
-inline constexpr FloatType FLOATTYPE_EPSILON = Ovito::epsilon_v<FloatType>;
-inline constexpr GraphicsFloatType GRAPHICS_FLOATTYPE_EPSILON = (GraphicsFloatType)1e-12;
+inline constexpr FloatType epsilon = epsilon_v<FloatType>; // Epsilon for our default floating-point type
 
 /// The maximum value for floating-point variables of type Ovito::FloatType.
 inline constexpr FloatType FLOATTYPE_MAX = std::numeric_limits<FloatType>::max();

@@ -137,7 +137,7 @@ public:
         }
         else {
             if(q.w() < T(-1))
-                _angle = T(FLOATTYPE_PI) * T(2);
+                _angle = Ovito::pi_v<T> * T(2);
             else if(q.w() > T(1))
                 _angle = T(0);
             else
@@ -159,7 +159,7 @@ public:
             _axis = Vector_3<T>(0,0,1);
         }
         else if(cos < T(-1) + Ovito::epsilon_v<T>) {
-            _angle = T(FLOATTYPE_PI);
+            _angle = Ovito::pi_v<T>;
             _axis = Vector_3<T>(0,0,1);
         }
         else {
@@ -281,7 +281,7 @@ public:
         }
         else if(rot1.angle() != T(0)) {
             T fDiff = _rot2.angle() - rot1.angle();
-            T fDiffUnit = fDiff/T(2*FLOATTYPE_PI);
+            T fDiffUnit = fDiff/(Ovito::pi_v<T> * 2);
             int extraSpins = (int)std::floor(fDiffUnit + T(0.5));
             if(extraSpins * fDiffUnit * (fDiffUnit - extraSpins) < 0)
                 extraSpins = -extraSpins;
@@ -303,7 +303,7 @@ public:
             RotationT result = RotationT(slerpExtraSpins(t, q1, q2, extraSpins));
             if(result.axis().dot(interpolateAxis(t, rot1.axis(), _rot2.axis())) < T(0))
                 result = RotationT(-result.axis(), -result.angle(), false);
-            int nrev = std::floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/T(2*FLOATTYPE_PI) + T(0.5));
+            int nrev = std::floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/(Ovito::pi_v<T> * 2) + T(0.5));
             result.addRevolutions(nrev);
             return result;
         }
@@ -344,19 +344,19 @@ public:
         // fashion. To this end, we test all possible combinations of revolutions until
         // we find the one that yields the original axis-angle rotation. Multiple equivalent decompositions
         // are ranked, because we prefer Euler decompositions that rotate about a single axis.
-        int maxRevolutions = (int)std::floor(std::abs(angle()) / T(FLOATTYPE_PI * 2) + T(0.5 + Ovito::epsilon_v<FloatType>));
+        int maxRevolutions = (int)std::floor(std::abs(angle()) / (Ovito::pi_v<T> * 2) + T(0.5) + Ovito::epsilon_v<T>);
         if(maxRevolutions == 0) return euler;
         Vector_3<T> bestDecomposition = euler;
         int bestDecompositionRanking = -1;
         for(int xr = -maxRevolutions; xr <= maxRevolutions; xr++) {
             Vector_3<T> euler2;
-            euler2.x() = euler.x() + T(FLOATTYPE_PI*2) * xr;
+            euler2.x() = euler.x() + (Ovito::pi_v<T> * 2) * xr;
             int maxRevolutionsY = maxRevolutions - std::abs(xr);
             for(int yr = -maxRevolutionsY; yr <= maxRevolutionsY; yr++) {
-                euler2.y() = euler.y() + T(FLOATTYPE_PI*2) * yr;
+                euler2.y() = euler.y() + (Ovito::pi_v<T> * 2) * yr;
                 int maxRevolutionsZ = maxRevolutionsY - std::abs(yr);
                 for(int zr = -maxRevolutionsZ; zr <= maxRevolutionsZ; zr++) {
-                    euler2.z() = euler.z() + T(FLOATTYPE_PI*2) * zr;
+                    euler2.z() = euler.z() + (Ovito::pi_v<T> * 2) * zr;
                     if(equals(fromEuler(euler2, axisSequence))) {
                         int ranking = int(std::abs(euler2.x()) <= Ovito::epsilon_v<T>) + int(std::abs(euler2.y()) <= Ovito::epsilon_v<T>) +
                                       int(std::abs(euler2.z()) <= Ovito::epsilon_v<T>);
@@ -393,20 +393,20 @@ public:
     /// \return The rounded value of \c angle divided by 2*pi.
     /// \sa setRevolutions()
     /// \sa addRevolutions()
-    constexpr int revolutions() const { return (int)(_angle/T(FLOATTYPE_PI*2)); }
+    constexpr int revolutions() const { return (int)(_angle / (Ovito::pi_v<T> * 2)); }
 
     /// \brief Sets the number of revolutions.
     /// \param n The new number of revolutions. This can be negative.
     /// \sa revolutions()
     /// \sa addRevolutions()
-    constexpr void setRevolutions(int n) { _angle = std::fmod(_angle, T(2*FLOATTYPE_PI)) + (T(2*FLOATTYPE_PI)*n); }
+    constexpr void setRevolutions(int n) { _angle = std::fmod(_angle, 2 * Ovito::pi_v<T>) + (2 * Ovito::pi_v<T> * n); }
 
     /// \brief Adds the given number of revolutions.
     /// \param n The number of revolutions to add to the angle. This can be negative.
     ///
     /// The rotation angle is increased by \c n*2*pi.
     /// \sa revolutions()
-    constexpr void addRevolutions(int n) { _angle += T(2*FLOATTYPE_PI) * n; }
+    constexpr void addRevolutions(int n) { _angle += 2 * Ovito::pi_v<T> * n; }
 
     /// \brief Returns a string representation of this rotation.
     /// \return A string that contains the components of the rotation structure.
@@ -425,11 +425,11 @@ private:
         OVITO_ASSERT(cos >= T(0));
         if(cos > T(1)) cos = T(1); // round-off error might create problems in acos call
 
-        T angle = acos(cos);
-        T invSin = T(1) / sin(angle);
+        T angle = std::acos(cos);
+        T invSin = T(1) / std::sin(angle);
         T timeAngle = time * angle;
-        T coeff0 = sin(angle - timeAngle) * invSin;
-        T coeff1 = sin(timeAngle) * invSin;
+        T coeff0 = std::sin(angle - timeAngle) * invSin;
+        T coeff1 = std::sin(timeAngle) * invSin;
 
         return (coeff0 * axis0 + coeff1 * axis1);
     }
@@ -442,17 +442,17 @@ private:
         if(fCos < T(-1)) fCos = T(-1);
         else if(fCos > T(1)) fCos = T(1);
 
-        T fAngle = acos(fCos);
-        T fSin = sin(fAngle);  // fSin >= 0 since fCos >= 0
+        T fAngle = std::acos(fCos);
+        T fSin = std::sin(fAngle);  // fSin >= 0 since fCos >= 0
 
         if(fSin < T(1e-3)) {
             return p;
         }
         else {
-            T fPhase = T(FLOATTYPE_PI) * (T)iExtraSpins * t;
+            T fPhase = Ovito::pi_v<T> * (T)iExtraSpins * t;
             T fInvSin = T(1) / fSin;
-            T fCoeff0 = sin((T(1) - t) * fAngle - fPhase) * fInvSin;
-            T fCoeff1 = sin(t * fAngle + fPhase) * fInvSin;
+            T fCoeff0 = std::sin((T(1) - t) * fAngle - fPhase) * fInvSin;
+            T fCoeff1 = std::sin(t * fAngle + fPhase) * fInvSin;
             return QuaternionT<T>(fCoeff0*p.x() + fCoeff1*q.x(), fCoeff0*p.y() + fCoeff1*q.y(),
                                     fCoeff0*p.z() + fCoeff1*q.z(), fCoeff0*p.w() + fCoeff1*q.w());
         }
@@ -474,8 +474,8 @@ constexpr inline RotationT<T> operator*(const RotationT<T>& r1, const RotationT<
     RotationT<T> result(q);
     int rev =
         (r1.axis().dot(r2.axis()) >= T(0))
-        ? (int)std::floor(((r1.angle()+r2.angle()) / T(FLOATTYPE_PI*2)))
-        : (int)std::floor(((r1.angle()-r2.angle()) / T(FLOATTYPE_PI*2)));
+        ? (int)std::floor(((r1.angle()+r2.angle()) / (Ovito::pi_v<T> * 2)))
+        : (int)std::floor(((r1.angle()-r2.angle()) / (Ovito::pi_v<T> * 2)));
     if((rev & 1) != 0) {
         result.setAngle(-result.angle());
         rev++;

@@ -73,7 +73,7 @@ public:
         v.init(-radius, radius, -radius, radius, -radius, radius);
         // Create an approximate sphere by making plane cuts in directions computed using the "Fibonacci sphere algorithm".
         int faceCount = 64;
-        FloatType phi = FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));  // golden angle in radians
+        FloatType phi = Ovito::pi * (FloatType(3) - sqrt(FloatType(5)));  // golden angle in radians
         for(int i = 0; i < faceCount; i++) {
             FloatType y = FloatType(1) - (i / FloatType(faceCount - 1)) * 2; // y goes from 1 to -1
             FloatType r = sqrt(FloatType(1) - y * y); // radius at y
@@ -476,7 +476,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                             // Verify the computed pbc shift vector. The corrected neighbor vector should now align with the face normal vector.
                             delta -= simCell().reducedToAbsolute(pbcShift.toDataType<FloatType>());
                             OVITO_ASSERT(std::abs(delta.dot(normal) / delta.length() / normal.length()) >
-                                         1.0 - Ovito::epsilon_v<FloatType>);
+                                         1.0 - Ovito::epsilon);
 #endif
                             Bond bond = { index, (size_t)neighbor_id, pbcShift };
                             if(!bond.isOdd()) {

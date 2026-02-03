@@ -46,7 +46,7 @@ NearestNeighborFinder::NearestNeighborFinder(int numNeighbors, BufferReadAccess<
     }
 
     OVITO_ASSERT(!_simCell.is2D() || !_simCell.cellMatrix().column(2).isZero());
-    if(_simCell.volume3D() <= Ovito::epsilon_v<FloatType> || _simCell.isDegenerate())
+    if(_simCell.volume3D() <= Ovito::epsilon || _simCell.isDegenerate())
         throw Exception("Simulation cell is degenerate or missing.");
 
     _cellVectorLengthsSquared[0] = _simCell.cellMatrix().column(0).squaredLength();

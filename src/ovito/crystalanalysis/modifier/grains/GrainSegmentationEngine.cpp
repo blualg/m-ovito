@@ -136,7 +136,7 @@ void GrainSegmentationEngine1::createNeighborBonds(TaskProgress& progress)
                 for(size_t dim = 0; dim < 3; dim++) {
                     if(cell().hasPbc(dim)) {
                         if(std::abs(cell().reciprocalCellMatrix().prodrow(neighborVector, dim)) >=
-                           FloatType(0.5) + Ovito::epsilon_v<FloatType>) {
+                           FloatType(0.5) + Ovito::epsilon) {
                             static const QString axes[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
                             throw Exception(GrainSegmentationModifier::tr("Simulation box is too short along cell vector %1 (%2) to perform analysis. "
                                     "Please extend it first using the 'Replicate' modifier.").arg(dim+1).arg(axes[dim]));
@@ -495,7 +495,7 @@ void GrainSegmentationEngine2::perform()
 
         uf.merge(node->a, node->b);
         size_t parent = uf.find(node->a);
-        OVITO_ASSERT(node->orientation.norm() > Ovito::epsilon_v<FloatType>);
+        OVITO_ASSERT(node->orientation.norm() > Ovito::epsilon);
         meanOrientation[parent] = node->orientation;
     }
 

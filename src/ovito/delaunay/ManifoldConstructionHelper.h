@@ -1009,12 +1009,12 @@ private:
                 else if(p1[dim] < 0 && p2[dim] >= 0) {
                     Vector3 delta = p2 - p1;
                     p1 -= delta * (p1[dim] / delta[dim]);
-                    OVITO_ASSERT(std::abs(p1[dim]) < Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(p1[dim]) < Ovito::epsilon);
                 }
                 else if(p1[dim] >= 0 && p2[dim] < 0) {
                     Vector3 delta = p2 - p1;
                     p2 -= delta * (p2[dim] / delta[dim]);
-                    OVITO_ASSERT(std::abs(p2[dim]) < Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(p2[dim]) < Ovito::epsilon);
                 }
 
                 // Clip at upper box boundary.
@@ -1025,12 +1025,12 @@ private:
                 else if(p1[dim] > 1.0 && p2[dim] <= 1.0) {
                     Vector3 delta = p2 - p1;
                     p1 -= delta * ((p1[dim] - 1.0) / delta[dim]);
-                    OVITO_ASSERT(std::abs(p1[dim] - 1.0) < Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(p1[dim] - 1.0) < Ovito::epsilon);
                 }
                 else if(p1[dim] <= 1.0 && p2[dim] > 1.0) {
                     Vector3 delta = p2 - p1;
                     p2 -= delta * ((p2[dim] - 1.0) / delta[dim]);
-                    OVITO_ASSERT(std::abs(p2[dim] - 1.0) < Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(p2[dim] - 1.0) < Ovito::epsilon);
                 }
             }
 
@@ -1072,12 +1072,12 @@ private:
                 else if(t1 < 0 && t2 > 0) {
                     Vector3 delta = p2 - p1;
                     p1 -= delta * (t1 / (t2 - t1));
-                    OVITO_ASSERT(std::abs(plane.pointDistance(p1)) <= Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(plane.pointDistance(p1)) <= Ovito::epsilon);
                 }
                 else if(t1 > 0 && t2 < 0) {
                     Vector3 delta = p2 - p1;
                     p2 += delta * (t2 / (t1 - t2));
-                    OVITO_ASSERT(std::abs(plane.pointDistance(p2)) <= Ovito::epsilon_v<FloatType>);
+                    OVITO_ASSERT(std::abs(plane.pointDistance(p2)) <= Ovito::epsilon);
                 }
             }
 

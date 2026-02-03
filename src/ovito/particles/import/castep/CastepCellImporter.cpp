@@ -117,16 +117,16 @@ void CastepCellImporter::FrameLoader::loadFile()
                 cell(2,2) = c;
             }
             else if(alpha == 90 && beta == 90) {
-                gamma *= FLOATTYPE_PI / 180;
+                gamma = qDegreesToRadians(gamma);
                 cell(0,0) = a;
                 cell(0,1) = b * cos(gamma);
                 cell(1,1) = b * sin(gamma);
                 cell(2,2) = c;
             }
             else {
-                alpha *= FLOATTYPE_PI / 180;
-                beta *= FLOATTYPE_PI / 180;
-                gamma *= FLOATTYPE_PI / 180;
+                alpha = qDegreesToRadians(alpha);
+                beta = qDegreesToRadians(beta);
+                gamma = qDegreesToRadians(gamma);
                 FloatType v = a*b*c*sqrt(1.0 - cos(alpha)*cos(alpha) - cos(beta)*cos(beta) - cos(gamma)*cos(gamma) + 2.0 * cos(alpha) * cos(beta) * cos(gamma));
                 cell(0,0) = a;
                 cell(0,1) = b * cos(gamma);

@@ -55,9 +55,9 @@ void SyclNeighborFinderBase::prepare(const Property* positions, const Simulation
         // Compute bounding box of input particles (possible restricted to the subset of selected particles).
         Box3 boundingBox = SyclBufferAccess<Point3, access_mode::read>{positions}.boundingBox(selection);
         if(boundingBox.isEmpty()) boundingBox.addPoint(Point3::Origin());
-        if(boundingBox.sizeX() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.x() = boundingBox.minc.x() + Ovito::epsilon_v<FloatType>;
-        if(boundingBox.sizeY() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.y() = boundingBox.minc.y() + Ovito::epsilon_v<FloatType>;
-        if(boundingBox.sizeZ() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.z() = boundingBox.minc.z() + Ovito::epsilon_v<FloatType>;
+        if(boundingBox.sizeX() <= Ovito::epsilon) boundingBox.maxc.x() = boundingBox.minc.x() + Ovito::epsilon;
+        if(boundingBox.sizeY() <= Ovito::epsilon) boundingBox.maxc.y() = boundingBox.minc.y() + Ovito::epsilon;
+        if(boundingBox.sizeZ() <= Ovito::epsilon) boundingBox.maxc.z() = boundingBox.minc.z() + Ovito::epsilon;
         _simCell = DataOORef<SimulationCell>::create(
                 ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),

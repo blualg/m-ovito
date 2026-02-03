@@ -92,7 +92,7 @@ public:
 
     /// Determines which spatial region contains the given location in space.
     std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location,
-                                                                  FloatType epsilon = Ovito::epsilon_v<FloatType>) const;
+                                                                  FloatType epsilon = Ovito::epsilon) const;
 
 private:
 

@@ -125,7 +125,7 @@ namespace {
  ******************************************************************************/
 inline bool isFractionalBond(GraphicsFloatType bondOrder)
 {
-    return std::abs(std::round(bondOrder) - bondOrder) > GRAPHICS_FLOATTYPE_EPSILON;
+    return std::abs(std::round(bondOrder) - bondOrder) > Ovito::epsilon_v<GraphicsFloatType>;
 }
 
 /******************************************************************************
@@ -199,7 +199,7 @@ std::pair<Vector3G, Vector3G> getBondNormalVector(const ParticleIndexPair& parti
                 count++;
             }
         }
-        return {normal_z.squaredLength() <= (GRAPHICS_FLOATTYPE_EPSILON * GRAPHICS_FLOATTYPE_EPSILON) ? normal_x : normal_z, direction};
+        return {normal_z.squaredLength() <= (Ovito::epsilon_v<GraphicsFloatType> * Ovito::epsilon_v<GraphicsFloatType>) ? normal_x : normal_z, direction};
     }
     return {{0, 0, 1}, Vector3G::Zero()};
 }
@@ -325,7 +325,7 @@ inline size_t bondOrderToCylinderCount(const GraphicsFloatType bondOrder, const 
     GraphicsFloatType intPart;
     const GraphicsFloatType remainder = std::modf(bondOrder, &intPart);
     size_t count = 2 * (size_t)std::clamp(intPart, (GraphicsFloatType)0, (GraphicsFloatType)3);
-    if(remainder > GRAPHICS_FLOATTYPE_EPSILON) {
+    if(remainder > Ovito::epsilon_v<GraphicsFloatType>) {
         count += cylindersPerFilledSegment;
     }
     return count;

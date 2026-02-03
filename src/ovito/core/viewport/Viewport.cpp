@@ -261,7 +261,7 @@ DataOORef<const AbstractCameraObject> Viewport::cameraObject(AnimationTime time)
 ******************************************************************************/
 ViewProjectionParameters Viewport::computeProjectionParameters(AnimationTime time, FloatType aspectRatio, const Box3& sceneBoundingBox)
 {
-    OVITO_ASSERT(aspectRatio > Ovito::epsilon_v<FloatType>);
+    OVITO_ASSERT(aspectRatio > Ovito::epsilon);
 
     ViewProjectionParameters params;
     params.aspectRatio = aspectRatio;

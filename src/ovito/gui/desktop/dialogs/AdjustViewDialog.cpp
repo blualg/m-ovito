@@ -270,7 +270,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindowUI& ui, Viewport* viewport, QWidget
     _camFOVAngleSpinner = new SpinnerWidget();
     _camFOVAngleSpinner->setUnit(unitsManager().angleUnit());
     _camFOVAngleSpinner->setMinValue(FloatType(1e-4));
-    _camFOVAngleSpinner->setMaxValue(FLOATTYPE_PI - FloatType(1e-2));
+    _camFOVAngleSpinner->setMaxValue(Ovito::pi - FloatType(1e-2));
     _camFOVAngleSpinner->setFloatValue(qDegreesToRadians(FloatType(35)));
     _camFOVAngleSpinner->setEnabled(false);
     connect(_camPerspective, &QRadioButton::toggled, _camFOVAngleSpinner, &SpinnerWidget::setEnabled);
@@ -361,13 +361,13 @@ void AdjustViewDialog::updateGUI()
     AffineTransformation unconstrainedOrientation = viewport->cameraTransformation();
     AffineTransformation delta = constrainedOrientation * unconstrainedOrientation;
     FloatType rollAngle = std::atan2(delta(1,0), delta(0,0));
-    if(std::abs(rollAngle) < Ovito::epsilon_v<FloatType>) rollAngle = 0;
+    if(std::abs(rollAngle) < Ovito::epsilon) rollAngle = 0;
     _rollAngleSpinner->setFloatValue(rollAngle);
 
     Vector3 upDir = viewport->cameraTransformation().column(1);
-    if(std::abs(upDir.x()) < Ovito::epsilon_v<FloatType>) upDir.x() = 0;
-    if(std::abs(upDir.y()) < Ovito::epsilon_v<FloatType>) upDir.y() = 0;
-    if(std::abs(upDir.z()) < Ovito::epsilon_v<FloatType>) upDir.z() = 0;
+    if(std::abs(upDir.x()) < Ovito::epsilon) upDir.x() = 0;
+    if(std::abs(upDir.y()) < Ovito::epsilon) upDir.y() = 0;
+    if(std::abs(upDir.z()) < Ovito::epsilon) upDir.z() = 0;
     _upDirXSpinner->setFloatValue(upDir.x());
     _upDirYSpinner->setFloatValue(upDir.y());
     _upDirZSpinner->setFloatValue(upDir.z());

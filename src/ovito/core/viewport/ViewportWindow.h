@@ -194,7 +194,7 @@ public:
     /// \return \c true if an intersection has been found; \c false if not.
     bool computeConstructionPlaneIntersection(const Point2& viewportPosition,
                                               Point3& intersectionPoint,
-                                              FloatType epsilon = Ovito::epsilon_v<FloatType>);
+                                              FloatType epsilon = Ovito::epsilon);
 
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box);
