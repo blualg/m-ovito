@@ -360,8 +360,8 @@ struct LinearValueInterpolator<Rotation> {
         }
         else if(rot1.angle() != T(0)) {
             T fDiff = _rot2.angle() - rot1.angle();
-            T fDiffUnit = fDiff/T(2*FLOATTYPE_PI);
-            int extraSpins = (int)floor(fDiffUnit + T(0.5));
+            T fDiffUnit = fDiff/(2*Ovito::pi_v<T>);
+            int extraSpins = (int)std::floor(fDiffUnit + T(0.5));
             if(extraSpins * fDiffUnit * (fDiffUnit - extraSpins) < 0)
                 extraSpins = -extraSpins;
 
@@ -382,7 +382,7 @@ struct LinearValueInterpolator<Rotation> {
             RotationT<T> result = RotationT<T>(slerpExtraSpins(t, q1, q2, extraSpins));
             if(result.axis().dot(interpolateAxis(t, rot1.axis(), _rot2.axis())) < T(0))
                 result = RotationT<T>(-result.axis(), -result.angle(), false);
-            int nrev = floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/T(2*FLOATTYPE_PI) + T(0.5));
+            int nrev = std::floor((t * _rot2.angle() + (T(1) - t) * rot1.angle() - result.angle())/(2*Ovito::pi_v<T>) + T(0.5));
             result.addRevolutions(nrev);
             return result;
         }
@@ -401,11 +401,11 @@ struct LinearValueInterpolator<Rotation> {
         OVITO_ASSERT(cos >= T(0));
         if(cos > T(1)) cos = T(1); // round-off error might create problems in acos call
 
-        T angle = acos(cos);
-        T invSin = T(1) / sin(angle);
+        T angle = std::acos(cos);
+        T invSin = T(1) / std::sin(angle);
         T timeAngle = time * angle;
-        T coeff0 = sin(angle - timeAngle) * invSin;
-        T coeff1 = sin(timeAngle) * invSin;
+        T coeff0 = std::sin(angle - timeAngle) * invSin;
+        T coeff1 = std::sin(timeAngle) * invSin;
 
         return (coeff0 * axis0 + coeff1 * axis1);
     }
@@ -419,17 +419,17 @@ struct LinearValueInterpolator<Rotation> {
         if(fCos < T(-1)) fCos = T(-1);
         else if(fCos > T(1)) fCos = T(1);
 
-        T fAngle = acos(fCos);
-        T fSin = sin(fAngle);  // fSin >= 0 since fCos >= 0
+        T fAngle = std::acos(fCos);
+        T fSin = std::sin(fAngle);  // fSin >= 0 since fCos >= 0
 
         if(fSin < T(1e-3)) {
             return p;
         }
         else {
-            T fPhase = T(FLOATTYPE_PI) * (T)iExtraSpins * t;
+            T fPhase = Ovito::pi_v<T> * (T)iExtraSpins * t;
             T fInvSin = T(1) / fSin;
-            T fCoeff0 = sin((T(1) - t) * fAngle - fPhase) * fInvSin;
-            T fCoeff1 = sin(t * fAngle + fPhase) * fInvSin;
+            T fCoeff0 = std::sin((T(1) - t) * fAngle - fPhase) * fInvSin;
+            T fCoeff1 = std::sin(t * fAngle + fPhase) * fInvSin;
             return QuaternionT<T>(fCoeff0*p.x() + fCoeff1*q.x(), fCoeff0*p.y() + fCoeff1*q.y(),
                                     fCoeff0*p.z() + fCoeff1*q.z(), fCoeff0*p.w() + fCoeff1*q.w());
         }

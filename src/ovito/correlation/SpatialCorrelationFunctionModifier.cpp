@@ -218,7 +218,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     const SimulationCell* inputCell = state.getObject<SimulationCell>();
     if(!inputCell)
         throw Exception(tr("No simulation cell defined. The spatial correlation function cannot be computed without a simulation cell."));
-    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < Ovito::epsilon_v<FloatType>)
+    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < Ovito::epsilon)
         throw Exception(tr("Simulation cell is degenerate. Cannot compute spatial correlation function."));
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -274,12 +274,12 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                 int binIndexZ = int( fractionalPos.z() * nZ );
                 FloatType window = 1;
                 if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
+                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.x()));
                 if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.y()));
                 if(is2D) binIndexZ = 0;
                 else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
-                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+                else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.z()));
                 if(!applyWindow) window = 1;
                 if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
                     // Store in row-major format.
@@ -306,12 +306,12 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                     int binIndexZ = int( fractionalPos.z() * nZ );
                     FloatType window = 1;
                     if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.x()));
                     if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.y()));
                     if(is2D) binIndexZ = 0;
                     else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*Ovito::pi*fractionalPos.z()));
                     if(!applyWindow) window = 1;
                     if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
                         // Store in row-major format.
@@ -468,7 +468,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 
     // Averaged reciprocal space correlation function.
     _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfWavevectorBins, Property::FloatDefault, 1, tr("C(q)"));
-    _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
+    _reciprocalSpaceCorrelationRange = 2 * Ovito::pi * minReciprocalSpaceVector * numberOfWavevectorBins;
 
     std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
     BufferWriteAccess<FloatType, access_mode::read_write> reciprocalSpaceCorrelationData(_reciprocalSpaceCorrelation);
@@ -617,7 +617,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
     size_t vecComponent2 = _vecComponent2;
-    FloatType gridSpacing = (neighCutoff() + Ovito::epsilon_v<FloatType>) / neighCorrelation()->size();
+    FloatType gridSpacing = (neighCutoff() + Ovito::epsilon) / neighCorrelation()->size();
     EnumerableThreadSpecific<std::vector<FloatType>> threadLocalCorrelations;
     EnumerableThreadSpecific<std::vector<int64_t>> threadLocalRDFs;
     parallelForInnerOuter(particleCount, 4096, *this, [&](auto&& iterate) {
@@ -655,7 +655,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 
     // Normalize short-ranged real-space correlation function.
     if(!cell().is2D()) {
-        FloatType normalizationFactor = 3 * cell().volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+        FloatType normalizationFactor = 3 * cell().volume3D() / (4 * Ovito::pi * sourceProperty1()->size() * sourceProperty2()->size());
         for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
             FloatType distance = distanceBinIndex * gridSpacing;
             FloatType distance2 = distance + gridSpacing;
@@ -664,7 +664,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         }
     }
     else {
-        FloatType normalizationFactor = cell().volume2D() / (FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+        FloatType normalizationFactor = cell().volume2D() / (Ovito::pi * sourceProperty1()->size() * sourceProperty2()->size());
         for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
             FloatType distance = distanceBinIndex * gridSpacing;
             FloatType distance2 = distance + gridSpacing;

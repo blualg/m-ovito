@@ -347,7 +347,7 @@ Future<PipelineFlowState> RadialDistributionFunctionModifier::evaluateModifier(c
         double density = (double)neighborFinder.particleCount() / neighborFinder.simulationCellVolume();
         double estimatedNeighborCount =
             density *
-            (!neighborFinder.simCell().is2D() ? (FLOATTYPE_PI * cutoff * cutoff * cutoff * (4.0 / 3.0)) : (FLOATTYPE_PI * cutoff * cutoff));
+            (!neighborFinder.simCell().is2D() ? (Ovito::pi * cutoff * cutoff * cutoff * (4.0 / 3.0)) : (Ovito::pi * cutoff * cutoff));
         size_t chunkSize = 4096;
         if(estimatedNeighborCount > 1.0) chunkSize = std::clamp<size_t>((4096 * 32) / estimatedNeighborCount, 8, chunkSize);
 
@@ -412,10 +412,10 @@ Future<PipelineFlowState> RadialDistributionFunctionModifier::evaluateModifier(c
         auto normalizeRDF = [&](size_t type1Count, size_t type2Count, size_t component = 0, FloatType prefactor = 1) {
             bool is2D = neighborFinder.simCell().is2D();
             if(!is2D) {
-                prefactor *= FloatType(4.0 / 3.0) * FLOATTYPE_PI * type1Count / neighborFinder.simCell().volume3D() * type2Count;
+                prefactor *= FloatType(4.0 / 3.0) * Ovito::pi * type1Count / neighborFinder.simCell().volume3D() * type2Count;
             }
             else {
-                prefactor *= FLOATTYPE_PI * type1Count / neighborFinder.simCell().volume2D() * type2Count;
+                prefactor *= Ovito::pi * type1Count / neighborFinder.simCell().volume2D() * type2Count;
             }
             if(prefactor == 0.0) return;
             OVITO_ASSERT(component < rdfY->componentCount());

@@ -404,7 +404,7 @@ public:
     /// Constructs the convex hull from a set of points and adds the resulting polyhedron to the mesh.
     void constructConvexHull(std::vector<Point3> vecs,
                              SurfaceMesh::region_index region = InvalidIndex,
-                             FloatType epsilon = Ovito::epsilon_v<FloatType>);
+                             FloatType epsilon = Ovito::epsilon);
 
     /// Joins adjacent faces that are coplanar.
     void joinCoplanarFaces(FloatType thresholdAngle = qDegreesToRadians(0.01));

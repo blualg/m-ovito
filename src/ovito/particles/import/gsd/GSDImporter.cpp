@@ -772,8 +772,8 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definit
             u2.normalizeSafely();
             FloatType theta1 = std::atan2(u1.x(), -u1.y());
             FloatType theta2 = std::atan2(u2.x(), -u2.y());
-            FloatType delta_theta = std::fmod(theta2 - theta1, FLOATTYPE_PI*2);
-            if(delta_theta < 0) delta_theta += FLOATTYPE_PI*2;
+            FloatType delta_theta = std::fmod(theta2 - theta1, Ovito::pi*2);
+            if(delta_theta < 0) delta_theta += Ovito::pi*2;
             delta_theta /= res;
             for(int i = 0; i < res+1; i++, theta1 += delta_theta) {
                 Vector2 delta(cos(theta1) * roundingRadius, sin(theta1) * roundingRadius);

@@ -44,7 +44,7 @@ DEFINE_PROPERTY_FIELD(StandardCameraObject, zoom);
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, fov, "FOV angle");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, zoom, "FOV size");
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit, FloatType(1e-3), Ovito::pi - FloatType(1e-2));
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraObject, zoom, WorldParameterUnit, 0);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CameraVis);
@@ -106,7 +106,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
     // Compute projection matrix.
     params.isPerspective = isPerspective();
     if(params.isPerspective) {
-        if(bb.minc.z() < -Ovito::epsilon_v<FloatType>) {
+        if(bb.minc.z() < -Ovito::epsilon) {
             params.zfar = -bb.minc.z();
             params.znear = std::max(-bb.maxc.z(), params.zfar * FloatType(1e-4));
         }
@@ -117,7 +117,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
 
         // Get the camera angle.
-        params.fieldOfView = qBound(Ovito::epsilon_v<FloatType>, fov(), FLOATTYPE_PI - Ovito::epsilon_v<FloatType>);
+        params.fieldOfView = qBound(Ovito::epsilon, fov(), Ovito::pi - Ovito::epsilon);
 
         params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
     }
@@ -132,7 +132,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         }
 
         // Get the camera zoom.
-        params.fieldOfView = qMax(Ovito::epsilon_v<FloatType>, zoom());
+        params.fieldOfView = qMax(Ovito::epsilon, zoom());
 
         params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
                             -params.fieldOfView, params.fieldOfView, params.znear, params.zfar);

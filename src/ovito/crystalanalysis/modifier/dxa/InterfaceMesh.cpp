@@ -95,7 +95,7 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
             for(size_t dim = 0; dim < 3; dim++) {
                 if(this->hasPbc(dim)) {
                     if(std::abs(this->domain().reciprocalCellMatrix().prodrow(_edges[edge].physicalVector, dim)) >=
-                       FloatType(0.5) + Ovito::epsilon_v<FloatType>)
+                       FloatType(0.5) + Ovito::epsilon)
                         StructureAnalysis::generateCellTooSmallError(dim);
                 }
             }

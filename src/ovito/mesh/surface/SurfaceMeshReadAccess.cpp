@@ -143,7 +143,7 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
         Vector3 edgeDir = wrapVector(p2 - p1);
         Vector3 r = wrapVector(p1 - location);
         FloatType edgeLength = edgeDir.length();
-        if(edgeLength <= Ovito::epsilon_v<FloatType>) continue;
+        if(edgeLength <= Ovito::epsilon) continue;
         edgeDir /= edgeLength;
         FloatType d = -edgeDir.dot(r);
         if(d <= 0 || d >= edgeLength) continue;
@@ -193,7 +193,7 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
             bool isInsideTriangle = true;
             Vector3 vertexVector = r;
             for(size_t v = 0; v < 3; v++) {
-                if(vertexVector.dot(normal.cross(edgeVectors[v])) >= Ovito::epsilon_v<FloatType>) {
+                if(vertexVector.dot(normal.cross(edgeVectors[v])) >= Ovito::epsilon) {
                     isInsideTriangle = false;
                     break;
                 }
@@ -202,7 +202,7 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
 
             if(isInsideTriangle) {
                 FloatType normalLengthSq = normal.squaredLength();
-                if(std::abs(normalLengthSq) > Ovito::epsilon_v<FloatType>) {
+                if(std::abs(normalLengthSq) > Ovito::epsilon) {
                     normal /= sqrt(normalLengthSq);
                     FloatType planeDist = normal.dot(r);
                     // In case the manifold is two-sided, skip face if it is facing toward the query point.

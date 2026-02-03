@@ -61,7 +61,7 @@ void SimulationCell::computeInverseMatrix() const
     else {
         _reciprocalSimulationCell.setIdentity();
         FloatType det = cellMatrix()(0,0) * cellMatrix()(1,1) - cellMatrix()(0,1) * cellMatrix()(1,0);
-        bool isValid = (std::abs(det) > Ovito::epsilon_v<FloatType>);
+        bool isValid = (std::abs(det) > Ovito::epsilon);
         if(isValid) {
             _reciprocalSimulationCell(0,0) = cellMatrix()(1,1) / det;
             _reciprocalSimulationCell(1,0) = -cellMatrix()(1,0) / det;

@@ -82,7 +82,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isPerspective, setIsPerspective);
 
     /// Field of view of the camera if it uses a perspective projection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{FLOATTYPE_PI/4}, fov, setFov);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{Ovito::pi/4}, fov, setFov);
 
     /// Field of view of the camera if it uses an orthogonal projection.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{200}, zoom, setZoom);

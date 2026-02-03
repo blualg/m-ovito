@@ -86,7 +86,7 @@ void OpacityFunction::freeDraw(std::span<const Point2> drawPath)
 
         // Calculate the slope of the line segment.
         FloatType deltaX = p1.x() - p0.x();
-        if(std::abs(deltaX) <= Ovito::epsilon_v<FloatType>) continue;  // Avoid division by zero
+        if(std::abs(deltaX) <= Ovito::epsilon) continue;  // Avoid division by zero
         FloatType slope = (p1.y() - p0.y()) / deltaX;
 
         // Iterate over the x-coordinates of the opacity function table

@@ -47,7 +47,7 @@ DEFINE_VIRTUAL_PROPERTY_FIELD(StandardCameraSource, isTargetCamera, setIsTargetC
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, fovController, "FOV angle");
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, zoomController, "FOV size");
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraSource, fovController, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraSource, fovController, AngleParameterUnit, FloatType(1e-3), Ovito::pi - FloatType(1e-2));
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, WorldParameterUnit, 0);
 
 /******************************************************************************
@@ -61,7 +61,7 @@ void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
-        fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI / 4);
+        fovController()->setFloatValue(AnimationTime(0), Ovito::pi / 4);
 
         setZoomController(ControllerManager::createFloatController());
         zoomController()->setFloatValue(AnimationTime(0), 200);
@@ -161,7 +161,7 @@ FloatType StandardCameraSource::fov() const
 {
     if(fovController())
         return fovController()->getFloatValue(AnimationTime(0));
-    return FLOATTYPE_PI / 4;
+    return Ovito::pi / 4;
 }
 
 /******************************************************************************

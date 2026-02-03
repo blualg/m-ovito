@@ -150,7 +150,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                                 auto mass = masses.cbegin();
                                 for(FloatType& density : BufferWriteAccess<FloatType, access_mode::discard_write>(newProperty)) {
                                     FloatType r = *radius++;
-                                    density = (r > 0) ? (*mass / (r*r*r * (FLOATTYPE_PI * FloatType(4.0/3.0)))) : FloatType(0);
+                                    density = (r > 0) ? (*mass / (r*r*r * (Ovito::pi * FloatType(4.0/3.0)))) : FloatType(0);
                                     ++mass;
                                 }
                                 OVITO_ASSERT(radius == radii.cend());

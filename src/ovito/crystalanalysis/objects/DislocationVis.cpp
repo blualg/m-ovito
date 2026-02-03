@@ -262,7 +262,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
                         FloatType dot = std::abs(delta.dot(normalizedBurgersVector));
                         if(dot != 0) dot /= delta.length();
                         if(dot > 1) dot = 1;
-                        FloatType angle = std::acos(dot) / (FLOATTYPE_PI/2);
+                        FloatType angle = std::acos(dot) / (Ovito::pi/2);
                         if(angle <= FloatType(0.5))
                             segmentColor = ColorG(1, angle * 2, angle * 2);
                         else
@@ -434,10 +434,10 @@ void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const S
                 isClipped = true;
                 break;
             }
-            else if(c1 > Ovito::epsilon_v<FloatType> && c2 < -Ovito::epsilon_v<FloatType>) {
+            else if(c1 > Ovito::epsilon && c2 < -Ovito::epsilon) {
                 p1 += (p2 - p1) * (c1 / (c1 - c2));
             }
-            else if(c1 < -Ovito::epsilon_v<FloatType> && c2 > Ovito::epsilon_v<FloatType>) {
+            else if(c1 < -Ovito::epsilon && c2 > Ovito::epsilon) {
                 p2 += (p1 - p2) * (c2 / (c2 - c1));
             }
         }
