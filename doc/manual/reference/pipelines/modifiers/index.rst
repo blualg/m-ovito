@@ -92,7 +92,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.expression_select`               Selects particles and other elements based on a user-defined criterion.
   :ref:`particles.modifiers.manual_selection`                Lets you select individual particles or bonds with the mouse.
   :ref:`particles.modifiers.invert_selection`                Inverts the selection state of each element.
-  :ref:`particles.modifiers.select_overlapping_particles`    Selects all particles that are within a certain distance of each other.
+  :ref:`particles.modifiers.select_overlapping_particles`    Selects particles that are too close to each other.
   :ref:`particles.modifiers.select_particle_type`            Selects all elements of a particular type, e.g. all atoms of a chemical species.
   ========================================================== ==========================================================
 
@@ -189,17 +189,17 @@ combine several modifiers to accomplish more complex tasks.
   polyhedral_template_matching
   python_script
   radial_distribution_function
+  reduce_property
   render_lammps_regions
   show_periodic_images
   scatter_plot
+  select_overlapping_particles
   select_particle_type
   shrink_wrap_box
   slice
   smooth_trajectory
   bin_and_reduce
-  reduce_property
   correlation_function
-  select_overlapping_particles
   structure_factor
   time_averaging
   time_series

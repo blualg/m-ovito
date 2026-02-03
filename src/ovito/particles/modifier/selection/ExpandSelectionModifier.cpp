@@ -116,9 +116,7 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
         engine = std::make_unique<ExpandSelectionBondedEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
     }
     else if(mode() == Molecule) {
-        // Get the current particle selection.
-        const Property* moleculeId = particles->expectProperty(Particles::MoleculeProperty);
-        engine = std::make_unique<ExpandSelectionMoleculeEngine>(request.modificationNode(), moleculeId, inputSelection);
+        engine = std::make_unique<ExpandSelectionMoleculeEngine>(request.modificationNode(), particles->expectProperty(Particles::MoleculeProperty), inputSelection);
     }
     else {
         throw Exception(tr("Invalid selection expansion mode."));

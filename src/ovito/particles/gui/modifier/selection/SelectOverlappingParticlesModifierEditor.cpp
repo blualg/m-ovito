@@ -39,7 +39,7 @@ void SelectOverlappingParticlesModifierEditor::createUI(const RolloutInsertionPa
 {
     // Create a rollout.
     QWidget* rollout =
-        createRollout(tr("Select overlapping atoms"), rolloutParams, "manual:particles.modifiers.select_overlapping_particles");
+        createRollout(tr("Select overlapping particles"), rolloutParams, "manual:particles.modifiers.select_overlapping_particles");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -58,7 +58,7 @@ void SelectOverlappingParticlesModifierEditor::createUI(const RolloutInsertionPa
     auto* applyToSelectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingParticlesModifier::applyToSelection));
     layout->addWidget(applyToSelectionUI->checkBox());
 
-    // Apply to selection parameter.
+    // Keep one unselected parameter.
     auto* keepOneUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SelectOverlappingParticlesModifier::keepOne));
     layout->addWidget(keepOneUI->checkBox());
 

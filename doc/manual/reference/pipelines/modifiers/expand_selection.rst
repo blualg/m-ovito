@@ -31,5 +31,5 @@ Number of iterations
   as if the modifier had been applied twice.
 
 .. seealso::
-  
+
   :py:class:`ovito.modifiers.ExpandSelectionModifier` (Python API)

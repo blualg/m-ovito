@@ -27,7 +27,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingParticlesModifier);
-OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "DisplayName", "Select overlapping atoms");
+OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "DisplayName", "Select overlapping particles");
 OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "Description", "Selects particles that are very close to each other.");
 OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "ModifierCategory", "Selection");
 
@@ -38,6 +38,8 @@ DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, keepOne);
 SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, overlapDistance, "Overlap distance");
 SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, applyToSelection, "Use only selected particles");
 SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, keepOne, "Keep one particle unselected on overlap");
+
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SelectOverlappingParticlesModifier, overlapDistance, WorldParameterUnit, 0);
 
 /******************************************************************************
  * Asks the modifier whether it can be applied to the given input data.
@@ -72,7 +74,19 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     co_await ExecutorAwaiter(ThreadPoolExecutor());
 
     TaskProgress progress(this_task::ui());
-    progress.setText(tr("Deleting overlapping atoms"));
+    progress.setText(tr("Selecting overlapping particles"));
+
+    // Validate input simulation cell.
+    // Warn if overlap distance exceeds periodicity lengths.
+    const SimulationCell* cell = state_l.getObject<SimulationCell>();
+    if(cell && keepOne_l) {
+        for(size_t dim = 0; dim < 3; dim++) {
+            if(cell->hasPbcCorrected(dim) && overlapDistance_l >= cell->cellMatrix().column(dim).length()) {
+                state_l.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Overlap distance exceeds simulation cell periodicity length. This likely leads to incorrect results.")));
+                break;
+            }
+        }
+    }
 
     // Output mask / selection property
     Particles* mutableParticles = state_l.expectMutableObject<Particles>();
@@ -83,7 +97,7 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     BufferReadAccess<SelectionIntType> selectionAcc(selProperty);
 
     CutoffNeighborFinder neighborFinder(
-        overlapDistance_l, particles->expectProperty(Particles::PositionProperty), state_l.getObject<SimulationCell>(), selProperty);
+        overlapDistance_l, particles->expectProperty(Particles::PositionProperty), cell, selProperty);
 
     std::vector<size_t> neighs;
 
@@ -92,13 +106,13 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
         rng.emplace(1323);
     }
 
-    progress.setMaximum((qlonglong)particles->elementCount());
+    progress.setMaximum(particles->elementCount());
     for(size_t particleIndex = 0; particleIndex < particles->elementCount(); particleIndex++) {
-        progress.setValueIntermittent((qlonglong)particleIndex);
+        progress.setValueIntermittent(particleIndex);
 
         // Skip particles that are not included in the analysis.
         if(selectionAcc && selectionAcc[particleIndex] == 0) continue;
-        // Skip particles that have already been marked for deletion.
+        // Skip particles that have already been marked.
         if(outputSelection[particleIndex] != 0) continue;
 
         neighs.clear();
@@ -109,17 +123,15 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
                 neighs.emplace_back(neighIndex);
             }
         }
-        if(keepOne_l) {
-            OVITO_ASSERT(rng.has_value());
-            if(neighs.size() > 1) {
+        if(neighs.size() > 1) {
+            if(keepOne_l) {
+                OVITO_ASSERT(rng.has_value());
                 const size_t keep = neighs[std::uniform_int_distribution<size_t>(0, neighs.size() - 1)(*rng)];
                 for(const size_t idx : neighs) {
                     outputSelection[idx] = (idx == keep) ? 0 : 1;
                 }
             }
-        }
-        else {
-            if(neighs.size() > 1) {
+            else {
                 for(size_t neigh : neighs) {
                     outputSelection[neigh] = 1;
                 }
@@ -130,7 +142,7 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
     const size_t selectedCount = outputSelectionProperty->nonzeroCount();
     state_l.addAttribute(
         QStringLiteral("SelectOverlappingParticles.count"), QVariant::fromValue(selectedCount), request_l.modificationNode());
-    state_l.setStatus(PipelineStatus(tr("%1 out of %2 elements selected (%3%)")
+    state_l.combineStatus(PipelineStatus(tr("%1 out of %2 particles selected (%3%)")
                                          .arg(selectedCount)
                                          .arg(particles->elementCount())
                                          .arg(particles->elementCount() > 0 ? selectedCount * 100 / particles->elementCount() : 0)));

@@ -13,11 +13,12 @@ Version 3.15.0 (dd-mm-2026)
 - CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
 - mmCIF file importer: read sequence id from file into new particle property "Sequence"
 - Simulation cell and particle types can no longer be edited directly
-- New modifier: :ref:`particles.modifiers.edit_types`
-- New modifier :ref:`particles.modifiers.edit_simulation_cell`
-- New modifier :ref:`particles.modifiers.bond_order`
-- New modifier :ref:`particles.modifiers.select_overlapping_particles`
-- Add "Molecule" mode to :ref:`particles.modifiers.expand_selection`
+- Newly added modifiers:
+  * :ref:`particles.modifiers.edit_types`
+  * :ref:`particles.modifiers.edit_simulation_cell`
+  * :ref:`particles.modifiers.bond_order`
+  * :ref:`particles.modifiers.select_overlapping_particles`
+- Add "Molecule" mode to :ref:`particles.modifiers.expand_selection` modifier
 - Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
   The old modifier will remain available for backwards compatibility.
 - Implement :ref:`particles.modifiers.assign_color` modifier for lines
@@ -30,7 +31,6 @@ Version 3.15.0 (dd-mm-2026)
 - Fix bug where the Find Rings modifier would report evenly sized rings in both directions
 - Reduce OVITO session state file sizes for long trajectories
 - Warn if user tries to export an empty scene to a glTF file via export_file()
-- ANARI progress refinement rendering in interactive Viewports
 - VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
 - VisRTX renderer: Support progressive refinement rendering in interactive viewports
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
