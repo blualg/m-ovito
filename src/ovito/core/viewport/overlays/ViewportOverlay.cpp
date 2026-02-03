@@ -102,4 +102,43 @@ void ViewportOverlay::checkAlignmentParameterValue(int alignment) const
             .arg(getOOMetaClass().name()));
 }
 
+/******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void ViewportOverlay::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    ActiveObject::registerObjectReferencesForSerialization(stream, deltaReferenceObject);
+
+    // Register weak reference to input pipeline.
+    stream.registerWeakObjectReference(pipeline());
+}
+
+/******************************************************************************
+* Saves the class' contents to the given stream.
+******************************************************************************/
+void ViewportOverlay::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+{
+    ActiveObject::saveToStream(stream, excludeRecomputableData);
+
+    // Save weak reference to input pipeline.
+    stream.beginChunk(0x01);
+    stream.saveWeakObjectReference(pipeline());
+    stream.endChunk();
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void ViewportOverlay::loadFromStream(ObjectLoadStream& stream)
+{
+    ActiveObject::loadFromStream(stream);
+
+    // Load weak reference to input pipeline.
+    if(stream.formatVersion() >= 30016) {
+        stream.expectChunk(0x01);
+        setPipeline(stream.loadWeakObjectReference<Pipeline>());
+        stream.closeChunk();
+    }
+}
+
 }   // End of namespace

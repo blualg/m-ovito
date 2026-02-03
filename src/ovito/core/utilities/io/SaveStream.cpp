@@ -160,15 +160,6 @@ void SaveStream::checkErrorCondition()
 }
 
 /******************************************************************************
-* Writes a reference to an OvitoObject derived class type to the stream.
-******************************************************************************/
-SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz)
-{
-    OvitoClass::serializeRTTI(stream, clazz);
-    return stream;
-}
-
-/******************************************************************************
 * Writes a URL to a SaveStream.
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, QUrl url)

@@ -78,7 +78,7 @@ QString ExportObjectSnippetDialog::generateObjectSnippet(const std::vector<OORef
         ObjectSaveStream stream(dstream, true);
         stream.writeSizeT(objects.size());
         for(const auto& obj : objects) {
-            stream.saveObject(obj, true);
+            stream.saveObject(obj);
         }
         stream.close();
 

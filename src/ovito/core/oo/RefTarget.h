@@ -188,6 +188,15 @@ protected:
 
     //////////////////////////////// Serialization //////////////////////////////////////
 
+    /// \brief Asks the object to register internal object references that will be saved to a data stream.
+    /// \param stream The destination data stream.
+    ///
+    /// Subclasses that perform custom serialization of internal object references should override this method
+    /// to register all internal references with the given ObjectSaveStream instance.
+    ///
+    /// The default implementation of this method registers all sub-objects stored in reference parameter fields of this object.
+    virtual void registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const;
+
     /// \brief Saves the internal state of this object to an output stream.
     /// \param stream The destination data stream.
     /// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.

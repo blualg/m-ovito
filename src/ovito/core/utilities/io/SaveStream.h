@@ -305,13 +305,4 @@ inline SaveStream& operator<<(SaveStream& stream, const boost::dynamic_bitset<>&
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
 
-/// \brief Writes a reference to an OvitoObject derived class type to the stream.
-/// \relates SaveStream
-///
-/// \param stream The destination stream.
-/// \param clazz The OvitoObject class type
-/// \return The destination stream.
-/// \throw Exception if an I/O error has occurred.
-extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz);
-
 }   // End of namespace

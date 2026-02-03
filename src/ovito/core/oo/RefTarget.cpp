@@ -255,6 +255,39 @@ bool RefTarget::isBeingEdited() const
 }
 
 /******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void RefTarget::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    // Visit all property fields of the object.
+    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+        if(field->dontSerialize())
+            continue; // Skip non-serializable fields.
+
+        if(field->isReferenceField()) {
+            if(!field->isVector()) {
+                // Get the current referenced target and obtain the corresponding sub-object from the delta reference object.
+                const RefTarget* target = getReferenceFieldTarget(field);
+                const RefTarget* refTarget = deltaReferenceObject ? deltaReferenceObject->getReferenceFieldTarget(field) : nullptr;
+                // Register the referenced sub-object.
+                stream.registerObjectReference(this, target, field->dontSaveRecomputableData(), refTarget);
+            }
+            else {
+                const auto count = getVectorReferenceFieldSize(field);
+                const auto refCount = deltaReferenceObject ? deltaReferenceObject->getVectorReferenceFieldSize(field) : 0;
+                for(int i = 0; i < count; i++) {
+                    // Get the current referenced target and the corresponding sub-object from the delta reference object.
+                    const RefTarget* target = getVectorReferenceFieldTarget(field, i);
+                    const RefTarget* refTarget = i < refCount ? deltaReferenceObject->getVectorReferenceFieldTarget(field, i) : nullptr;
+                    // Register the referenced sub-object.
+                    stream.registerObjectReference(this, target, field->dontSaveRecomputableData(), refTarget);
+                }
+            }
+        }
+    }
+}
+
+/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void RefTarget::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

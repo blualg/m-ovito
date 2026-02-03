@@ -537,6 +537,19 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void Pipeline::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    RefTarget::registerObjectReferencesForSerialization(stream, deltaReferenceObject);
+
+    // Register list of weak references to vis elements that have been replaced with local copies.
+    for(const auto& weakRef : replacedVisElements()) {
+        stream.registerWeakObjectReference(weakRef.lock().get());
+    }
+}
+
+/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

@@ -119,7 +119,7 @@ inline OVITO_CORE_EXPORT QDebug operator<<(QDebug debug, const DataObjectReferen
 inline OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const DataObjectReference& r)
 {
     stream.beginChunk(0x02);
-    stream << static_cast<const OvitoClassPtr&>(r.dataClass());
+    OvitoClass::serializeRTTI(stream, r.dataClass(), true);
     stream << r.dataPath();
     stream << r.dataTitle();
     stream.endChunk();
@@ -131,9 +131,7 @@ inline OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const DataOb
 inline OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, DataObjectReference& r)
 {
     stream.expectChunk(0x02);
-    OvitoClassPtr clazz;
-    stream >> clazz;
-    r._dataClass = static_cast<DataObjectClassPtr>(clazz);
+    r._dataClass = static_cast<DataObjectClassPtr>(OvitoClass::deserializeRTTI(stream, true));
     stream >> r._dataPath;
     stream >> r._dataTitle;
     if(!r._dataClass)

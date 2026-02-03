@@ -32,7 +32,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for all viewport layers types.
+ * \brief Abstract base class for all viewport layer types.
  */
 class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 {
@@ -77,10 +77,19 @@ protected:
     /// This method is called when a reference target changes.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
+    /// Asks the object to register internal object references that will be saved to a data stream.
+    virtual void registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const override;
+
+    /// Saves the class' contents to the given stream.
+    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+
+    /// Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
+
 private:
 
     /// The pipeline generating the data that is being used by the overlay (optional).
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_DONT_SERIALIZE);
 };
 
 }   // End of namespace

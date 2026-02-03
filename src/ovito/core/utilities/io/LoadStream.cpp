@@ -249,15 +249,6 @@ void LoadStream::checkErrorCondition()
 }
 
 /******************************************************************************
-* Reads a reference to an OvitoObject derived class type from the input stream.
-******************************************************************************/
-LoadStream& operator>>(LoadStream& stream, OvitoClassPtr& clazz)
-{
-    clazz = OvitoClass::deserializeRTTI(stream);
-    return stream;
-}
-
-/******************************************************************************
 * Reads a URL from the input stream.
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, QUrl& url)

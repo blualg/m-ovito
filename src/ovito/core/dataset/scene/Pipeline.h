@@ -151,6 +151,9 @@ protected:
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Asks the object to register internal object references that will be saved to a data stream.
+    virtual void registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const override;
+
     /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 

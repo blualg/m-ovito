@@ -437,6 +437,19 @@ bool SceneNode::isSelected() const
 }
 
 /******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void SceneNode::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    RefTarget::registerObjectReferencesForSerialization(stream, deltaReferenceObject);
+
+    // Register list of weak references to viewports in which the node is hidden.
+    for(const auto& vpWeakRef : hiddenInViewports()) {
+        stream.registerWeakObjectReference(vpWeakRef.lock().get());
+    }
+}
+
+/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

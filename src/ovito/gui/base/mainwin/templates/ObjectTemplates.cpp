@@ -48,12 +48,12 @@ int ObjectTemplates::createTemplate(const QString& templateName, const QVector<O
 
     QByteArray buffer;
     QDataStream dstream(&buffer, QIODevice::WriteOnly);
-    ObjectSaveStream stream(dstream);
+    ObjectSaveStream stream(dstream, true);
 
     // Serialize objects.
     for(RefTarget* obj : objects) {
         stream.beginChunk(0x01);
-        stream.saveObject(obj, true);
+        stream.saveObject(obj);
         stream.endChunk();
     }
 

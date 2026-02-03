@@ -87,9 +87,7 @@ LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
         stream >> r._nameWithComponent;
     }
     else {
-        OvitoClassPtr clazz;
-        stream >> clazz;
-        PropertyContainerClassPtr containerClass = static_cast<PropertyContainerClassPtr>(clazz);
+        PropertyContainerClassPtr containerClass = static_cast<PropertyContainerClassPtr>(OvitoClass::deserializeRTTI(stream));
         int typeId;
         stream >> typeId;
         QString name;
