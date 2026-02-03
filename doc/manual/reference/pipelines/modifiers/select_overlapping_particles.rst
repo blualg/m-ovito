@@ -21,10 +21,15 @@ Overlap distance
 Use only selected particles
   Controls whether the modifier should operate only on currently selected particles. Requires an input selection.
 
-On Overlap: Keep one
+Keep one particle unselected on overlap
   When two or more particles are within the :guilabel:`Overlap distance` of each other, this option controls whether the modifier
-  should select all of the particles. If this option is turned on (the default), one randomly selected particle in the overlap group
-  will be deselected. If this option is turned off, all particles in the overlap group will be selected.
+  selects all of the particles in the overlap group or excludes one of them from the selection.
+
+  If this option is turned on (the default), one randomly picked particle from each overlap group will *not* be selected.
+  Use this mode if the goal is to delete duplicate particles and keep exactly one.
+
+  If this option is turned off, all particles in the overlap group will be selected.
+  Use this mode when the goal is to identify particles that are close to each other.
 
 .. seealso::
   
