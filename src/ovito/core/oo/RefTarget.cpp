@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -240,18 +240,69 @@ bool RefTarget::isBeingEdited() const
 {
     // Look up the PropertiesEditor class, which is defined in the GUI plugin module.
     // That means it is not accessible at compile time here from the Core module.
-    // Note: The GUI module and the PropertiesEditor class may not be present if OVITO is built without GUI support.
+    // Note: The GUI module and the PropertiesEditor class may not be present if OVITO was built without GUI support.
     static const OvitoClassPtr propertiesEditorClass = PluginManager::instance().findClass("Gui", "PropertiesEditor");
 
     bool result = false;
     if(propertiesEditorClass) {
-        // Check if this object is currently referenced by a PropertiesEditor instance.
+        // Determine whether this object is currently being referenced by a PropertiesEditor instance.
         visitDependents([&](const RefMaker* dependent) {
             if(propertiesEditorClass->isMember(dependent))
                 result = true;
         });
     }
     return result;
+}
+
+/******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void RefTarget::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    // Visit all property fields of the object.
+    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+        if(field->dontSerialize())
+            continue; // Skip non-serializable fields.
+
+        if(field->isReferenceField()) {
+            if(!field->isVector()) {
+                // Get the current referenced target and obtain the corresponding sub-object from the delta reference object.
+                const RefTarget* target = getReferenceFieldTarget(field);
+                const RefTarget* refTarget = deltaReferenceObject ? deltaReferenceObject->getReferenceFieldTarget(field) : nullptr;
+                // Register the referenced sub-object.
+                stream.registerObjectReference(this, target, field->dontSaveRecomputableData(), refTarget);
+            }
+            else {
+                const auto count = getVectorReferenceFieldSize(field);
+                const auto refCount = deltaReferenceObject ? deltaReferenceObject->getVectorReferenceFieldSize(field) : 0;
+                for(int i = 0; i < count; i++) {
+                    // Get the current referenced target and the corresponding sub-object from the delta reference object.
+                    const RefTarget* target = getVectorReferenceFieldTarget(field, i);
+                    const RefTarget* refTarget = i < refCount ? deltaReferenceObject->getVectorReferenceFieldTarget(field, i) : nullptr;
+                    // Register the referenced sub-object.
+                    stream.registerObjectReference(this, target, field->dontSaveRecomputableData(), refTarget);
+                }
+            }
+        }
+    }
+}
+
+/******************************************************************************
+* Saves the class' contents to the given stream.
+******************************************************************************/
+void RefTarget::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+{
+    // Serializes the values of the object's parameter fields.
+    stream.serializeParameterFieldValues(this);
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void RefTarget::loadFromStream(ObjectLoadStream& stream)
+{
+    // Deserializes the values of the object's parameter fields.
+    stream.deserializeParameterFieldValues(this);
 }
 
 }   // End of namespace

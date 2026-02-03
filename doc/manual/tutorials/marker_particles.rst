@@ -55,7 +55,7 @@ Step 3: Create particle selection
 
 Next, insert the :ref:`particles.modifiers.slice` modifier into the :ref:`data pipeline <usage.modification_pipeline>` to select all particles within a narrow slab of the crystal:
 
-  1. Select :ref:`particles.modifiers.slice` from the :guilabel:`Add modification...` drop-down list (`Modifications` section).
+  1. Select :ref:`particles.modifiers.slice` from the :guilabel:`Add modification...` list (`Modifications` section).
   2. The modifier will now appear as a new item in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
 By default, the :ref:`particles.modifiers.slice` modifier removes particles on one side of the slicing plane.

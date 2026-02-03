@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,12 +61,14 @@ void AnimationKey::loadFromStreamComplete(ObjectLoadStream& stream)
 
     // For backward compatibility with OVITO 3.7:
     // Convert legacy time value. This requires access to the AnimationSettings object, which is stored in the scene.
-    if(stream.formatVersion() <= 30008 && stream.datasetToBePopulated()) {
-        if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
-            if(Scene* scene = vp->scene()) {
-                if(scene->animationSettings()) {
-                    int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
-                    setTime(AnimationTime::fromFrame(time().ticks() / ticksPerFrame));
+    if(stream.formatVersion() <= 30008) {
+        if(DataSet* dataset = stream.datasetBeingLoaded()) {
+            if(Viewport* vp = dataset->viewportConfig()->activeViewport()) {
+                if(Scene* scene = vp->scene()) {
+                    if(scene->animationSettings()) {
+                        int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                        setTime(AnimationTime::fromFrame(time().ticks() / ticksPerFrame));
+                    }
                 }
             }
         }

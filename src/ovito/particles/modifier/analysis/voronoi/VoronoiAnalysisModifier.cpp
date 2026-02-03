@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -475,7 +475,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 #ifdef OVITO_DEBUG
                             // Verify the computed pbc shift vector. The corrected neighbor vector should now align with the face normal vector.
                             delta -= simCell().reducedToAbsolute(pbcShift.toDataType<FloatType>());
-                            OVITO_ASSERT(std::abs(delta.dot(normal) / delta.length() / normal.length()) > 1.0 - FLOATTYPE_EPSILON);
+                            OVITO_ASSERT(std::abs(delta.dot(normal) / delta.length() / normal.length()) >
+                                         1.0 - Ovito::epsilon_v<FloatType>);
 #endif
                             Bond bond = { index, (size_t)neighbor_id, pbcShift };
                             if(!bond.isOdd()) {

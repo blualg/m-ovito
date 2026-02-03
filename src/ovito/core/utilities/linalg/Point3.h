@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -226,14 +226,16 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
     ///        the absolute differences in their X, Y, and Z coordinates are all smaller than this tolerance.
     /// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
-    constexpr bool equals(const Point_3& p, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Point_3& p, T tolerance = Ovito::epsilon_v<T>) const
+    {
         return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance && std::abs(p.z() - z()) <= tolerance;
     }
 
     /// \brief Tests whether this point is at the origin within a specified tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
-    constexpr bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isOrigin(T tolerance = Ovito::epsilon_v<T>) const
+    {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
 

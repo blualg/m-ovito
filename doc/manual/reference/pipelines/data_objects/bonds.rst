@@ -34,8 +34,7 @@ The ``Topology`` property, always present in bond datasets, defines the actual c
 If particles are deleted from the system, OVITO automatically updates these indices to maintain consistency with the particles.
 
 You can inspect all bond properties using the **Bonds** tab in the :ref:`data inspector panel <data_inspector.bonds>` beneath the viewport(s).
-The :ref:`particles.modifiers.bond_analysis` modifier is a useful tool for computing statistical properties of the bond network,
-such as bond length or bond angle histograms.
+The :ref:`particles.modifiers.bond_length_distribution` and :ref:`particles.modifiers.bond_angle_distribution` modifiers are useful tools for computing statistical properties of the bond network.
 
 Additional bond generation tools in OVITO include the :ref:`particles.modifiers.voronoi_analysis` modifier, which creates bonds
 between nearest-neighbor particles. Bonds and their properties can also be manipulated using general-purpose modifiers such as:

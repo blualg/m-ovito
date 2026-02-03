@@ -19,6 +19,12 @@ This allows you to:
   - Resume your work at a later time without losing your progress.
   - Create a template to apply the same data analysis pipeline and camera setup to multiple simulations.
 
+.. seealso::
+
+  * :ref:`modifier_templates`
+  * :ref:`viewport_layer_templates`
+  * :ref:`modifier_snippets`
+
 .. _usage.spinner_widgets:
 
 Spinner controls
@@ -76,17 +82,6 @@ Viewport layers allow you to overlay additional information and 2D graphical ele
 
 on top of the three-dimensional scene. OVITO offers several different layer types, which can be added to a viewport from the
 :ref:`Viewport Layers <viewport_layers>` tab of the command panel.
-
-.. _usage.modifier_templates:
-
-Modifier & viewport layer templates
------------------------------------
-
-Frequently used modifiers or combinations of modifiers can be saved as preconfigured *modifier templates*,
-allowing quick insertion into the data pipeline with a single click.
-
-Similarly, you can create *viewport layer templates* for commonly used visual overlays.
-This feature helps streamline workflows and reduces repetitive setup steps. See :ref:`modifier_templates` for more details.
 
 .. _usage.scripting:
 

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2025 OVITO GmbH, Germany
+#  Copyright 2026 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -36,7 +36,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/ackland_jones/AcklandJonesModifierEditor.cpp
         modifier/analysis/chill_plus/ChillPlusModifierEditor.cpp
         modifier/analysis/cna/CommonNeighborAnalysisModifierEditor.cpp
-        modifier/analysis/coordination/CoordinationAnalysisModifierEditor.cpp
+        modifier/analysis/rdf/RadialDistributionFunctionModifierEditor.cpp
         modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
         modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
         modifier/analysis/strain/AtomicStrainModifierEditor.cpp
@@ -47,6 +47,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/ptm/PolyhedralTemplateMatchingModifierEditor.cpp
         modifier/analysis/surface/ConstructSurfaceModifierEditor.cpp
         modifier/selection/ExpandSelectionModifierEditor.cpp
+        modifier/selection/SelectOverlappingParticlesModifierEditor.cpp
         modifier/properties/SmoothTrajectoryModifierEditor.cpp
         modifier/properties/GenerateTrajectoryLinesModifierEditor.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegateEditor.cpp

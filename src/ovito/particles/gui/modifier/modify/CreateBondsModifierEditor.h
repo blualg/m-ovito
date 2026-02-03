@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,6 +94,13 @@ private:
     QTableView* _pairCutoffTable;
     PairCutoffTableModel* _pairCutoffTableModel;
     QTableWidget* _vdwTable;
+
+    boost::container::flat_map<
+        CreateBondsModifier::CutoffMode,
+        QWidget*,
+        std::less<>,
+        boost::container::small_vector<std::pair<CreateBondsModifier::CutoffMode, QWidget*>, CreateBondsModifier::CutoffModeElemCount>>
+        _paramWidgets;
 };
 
 }   // End of namespace

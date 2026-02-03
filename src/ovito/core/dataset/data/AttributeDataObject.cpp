@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,19 +27,8 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AttributeDataObject);
 OVITO_CLASSINFO(AttributeDataObject, "DisplayName", "Attribute");
-DEFINE_RUNTIME_PROPERTY_FIELD(AttributeDataObject, value);
+DEFINE_PROPERTY_FIELD(AttributeDataObject, value);
 SET_PROPERTY_FIELD_LABEL(AttributeDataObject, value, "Value");
-
-/******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    DataObject::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x01);
-    stream << value();
-    stream.endChunk();
-}
 
 /******************************************************************************
 * Loads the class' contents from the given stream.
@@ -47,9 +36,12 @@ void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRec
 void AttributeDataObject::loadFromStream(ObjectLoadStream& stream)
 {
     DataObject::loadFromStream(stream);
-    stream.expectChunk(0x01);
-    stream >> _value.mutableValue();
-    stream.closeChunk();
+
+    if(stream.formatVersion() < 30016) {
+        stream.expectChunk(0x01);
+        stream >> _value.mutableValue();
+        stream.closeChunk();
+    }
 }
 
 }   // End of namespace

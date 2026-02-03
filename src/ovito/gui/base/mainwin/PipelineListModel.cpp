@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,10 +88,12 @@ QT_WARNING_POP
     connect(_toggleModifierGroupAction, &QAction::triggered, this, &PipelineListModel::toggleModifierGroup);
     _makeElementIndependentAction = actionManager()->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Make Independent"), "modify_make_element_independent", tr("Duplicate an item shared by multiple pipelines to make it independent from the other pipeline(s)."));
     connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
-    _copyItemToPipelineAction = actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
+    _copyItemToPipelineAction = actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To Pipeline..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
     _renamePipelineItemAction = actionManager()->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
     _shareOrSplitVisualElementsAction = actionManager()->createCommandAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS, tr("Replace With Shared Element"), nullptr, tr("Combine several visual elements into one."));
     connect(_shareOrSplitVisualElementsAction, &QAction::triggered, this, &PipelineListModel::shareOrSplitVisualElements);
+    _exportModifierSnippetAction = actionManager()->getAction(ACTION_MODIFIER_EXPORT_SNIPPET);
+    _importModifierSnippetAction = actionManager()->getAction(ACTION_MODIFIER_IMPORT_SNIPPET);
 
     updateActions();
 }
@@ -887,7 +889,7 @@ void PipelineListModel::updateActions()
     RefTarget* currentObject = (_itemsRefreshPending.empty() && objects.size() == 1) ? objects.front() : nullptr;
 
     // Check if all selected objects are deletable.
-    _deleteItemAction->setEnabled(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
+    _deleteItemAction->setEnabled(!objects.empty() && std::ranges::all_of(objects, [](RefTarget* obj) {
         return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
     if(objects.size() == 1 && dynamic_object_cast<ModificationNode>(objects[0]))
@@ -917,9 +919,15 @@ void PipelineListModel::updateActions()
         _shareOrSplitVisualElementsAction->setVisible(false);
     }
 
-    _copyItemToPipelineAction->setEnabled(boost::algorithm::any_of(objects, [](RefTarget* obj) {
+    _copyItemToPipelineAction->setEnabled(std::ranges::any_of(objects, [](RefTarget* obj) {
         return dynamic_object_cast<PipelineNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
+
+    _exportModifierSnippetAction->setEnabled(!objects.empty() && std::ranges::all_of(objects, [](RefTarget* obj) {
+        return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+    }));
+
+    _importModifierSnippetAction->setEnabled(selectedPipeline() != nullptr);
 
     _renamePipelineItemAction->setEnabled(ModificationNode::OOClass().isMember(currentObject) || ModifierGroup::OOClass().isMember(currentObject) || DataVis::OOClass().isMember(currentObject));
 
@@ -968,7 +976,7 @@ void PipelineListModel::updateActions()
     _toggleModifierGroupAction->setEnabled(false);
     _toggleModifierGroupAction->setText(tr("Create Modifier Group"));
     // Are all selected objects modifier nodes and are they not in a group?
-    if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
+    if(!objects.empty() && std::ranges::all_of(objects, [](RefTarget* obj) {
             ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj);
             return modNode && modNode->modifierGroup() == nullptr; }))
     {

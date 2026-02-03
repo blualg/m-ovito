@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -252,6 +252,21 @@ inline SaveStream& operator<<(SaveStream& stream, const std::array<T, N>& a)
     return stream;
 }
 
+/// \brief Writes an array of size_t values to the output stream.
+/// \relates SaveStream
+///
+/// \param stream The destination stream.
+/// \param a The array to be written to the stream.
+/// \return The destination stream.
+/// \throw Exception if an I/O error has occurred.
+template<std::size_t N>
+inline SaveStream& operator<<(SaveStream& stream, const std::array<size_t, N>& a)
+{
+    for(typename std::array<size_t, N>::size_type i = 0; i < N; ++i)
+        stream.writeSizeT(a[i]);
+    return stream;
+}
+
 /// \brief Writes Qt flag to the output stream.
 /// \relates SaveStream
 ///
@@ -289,14 +304,5 @@ inline SaveStream& operator<<(SaveStream& stream, const boost::dynamic_bitset<>&
 /// \return The destination stream.
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
-
-/// \brief Writes a reference to an OvitoObject derived class type to the stream.
-/// \relates SaveStream
-///
-/// \param stream The destination stream.
-/// \param clazz The OvitoObject class type
-/// \return The destination stream.
-/// \throw Exception if an I/O error has occurred.
-extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz);
 
 }   // End of namespace

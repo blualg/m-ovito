@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -187,8 +187,7 @@ public:
 
     /// Checks whether the simulation cell has zero volume or the cell matrix contains NaN entries.
     bool isDegenerate() const {
-        if((is2D() ? volume2D() : volume3D()) <= FLOATTYPE_EPSILON)
-            return true;
+        if((is2D() ? volume2D() : volume3D()) <= Ovito::epsilon_v<FloatType>) return true;
         for(size_t i = 0; i < 3; i++)
             for(size_t j = 0; j < 4; j++)
                 if(std::isnan(cellMatrix()(i,j)))
@@ -438,7 +437,7 @@ public:
     /// Checks whether the simulation cell has zero volume or the cell matrix contains NaN entries.
     [[nodiscard]] constexpr bool isDegenerate() const
     {
-        if((is2D() ? volume2D() : volume3D()) <= FLOATTYPE_EPSILON) return true;
+        if((is2D() ? volume2D() : volume3D()) <= Ovito::epsilon_v<FloatType>) return true;
         for(size_t i = 0; i < 3; i++)
             for(size_t j = 0; j < 4; j++)
                 if(std::isnan(cellMatrix()(i, j))) return true;

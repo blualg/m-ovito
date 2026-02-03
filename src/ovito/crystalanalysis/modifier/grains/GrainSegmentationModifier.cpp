@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -40,6 +40,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GrainSegmentationModifier);
 OVITO_CLASSINFO(GrainSegmentationModifier, "DisplayName", "Grain segmentation");
+OVITO_CLASSINFO(GrainSegmentationModifier, "Description", "Segment grains in polycrystalline structures.");
 OVITO_CLASSINFO(GrainSegmentationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergeAlgorithm);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, handleCoherentInterfaces);

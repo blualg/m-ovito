@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,15 +67,13 @@ void StandardCameraObject::initializeObject(ObjectInitializationFlags flags)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3 and earlier.
     if(field.identifier == "fovController" && field.definingClass == &StandardCameraObject::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {
@@ -84,11 +82,9 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
         };
     }
     else if(field.identifier == "zoomController" && field.definingClass == &StandardCameraObject::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {
@@ -110,7 +106,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
     // Compute projection matrix.
     params.isPerspective = isPerspective();
     if(params.isPerspective) {
-        if(bb.minc.z() < -FLOATTYPE_EPSILON) {
+        if(bb.minc.z() < -Ovito::epsilon_v<FloatType>) {
             params.zfar = -bb.minc.z();
             params.znear = std::max(-bb.maxc.z(), params.zfar * FloatType(1e-4));
         }
@@ -121,7 +117,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
 
         // Get the camera angle.
-        params.fieldOfView = qBound(FLOATTYPE_EPSILON, fov(), FLOATTYPE_PI - FLOATTYPE_EPSILON);
+        params.fieldOfView = qBound(Ovito::epsilon_v<FloatType>, fov(), FLOATTYPE_PI - Ovito::epsilon_v<FloatType>);
 
         params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
     }
@@ -136,7 +132,7 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
         }
 
         // Get the camera zoom.
-        params.fieldOfView = qMax(FLOATTYPE_EPSILON, zoom());
+        params.fieldOfView = qMax(Ovito::epsilon_v<FloatType>, zoom());
 
         params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
                             -params.fieldOfView, params.fieldOfView, params.znear, params.zfar);

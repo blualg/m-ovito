@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2025 OVITO GmbH, Germany
+#  Copyright 2026 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -38,7 +38,10 @@ OVITO_STANDARD_PLUGIN(Gui
         mainwin/cmdpanel/CommandPanel.cpp
         mainwin/cmdpanel/RenderCommandPage.cpp
         mainwin/cmdpanel/ModifyCommandPage.cpp
+        mainwin/cmdpanel/AvailableModifiersSelectorWidget.cpp
+        mainwin/cmdpanel/ActionCardsPopup.cpp
         mainwin/cmdpanel/OverlayCommandPage.cpp
+        mainwin/cmdpanel/AvailableOverlaysSelectorWidget.cpp
         mainwin/cmdpanel/UtilityCommandPage.cpp
         mainwin/cmdpanel/UtilityListModel.cpp
         mainwin/data_inspector/DataInspectorPanel.cpp
@@ -67,6 +70,8 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/ModalPropertiesEditorDialog.cpp
         dialogs/UpdateNotificationDialog.cpp
         dialogs/SystemInformationDialog.cpp
+        dialogs/ExportObjectSnippetDialog.cpp
+        dialogs/ImportObjectSnippetDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp

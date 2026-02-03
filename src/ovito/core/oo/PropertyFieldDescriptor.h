@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,6 +57,7 @@ public:
             void (*propertyStorageCopyFunc)(RefMaker*, const PropertyFieldDescriptor*, const RefMaker*),
             QVariant (*propertyStorageReadFunc)(const RefMaker*, const PropertyFieldDescriptor*),
             void (*propertyStorageWriteFunc)(RefMaker*, const PropertyFieldDescriptor*, const QVariant&),
+            bool (*propertyStorageCompareFunc)(const RefMaker*, const PropertyFieldDescriptor*, const RefMaker*),
             void (*propertyStorageSaveFunc)(const RefMaker*, const PropertyFieldDescriptor*, SaveStream&),
             void (*propertyStorageLoadFunc)(RefMaker*, const PropertyFieldDescriptor*, LoadStream&),
             void (*propertyStorageTakeSnapshotFunc)(RefMaker*, const PropertyFieldDescriptor*) = nullptr,
@@ -93,8 +94,8 @@ public:
     /// Returns true if this reference field stores a vector of objects.
     bool isVector() const { return _flags.testFlag(PROPERTY_FIELD_VECTOR); }
 
-    /// Returns true if referenced objects should not be saved to a scene file.
-    bool dontSaveTarget() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SAVE_TARGET); }
+    /// Returns true if referenced target or the property field's value should not be saved to a scene file.
+    bool dontSerialize() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SERIALIZE); }
 
     /// Returns true if referenced objects should not save their recomputable data to a scene file.
     bool dontSaveRecomputableData() const { return _flags.testFlag(PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA); }
@@ -168,6 +169,9 @@ protected:
     /// Stores a pointer to the function that loads the property field's value from a stream.
     void (*_propertyStorageLoadFunc)(RefMaker*, const PropertyFieldDescriptor*, LoadStream&) = nullptr;
 
+    /// Stores a pointer to the function that compares the property field values of two RefMaker instances for equality.
+    bool (*_propertyStorageCompareFunc)(const RefMaker*, const PropertyFieldDescriptor*, const RefMaker*) = nullptr;
+
     /// Pointer to a function that copies the current value of an object parameter to the shadow field.
     void (*_propertyStorageTakeSnapshotFunc)(RefMaker*, const PropertyFieldDescriptor*) = nullptr;
 
@@ -209,6 +213,8 @@ protected:
 
     friend class RefMaker;
     friend class RefTarget;
+    friend class ObjectSaveStream; // Needs direct access to _propertyStorageSaveFunc
+    friend class ObjectLoadStream; // Needs direct access to _propertyStorageLoadFunc
 };
 
 }   // End of namespace

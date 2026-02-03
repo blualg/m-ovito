@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -125,20 +125,18 @@ TimeInterval LookAtController::validityInterval(AnimationTime time)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr LookAtController::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr LookAtController::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // For backward compatibility with OVITO 3.11:
     // The Pipeline class has been split from the SceneNode base class in OVITO 3.12. This means we have to handle
     // the deserialization of the targetNode field here, which used to be a Pipeline object, now a pure SceneNode.
     if(field.definingClass == &LookAtController::OOClass() && stream.formatVersion() < 30013) {
         if(field.identifier == "targetNode") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 OORef<RefTarget> node = stream.loadObject<RefTarget>();
                 if(OORef<Pipeline> pipeline = dynamic_object_cast<Pipeline>(node))
                     node = pipeline->deserializationSceneNode();
                 static_object_cast<LookAtController>(&owner)->_targetNode.set(&owner, PROPERTY_FIELD(targetNode), static_object_cast<SceneNode>(std::move(node)));
-                stream.closeChunk();
             };
         }
     }

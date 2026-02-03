@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,9 +80,6 @@ protected:
 
     /// Asks the object for the result of the data pipeline.
     virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
-
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 

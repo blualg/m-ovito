@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,8 +38,11 @@
 #include <ovito/gui/desktop/widgets/general/InfoItemDelegate.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
 #include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
+#include <ovito/gui/desktop/dialogs/ExportObjectSnippetDialog.h>
+#include <ovito/gui/desktop/dialogs/ImportObjectSnippetDialog.h>
 #include "CommandPanel.h"
 #include "ModifyCommandPage.h"
+#include "AvailableModifiersSelectorWidget.h"
 
 namespace Ovito {
 
@@ -53,21 +56,14 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     layout->setSpacing(4);
     layout->setColumnStretch(0,1);
 
+    QAction* manageModifierTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
+    connect(manageModifierTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &ModifierTemplatesPage::OOClass());
+        dlg.exec();
+    });
+
     _pipelineListModel = new PipelineListModel(ui, this);
-    class ModifierListBox : public QComboBox {
-    public:
-        using QComboBox::QComboBox;
-        virtual void showPopup() override {
-            static_cast<AvailableModifiersModel*>(model())->updateActionState();
-            QComboBox::showPopup();
-        }
-    };
-    _modifierSelector = new ModifierListBox(this);
-    layout->addWidget(_modifierSelector, 1, 0, 1, 1);
-    _modifierSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _modifierSelector->setModel(new AvailableModifiersModel(this, ui, _pipelineListModel));
-    _modifierSelector->setMaxVisibleItems(0xFFFF);
-    connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, &ModifyCommandPage::onInsertNewModifier);
+    layout->addWidget(new AvailableModifiersSelectorWidget(this, ui, _pipelineListModel), 1, 0, 1, 1);
 
     class PipelineListView : public QListView {
     public:
@@ -141,6 +137,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_COPY_ITEM));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_MODIFIER_EXPORT_SNIPPET));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_MODIFIER_IMPORT_SNIPPET));
+    separator = new QAction(_pipelineWidget);
+    separator->setSeparator(true);
+    _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
     separator = new QAction(_pipelineWidget);
@@ -167,11 +168,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     editToolbar->addSeparator();
     editToolbar->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
 
-    QAction* manageModifierTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
-    connect(manageModifierTemplatesAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(this->ui(), &ModifierTemplatesPage::OOClass());
-        dlg.exec();
-    });
     editToolbar->addAction(manageModifierTemplatesAction);
 
     connect(actionManager()->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
@@ -198,6 +194,9 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
             dlg.exec();
         }
     });
+
+    connect(actionManager()->getAction(ACTION_MODIFIER_EXPORT_SNIPPET), &QAction::triggered, this, &ModifyCommandPage::onExportModifierSnippet);
+    connect(actionManager()->getAction(ACTION_MODIFIER_IMPORT_SNIPPET), &QAction::triggered, this, &ModifyCommandPage::onImportModifierSnippet);
 
     layout->addWidget(_splitter, 2, 0, 1, 2);
     layout->setRowStretch(2, 1);
@@ -238,35 +237,12 @@ void ModifyCommandPage::saveLayout()
 }
 
 /******************************************************************************
-* Is called when the user has selected a modifier from drop-down list of available modifiers.
-******************************************************************************/
-void ModifyCommandPage::onInsertNewModifier(int index)
-{
-    if(index == availableModifiersModel()->getMoreExtensionsItemIndex()) {
-        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
-            action->trigger();
-        else
-            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
-    }
-    else {
-        availableModifiersModel()->insertModifierByIndex(index);
-    }
-    _modifierSelector->setCurrentIndex(0);
-}
-
-/******************************************************************************
 * Is called when a new modification list item has been selected, or if the currently
 * selected item has changed.
 ******************************************************************************/
 void ModifyCommandPage::onSelectedItemChanged()
 {
-    RefTarget* selectedObject = pipelineListModel()->selectedObject();
-
-    _modifierSelector->setEnabled(selectedObject != nullptr);
-
-    if(selectedObject != _propertiesPanel->editObject()) {
-        _propertiesPanel->setEditObject(selectedObject);
-    }
+    _propertiesPanel->setEditObject(pipelineListModel()->selectedObject());
 
     // Whenever no object is selected, show information about the program.
     if(pipelineListModel()->selectedItems().empty())
@@ -296,6 +272,88 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
             vis->setEnabled(!vis->isEnabled());
         });
     }
+}
+
+/******************************************************************************
+* Is called when the user triggers the "Export as Snippet..." action.
+******************************************************************************/
+void ModifyCommandPage::onExportModifierSnippet()
+{
+    handleExceptions([&]() {
+        // Collect all currently selected modifiers.
+        std::vector<OORef<RefTarget>> objects;
+        QStringList descriptions;
+        auto addModificationNode = [&](ModificationNode* modNode) {
+            QString description = modNode->objectTitle();
+            if(_pipelineListModel->selectedSceneNode()) {
+                QString shortInfo = modNode->getPipelineEditorShortInfo(_pipelineListModel->selectedSceneNode()->scene()).toString();
+                if(!shortInfo.isEmpty())
+                    description += " (" + shortInfo + ")";
+            }
+            descriptions.push_back(description);
+            objects.push_back(modNode->modifier());
+        };
+        for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
+                addModificationNode(modNode);
+            }
+            else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
+                if(!group->isCollapsed())
+                    continue;
+                for(ModificationNode* modNode : group->nodes()) {
+                    addModificationNode(modNode);
+                }
+            }
+        }
+        std::ranges::reverse(descriptions);
+        if(objects.empty())
+            throw Exception(tr("No modifiers selected. Please select at least one modifier to export."));
+        ExportObjectSnippetDialog(objects,
+            tr("OVITO Modifier Snippet: %1").arg(descriptions.join(" | ")), tr(
+            "The following text snippet represents the selected OVITO modifier(s). "
+            "You can save it to a file for later reuse, copy it to the clipboard, or share it with others. "
+            "The snippet can be imported back into OVITO to exactly recreate the modifier(s)."), this->ui(), this).exec();
+    });
+}
+
+/******************************************************************************
+* Is called when the user triggers the "Import from Snippet..." action.
+******************************************************************************/
+void ModifyCommandPage::onImportModifierSnippet()
+{
+    handleExceptions([&]() {
+        Pipeline* pipeline = _pipelineListModel->selectedPipeline();
+        if(!pipeline)
+            throw Exception(tr("No modification pipeline selected. Please select a scene node with a modification pipeline into which the imported modifier(s) should be inserted."));
+
+        // Open the import dialog.
+        ImportObjectSnippetDialog dialog(tr("modifier"), this->ui(), this);
+        if(dialog.exec() != QDialog::Accepted)
+            return;
+
+        // Cast the imported objects to Modifier instances.
+        QVector<OORef<Modifier>> modifiers;
+        for(const auto& obj : dialog.objects()) {
+            if(Modifier* modifier = dynamic_object_cast<Modifier>(obj.get())) {
+                modifiers.push_back(modifier);
+            }
+        }
+
+        if(modifiers.empty())
+            throw Exception(tr("No valid modifiers found in the imported snippet."));
+
+        // Insert the modifiers into the pipeline.
+        performTransaction(tr("Import modifiers from snippet"), [&]() {
+            // Put the modifiers into a group if there are two or more.
+            OORef<ModifierGroup> modifierGroup;
+            if(modifiers.size() >= 2) {
+                modifierGroup = OORef<ModifierGroup>::create();
+                modifierGroup->setCollapsed(true);
+                modifierGroup->setTitle(tr("Imported modifiers"));
+            }
+            _pipelineListModel->applyModifiers(modifiers, modifierGroup);
+        });
+    });
 }
 
 /******************************************************************************

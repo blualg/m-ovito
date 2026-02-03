@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -348,10 +348,10 @@ void OrbitMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, b
         FloatType phi = std::atan2(sqrt(v.x() * v.x() + v.y() * v.y()), v.z());
 
         // Restrict rotation to keep the major axis pointing upward (prevent camera from becoming upside down).
-        if(phi + deltaPhi < FLOATTYPE_EPSILON)
-            deltaPhi = -phi + FLOATTYPE_EPSILON;
-        else if(phi + deltaPhi > FLOATTYPE_PI - FLOATTYPE_EPSILON)
-            deltaPhi = FLOATTYPE_PI - FLOATTYPE_EPSILON - phi;
+        if(phi + deltaPhi < Ovito::epsilon_v<FloatType>)
+            deltaPhi = -phi + Ovito::epsilon_v<FloatType>;
+        else if(phi + deltaPhi > FLOATTYPE_PI - Ovito::epsilon_v<FloatType>)
+            deltaPhi = FLOATTYPE_PI - Ovito::epsilon_v<FloatType> - phi;
 
         if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE || !vp->scene()) {
             AffineTransformation newTM =

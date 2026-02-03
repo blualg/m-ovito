@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.7.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
     };
 
     OVITO_CLASS_META(AnimationSettings, AnimationSettingsClass)
@@ -98,9 +98,6 @@ protected:
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
-    /// Saves the class' contents to an output stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
     /// Loads the class' contents from an input stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;

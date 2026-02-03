@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,28 +68,6 @@ void VoxelGridVis::initializeObject(ObjectInitializationFlags flags)
 
         // Create a default opacity function for volume rendering.
         setOpacityFunction(DataOORef<OpacityFunction>::create(flags));
-    }
-}
-
-/******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    DataVis::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!colorMapping()) {
-        // Create a color mapping object for pseudo-color visualization of a grid property.
-        setColorMapping(OORef<PropertyColorMapping>::create());
-    }
-
-    // For backward compatibility with OVITO 3.12.x.
-    // Create a opacity function if it wasn't loaded from the state file.
-    if(!opacityFunction()) {
-        setOpacityFunction(DataOORef<OpacityFunction>::create());
     }
 }
 

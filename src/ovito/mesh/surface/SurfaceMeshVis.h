@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -81,9 +81,6 @@ public:
     virtual void replaceWithSharedElement(DataVis* sharedVis) const override;
 
 protected:
-
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
     /// Algorithm for building the renderable surface mesh.
     /// Subclasses can customize individual aspects of the algorithm by overriding the virtual methods.

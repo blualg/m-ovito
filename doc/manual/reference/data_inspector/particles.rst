@@ -17,7 +17,7 @@ Interface elements
 The particles tab includes the following elements:
 
 1. **Filter expression field** (top center): Allows dynamic filtering of the particle list using Boolean expressions.
-   For example, entering ``Coordination==11`` will display only particles with a coordination number of 11, assuming that the :ref:`coordinations numbers have been computed <particles.modifiers.coordination_analysis>` in the pipeline.
+   For example, entering ``Coordination==11`` will display only particles with a coordination number of 11, assuming that the :ref:`coordinations numbers have been computed <particles.modifiers.radial_distribution_function>` in the pipeline.
    Multiple criteria can be combined using logical *AND* and *OR* operators. The expression syntax is identical
    to that used by the :ref:`Expression selection <particles.modifiers.expression_select>` modifier. The field
    provides auto-completion suggestions for available particle properties.

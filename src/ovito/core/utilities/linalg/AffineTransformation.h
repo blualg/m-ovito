@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -275,7 +275,8 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    constexpr inline bool equals(const AffineTransformationT& m, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr inline bool equals(const AffineTransformationT& m, T tolerance = Ovito::epsilon_v<T>) const
+    {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -284,7 +285,8 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    constexpr inline bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr inline bool isZero(T tolerance = Ovito::epsilon_v<T>) const
+    {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -527,7 +529,8 @@ public:
     /// \return \c true if the matrix is orthogonal; \c false otherwise.
     ///
     /// The matrix A is a pure rotation/reflection matrix if A * A^T = I and the translation is zero.
-    constexpr bool isOrthogonalMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr bool isOrthogonalMatrix(T epsilon = Ovito::epsilon_v<T>) const
+    {
         return
             translation().isZero(epsilon) &&
             (std::abs((*this)[0][0]*(*this)[1][0] + (*this)[0][1]*(*this)[1][1] + (*this)[0][2]*(*this)[1][2]) <= epsilon) &&
@@ -544,7 +547,8 @@ public:
     /// The matrix A is a pure rotation matrix if:
     ///   1. det(A) = 1  and
     ///   2. A * A^T = I
-    constexpr bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr bool isRotationMatrix(T epsilon = Ovito::epsilon_v<T>) const
+    {
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
     }
 
@@ -761,7 +765,9 @@ inline constexpr AffineTransformationT<T> AffineTransformationT<T>::rotation(con
     T s = sin(rot.angle());
     T t = T(1) - c;
     const auto& a = rot.axis();
-    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= FloatTypeEpsilon<T>(), "AffineTransformation::rotation", "Rotation axis vector must be normalized.");
+    OVITO_ASSERT_MSG(std::abs(a.squaredLength() - T(1)) <= Ovito::epsilon_v<T>,
+                     "AffineTransformation::rotation",
+                     "Rotation axis vector must be normalized.");
 
     // Make sure the result is a pure rotation matrix.
 #ifdef OVITO_DEBUG
@@ -781,7 +787,7 @@ template<typename T>
 inline constexpr AffineTransformationT<T> AffineTransformationT<T>::rotation(const QuaternionT<T>& q)
 {
 #ifdef OVITO_DEBUG
-    if(std::abs(q.dot(q) - T(1)) > FloatTypeEpsilon<T>())
+    if(std::abs(q.dot(q) - T(1)) > Ovito::epsilon_v<T>)
         OVITO_ASSERT_MSG(false, "AffineTransformation::rotation(const Quaternion&)", "Quaternion must be normalized.");
 
     // Make sure the result is a pure rotation matrix.

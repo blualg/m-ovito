@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -232,7 +232,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the three components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    [[nodiscard]] constexpr bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const
+    [[nodiscard]] constexpr bool equals(const Vector_3& v, T tolerance = Ovito::epsilon_v<T>) const
     {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance;
     }
@@ -240,7 +240,7 @@ public:
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    [[nodiscard]] constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const
+    [[nodiscard]] constexpr bool isZero(T tolerance = Ovito::epsilon_v<T>) const
     {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
@@ -289,7 +289,7 @@ public:
     /// \sa normalized(), normalizeSafely()
     template<bool returnOptional = false>
     [[nodiscard]] constexpr inline std::conditional_t<returnOptional, std::optional<Vector_3>, Vector_3> safelyNormalized(
-        T epsilon = FloatTypeEpsilon<T>()) const
+        T epsilon = Ovito::epsilon_v<T>) const
     {
         const T l = length();
         if constexpr(returnOptional) {
@@ -312,7 +312,7 @@ public:
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
     /// \return True if the vector was normalized, false otherwise.
-    constexpr inline bool normalizeSafely(T epsilon = FloatTypeEpsilon<T>())
+    constexpr inline bool normalizeSafely(T epsilon = Ovito::epsilon_v<T>)
     {
         T l = length();
         if(l > epsilon) {

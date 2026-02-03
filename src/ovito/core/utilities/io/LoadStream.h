@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -325,6 +325,23 @@ inline LoadStream& operator>>(LoadStream& stream, std::array<T, N>& a)
     return stream;
 }
 
+/// \brief Reads an array with a fixed number of size_t values from the input stream.
+/// \relates LoadStream
+///
+/// \param stream The source stream.
+/// \param a The array into which the data will be stored.
+/// \return The source stream.
+/// \throw Exception if an I/O error has occurred.
+///
+/// \note The destination array's size must exactly match the size of the array read from the file.
+template<std::size_t N>
+inline LoadStream& operator>>(LoadStream& stream, std::array<size_t, N>& a)
+{
+    for(typename std::array<size_t, N>::size_type i = 0; i < N; ++i)
+        stream.readSizeT(a[i]);
+    return stream;
+}
+
 /// \brief Reads a floating-point value from the input stream.
 /// \relates LoadStream
 ///
@@ -383,14 +400,5 @@ inline LoadStream& operator>>(LoadStream& stream, boost::dynamic_bitset<>& bs)
 /// \return The source stream.
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, QUrl& url);
-
-/// \brief Reads a reference to an OvitoObject derived class type from the input stream.
-/// \relates LoadStream
-///
-/// \param stream The source stream.
-/// \param clazz Reference to the class pointer that the will receive the loaded data.
-/// \return The source stream.
-/// \throw Exception if an I/O error has occurred.
-extern OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, OvitoClassPtr& clazz);
 
 }   // End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -151,7 +151,8 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
     // Insert contents.
     _content->setParent(this);
     _content->setVisible(true);
-    connect(_content.data(), &QWidget::destroyed, this, &Rollout::deleteLater);
+    connect(content, &QWidget::destroyed, this, &QWidget::hide); // Hide rollout when content is destroyed.
+    connect(content, &QWidget::destroyed, this, &Rollout::deleteLater); // Delete rollout when content is destroyed. Note: The deletion may be delayed if a modal dialog is open.
 
     if(!params._hideTitleBar) {
         // Set up title button.

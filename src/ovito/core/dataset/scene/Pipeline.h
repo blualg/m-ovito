@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ class OVITO_CORE_EXPORT Pipeline : public RefTarget
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed or changed in a newer version of OVITO.
         /// This is needed for backward compatibility with OVITO 3.11.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedPropertyField::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const override;
     };
     OVITO_CLASS_META(Pipeline, PipelineClass)
 
@@ -151,6 +151,9 @@ protected:
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Asks the object to register internal object references that will be saved to a data stream.
+    virtual void registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const override;
+
     /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
@@ -191,7 +194,7 @@ private:
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// List of visual elements coming from the pipeline which shall be replaced with independent versions owned by this pipeline.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<OOWeakRef<DataVis>>{}, replacedVisElements, setReplacedVisElements);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(std::vector<OOWeakRef<DataVis>>{}, replacedVisElements, setReplacedVisElements, PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// Visual elements owned by the pipeline itself, which replace the ones generated within the pipeline.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);

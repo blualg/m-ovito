@@ -40,6 +40,12 @@ Note that OVITO stores the definition of all modifier templates in the applicati
 If needed, they can be exported to a special modifier template file (:file:`*.ovmod`) to transfer them to another computer.
 On the target computer, your can import them into another OVITO installation.
 
+.. seealso::
+
+   :ref:`modifier_snippets`
+      An alternative method for sharing modifier configurations with others, e.g. in online forums or via email.
+      Snippets are portable text strings that can be copied to the clipboard and pasted into another OVITO session.
+
 .. _viewport_layer_templates:
 
 Viewport layer templates

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ int ObjectTemplates::createTemplate(const QString& templateName, const QVector<O
 
     QByteArray buffer;
     QDataStream dstream(&buffer, QIODevice::WriteOnly);
-    ObjectSaveStream stream(dstream);
+    ObjectSaveStream stream(dstream, true);
 
     // Serialize objects.
     for(RefTarget* obj : objects) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,20 +91,6 @@ void SurfaceMeshVis::initializeObject(ObjectInitializationFlags flags)
         // Create a color mapping object for pseudo-color visualization of a surface property.
         setSurfaceColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
-}
-
-/******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    DataVis::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!surfaceColorMapping())
-        setSurfaceColorMapping(OORef<PropertyColorMapping>::create());
 }
 
 /******************************************************************************
@@ -1174,7 +1160,8 @@ std::vector<Point2> SurfaceMeshVis::RenderableSurfaceBuilder::traceContour(const
             FloatType x = v1[dim1] - delta[dim1] * t;
             FloatType y = v1[dim2] - delta[dim2] * t;
             OVITO_ASSERT(std::isfinite(x) && std::isfinite(y));
-            if(contour.empty() || std::abs(x - contour.back().x()) > FLOATTYPE_EPSILON || std::abs(y - contour.back().y()) > FLOATTYPE_EPSILON) {
+            if(contour.empty() || std::abs(x - contour.back().x()) > Ovito::epsilon_v<FloatType> ||
+               std::abs(y - contour.back().y()) > Ovito::epsilon_v<FloatType>) {
                 contour.push_back({x,y});
             }
         }
@@ -1183,10 +1170,12 @@ std::vector<Point2> SurfaceMeshVis::RenderableSurfaceBuilder::traceContour(const
             FloatType y1 = v1[dim2];
             FloatType x2 = v1[dim1] + delta[dim1];
             FloatType y2 = v1[dim2] + delta[dim2];
-            if(contour.empty() || std::abs(x1 - contour.back().x()) > FLOATTYPE_EPSILON || std::abs(y1 - contour.back().y()) > FLOATTYPE_EPSILON) {
+            if(contour.empty() || std::abs(x1 - contour.back().x()) > Ovito::epsilon_v<FloatType> ||
+               std::abs(y1 - contour.back().y()) > Ovito::epsilon_v<FloatType>) {
                 contour.push_back({x1,y1});
             }
-            else if(contour.empty() || std::abs(x2 - contour.back().x()) > FLOATTYPE_EPSILON || std::abs(y2 - contour.back().y()) > FLOATTYPE_EPSILON) {
+            else if(contour.empty() || std::abs(x2 - contour.back().x()) > Ovito::epsilon_v<FloatType> ||
+                    std::abs(y2 - contour.back().y()) > Ovito::epsilon_v<FloatType>) {
                 contour.push_back({x2,y2});
             }
         }
@@ -1268,7 +1257,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceContourAtPeriodicBoundaries(
             if(pbcFlags[dim]) {
                 if(delta[dim] >= FloatType(0.5)) {
                     delta[dim] -= FloatType(1);
-                    if(std::abs(delta[dim]) > FLOATTYPE_EPSILON)
+                    if(std::abs(delta[dim]) > Ovito::epsilon_v<FloatType>)
                         t[dim] = std::min((*v1)[dim] / -delta[dim], FloatType(1));
                     else
                         t[dim] = FloatType(0.5);
@@ -1277,7 +1266,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceContourAtPeriodicBoundaries(
                 }
                 else if(delta[dim] <= FloatType(-0.5)) {
                     delta[dim] += FloatType(1);
-                    if(std::abs(delta[dim]) > FLOATTYPE_EPSILON)
+                    if(std::abs(delta[dim]) > Ovito::epsilon_v<FloatType>)
                         t[dim] = std::max((FloatType(1) - (*v1)[dim]) / delta[dim], FloatType(0));
                     else
                         t[dim] = FloatType(0.5);
@@ -1388,7 +1377,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                 if(pbcFlags[dim]) { // Periodic boundary?
                     if(delta[dim] >= FloatType(0.5)) { // Crossing through periodic 0-edge?
                         delta[dim] -= FloatType(1);
-                        if(std::abs(delta[dim]) > FLOATTYPE_EPSILON) {
+                        if(std::abs(delta[dim]) > Ovito::epsilon_v<FloatType>) {
                             FloatType t = std::min(base[dim] / -delta[dim], FloatType(1));
                             if(t < t_closest) {
                                 t_closest = t;
@@ -1406,7 +1395,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                     }
                     else if(delta[dim] <= FloatType(-0.5)) { // Crossing through periodic 1-edge?
                         delta[dim] += FloatType(1);
-                        if(std::abs(delta[dim]) > FLOATTYPE_EPSILON) {
+                        if(std::abs(delta[dim]) > Ovito::epsilon_v<FloatType>) {
                             FloatType t = std::max((FloatType(1) - base[dim]) / delta[dim], FloatType(0));
                             if(t < t_closest) {
                                 t_closest = t;
@@ -1427,7 +1416,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                     if(clipCode & (dim == 0 ? OUT_NEG_X : OUT_NEG_Y)) {
                         OVITO_ASSERT(base[dim] <= 0);
                         if((*v2)[dim] >= 0) { // Entering through 0-edge?
-                            if(delta[dim] > FLOATTYPE_EPSILON) {
+                            if(delta[dim] > Ovito::epsilon_v<FloatType>) {
                                 FloatType t = std::max(base[dim] / delta[dim], FloatType(0));
                                 if(t < t_closest) {
                                     t_closest = t;
@@ -1449,7 +1438,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                     else {
                         OVITO_ASSERT(base[dim] >= 0);
                         if((*v2)[dim] < 0) { // Leaving through 0-edge?
-                            if(delta[dim] < -FLOATTYPE_EPSILON) {
+                            if(delta[dim] < -Ovito::epsilon_v<FloatType>) {
                                 FloatType t = std::min(base[dim] / -delta[dim], FloatType(1));
                                 if(t < t_closest) {
                                     t_closest = t;
@@ -1471,7 +1460,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                     if(clipCode & (dim == 0 ? OUT_POS_X : OUT_POS_Y)) {
                         OVITO_ASSERT(base[dim] >= 1);
                         if((*v2)[dim] <= 1) { // Entering through 1-edge?
-                            if(delta[dim] < -FLOATTYPE_EPSILON) {
+                            if(delta[dim] < -Ovito::epsilon_v<FloatType>) {
                                 FloatType t = std::min((base[dim] - FloatType(1)) / -delta[dim], FloatType(1));
                                 if(t < t_closest) {
                                     t_closest = t;
@@ -1493,7 +1482,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<P
                     else {
                         OVITO_ASSERT(base[dim] <= 1);
                         if((*v2)[dim] > 1) { // Leaving through 1-edge?
-                            if(delta[dim] > FLOATTYPE_EPSILON) {
+                            if(delta[dim] > Ovito::epsilon_v<FloatType>) {
                                 FloatType t = std::max((FloatType(1) - base[dim]) / delta[dim], FloatType(0));
                                 if(t < t_closest) {
                                     t_closest = t;
@@ -1625,7 +1614,7 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::isCornerInside2DRegion(const std:
             // Check if any edge is closer to the test point.
             Vector2 edgeDir = (*v2) - (*v1);
             FloatType edgeLength = edgeDir.length();
-            if(edgeLength <= FLOATTYPE_EPSILON) continue;
+            if(edgeLength <= Ovito::epsilon_v<FloatType>) continue;
             edgeDir /= edgeLength;
             FloatType d = -edgeDir.dot(r);
             if(d <= 0 || d >= edgeLength) continue;

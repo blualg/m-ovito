@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -114,6 +114,9 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
     else if(mode() == BondedNeighbors) {
         particles->expectBonds()->verifyIntegrity();
         engine = std::make_unique<ExpandSelectionBondedEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+    }
+    else if(mode() == Molecule) {
+        engine = std::make_unique<ExpandSelectionMoleculeEngine>(request.modificationNode(), particles->expectProperty(Particles::MoleculeProperty), inputSelection);
     }
     else {
         throw Exception(tr("Invalid selection expansion mode."));
@@ -260,6 +263,39 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection(TaskP
             outputSelectionArray[neighQuery.current()] = 1;
         }
     });
+}
+
+/******************************************************************************
+ * Performs one iteration of the selection expansion.
+ ******************************************************************************/
+void ExpandSelectionModifier::ExpandSelectionMoleculeEngine::expandSelection(TaskProgress& progress)
+{
+    // Selections
+    BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
+    BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
+
+    // Loop over all particles twice
+    progress.setMaximum(2 * inputSelectionArray.size());
+
+    // Molecule IDs
+    BufferReadAccess<IdentifierIntType> moleculeIdArray(_moleculeIdProperty);
+
+    // Collect all unique molecule IDs that are selected
+    std::vector<IdentifierIntType> selectedMolecules;
+    for(auto [i, selected] : Ovito::enumerate(inputSelectionArray)) {
+        progress.setValueIntermittent((qlonglong)i);
+        if(selected != 0 && std::ranges::find(selectedMolecules, moleculeIdArray[i]) == selectedMolecules.end()) {
+            selectedMolecules.push_back(moleculeIdArray[i]);
+        }
+    }
+
+    // Select all particles that have molecule IDs in the selectedMolecules list
+    for(auto [i, selected] : Ovito::enumerate(inputSelectionArray)) {
+        progress.setValueIntermittent((qlonglong)i);
+        if(std::ranges::find(selectedMolecules, moleculeIdArray[i]) != selectedMolecules.end()) {
+            outputSelectionArray[i] = 1;
+        }
+    }
 }
 
 }   // End of namespace

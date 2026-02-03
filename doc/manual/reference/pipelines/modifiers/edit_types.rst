@@ -10,7 +10,7 @@ Edit types
 .. versionadded:: 3.15.0
 
 This modifier lets you inspect and modify the list of element types associated with a
-typed property (for example the ``Particle Type`` or ``Bond Type`` property).
+:ref:`typed property <scene_objects.particle_types>` (for example the ``Particle Type`` or ``Bond Type`` property).
 By inserting an *Edit Types* modifier into a data pipeline you can:
 
 - Edit attributes of existing types (name, display color, radius, physical properties).

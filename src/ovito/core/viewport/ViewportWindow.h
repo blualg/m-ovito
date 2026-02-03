@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -192,7 +192,9 @@ public:
     ///                               The point can be transformed to world coordinates using the gridMatrix() transform.
     /// \param[in] epsilon This threshold value is used to test whether the ray is parallel to the grid plane.
     /// \return \c true if an intersection has been found; \c false if not.
-    bool computeConstructionPlaneIntersection(const Point2& viewportPosition, Point3& intersectionPoint, FloatType epsilon = FLOATTYPE_EPSILON);
+    bool computeConstructionPlaneIntersection(const Point2& viewportPosition,
+                                              Point3& intersectionPoint,
+                                              FloatType epsilon = Ovito::epsilon_v<FloatType>);
 
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box);

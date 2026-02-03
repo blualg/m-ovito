@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -647,32 +647,18 @@ void PropertyContainer::verifyIntegrity() const
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void PropertyContainer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    DataObject::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x01);
-    stream << excludeRecomputableData;
-    stream.endChunk();
-}
-
-/******************************************************************************
 * Loads the class' contents from the given stream.
 ******************************************************************************/
 void PropertyContainer::loadFromStream(ObjectLoadStream& stream)
 {
     DataObject::loadFromStream(stream);
-    if(stream.formatVersion() >= 30004) {
+
+    if(stream.formatVersion() >= 30004 && stream.formatVersion() < 30016) {
+        // For backward compatibility with OVITO 3.14:
         stream.expectChunk(0x01);
-        bool excludeRecomputableData;
-        stream >> excludeRecomputableData;
-        if(excludeRecomputableData) {
-            // Reset internal element counter.
-            _elementCount.set(this, PROPERTY_FIELD(elementCount), 0);
-        }
         stream.closeChunk();
     }
+
     // This is needed only for backward compatibility with early dev builds of OVITO 3.0:
     if(identifier().isEmpty())
         setIdentifier(getOOMetaClass().pythonName());
@@ -685,13 +671,21 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     DataObject::loadFromStreamComplete(stream);
 
-    // For backward compatibility with old OVITO versions.
-    // Make sure sizes of deserialized property arrays are consistent.
     if(stream.formatVersion() < 30004) {
+        // For backward compatibility with old OVITO versions.
+        // Make sure sizes of deserialized property arrays are consistent.
         for(const Property* property : properties()) {
             if(property->size() != elementCount()) {
                 makeMutable(property)->resize(elementCount(), true);
             }
+        }
+    }
+    else {
+        // Detect when all property arrays have been truncated to zero length in the state file.
+        // If that is the case, set the internal element counter to zero as well.
+        bool allZeroLength = std::ranges::all_of(properties(), [](const Property* property) { return property->size() == 0; });
+        if(allZeroLength) {
+            _elementCount.set(this, PROPERTY_FIELD(elementCount), 0);
         }
     }
 

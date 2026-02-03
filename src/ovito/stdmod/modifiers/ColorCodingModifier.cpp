@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -515,15 +515,13 @@ void ColorCodingModifier::reverseRange()
 * serialized animation controller field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.10.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr ColorCodingModifier::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr ColorCodingModifier::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // The ColorCodingModifier used to manage animation controllers for start and end value parameters in OVITO 3.10 and before.
     if(field.identifier == "startValueController" && field.definingClass == &ColorCodingModifier::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([modifier = static_cast<ColorCodingModifier*>(&owner), controller = std::move(controller)]() {
@@ -532,11 +530,9 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
         };
     }
     else if(field.identifier == "endValueController" && field.definingClass == &ColorCodingModifier::OOClass()) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             OVITO_ASSERT(field.isReferenceField);
-            stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
-            stream.closeChunk();
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             stream.registerPostLoadCallback([modifier = static_cast<ColorCodingModifier*>(&owner), controller = std::move(controller)]() {

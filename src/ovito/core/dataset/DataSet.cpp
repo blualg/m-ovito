@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,6 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/StandaloneApplication.h>
-#include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
 
 namespace Ovito {
 
@@ -36,7 +35,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
 DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
-DEFINE_RUNTIME_PROPERTY_FIELD(DataSet, filePath);
+DEFINE_PROPERTY_FIELD(DataSet, filePath);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
@@ -198,12 +197,6 @@ void DataSet::loadFromFile(const QString& filePath)
     if(!fileStream.open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
-    // Temporarily establish a non-interactive context to always initialize
-    // object parameters to factory default settings. This is necessary to
-    // ensure that the loaded objects are in a consistent state even if parameters have
-    // been added to the objects in newer OVITO versions since the session state file was written.
-    NoninteractiveContext noninteractiveContext;
-
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
 
@@ -212,13 +205,18 @@ void DataSet::loadFromFile(const QString& filePath)
     if(stream.applicationName() != QStringLiteral("OVITO Pro"))
         throw Exception(tr("This function can only load session states written by OVITO Pro or the OVITO Python package. Files created with OVITO Basic are no longer supported."));
 
-    stream.setDatasetToBePopulated(this);
-    OORef<DataSet> dataSet = stream.loadObject<DataSet>();
+    // Before loading the new contents, discard existing contents of DataSet.
+    _globalObjects.clear(this, PROPERTY_FIELD(globalObjects));
+    setRenderSettings(nullptr);
+    setViewportConfig(nullptr);
+
+    stream.loadObject<DataSet>(this);
     stream.close();
 
     if(fileStream.error() != QFile::NoError)
         throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));
     fileStream.close();
+    setFilePath(absolutePath);
 }
 
 /******************************************************************************
@@ -234,15 +232,8 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
     if(!fileStream.open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
 
-    // Temporarily establish a non-interactive context to always initialize
-    // object parameters to factory default settings. This is necessary to
-    // ensure that the loaded objects are in a consistent state even if parameters have
-    // been added to the objects in newer OVITO versions since the session state file was written.
-    NoninteractiveContext noninteractiveContext;
-
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
-
     OORef<DataSet> dataSet = stream.loadObject<DataSet>();
     stream.close();
 
@@ -258,31 +249,25 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
     if(field.definingClass == &DataSet::OOClass()) {
         // Load the legacy objects from the stream and temporarily store them in the DataSet::globalObjects list.
         // Once the entire DataSet has been loaded, loadFromStreamComplete() will move them rto the right places.
         if(field.identifier == "animationSettings") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<AnimationSettings>());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "sceneRoot") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<Scene>());
-                stream.closeChunk();
             };
         }
         else if(field.identifier == "selection") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<SelectionSet>());
-                stream.closeChunk();
             };
         }
     }

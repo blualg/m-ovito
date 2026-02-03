@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,6 +100,45 @@ void ViewportOverlay::checkAlignmentParameterValue(int alignment) const
     if(verticalAlignment != Qt::AlignTop && verticalAlignment != Qt::AlignBottom && verticalAlignment != Qt::AlignVCenter)
         throw Exception(tr("More than one vertical alignment flag was specified for the %1. Please check the value you provided for the alignment parameter. It must be a combination of exactly one horizontal and one vertical alignment flag.")
             .arg(getOOMetaClass().name()));
+}
+
+/******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void ViewportOverlay::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    ActiveObject::registerObjectReferencesForSerialization(stream, deltaReferenceObject);
+
+    // Register weak reference to input pipeline.
+    stream.registerWeakObjectReference(pipeline());
+}
+
+/******************************************************************************
+* Saves the class' contents to the given stream.
+******************************************************************************/
+void ViewportOverlay::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+{
+    ActiveObject::saveToStream(stream, excludeRecomputableData);
+
+    // Save weak reference to input pipeline.
+    stream.beginChunk(0x01);
+    stream.saveWeakObjectReference(pipeline());
+    stream.endChunk();
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void ViewportOverlay::loadFromStream(ObjectLoadStream& stream)
+{
+    ActiveObject::loadFromStream(stream);
+
+    // Load weak reference to input pipeline.
+    if(stream.formatVersion() >= 30016) {
+        stream.expectChunk(0x01);
+        setPipeline(stream.loadWeakObjectReference<Pipeline>());
+        stream.closeChunk();
+    }
 }
 
 }   // End of namespace

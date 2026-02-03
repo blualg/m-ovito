@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ LoadStream::LoadStream(QDataStream& source) : _is(source)
 
     // Check file format version.
     if(_fileFormat > OVITO_FILE_FORMAT_VERSION)
-        throw Exception(tr("Unsupported file format revision %1. This file was written by %2 %3 and you are currently using %4 %5. Please upgrade to a newer program version to open this file.")
+        throw Exception(tr("Unsupported file format revision %1. This file was written by %2 %3 and you are currently using %4 %5. Please upgrade to a newer program version to load this file.")
                 .arg(_fileFormat)
                 .arg(_applicationName).arg(_applicationVersionString)
                 .arg(Application::applicationName()).arg(Application::applicationVersionString()));
@@ -149,12 +149,12 @@ quint32 LoadStream::expectChunkRange(quint32 chunkBaseId, quint32 maxVersion)
     quint32 cid = openChunk();
     if(cid < chunkBaseId) {
         Exception ex(tr("Invalid file structure. This error might be caused by old files that are no longer supported by the current program version."));
-        ex.appendDetailMessage(tr("Expected chunk ID range %1-%2 (0x%3-0x%4), but found chunk ID %5 (0x%6).").arg(chunkBaseId).arg(chunkBaseId, 0, 16).arg(chunkBaseId+maxVersion).arg(chunkBaseId+maxVersion, 0, 16).arg(cid).arg(cid, 0, 16));
+        ex.appendDetailMessage(tr("Expected chunk ID range %1-%3 (0x%2-0x%4), but found chunk ID %5 (0x%6).").arg(chunkBaseId).arg(chunkBaseId, 0, 16).arg(chunkBaseId+maxVersion).arg(chunkBaseId+maxVersion, 0, 16).arg(cid).arg(cid, 0, 16));
         throw ex;
     }
     else if(cid > chunkBaseId + maxVersion) {
         Exception ex(tr("Unexpected chunk ID. This error might be caused by files that have been written by a newer program version."));
-        ex.appendDetailMessage(tr("Expected chunk ID range %1-%2 (0x%3-0x%4), but found chunk ID %5 (0x%6).").arg(chunkBaseId).arg(chunkBaseId, 0, 16).arg(chunkBaseId+maxVersion).arg(chunkBaseId+maxVersion, 0, 16).arg(cid).arg(cid, 0, 16));
+        ex.appendDetailMessage(tr("Expected chunk ID range %1-%3 (0x%2-0x%4), but found chunk ID %5 (0x%6).").arg(chunkBaseId).arg(chunkBaseId, 0, 16).arg(chunkBaseId+maxVersion).arg(chunkBaseId+maxVersion, 0, 16).arg(cid).arg(cid, 0, 16));
         throw ex;
     }
     else return cid - chunkBaseId;
@@ -177,11 +177,13 @@ void LoadStream::closeChunk()
     if(currentPos != chunkEnd)
         setFilePosition(chunkEnd);
 
-    // Check end code.
-    quint32 code;
-    *this >> code;
-    if(code != 0x0FFFFFFF)
-        throw Exception(tr("Inconsistent file structure."));
+    if(formatVersion() < 30016) {
+        // Check end code (for backward compatibility with OVITO 3.14).
+        quint32 code;
+        *this >> code;
+        if(code != 0x0FFFFFFF)
+            throw Exception(tr("Inconsistent file structure."));
+    }
 }
 
 /******************************************************************************
@@ -244,15 +246,6 @@ void LoadStream::checkErrorCondition()
         else if(dataStream().status() == QDataStream::ReadCorruptData)
             throw Exception(tr("File contains corrupted data."));
     }
-}
-
-/******************************************************************************
-* Reads a reference to an OvitoObject derived class type from the input stream.
-******************************************************************************/
-LoadStream& operator>>(LoadStream& stream, OvitoClassPtr& clazz)
-{
-    clazz = OvitoClass::deserializeRTTI(stream);
-    return stream;
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,11 +70,13 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public Modifier
 public:
     enum CutoffMode
     {
-        UniformCutoff,        ///< A uniform distance cutoff for all pairs of particles.
-        PairCutoff,           ///< Individual cutoff for each pair-wise combination of particle types.
-        VDWRadiusCutoff,      ///< Cutoff based on Van der Waals radii of the two particle types involved.
-        CovalentRadiusCutoff  ///< Cutoff based on covalent radii of the two particle types involved, accounting for maximum coordination
-                              ///< numbers and valences.
+        UniformCutoff,         ///< A uniform distance cutoff for all pairs of particles.
+        PairCutoff,            ///< Individual cutoff for each pair-wise combination of particle types.
+        VDWRadiusCutoff,       ///< Cutoff based on Van der Waals radii of the two particle types involved.
+        CovalentRadiusCutoff,  ///< Cutoff based on covalent radii of the two particle types involved, accounting for maximum coordination
+                               ///< numbers and valences.
+
+        CutoffModeElemCount  ///< Number of elements in the CutoffMode enum.
     };
     Q_ENUM(CutoffMode);
 

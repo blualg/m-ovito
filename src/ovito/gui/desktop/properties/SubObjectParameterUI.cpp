@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ void SubObjectParameterUI::resetUI()
                     subEditor()->editObject()->getOOClass() != parameterObject()->getOOClass() ||
                     !isEnabled()) {
 
-                _subEditor = nullptr;
+                _subEditor.reset();
             }
         }
         if(!parameterObject() || !isEnabled()) return;

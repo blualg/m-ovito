@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BasePipelineSource);
 DEFINE_REFERENCE_FIELD(BasePipelineSource, dataCollection);
-DEFINE_RUNTIME_PROPERTY_FIELD(BasePipelineSource, dataCollectionFrame);
+DEFINE_PROPERTY_FIELD(BasePipelineSource, dataCollectionFrame);
 DEFINE_PROPERTY_FIELD(BasePipelineSource, userHasChangedDataCollection);
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollection, "Data");
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame index");

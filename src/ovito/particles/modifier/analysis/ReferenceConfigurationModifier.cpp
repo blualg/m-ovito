@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,6 +47,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReferenceConfigurationModifier, referenceFr
 
 // This class can be removed in a future version of OVITO:
 IMPLEMENT_CREATABLE_OVITO_CLASS(ReferenceConfigurationModifierApplication);
+// Tag the class as optional, which means it's not an error if objects of this class cannot be deserialized from a state file.
+// In other words, it's okay to remove this class in a future version of OVITO without breaking compatibility with older state files.
+OVITO_CLASSINFO(ReferenceConfigurationModifierApplication, "NonessentialClass", "true");
 
 /******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2025 OVITO GmbH, Germany
+#  Copyright 2026 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -44,7 +44,7 @@ SET(SourceFiles
     modifier/analysis/ReferenceConfigurationModifier.cpp
     modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
     modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
-    modifier/analysis/coordination/CoordinationAnalysisModifier.cpp
+    modifier/analysis/rdf/RadialDistributionFunctionModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
     modifier/analysis/displacements/CalculateDisplacementsModifier.cpp
     modifier/analysis/centrosymmetry/CentroSymmetryModifier.cpp
@@ -57,6 +57,7 @@ SET(SourceFiles
     modifier/analysis/ptm/PTMAlgorithm.cpp
     modifier/analysis/surface/ConstructSurfaceModifier.cpp
     modifier/selection/ExpandSelectionModifier.cpp
+    modifier/selection/SelectOverlappingParticlesModifier.cpp
     modifier/properties/SmoothTrajectoryModifier.cpp
     modifier/properties/GenerateTrajectoryLinesModifier.cpp
     import/ParticleImporter.cpp

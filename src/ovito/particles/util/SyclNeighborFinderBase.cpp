@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,9 +55,9 @@ void SyclNeighborFinderBase::prepare(const Property* positions, const Simulation
         // Compute bounding box of input particles (possible restricted to the subset of selected particles).
         Box3 boundingBox = SyclBufferAccess<Point3, access_mode::read>{positions}.boundingBox(selection);
         if(boundingBox.isEmpty()) boundingBox.addPoint(Point3::Origin());
-        if(boundingBox.sizeX() <= FLOATTYPE_EPSILON) boundingBox.maxc.x() = boundingBox.minc.x() + FLOATTYPE_EPSILON;
-        if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + FLOATTYPE_EPSILON;
-        if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + FLOATTYPE_EPSILON;
+        if(boundingBox.sizeX() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.x() = boundingBox.minc.x() + Ovito::epsilon_v<FloatType>;
+        if(boundingBox.sizeY() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.y() = boundingBox.minc.y() + Ovito::epsilon_v<FloatType>;
+        if(boundingBox.sizeZ() <= Ovito::epsilon_v<FloatType>) boundingBox.maxc.z() = boundingBox.minc.z() + Ovito::epsilon_v<FloatType>;
         _simCell = DataOORef<SimulationCell>::create(
                 ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),

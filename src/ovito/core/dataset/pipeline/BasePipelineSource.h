@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The trajectory frame number that is currently stored in the source's data collection.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int{-1}, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{-1}, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// Indicates that the user has made manual changes to the data objects in the source's data collection
     /// or to the visual elements. If this flag is set, we'll ask the user if these changes should be preserved when

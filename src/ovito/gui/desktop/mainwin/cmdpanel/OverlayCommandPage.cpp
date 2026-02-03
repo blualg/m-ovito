@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/gui/base/mainwin/OverlayListItem.h>
-#include <ovito/gui/base/mainwin/AvailableOverlaysModel.h>
+#include "AvailableOverlaysSelectorWidget.h"
 #include "CommandPanel.h"
 #include "OverlayCommandPage.h"
 
@@ -46,15 +46,16 @@ OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWid
     layout->setContentsMargins(2,2,2,2);
     layout->setSpacing(4);
 
+    QAction* manageOverlayTemplatesAction = actionManager()->createCommandAction(ACTION_VIEWPORT_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
+    connect(manageOverlayTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &OverlayTemplatesPage::OOClass());
+        dlg.exec();
+    });
+
     _overlayListModel = new OverlayListModel(this, ui);
     connect(_overlayListModel, &OverlayListModel::selectedItemChanged, this, &OverlayCommandPage::onItemSelectionChanged, Qt::QueuedConnection);
 
-    _newLayerBox = new QComboBox(this);
-    layout->addWidget(_newLayerBox);
-    _newLayerBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _newLayerBox->setModel(new AvailableOverlaysModel(this, ui, _overlayListModel));
-    _newLayerBox->setMaxVisibleItems(0xFFFF);
-    connect(_newLayerBox, qOverload<int>(&QComboBox::activated), this, &OverlayCommandPage::onInsertNewOverlay);
+    layout->addWidget(new AvailableOverlaysSelectorWidget(this, ui, _overlayListModel));
 
     _splitter = new QSplitter(Qt::Vertical);
     _splitter->setChildrenCollapsible(false);
@@ -126,12 +127,6 @@ OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWid
     });
 
     editToolbar->addSeparator();
-
-    QAction* manageOverlayTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
-    connect(manageOverlayTemplatesAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(this->ui(), &OverlayTemplatesPage::OOClass());
-        dlg.exec();
-    });
     editToolbar->addAction(manageOverlayTemplatesAction);
 
     layout->addWidget(_splitter, 1);
@@ -177,27 +172,6 @@ ViewportOverlay* OverlayCommandPage::selectedLayer() const
 }
 
 /******************************************************************************
-* Is called when the user has selected an overlay type from drop-down list of available overlays.
-******************************************************************************/
-void OverlayCommandPage::onInsertNewOverlay(int index)
-{
-    QComboBox* selector = static_cast<QComboBox*>(sender());
-    AvailableOverlaysModel* model = static_cast<AvailableOverlaysModel*>(selector->model());
-    if(index == model->getMoreExtensionsItemIndex()) {
-        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
-            action->trigger();
-        else
-            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
-    }
-    else {
-        if(QAction* action = model->actionFromIndex(index))
-            action->trigger();
-    }
-    selector->setCurrentIndex(0);
-    _overlayListWidget->setFocus();
-}
-
-/******************************************************************************
 * This is called when another viewport became active.
 ******************************************************************************/
 void OverlayCommandPage::onActiveViewportChanged(Viewport* activeViewport)
@@ -205,7 +179,6 @@ void OverlayCommandPage::onActiveViewportChanged(Viewport* activeViewport)
     if(!activeViewport)
         _propertiesPanel->setEditObject(nullptr);
     overlayListModel()->setSelectedViewport(activeViewport);
-    _newLayerBox->setEnabled(activeViewport != nullptr && _newLayerBox->count() > 1);
 }
 
 /******************************************************************************

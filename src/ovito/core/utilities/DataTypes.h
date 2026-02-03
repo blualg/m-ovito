@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,9 @@
 #pragma once
 
 #include <cstdint>
+#include <concepts>
+#include <numbers>
+#include <limits>
 
 namespace Ovito {
 
@@ -35,9 +38,6 @@ namespace Ovito {
 
     /// The default floating-point type used by OVITO.
     using FloatType = float;
-
-    /// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-    #define FLOATTYPE_EPSILON   Ovito::FloatType(1e-6)
 
     /// The format specifier to be passed to the sscanf() function to parse floating-point numbers of type Ovito::FloatType.
     #define FLOATTYPE_SCANF_STRING      "%g"
@@ -47,36 +47,43 @@ namespace Ovito {
     /// The default floating-point type used by OVITO.
     using FloatType = double;
 
-    /// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-    #define FLOATTYPE_EPSILON   Ovito::FloatType(1e-12)
-
     /// The format specifier to be passed to the sscanf() function to parse floating-point numbers of type Ovito::FloatType.
     #define FLOATTYPE_SCANF_STRING      "%lg"
 
 #endif
 
-/// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-/// This function template returns a type dependent epsilon value (for single and double precision types).
-template<typename T> constexpr T FloatTypeEpsilon() { return T{}; }
-template<> constexpr float FloatTypeEpsilon<float>() { return 1e-6f; }
-template<> constexpr double FloatTypeEpsilon<double>() { return 1e-12f; }
-
-/// The maximum value for floating-point variables of type Ovito::FloatType.
-#define FLOATTYPE_MAX   (std::numeric_limits<Ovito::FloatType>::max())
-
-/// The lowest value for floating-point variables of type Ovito::FloatType.
-#define FLOATTYPE_MIN   (std::numeric_limits<Ovito::FloatType>::lowest())
-
-/// The constant PI.
-#define FLOATTYPE_PI    Ovito::FloatType(3.14159265358979323846)
-
 /// Low-precision floating-point type used for graphics data.
 using GraphicsFloatType = float;
 
-/// A small epsilon, which is used in OVITO to test if a number is (almost) zero.
-#define GRAPHICS_FLOATTYPE_EPSILON Ovito::GraphicsFloatType(1e-12)
+/// The constant number pi.
+template<std::floating_point T>
+inline constexpr T pi_v = std::numbers::pi_v<T>;
+// Pi for our default floating-point type:
+inline constexpr FloatType pi = pi_v<FloatType>;
+// Legacy constant for backward compatibility:
+inline constexpr FloatType FLOATTYPE_PI = Ovito::pi_v<FloatType>;
 
-/// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type Ovito::GraphicsFloatType.
+/// A small epsilon, which is used in OVITO to test if a number is (almost) zero:
+template<typename T> requires (std::integral<T> || std::floating_point<T>)
+inline constexpr T epsilon_v = (T)0;
+template<>
+inline constexpr double epsilon_v<double> = 1e-12;
+template<>
+inline constexpr float epsilon_v<float> = 1e-6f;
+// Epsilon for our default floating-point type:
+inline constexpr FloatType epsilon = epsilon_v<FloatType>;
+// Legacy constants for backward compatibility:
+inline constexpr FloatType FLOATTYPE_EPSILON = Ovito::epsilon_v<FloatType>;
+inline constexpr GraphicsFloatType GRAPHICS_FLOATTYPE_EPSILON = (GraphicsFloatType)1e-12;
+
+/// The maximum value for floating-point variables of type Ovito::FloatType.
+inline constexpr FloatType FLOATTYPE_MAX = std::numeric_limits<FloatType>::max();
+
+/// The lowest value for floating-point variables of type Ovito::FloatType.
+inline constexpr FloatType FLOATTYPE_MIN = std::numeric_limits<FloatType>::lowest();
+
+/// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type
+/// Ovito::GraphicsFloatType.
 #define GRAPHICS_FLOATTYPE_SCANF_STRING "%g"
 
 /// Data type used for storing unique identifiers.

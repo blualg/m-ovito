@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,6 @@
 
 #pragma once
 
-
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
@@ -31,15 +30,14 @@
 namespace Ovito {
 
 /**
- * A properties editor for the CoordinationAnalysisModifier class.
+ * A properties editor for the RadialDistributionFunctionModifier class.
  */
-class CoordinationAnalysisModifierEditor : public PropertiesEditor
+class RadialDistributionFunctionModifierEditor : public PropertiesEditor
 {
-    OVITO_CLASS(CoordinationAnalysisModifierEditor)
+    OVITO_CLASS(RadialDistributionFunctionModifierEditor)
     Q_OBJECT
 
 protected:
-
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
@@ -49,7 +47,6 @@ protected Q_SLOTS:
     void plotRDF();
 
 private:
-
     /// The plotting widget for displaying the computed RDFs.
     DataTablePlotWidget* _rdfPlot;
 
@@ -57,4 +54,4 @@ private:
     PropertyReferenceParameterUI* _typePropertyUI;
 };
 
-}   // End of namespace
+}  // namespace Ovito

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,41 +54,34 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Saves the class' contents to an output stream.
-******************************************************************************/
-void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    RefTarget::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x03);
-    stream.endChunk();
-}
-
-/******************************************************************************
 * Loads the class' contents from an input stream.
 ******************************************************************************/
 void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
 
-    // Save the human-readable labels associated with individual animation frames.
-    int version = stream.expectChunkRange(0x01, 2);
-    if(version >= 2) {
-        // To reduce the state file size, OVITO 3.15 and later no longer serialize the frame labels.
-        // They are rebuilt by loadFromStreamComplete() after loading of the entire scene.
-    }
-    else if(version >= 1) {
-        // For backward compatibility with OVITO 3.14.
-        stream >> _frameLabels;
-    }
-    else {
-        // For backward compatibility with OVITO 3.13, where frame labels were simple strings.
-        QMap<int, QString> namedFrames;
-        stream >> namedFrames;
-        for(auto it = namedFrames.constBegin(); it != namedFrames.constEnd(); ++it) {
-            _frameLabels.insert(it.key(), AnimationFrameLabel::parse(it.value()));
+    // For backward compatibility with OVITO 3.14:
+    if(stream.formatVersion() < 30016) {
+        // Save the human-readable labels associated with individual animation frames.
+        int version = stream.expectChunkRange(0x01, 2);
+        if(version >= 2) {
+            // Format version 30015: To reduce the state file size, OVITO 3.15 and later no longer serialize the frame labels.
+            // They are rebuilt by loadFromStreamComplete() after loading of the entire scene.
         }
+        else if(version >= 1) {
+            // For backward compatibility with OVITO 3.14.
+            stream >> _frameLabels;
+        }
+        else {
+            // For backward compatibility with OVITO 3.13, where frame labels were simple strings.
+            QMap<int, QString> namedFrames;
+            stream >> namedFrames;
+            for(auto it = namedFrames.constBegin(); it != namedFrames.constEnd(); ++it) {
+                _frameLabels.insert(it.key(), AnimationFrameLabel::parse(it.value()));
+            }
+        }
+        stream.closeChunk();
     }
-    stream.closeChunk();
 }
 
 /******************************************************************************
@@ -177,43 +170,37 @@ void AnimationSettings::jumpToNextFrame()
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // For backward compatibility with OVITO 3.7:
 
     // The AnimationSettings classes used to store the animation interval in a single property field.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "animationInterval") {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-            stream.expectChunk(0x04);
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             int intervalStart, intervalEnd;
             stream >> intervalStart >> intervalEnd;
             int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
             static_cast<AnimationSettings&>(owner).setFirstFrame(intervalStart / ticksPerFrame);
             static_cast<AnimationSettings&>(owner).setLastFrame(intervalEnd / ticksPerFrame);
-            stream.closeChunk();
         };
     }
 
     // The AnimationSettings classes used to store the current animation time in the field 'time'. Now it is in 'currentFrame'.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "time") {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-            stream.expectChunk(0x04);
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             int time; // Legacy TimePoint data type
             stream >> time;
             int ticksPerFrame = (int)std::round(4800.0f / static_cast<AnimationSettings&>(owner).framesPerSecond());
             static_cast<AnimationSettings&>(owner).setCurrentFrame(time / ticksPerFrame);
-            stream.closeChunk();
         };
     }
 
     // The AnimationSettings classes used to store the frame rate in the field 'ticksPerFrame'. Now it is in 'framesPerSecond'.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "ticksPerFrame") {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-            stream.expectChunk(0x04);
+        return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
             int ticksPerFrame;
             stream >> ticksPerFrame;
             static_cast<AnimationSettings&>(owner).setFramesPerSecond(4800.0f / ticksPerFrame);
-            stream.closeChunk();
         };
     }
 

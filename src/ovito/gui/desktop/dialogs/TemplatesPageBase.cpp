@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,11 @@ void TemplatesPageBase::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     QVBoxLayout* layout2 = new QVBoxLayout();
     layout2->setContentsMargins(0,0,0,0);
+#ifndef Q_OS_MAC
     layout2->setSpacing(4);
+#else
+    layout2->setSpacing(8);
+#endif
     layout1->addLayout(layout2, 3, 1);
     QPushButton* createTemplateBtn = new QPushButton(tr("New..."), page);
     connect(createTemplateBtn, &QPushButton::clicked, this, &TemplatesPageBase::onCreateTemplate);

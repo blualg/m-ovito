@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -461,8 +461,8 @@ void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
             Vector3 x0, x1;
             Vector3I x0_vc, x1_vc;
             for(size_t dim = 0; dim < 3; dim++) {
-                OVITO_ASSERT(p[dim] >= -0.5-FLOATTYPE_EPSILON);
-                OVITO_ASSERT(p[dim] <= (FloatType)gridShape[dim] + FLOATTYPE_EPSILON + 0.5);
+                OVITO_ASSERT(p[dim] >= -0.5 - Ovito::epsilon_v<FloatType>);
+                OVITO_ASSERT(p[dim] <= (FloatType)gridShape[dim] + Ovito::epsilon_v<FloatType> + 0.5);
                 FloatType fl = std::floor(p[dim]);
                 x1[dim] = p[dim] - fl;
                 x0[dim] = FloatType(1) - x1[dim];

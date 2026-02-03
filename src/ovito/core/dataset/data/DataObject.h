@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -205,9 +205,6 @@ protected:
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
@@ -252,7 +249,7 @@ private:
 
     /// The PipelineNode that created this data object (may be null).
     /// Note: Weak reference is to a generic RefTarget, because the PipelineNode class will be defined later in the code.
-    DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>{}, createdByNode, setCreatedByNode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OOWeakRef<const RefTarget>{}, createdByNode, setCreatedByNode, PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// The number of strong references to this DataObject that currently exist.
     mutable std::atomic<int> _dataReferenceCount{0};

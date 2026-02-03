@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -143,7 +143,7 @@ public:
             Point3I centerBin;
             for(size_t k = 0; k < 3; k++) {
                 FloatType rc = _reciprocalBinCell.prodrow(center, k);
-                OVITO_ASSERT(!_pbcFlags[k] || (rc >= -FLOATTYPE_EPSILON && rc <= _binDim[k]+FLOATTYPE_EPSILON));
+                OVITO_ASSERT(!_pbcFlags[k] || (rc >= -Ovito::epsilon_v<FloatType> && rc <= _binDim[k] + Ovito::epsilon_v<FloatType>));
                 centerBin[k] = std::clamp((int)sycl::floor(rc), 0, _binDim[k] - 1);
             }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -98,7 +98,7 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(title);
 
     /// The current status of this object.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus{}, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(PipelineStatus{}, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_DONT_SERIALIZE);
 
     /// Indicates how many running tasks are currently associated with this object.
     int _numberOfActiveTasks = 0;

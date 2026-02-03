@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,6 +112,7 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
     // Open a sub-editor for the property color mapping.
     _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::surfaceColorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI->setEnabled(false);
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,6 +38,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorLegendOverlay);
 OVITO_CLASSINFO(ColorLegendOverlay, "DisplayName", "Color legend");
+OVITO_CLASSINFO(ColorLegendOverlay, "Description", "Legend for color-mapped properties.");
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, orientation);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, legendSize);
@@ -1207,39 +1208,41 @@ void ColorLegendOverlay::loadFromStreamComplete(ObjectLoadStream& stream)
     ViewportOverlay::loadFromStreamComplete(stream);
 
     // For backward compatibility with OVITO 3.10.6:
-    if(!pipeline() && stream.datasetToBePopulated()) {
-        // Automatically choose a scene pipeline for this overlay.
-        if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
-            if(Scene* scene = vp->scene()) {
-                Pipeline* selectedPipeline = nullptr;
-                scene->visitPipelines([&](SceneNode* sceneNode) {
-                    Pipeline* pipeline = sceneNode->pipeline();
-                    if(selectedPipeline == nullptr)
-                        selectedPipeline = pipeline;
-                    if(modifier()) {
-                        ModificationNode* modNode = nullptr;
-                        PipelineNode* node = pipeline->head();
-                        for(;;) {
-                            if((modNode = dynamic_object_cast<ModificationNode>(node))) {
-                                if(modNode->modifier() == modifier()) {
-                                    selectedPipeline = pipeline;
-                                    return false;
-                                }
-                                node = modNode->input();
-                            }
-                            else break;
-                        }
-                    }
-                    else if(sourceProperty()) {
-                        const PipelineFlowState& state = pipeline->getCachedPipelineOutput(scene->animationSettings()->currentTime());
-                        if(state.getLeafObject(sourceProperty())) {
+    if(!pipeline()) {
+        if(DataSet* dataset = stream.datasetBeingLoaded()) {
+            // Automatically choose a scene pipeline for this overlay.
+            if(Viewport* vp = dataset->viewportConfig()->activeViewport()) {
+                if(Scene* scene = vp->scene()) {
+                    Pipeline* selectedPipeline = nullptr;
+                    scene->visitPipelines([&](SceneNode* sceneNode) {
+                        Pipeline* pipeline = sceneNode->pipeline();
+                        if(selectedPipeline == nullptr)
                             selectedPipeline = pipeline;
-                            return false;
+                        if(modifier()) {
+                            ModificationNode* modNode = nullptr;
+                            PipelineNode* node = pipeline->head();
+                            for(;;) {
+                                if((modNode = dynamic_object_cast<ModificationNode>(node))) {
+                                    if(modNode->modifier() == modifier()) {
+                                        selectedPipeline = pipeline;
+                                        return false;
+                                    }
+                                    node = modNode->input();
+                                }
+                                else break;
+                            }
                         }
-                    }
-                    return true;
-                });
-                setPipeline(selectedPipeline);
+                        else if(sourceProperty()) {
+                            const PipelineFlowState& state = pipeline->getCachedPipelineOutput(scene->animationSettings()->currentTime());
+                            if(state.getLeafObject(sourceProperty())) {
+                                selectedPipeline = pipeline;
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                    setPipeline(selectedPipeline);
+                }
             }
         }
     }

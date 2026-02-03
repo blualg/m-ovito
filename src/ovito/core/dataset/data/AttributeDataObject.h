@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,16 +56,13 @@ public:
 
 protected:
 
-    /// Saves the class' contents to the given stream.
-    virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:
 
-    /// The stored attribute value.
-    DECLARE_RUNTIME_PROPERTY_FIELD(QVariant{}, value, setValue);
+    /// The attribute's value.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QVariant{}, value, setValue, PROPERTY_FIELD_WAS_RUNTIME_PROPERTY_FIELD);
 };
 
 }   // End of namespace

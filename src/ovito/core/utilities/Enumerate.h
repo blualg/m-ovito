@@ -71,8 +71,8 @@ requires r::view<V> class enumerate_view
         r::iterator_t<Base> current_ = r::iterator_t<Base>();
         count_type pos_ = 0;
 
-        template <bool>
-        friend class iterator;
+        template<bool>
+        friend struct iterator;
         template <bool>
         friend class sentinel;
 

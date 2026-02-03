@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -177,7 +177,10 @@ public:
 
     /// Determines which spatial region contains the given point in space.
     /// Returns no result if the point is exactly on a region boundary.
-    std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>()) const;
+    std::optional<std::pair<region_index, FloatType>> locatePoint(
+        const Point3& location,
+        FloatType epsilon = Ovito::epsilon_v<FloatType>,
+        const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>()) const;
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
     const Property* vertexProperty(SurfaceMeshVertices::Type ptype) const {

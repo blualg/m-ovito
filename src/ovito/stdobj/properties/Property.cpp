@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,14 +32,19 @@ OVITO_CLASSINFO(Property, "DisplayName", "Property");
 OVITO_CLASSINFO(Property, "ClassNameAlias", "PropertyObject");  // For backward compatibility with OVITO 3.9.2
 DEFINE_VECTOR_REFERENCE_FIELD(Property, elementTypes);
 DEFINE_PROPERTY_FIELD(Property, title);
+DEFINE_PROPERTY_FIELD(Property, typeId);
 SET_PROPERTY_FIELD_LABEL(Property, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(Property, title, "Title");
+SET_PROPERTY_FIELD_LABEL(Property, typeId, "Type ID");
 SET_PROPERTY_FIELD_CHANGE_EVENT(Property, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
  * Constructor creating an empty property array.
  ******************************************************************************/
-void Property::initializeObject(ObjectInitializationFlags flags) { DataBuffer::initializeObject(flags); }
+void Property::initializeObject(ObjectInitializationFlags flags)
+{
+    DataBuffer::initializeObject(flags);
+}
 
 /******************************************************************************
  * Constructor allocating a property array with given size and data layout.
@@ -55,7 +60,7 @@ void Property::initializeObject(ObjectInitializationFlags flags,
 {
     DataBuffer::initializeObject(flags, init, elementCount, dataType, componentCount, std::move(componentNames));
 
-    _typeId = typeId;
+    setTypeId(typeId);
     setName(name.toString());
 }
 
@@ -74,11 +79,6 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
     // Let the base class create an instance of this class.
     OORef<Property> clone = static_object_cast<Property>(DataBuffer::clone(deepCopy, cloneHelper));
 
-    // Copy internal data.
-    prepareReadAccess();
-    clone->_typeId = _typeId;
-    finishReadAccess();
-
 #ifdef OVITO_USE_SYCL
     if(isBeingAccessedExternally()) {
         // Force flush SYCL queue to complete the memcpy to the cloned data buffer now.
@@ -95,7 +95,10 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 /******************************************************************************
  * Returns the display title of this property object in the user interface.
  ******************************************************************************/
-QString Property::objectTitle() const { return title().isEmpty() ? name() : title(); }
+QString Property::objectTitle() const
+{
+    return title().isEmpty() ? name() : title();
+}
 
 /******************************************************************************
  * Is called when the value of a property of this object has changed.
@@ -127,54 +130,39 @@ QString Property::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& p
 }
 
 /******************************************************************************
- * Saves the class' contents to the given stream.
- ******************************************************************************/
-void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    DataBuffer::saveToStream(stream, excludeRecomputableData);
-
-    prepareReadAccess();
-    try {
-        stream.beginChunk(0x100);
-        stream << name();
-        stream << _typeId;
-        stream.endChunk();
-        finishReadAccess();
-    }
-    catch(...) {
-        finishReadAccess();
-        throw;
-    }
-}
-
-/******************************************************************************
  * Loads the class' contents from the given stream.
  ******************************************************************************/
 void Property::loadFromStream(ObjectLoadStream& stream)
 {
-    QString name;
-    if(stream.formatVersion() >= 30007) {  // Current file format
+    if(stream.formatVersion() >= 30016) {
         DataBuffer::loadFromStream(stream);
-
-        stream.expectChunk(0x100);
-        stream >> name;
-        stream >> _typeId;
-        stream.closeChunk();
     }
-    else {  // Legacy file format
-        // For backward compatibility with OVITO 3.3.5 and earlier versions. Here, the Property class was a direct
-        // subclass of DataObject and did not inherit from DataBuffer.
-        DataObject::loadFromStream(stream);
+    else {
+        // For backward compatibility with OVITO 3.14.x and earlier versions.
+        QString name;
+        if(stream.formatVersion() >= 30007) {  // Current file format
+            DataBuffer::loadFromStream(stream);
 
-        stream.expectChunk(0x01);
-        stream.expectChunk(0x02);
-        stream >> name;
-        stream >> _typeId;
-        DataBuffer::loadFromStream(stream);
-        stream.closeChunk();
+            stream.expectChunk(0x100);
+            stream >> name;
+            stream >> _typeId.mutableValue();
+            stream.closeChunk();
+        }
+        else {  // Legacy file format
+            // For backward compatibility with OVITO 3.3.5 and earlier versions. Here, the Property class was a direct
+            // subclass of DataObject and did not inherit from DataBuffer.
+            DataObject::loadFromStream(stream);
+
+            stream.expectChunk(0x01);
+            stream.expectChunk(0x02);
+            stream >> name;
+            stream >> _typeId.mutableValue();
+            DataBuffer::loadFromStream(stream);
+            stream.closeChunk();
+        }
+
+        setIdentifier(name);
     }
-
-    setIdentifier(name);
 }
 
 /******************************************************************************

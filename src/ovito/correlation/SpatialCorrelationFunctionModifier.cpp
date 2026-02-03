@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -39,6 +39,7 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ClassNameAlias", "CorrelationFunctionModifier");
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "DisplayName", "Spatial correlation function");
+OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "Description", "Compute spatial correlation functions for particle properties.");
 OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty2);
@@ -217,7 +218,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     const SimulationCell* inputCell = state.getObject<SimulationCell>();
     if(!inputCell)
         throw Exception(tr("No simulation cell defined. The spatial correlation function cannot be computed without a simulation cell."));
-    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
+    if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < Ovito::epsilon_v<FloatType>)
         throw Exception(tr("Simulation cell is degenerate. Cannot compute spatial correlation function."));
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -616,7 +617,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     // Perform analysis on each particle in parallel.
     size_t vecComponent1 = _vecComponent1;
     size_t vecComponent2 = _vecComponent2;
-    FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
+    FloatType gridSpacing = (neighCutoff() + Ovito::epsilon_v<FloatType>) / neighCorrelation()->size();
     EnumerableThreadSpecific<std::vector<FloatType>> threadLocalCorrelations;
     EnumerableThreadSpecific<std::vector<int64_t>> threadLocalRDFs;
     parallelForInnerOuter(particleCount, 4096, *this, [&](auto&& iterate) {

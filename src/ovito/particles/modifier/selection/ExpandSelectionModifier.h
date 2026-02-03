@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,8 @@
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 
+#include <utility>
+
 namespace Ovito {
 
 /**
@@ -52,11 +54,12 @@ class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public Modifier
     OVITO_CLASS_META(ExpandSelectionModifier, OOMetaClass)
 
 public:
-
-    enum ExpansionMode {
-        BondedNeighbors,    ///< Expands the selection to particles that are bonded to an already selected particle.
-        CutoffRange,        ///< Expands the selection to particles that within a cutoff range of an already selected particle.
-        NearestNeighbors,   ///< Expands the selection to the N nearest particles of already selected particles.
+    enum ExpansionMode
+    {
+        BondedNeighbors,   ///< Expands the selection to particles that are bonded to an already selected particle.
+        CutoffRange,       ///< Expands the selection to particles that within a cutoff range of an already selected particle.
+        NearestNeighbors,  ///< Expands the selection to the N nearest particles of already selected particles.
+        Molecule           ///< Expands the selection to all particles in the molecule
     };
     Q_ENUM(ExpansionMode);
 
@@ -83,13 +86,19 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionEngine(OOWeakRef<const PipelineNode> createdByNode, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
-            _createdByNode(createdByNode),
-            _numIterations(numIterations),
-            _positions(std::move(positions)),
-            _simCell(simCell),
-            _inputSelection(inputSelection),
-            _outputSelection(inputSelection.makeCopy()) {}
+        ExpandSelectionEngine(OOWeakRef<const PipelineNode> createdByNode,
+                              ConstPropertyPtr positions,
+                              const SimulationCell* simCell,
+                              ConstPropertyPtr inputSelection,
+                              int numIterations)
+            : _createdByNode(std::move(createdByNode)),
+              _numIterations(numIterations),
+              _positions(std::move(positions)),
+              _simCell(simCell),
+              _inputSelection(inputSelection),
+              _outputSelection(inputSelection.makeCopy())
+        {
+        }
 
         /// Destructor.
         virtual ~ExpandSelectionEngine() = default;
@@ -187,6 +196,26 @@ private:
     private:
 
         ConstPropertyPtr _bondTopology;
+    };
+
+    /// Computes the expanded selection by using the molecule id.
+    class ExpandSelectionMoleculeEngine : public ExpandSelectionEngine
+    {
+    public:
+        /// Constructor.
+        ExpandSelectionMoleculeEngine(OOWeakRef<const PipelineNode> createdByNode,
+                                      ConstPropertyPtr moleculeIdProperty,
+                                      ConstPropertyPtr inputSelection)
+            : ExpandSelectionEngine(std::move(createdByNode), nullptr, nullptr, std::move(inputSelection), /*num iterations*/ 1),
+              _moleculeIdProperty(std::move(moleculeIdProperty))
+        {
+        }
+
+        /// Expands the selection by one step.
+        virtual void expandSelection(TaskProgress& progress) override;
+
+    private:
+        ConstPropertyPtr _moleculeIdProperty;
     };
 
 private:

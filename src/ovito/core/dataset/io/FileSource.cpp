@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -566,11 +566,13 @@ void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 
     // Serialize the list of animation frames.
     stream.beginChunk(0x04);
-    stream.writeSizeT(frames().size());
-
-    // To compactly serialize the list of frames, we use a combination of run-length encoding (RLE) and range-based encoding (start,step).
-    // For example, in many cases, consecutive frames will come from the same source file URL. And in many cases the line numbers follow a regular pattern.
-    if(!frames().empty()) {
+    if(frames().empty() || excludeRecomputableData) {
+        stream.writeSizeT(0);
+    }
+    else {
+        // To compactly serialize the list of frames, we use a combination of run-length encoding (RLE) and range-based encoding (start,step).
+        // For example, in many cases, consecutive frames will come from the same source file URL. And in many cases the line numbers follow a regular pattern.
+        stream.writeSizeT(frames().size());
         // Helper that checks whether the given array can be range-encoded, i.e., the numeric values follow a regular pattern with a fixed step size.
         auto isRangeEncodable = [&](auto&& getterFunc) {
             if constexpr (std::is_arithmetic_v<std::remove_reference_t<decltype(getterFunc(frames()[0]))>>) {

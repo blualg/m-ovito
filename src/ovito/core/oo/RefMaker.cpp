@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,8 +25,6 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/utilities/io/ObjectSaveStream.h>
-#include <ovito/core/utilities/io/ObjectLoadStream.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
@@ -70,6 +68,19 @@ void RefMaker::copyPropertyFieldValue(const PropertyFieldDescriptor* field, cons
     OVITO_ASSERT_MSG(other.getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::copyPropertyFieldValue", "The property field has not been defined in the source's class or its base classes.");
     OVITO_ASSERT(field->_propertyStorageCopyFunc != nullptr);
     field->_propertyStorageCopyFunc(this, field, &other);
+}
+
+/******************************************************************************
+* Compares the value stored in a non-animatable property field of from another
+* RefMaker instance to this RefMaker object for equality.
+******************************************************************************/
+bool RefMaker::comparePropertyFieldValue(const PropertyFieldDescriptor* field, const RefMaker& other) const
+{
+    OVITO_ASSERT_MSG(!field->isReferenceField(), "RefMaker::comparePropertyFieldValue", "This function may be used only to access property fields and not reference fields.");
+    OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::comparePropertyFieldValue", "The property field has not been defined in this class or its base classes.");
+    OVITO_ASSERT_MSG(other.getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::comparePropertyFieldValue", "The property field has not been defined in the source's class or its base classes.");
+    OVITO_ASSERT(field->_propertyStorageCompareFunc != nullptr);
+    return field->_propertyStorageCompareFunc(this, field, &other);
 }
 
 /******************************************************************************
@@ -393,181 +404,6 @@ void RefMaker::clearReferenceField(const PropertyFieldDescriptor* field)
         while(int count = getVectorReferenceFieldSize(field))
             removeVectorReferenceFieldTarget(field, count - 1);
     }
-}
-
-/******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    OvitoObject::saveToStream(stream, excludeRecomputableData);
-
-#if 0
-    qDebug() << "Saving object" << this;
-#endif
-
-    // Iterate over all property fields in the class hierarchy.
-    for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-        if(field->isReferenceField()) {
-            // Write the object pointed to by the reference field to the stream.
-            if(!field->dontSaveTarget()) {
-                stream.beginChunk(0x02);
-                try {
-                    if(!field->isVector()) {
-                        stream.saveObject(getReferenceFieldTarget(field), excludeRecomputableData || field->dontSaveRecomputableData());
-                    }
-                    else {
-                        qint32 count = getVectorReferenceFieldSize(field);
-                        stream << count;
-                        for(int i = 0; i < count; i++)
-                            stream.saveObject(getVectorReferenceFieldTarget(field, i), excludeRecomputableData || field->dontSaveRecomputableData());
-                    }
-                }
-                catch(Exception& ex) {
-                    throw ex.prependGeneralMessage(tr("Failed to serialize contents of reference field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
-                }
-                stream.endChunk();
-            }
-            else {
-                // Indicate that this target is not serialized.
-                stream.beginChunk(0x05);
-                stream.endChunk();
-            }
-        }
-        else {
-            // Write the primitive value stored in the property field to the stream.
-            if(field->_propertyStorageSaveFunc != nullptr) {
-                stream.beginChunk(0x04);
-                field->_propertyStorageSaveFunc(this, field, stream);
-#if 0
-                qDebug() << "  Property field" << field->identifier() << " contains" << field->propertyStorageReadFunc(this, field);
-#endif
-            }
-            else {
-                // Indicate that this property field is not serializable.
-                stream.beginChunk(0x05);
-            }
-            stream.endChunk();
-        }
-    }
-}
-
-/******************************************************************************
-* Loads the class' contents from the given stream.
-******************************************************************************/
-void RefMaker::loadFromStream(ObjectLoadStream& stream)
-{
-    OvitoObject::loadFromStream(stream);
-    OVITO_ASSERT(!isUndoRecording());
-
-#if 0
-    qDebug() << "Loading object" << this;
-#endif
-
-    // Look up the serialized metadata for this RefMaker-derived class,
-    // which was loaded from the input stream.
-    const RefMakerClass::SerializedClassInfo* classInfo = static_cast<const RefMakerClass::SerializedClassInfo*>(stream.getSerializedClassInfo());
-
-    // Read property field values from the stream.
-    for(const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& fieldEntry : classInfo->propertyFields) {
-        if(fieldEntry.customDeserializationFunction) {
-            // The class has installed its own custom deserialization function for this property field.
-            fieldEntry.customDeserializationFunction(fieldEntry, stream, *this);
-        }
-        else if(fieldEntry.isReferenceField) {
-            OVITO_ASSERT(fieldEntry.targetClass != nullptr);
-
-            // Parse target object(s).
-            int chunkId = stream.openChunk();
-            if(chunkId == 0x02) {
-
-                // Parse object chunk describing the reference target.
-                if(fieldEntry.field != nullptr) {
-                    OVITO_CHECK_POINTER(fieldEntry.field);
-                    OVITO_ASSERT(fieldEntry.field->isVector() == ((fieldEntry.field->flags() & PROPERTY_FIELD_VECTOR) != 0));
-                    OVITO_ASSERT(fieldEntry.targetClass->isDerivedFrom(*fieldEntry.field->targetClass()));
-                    if(!fieldEntry.field->isVector()) {
-                        OORef<RefTarget> target = stream.loadObject<RefTarget>();
-                        if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
-                            throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
-                                .arg(QString::fromUtf8(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()).arg(fieldEntry.targetClass->name()).arg(target->getOOClass().name()));
-                        }
-#if 0
-                        qDebug() << "  Reference field" << fieldEntry.identifier << " contains" << target;
-#endif
-                        fieldEntry.field->_singleReferenceWriteFuncRef(this, fieldEntry.field, std::move(target));
-                    }
-                    else {
-                        // Remove any pre-existing targets from the reference field.
-                        clearReferenceField(fieldEntry.field);
-
-                        // Load each target object and store it in the list reference field.
-                        qint32 numEntries;
-                        stream >> numEntries;
-                        OVITO_ASSERT(numEntries >= 0);
-                        for(qint32 i = 0; i < numEntries; i++) {
-                            OORef<RefTarget> target = stream.loadObject<RefTarget>();
-                            if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
-                                throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
-                                    .arg(QString::fromUtf8(fieldEntry.identifier)).arg(fieldEntry.definingClass->name(), fieldEntry.targetClass->name(), target->getOOClass().name()));
-                            }
-#if 0
-                            qDebug() << "  Vector reference field" << fieldEntry.identifier << " contains" << target;
-#endif
-                            fieldEntry.field->_vectorReferenceInsertFunc(this, fieldEntry.field, i, std::move(target));
-                        }
-                    }
-                }
-                else {
-#if 0
-                    qDebug() << "  Reference field" << fieldEntry.identifier << " no longer exists.";
-#endif
-                    // The serialized reference field no longer exists in the current program version.
-                    // Load object from stream and release it immediately.
-                    if(fieldEntry.flags & PROPERTY_FIELD_VECTOR) {
-                        qint32 numEntries;
-                        stream >> numEntries;
-                        for(qint32 i = 0; i < numEntries; i++)
-                            stream.loadObject<RefTarget>();
-                    }
-                    else {
-                        stream.loadObject<RefTarget>();
-                    }
-                }
-            }
-            else if(chunkId == 0x05) {
-                // The target object has not been serialized (typically due to flag PROPERTY_FIELD_DONT_SAVE_TARGET).
-            }
-            else {
-                throw Exception(tr("Expected reference field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
-            }
-            stream.closeChunk();
-        }
-        else {
-            // Read the primitive value of the property field from the stream.
-            OVITO_ASSERT(fieldEntry.targetClass == nullptr);
-            int chunkId = stream.openChunk();
-            if(chunkId == 0x04) {
-                if(!loadPropertyFieldFromStream(stream, fieldEntry)) {
-                    if(fieldEntry.field && fieldEntry.field->_propertyStorageLoadFunc != nullptr) {
-                        fieldEntry.field->_propertyStorageLoadFunc(this, fieldEntry.field, stream);
-                    }
-                    else {
-                        // The property field no longer exists.
-                        // Ignore chunk contents.
-                    }
-                }
-            }
-            else if(chunkId != 0x05) {
-                throw Exception(tr("Expected non-serializable property field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));
-            }
-            stream.closeChunk();
-        }
-    }
-
-#if 0
-    qDebug() << "Done loading automatic fields of " << this;
-#endif
 }
 
 /******************************************************************************

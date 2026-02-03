@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,9 +70,10 @@ private:
 };
 
 /**
- * A Qt list model that list all available viewport layer types.
+ * A Qt tree model that organizes all available viewport layer types by category.
+ * Root items are categories, and child items are viewport layers within each category.
  */
-class OVITO_GUIBASE_EXPORT AvailableOverlaysModel : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
+class OVITO_GUIBASE_EXPORT AvailableOverlaysModel : public QAbstractItemModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -81,31 +82,40 @@ public:
     /// Constructor.
     AvailableOverlaysModel(QObject* parent, UserInterface& ui, OverlayListModel* overlayListModel);
 
-    /// Returns the number of rows in the model.
-    virtual int rowCount(const QModelIndex& parent) const override;
+    /// Returns the model index for the item at the given row and column under the given parent.
+    virtual QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
 
-    /// Returns the data associated with a list item.
+    /// Returns the parent of the model item with the given index.
+    virtual QModelIndex parent(const QModelIndex& index) const override;
+
+    /// Returns the number of rows under the given parent.
+    virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    /// Returns the number of columns for the children of the given parent.
+    virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    /// Returns the data associated with an item.
     virtual QVariant data(const QModelIndex& index, int role) const override;
 
     /// Returns the flags for an item.
     virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    /// Returns the action that belongs to the given model index.
-    OverlayAction* actionFromIndex(int index) const { return (index >= 0 && index < _modelActions.size()) ? _modelActions[index] : nullptr; }
+    /// Returns the name of the category at the given index.
+    const QString& categoryName(int categoryIndex) const { return _categoryNames[categoryIndex]; }
 
-    /// Returns the action that belongs to the given model index.
-    OverlayAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
+    /// Returns the list of overlay actions for the given category.
+    const std::vector<QAction*>& categoryActions(int categoryIndex) const { return _actionsPerCategory[categoryIndex]; }
+
+    /// Returns the action for an overlay at a given category and row.
+    QAction* actionAt(int categoryIndex, int overlayIndex) const;
+
+    /// Returns the action for an overlay from a model index.
+    QAction* actionFromIndex(const QModelIndex& index) const;
 
     /// Returns the category index for the viewport layer templates.
     int templatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
 
-    /// Returns the list index where the "Get more layers..." item is located.
-    int getMoreExtensionsItemIndex() const { return _getMoreExtensionsItemIndex; }
-
 private Q_SLOTS:
-
-    /// Updates the color brushes of the model.
-    void updateColorPalette(const QPalette& palette);
 
     /// Rebuilds the list of actions for the viewport layer templates.
     void refreshTemplates();
@@ -118,23 +128,11 @@ private Q_SLOTS:
 
 private:
 
-    /// Rebuilds the internal list of model items.
-    void updateModelLists();
-
-    /// The list of viewport layer actions, sorted alphabetically.
-    std::vector<OverlayAction*> _actions;
-
     /// The list of viewport layer actions, sorted by category.
-    std::vector<std::vector<OverlayAction*>> _actionsPerCategory;
+    std::vector<std::vector<QAction*>> _actionsPerCategory;
 
     /// The list of viewport layer categories.
     std::vector<QString> _categoryNames;
-
-    /// The viewport layer actions as shown by the model.
-    std::vector<OverlayAction*> _modelActions;
-
-    /// The display strings as shown by the model.
-    std::vector<QString> _modelStrings;
 
     /// The model representing the viewport layers of the active viewport.
     OverlayListModel* _overlayListModel;
@@ -142,21 +140,7 @@ private:
     /// The list of directories searched for user-defined viewport layer scripts.
     QVector<QDir> _layerScriptDirectories;
 
-    /// Font used for category header items.
-    QFont _categoryFont;
-
-    /// Colors used for category header items.
-    QBrush _categoryBackgroundBrush;
-    QBrush _categoryForegroundBrush;
-
-    /// The font used for "Get more layers..." item.
-    QFont _getMoreExtensionsFont;
-
-    /// Color used for the "Get more layers..." item.
-    QBrush _getMoreExtensionsForegroundBrush;
-
-    /// The list index where the "Get more layers..." item is located.
-    int _getMoreExtensionsItemIndex = -1;
-};
+    /// Wrapper action for managing layer templates.
+    QAction* _manageTemplatesAction = nullptr;};
 
 }   // End of namespace

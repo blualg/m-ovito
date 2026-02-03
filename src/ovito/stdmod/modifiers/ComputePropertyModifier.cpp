@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,9 +51,9 @@ SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand fi
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ComputePropertyModificationNode);
 DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModificationNode, cachedVisElements);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableNames);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableTable);
+DEFINE_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableNames);
+DEFINE_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);
+DEFINE_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableTable);
 SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationNode);
 OVITO_CLASSINFO(ComputePropertyModificationNode, "ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 

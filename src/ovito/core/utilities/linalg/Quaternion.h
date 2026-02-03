@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -115,7 +115,7 @@ public:
     /// \param tm A rotation matrix.
     ///
     /// It is assumed that \a tm is a pure rotation matrix.
-    constexpr explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = FloatTypeEpsilon<T>());
+    constexpr explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = Ovito::epsilon_v<T>);
 
     /// Casts the quaternion to another component type \a U.
     template<typename U>
@@ -224,7 +224,8 @@ public:
     }
 
     /// \brief Normalizes this quaternion to unit length unless it's the null quaternion.
-    constexpr inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    constexpr inline void normalizeSafely(T epsilon = Ovito::epsilon_v<T>)
+    {
         T c = this->norm();
         if(c > epsilon) {
             x() /= c; y() /= c; z() /= c; w() /= c;
@@ -239,7 +240,8 @@ public:
     }
 
     /// \brief Returns a normalized version of this quaternion - unless its the null quaternion, then it returns the identity quaternion.
-    constexpr inline QuaternionT safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr inline QuaternionT safelyNormalized(T epsilon = Ovito::epsilon_v<T>) const
+    {
         T c = this->norm();
         if(c > epsilon)
             return { x() / c, y() / c, z() / c, w() / c };
@@ -255,8 +257,8 @@ public:
     /// \param alpha The parameter for the linear interpolation in the range [0,1].
     /// \return A linear interpolation between \a q1 and \a q2.
     constexpr static QuaternionT interpolate(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
-        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
-        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
+        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= Ovito::epsilon_v<T>, "Quaternion::interpolate", "Quaternions must be normalized.");
+        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= Ovito::epsilon_v<T>, "Quaternion::interpolate", "Quaternions must be normalized.");
 
         T cos_t = q1.dot(q2);
 
@@ -288,7 +290,8 @@ public:
     constexpr static QuaternionT interpolateSafely(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
         T q1dot = q1.dot(q1);
         T q2dot = q2.dot(q2);
-        if(q1dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON) && q2dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)) {
+        if(q1dot > T(Ovito::epsilon_v<FloatType> * Ovito::epsilon_v<FloatType>) &&
+           q2dot > T(Ovito::epsilon_v<FloatType> * Ovito::epsilon_v<FloatType>)) {
             T q1norm = std::sqrt(q1dot);
             T q2norm = std::sqrt(q2dot);
             return interpolate(

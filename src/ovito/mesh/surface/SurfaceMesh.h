@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,7 +91,8 @@ public:
     }
 
     /// Determines which spatial region contains the given location in space.
-    std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON) const;
+    std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location,
+                                                                  FloatType epsilon = Ovito::epsilon_v<FloatType>) const;
 
 private:
 

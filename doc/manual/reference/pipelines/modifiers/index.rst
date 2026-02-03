@@ -17,10 +17,11 @@ combine several modifiers to accomplish more complex tasks.
   Analysis
   ================================================================= ==========================================================
   :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
-  :ref:`particles.modifiers.assign_bond_order` |ovito-pro|          Assign bond order to existing bonds.
-  :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
+  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assign bond order to existing bonds.
+  :ref:`particles.modifiers.bond_angle_distribution` |ovito-pro|    Computes bond angle distributions.
+  :ref:`particles.modifiers.bond_length_distribution` |ovito-pro|   Computes bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
-  :ref:`particles.modifiers.coordination_analysis`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
+  :ref:`particles.modifiers.radial_distribution_function`           Determines the number of neighbors of each particle and computes the radial distribution function for the system.
   :ref:`particles.modifiers.difference_between_frames` |ovito-pro|  Calculates differences (delta values) between two simulation trajectory frames.
   :ref:`particles.modifiers.dislocation_analysis`                   Identifies dislocation defects in a crystal.
   :ref:`particles.modifiers.displacement_vectors`                   Calculates the displacements of particles based on an initial and a deformed configuration.
@@ -91,6 +92,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.expression_select`               Selects particles and other elements based on a user-defined criterion.
   :ref:`particles.modifiers.manual_selection`                Lets you select individual particles or bonds with the mouse.
   :ref:`particles.modifiers.invert_selection`                Inverts the selection state of each element.
+  :ref:`particles.modifiers.select_overlapping_particles`    Selects particles that are too close to each other.
   :ref:`particles.modifiers.select_particle_type`            Selects all elements of a particular type, e.g. all atoms of a chemical species.
   ========================================================== ==========================================================
 
@@ -148,7 +150,8 @@ combine several modifiers to accomplish more complex tasks.
   ambient_occlusion
   assign_color
   atomic_strain
-  bond_analysis
+  bond_angle_distribution
+  bond_length_distribution
   bond_order
   calculate_local_entropy
   centrosymmetry
@@ -161,7 +164,6 @@ combine several modifiers to accomplish more complex tasks.
   common_neighbor_analysis
   compute_property
   construct_surface_mesh
-  coordination_analysis
   coordination_polyhedra
   create_bonds
   create_isosurface
@@ -186,15 +188,17 @@ combine several modifiers to accomplish more complex tasks.
   manual_selection
   polyhedral_template_matching
   python_script
+  radial_distribution_function
+  reduce_property
   render_lammps_regions
   show_periodic_images
   scatter_plot
+  select_overlapping_particles
   select_particle_type
   shrink_wrap_box
   slice
   smooth_trajectory
   bin_and_reduce
-  reduce_property
   correlation_function
   structure_factor
   time_averaging

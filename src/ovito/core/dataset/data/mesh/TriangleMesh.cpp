@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -154,7 +154,7 @@ void TriangleMesh::saveToStream(ObjectSaveStream& stream, bool excludeRecomputab
     stream << _vertexColors;
 
     // Note: Current file format does not store pseudo-color values.
-    // This may be added in the future, when there is a usecase for it.
+    // This may be added in the future, when there is a use case for it.
     OVITO_ASSERT(!_hasVertexPseudoColors);
     OVITO_ASSERT(!_hasFacePseudoColors);
 
@@ -271,8 +271,7 @@ bool TriangleMesh::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, 
         Vector3 h = ray.dir.cross(e2);
         FloatType a = e1.dot(h);
 
-        if(std::fabs(a) < FLOATTYPE_EPSILON)
-            continue;
+        if(std::fabs(a) < Ovito::epsilon_v<FloatType>) continue;
 
         FloatType f = 1 / a;
         Vector3 s = ray.base - v0;
@@ -289,15 +288,14 @@ bool TriangleMesh::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, 
 
         FloatType tt = f * e2.dot(q);
 
-        if(tt < FLOATTYPE_EPSILON)
-            continue;
+        if(tt < Ovito::epsilon_v<FloatType>) continue;
 
         if(tt >= bestT)
             continue;
 
         // Compute face normal.
         Vector3 faceNormal = e1.cross(e2);
-        if(faceNormal.isZero(FLOATTYPE_EPSILON)) continue;
+        if(faceNormal.isZero(Ovito::epsilon_v<FloatType>)) continue;
 
         // Do backface culling.
         if(backfaceCull && faceNormal.dot(ray.dir) >= 0)
@@ -393,7 +391,8 @@ void TriangleMesh::clipAtPlane(const Plane3& plane)
             // Check if edge intersects plane.
             FloatType z1 = plane.pointDistance(v1);
             FloatType z2 = plane.pointDistance(v2);
-            if((z1 < FLOATTYPE_EPSILON && z2 > FLOATTYPE_EPSILON) || (z2 < FLOATTYPE_EPSILON && z1 > FLOATTYPE_EPSILON)) {
+            if((z1 < Ovito::epsilon_v<FloatType> && z2 > Ovito::epsilon_v<FloatType>) ||
+               (z2 < FLOATTYPE_EPSILON && z1 > FLOATTYPE_EPSILON)) {
                 if(newVertexMapping.find(vindices) == newVertexMapping.end()) {
                     FloatType t = z1 / (z1 - z2);
                     Point3 intersection = v1 + (v2 - v1) * t;

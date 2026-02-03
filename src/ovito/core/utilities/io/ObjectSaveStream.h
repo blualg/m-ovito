@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,10 +29,10 @@
 namespace Ovito {
 
 /**
- * \brief An output stream that can serialize an OvitoObject graph a file.
+ * \brief An output stream that can serialize a RefTarget object graph a file.
  *
  * This class is used to write OVITO state files, which are on-disk representations of
- * OvitoObject graphs. The object graph can be read back from the file using ObjectLoadStream.
+ * object reference graphs. The object graph can be read back from the file using ObjectLoadStream.
  *
  * \note All objects written to a stream must belong to the same DataSet.
  *
@@ -46,8 +46,9 @@ public:
 
     /// \brief Initializes the ObjectSaveStream.
     /// \param destination The Qt data stream to which data is written. This stream must support random access.
+    /// \param saveOnlyModifiedData If true, only objects and parameters that differ from their reference state are saved to the stream to minimize file size.
     /// \throw Exception if the source stream does not support random access, or if an I/O error occurs.
-    explicit ObjectSaveStream(QDataStream& destination) : SaveStream(destination) {}
+    explicit ObjectSaveStream(QDataStream& destination, bool saveOnlyModifiedData = false) : SaveStream(destination), _saveOnlyModifiedData(saveOnlyModifiedData) {}
 
     /// Calls close() to close the ObjectSaveStream.
     virtual ~ObjectSaveStream();
@@ -56,24 +57,93 @@ public:
     /// \throw Exception if an I/O error has occurred.
     virtual void close() override;
 
-    /// \brief Serializes an object and writes its data to the output stream.
+    /// \brief Registers an object class to be written to the stream.
+    /// \return The unique serialization ID assigned to the class.
+    quint32 registerObjectClass(OvitoClassPtr clazz);
+
+    /// \brief Registers an object reference for serialization.
+    quint32 registerObjectReference(const RefTarget* source, const RefTarget* target, bool excludeRecomputableData = false, const RefTarget* deltaReferenceObject = nullptr);
+
+    /// \brief Registers a weak object reference for serialization.
+    quint32 registerWeakObjectReference(const RefTarget* target);
+
+    /// \brief Returns the unique serialization ID for a previously registered object instance.
+    quint32 lookupObjectInstance(const RefTarget* object) const;
+
+    /// \brief Serializes an object to the output stream.
     /// \throw Exception if an I/O error has occurred.
     /// \sa ObjectLoadStream::loadObject()
-    void saveObject(const OvitoObject* object, bool excludeRecomputableData = false);
+    void saveObject(const RefTarget* object);
+
+    /// \brief Serializes a weak reference to an object and writes it to the output stream.
+    /// \throw Exception if an I/O error has occurred.
+    /// \sa ObjectLoadStream::loadWeakObjectReference()
+    void saveWeakObjectReference(const RefTarget* object);
 
 private:
 
-    /// A data record kept for each object written to the stream.
+    /// A data record kept for each object to be written to the stream.
     struct ObjectRecord {
-        const OvitoObject* object;
+        OORef<const RefTarget> object;
+        OORef<const RefTarget> deltaReferenceObject;
         bool excludeRecomputableData;
+        bool isWeaklyReferenced;
+        bool isReusedSubobject;
+        bool maybeSkipped;
+        std::vector<OORef<const RefTarget>> references;
+        quint32 classId;
+        qint64 byteOffset;
     };
 
-    /// Contains all objects stored so far and their IDs.
-    std::unordered_map<const OvitoObject*, quint32> _objectMap;
+    /// Clears the excludeRecomputableData flag in the given object record and all its sub-objects.
+    void clearExcludeRecomputableDataFlag(ObjectRecord& record);
 
-    /// Contains all objects ordered by ID.
+    /// If an object has been using a custom delta reference object, replace it and all its sub-objects
+    /// by default-constructed instances.
+    void assignDefaultConstructedReferenceObject(ObjectRecord& record);
+
+    /// Determines whether the subtree rooted at the given object can be completely
+    /// skipped from serialization.
+    bool checkSkippableSubTree(ObjectRecord& objectRecord);
+
+    /// Serializes the values of the current object's parameter fields.
+    /// This method is called from RefTarget::saveToStream().
+    void serializeParameterFieldValues(const RefTarget* object);
+
+    /// Registers a parameter field of a class for serialization.
+    quint32 registerParameterField(const PropertyFieldDescriptor* field);
+
+    /// Writes the metadata associated with a parameter field to the stream.
+    void serializeParameterField(const PropertyFieldDescriptor* field);
+
+    /// Writes the information associated with an object class to the stream.
+    void serializeObjectClass(OvitoClassPtr clazz);
+
+    /// All objects registered for serialization and their corresponding numeric IDs.
+    std::unordered_map<const RefTarget*, quint32> _objectMap;
+
+    /// All objects registered for serialization ordered by numeric ID.
     std::vector<ObjectRecord> _objects;
+
+    /// All object classes that have been written to the stream so far and their corresponding numeric IDs.
+    std::unordered_map<OvitoClassPtr, quint32> _classMap;
+
+    /// All object classes that have been written to the stream.
+    std::vector<OvitoClassPtr> _classes;
+
+    /// All parameter fields that have been written to the stream so far and their corresponding numeric IDs.
+    std::unordered_map<const PropertyFieldDescriptor*, quint32> _fieldMap;
+
+    /// All parameter fields that have been written to the stream.
+    std::vector<const PropertyFieldDescriptor*> _fields;
+
+    /// The object object currently being saved to the stream.
+    ObjectRecord* _currentObjectRecord = nullptr;
+
+    /// If true, only objects and parameters that differ from their factory default state are saved to the stream.
+    bool _saveOnlyModifiedData = false;
+
+    friend class RefTarget; // for access to serializeParameterFieldValues()
 };
 
 }   // End of namespace

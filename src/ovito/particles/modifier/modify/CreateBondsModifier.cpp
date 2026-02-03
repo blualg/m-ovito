@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CreateBondsModifier);
 OVITO_CLASSINFO(CreateBondsModifier, "DisplayName", "Create bonds");
-OVITO_CLASSINFO(CreateBondsModifier, "Description", "Creates bonds between particles.");
+OVITO_CLASSINFO(CreateBondsModifier, "Description", "Create bonds between pairs of particles.");
 OVITO_CLASSINFO(CreateBondsModifier, "ModifierCategory", "Visualization");
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
@@ -378,8 +378,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                 ParticleType::ChemicalElement atomicNumber = ParticleType::getChemicalElementFromSymbol(type->name());
                 if(atomicNumber == ParticleType::ChemicalElement::X) {
                     throw Exception(
-                        tr("Unknown particle type %1: Particle type names need to exactly match element symbols in the periodic table.")
-                            .arg(type->name()));
+                        tr("Unknown particle type '%1': Particle type names need to exactly match element symbols in the periodic table.")
+                            .arg(type->nameOrNumericId()));
                 }
                 std::optional<FloatType> covalentRadius = CovalentRadii::get(atomicNumber);
                 if(!covalentRadius) {

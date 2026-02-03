@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -187,14 +187,16 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the four components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    constexpr bool equals(const Vector_4& v, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Vector_4& v, T tolerance = Ovito::epsilon_v<T>) const
+    {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance && std::abs(v.w() - w()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isZero(T tolerance = Ovito::epsilon_v<T>) const
+    {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance && std::abs(w()) <= tolerance;
     }
 
@@ -233,7 +235,8 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    constexpr inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    constexpr inline void normalizeSafely(T epsilon = Ovito::epsilon_v<T>)
+    {
         T l = length();
         if(l > epsilon)
             *this /= l;

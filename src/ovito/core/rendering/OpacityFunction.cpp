@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -86,7 +86,7 @@ void OpacityFunction::freeDraw(std::span<const Point2> drawPath)
 
         // Calculate the slope of the line segment.
         FloatType deltaX = p1.x() - p0.x();
-        if(std::abs(deltaX) <= FLOATTYPE_EPSILON) continue; // Avoid division by zero
+        if(std::abs(deltaX) <= Ovito::epsilon_v<FloatType>) continue;  // Avoid division by zero
         FloatType slope = (p1.y() - p0.y()) / deltaX;
 
         // Iterate over the x-coordinates of the opacity function table

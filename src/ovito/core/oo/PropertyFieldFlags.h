@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,10 +58,14 @@ enum PropertyFieldFlag
     PROPERTY_FIELD_OPEN_SUBEDITOR               = (1<<11),
     /// Automatically create a UI to reset this property field to its default.
     PROPERTY_FIELD_RESETTABLE                   = (1<<12),
-    /// Never save the target(s) of the reference field to a state file.
-    PROPERTY_FIELD_DONT_SAVE_TARGET             = (1<<13),
+    /// Do not save the property field value or reference target to state files.
+    PROPERTY_FIELD_DONT_SERIALIZE               = (1<<13),
     /// Prevents the property field from being registered with the class it is defined for.
+    /// This flag can be used to create temporary property fields at runtime.
     PROPERTY_FIELD_DONT_REGISTER_IN_CLASS       = (1<<14),
+    /// Indicates that the property field used to be a runtime property field in OVITO 3.14 or earlier.
+    /// This activates a special compatibility parsing mode when loading state files written by OVITO 3.14 or earlier.
+    PROPERTY_FIELD_WAS_RUNTIME_PROPERTY_FIELD   = (1<<15),
 };
 Q_DECLARE_FLAGS(PropertyFieldFlags, PropertyFieldFlag);
 

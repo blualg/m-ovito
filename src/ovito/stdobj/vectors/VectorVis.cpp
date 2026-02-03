@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -81,20 +81,6 @@ void VectorVis::initializeObject(ObjectInitializationFlags flags)
         // Create a color mapping object for pseudo-color visualization of an auxiliary property.
         setColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
-}
-
-/******************************************************************************
-* This method is called once for this object after it has been completely
-* loaded from a stream.
-******************************************************************************/
-void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
-{
-    DataVis::loadFromStreamComplete(stream);
-
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!colorMapping())
-        setColorMapping(OORef<PropertyColorMapping>::create());
 }
 
 /******************************************************************************

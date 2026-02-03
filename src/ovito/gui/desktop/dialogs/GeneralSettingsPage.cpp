@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
-#include <ovito/gui/base/mainwin/AvailableModifiersModel.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include "GeneralSettingsPage.h"
@@ -70,11 +69,6 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
             "<p>Maintain individual working directories for different types of file I/O operations.</p>"));
     layout2->addWidget(_keepDirHistory, 1, 0);
     _keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
-
-    _sortModifiersByCategory = new QCheckBox(tr("Sort list of available modifiers by category"));
-    _sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
-    layout2->addWidget(_sortModifiersByCategory, 2, 0);
-    _sortModifiersByCategory->setChecked(AvailableModifiersModel::useCategoriesGlobal());
 
     // Group "Data import":
     QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
@@ -122,7 +116,6 @@ void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     QSettings settings;
     HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
-    AvailableModifiersModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
 #if !(defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if(_enableAutomaticDarkMode->isChecked())
         settings.setValue("ui/automatic_dark_mode", true);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,7 @@ bool OwnerPropertyRef::operator<(const OwnerPropertyRef& other) const
 SaveStream& operator<<(SaveStream& stream, const OwnerPropertyRef& r)
 {
     stream.beginChunk(0x04);
-    stream << static_cast<const OvitoClassPtr&>(r.containerClass());
+    OvitoClass::serializeRTTI(stream, r.containerClass(), true);
     stream << r.name();
     stream.endChunk();
     return stream;
@@ -88,9 +88,7 @@ SaveStream& operator<<(SaveStream& stream, const OwnerPropertyRef& r)
 LoadStream& operator>>(LoadStream& stream, OwnerPropertyRef& r)
 {
     int version = stream.expectChunkRange(0x02, 2);
-    OvitoClassPtr clazz;
-    stream >> clazz;
-    r._containerClass = static_cast<PropertyContainerClassPtr>(clazz);
+    r._containerClass = static_cast<PropertyContainerClassPtr>(OvitoClass::deserializeRTTI(stream, true));
     if(version < 2) {
         int typeId;
         stream >> typeId;

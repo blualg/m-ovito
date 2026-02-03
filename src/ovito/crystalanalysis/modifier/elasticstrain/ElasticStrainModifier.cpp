@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ElasticStrainModifier);
 OVITO_CLASSINFO(ElasticStrainModifier, "DisplayName", "Elastic strain calculation");
+OVITO_CLASSINFO(ElasticStrainModifier, "Description", "Calculate atomic-level elastic strain in crystal lattices.");
 OVITO_CLASSINFO(ElasticStrainModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateDeformationGradients);

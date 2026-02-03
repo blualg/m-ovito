@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -103,9 +103,6 @@ protected:
 
     /// Computes the bounding box of the arrows.
     Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
-
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 protected:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,11 +68,6 @@ public:
 
     /// Replaces this visual element with a shared visual element by telling all dependents to update their references.
     virtual void replaceWithSharedElement(DataVis* sharedVis) const override;
-
-protected:
-
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 

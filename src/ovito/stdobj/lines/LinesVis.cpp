@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -122,10 +122,6 @@ void LinesVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     DataVis::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.5.4.
-    // Create a color mapping sub-object if it wasn't loaded from the state file.
-    if(!colorMapping()) setColorMapping(OORef<PropertyColorMapping>::create());
-
     // For backward compatibility with OVITO 3.9.x.
     if(stream.applicationMajorVersion() == 3 && stream.applicationMinorVersion() < 10) {
         setRoundedCaps(false); // Override user default setting when loading a legacy state file.
@@ -200,11 +196,11 @@ void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulati
                 isClipped = true;
                 break;
             }
-            else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
+            else if(c1 > Ovito::epsilon_v<FloatType> && c2 < -Ovito::epsilon_v<FloatType>) {
                 p1 += (p2 - p1) * (c1 / (c1 - c2));
                 t1 += (t2 - t1) * (c1 / (c1 - c2));
             }
-            else if(c1 < -FLOATTYPE_EPSILON && c2 > FLOATTYPE_EPSILON) {
+            else if(c1 < -Ovito::epsilon_v<FloatType> && c2 > Ovito::epsilon_v<FloatType>) {
                 p2 += (p1 - p2) * (c2 / (c2 - c1));
                 t2 += (t1 - t2) * (c2 / (c2 - c1));
             }
@@ -261,7 +257,7 @@ void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulati
                 Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
                 Point3 intabs = simulationCell->reducedToAbsolute(intersection);
                 if(!intabs.equals(rp1abs)) {
-                    OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
+                    OVITO_ASSERT(t2 <= FloatType(1) + Ovito::epsilon_v<FloatType>);
                     clippingFunction(rp1abs, intabs, t1, t2);
                 }
                 shiftVector[crossDim] -= crossDir;

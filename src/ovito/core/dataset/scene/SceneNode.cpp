@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_REFERENCE_FIELD(SceneNode, pipeline);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
-DEFINE_RUNTIME_PROPERTY_FIELD(SceneNode, hiddenInViewports);
+DEFINE_PROPERTY_FIELD(SceneNode, hiddenInViewports);
 DEFINE_PROPERTY_FIELD(SceneNode, sceneNodeName);
 DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
@@ -437,6 +437,19 @@ bool SceneNode::isSelected() const
 }
 
 /******************************************************************************
+* Asks the object to register internal object references that will be saved to a data stream.
+******************************************************************************/
+void SceneNode::registerObjectReferencesForSerialization(ObjectSaveStream& stream, const RefTarget* deltaReferenceObject) const
+{
+    RefTarget::registerObjectReferencesForSerialization(stream, deltaReferenceObject);
+
+    // Register list of weak references to viewports in which the node is hidden.
+    for(const auto& vpWeakRef : hiddenInViewports()) {
+        stream.registerWeakObjectReference(vpWeakRef.lock().get());
+    }
+}
+
+/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
@@ -447,7 +460,7 @@ void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableD
     // Save list of weak references to viewports in which the node is hidden.
     stream.writeSizeT(hiddenInViewports().size());
     for(const auto& vpWeakRef : hiddenInViewports()) {
-        stream.saveObject(vpWeakRef.lock().get(), excludeRecomputableData);
+        stream.saveWeakObjectReference(vpWeakRef.lock().get());
     }
     stream.endChunk();
 }
@@ -465,7 +478,7 @@ void SceneNode::loadFromStream(ObjectLoadStream& stream)
         size_t numHiddenInViewports = stream.readSizeT();
         std::vector<OOWeakRef<Viewport>> viewports;
         for(size_t i = 0; i < numHiddenInViewports; i++) {
-            if(OORef<Viewport> vp = stream.loadObject<Viewport>())
+            if(OORef<Viewport> vp = stream.loadWeakObjectReference<Viewport>())
                 viewports.push_back(std::move(vp));
         }
         setHiddenInViewports(std::move(viewports));
@@ -482,15 +495,14 @@ void SceneNode::loadFromStream(ObjectLoadStream& stream)
 * serialized property field that has been removed or changed in a newer version of OVITO.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr SceneNode::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+RefTarget::SerializedPropertyField::CustomDeserializationFunctionPtr SceneNode::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedPropertyField& field) const
 {
     // For backward compatibility with OVITO 3.11:
     if(field.definingClass == &SceneNode::OOClass() && stream.formatVersion() < 30013) {
         // The 'hiddenInViewports' list used to be a vector reference field in previous OVITO versions.
         // Now it is a simple property field holding a vector of weak references to viewports.
         if(field.identifier == "hiddenInViewports") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numHiddenInViewports;
                 stream >> numHiddenInViewports;
                 std::vector<OOWeakRef<Viewport>> viewports;
@@ -498,20 +510,18 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
                     viewports.push_back(stream.loadObject<Viewport>());
                 }
                 static_object_cast<SceneNode>(&owner)->setHiddenInViewports(std::move(viewports));
-                stream.closeChunk();
             };
         }
         // The Pipeline class has been split from the SceneNode base class in OVITO 3.12. This means we have to handle
         // the deserialization of the children field here, which used to be a list of Pipeline objects (now a list of SceneNode instances).
         else if(field.identifier == "children") {
-            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-                stream.expectChunk(0x02);
+            return [](const SerializedPropertyField& field, ObjectLoadStream& stream, RefMaker& owner) {
                 qint32 numChildren;
                 stream >> numChildren;
+                static_object_cast<SceneNode>(&owner)->_children.clear(&owner, PROPERTY_FIELD(SceneNode::children));
                 for(qint32 i = 0; i < numChildren; i++) {
                     static_object_cast<SceneNode>(&owner)->_children.insert(&owner, PROPERTY_FIELD(SceneNode::children), i, stream.loadObject<Pipeline>()->deserializationSceneNode());
                 }
-                stream.closeChunk();
             };
         }
     }

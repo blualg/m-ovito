@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -102,7 +102,7 @@ void InputColumnMapping::convertToContainerClass(PropertyContainerClassPtr newCl
 SaveStream& operator<<(SaveStream& stream, const InputColumnMapping& m)
 {
     stream.beginChunk(0x02);
-    stream << static_cast<const OvitoClassPtr&>(m.containerClass());
+    OvitoClass::serializeRTTI(stream, m.containerClass());
     stream.writeSizeT(m.size());
     for(const InputColumnInfo& col : m) {
         stream << col.property;
@@ -143,9 +143,7 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
         }
     }
     else {
-        OvitoClassPtr clazz;
-        stream >> clazz;
-        m._containerClass = static_cast<PropertyContainerClassPtr>(clazz);
+        m._containerClass = static_cast<PropertyContainerClassPtr>(OvitoClass::deserializeRTTI(stream));
         m.resize(stream.readSizeT());
         for(InputColumnInfo& col : m) {
             stream >> col.property;

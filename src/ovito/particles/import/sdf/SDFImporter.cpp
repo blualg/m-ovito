@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ bool SDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
             // Read the V2000 / V3000 token
             char tag[6];
 
-            if(sscanf(line, "%*d %*d %*d %*d %*d %*d %*d %*d %*d %5s %*n", tag) == 1) {
+            if(sscanf(line, "%*d %*d %*d %*d %*d %*d %*d %*d %*d %5s", tag) == 1) {
                 return strncmp(tag, "V2000", 5) == 0 || strncmp(tag, "V3000", 5) == 0;
             }
             else {
@@ -145,7 +145,7 @@ void SDFImporter::FrameLoader::loadFile()
     qlonglong numParticles;
     qlonglong numBonds;
     const char* line = stream.readLine();
-    if(sscanf(line, "%llu %llu %*d %*d %*d %*d %*d %*d %*d %5s%*n", &numParticles, &numBonds, tag) != 3) {
+    if(sscanf(line, "%llu %llu %*d %*d %*d %*d %*d %*d %*d %5s", &numParticles, &numBonds, tag) != 3) {
         throw Exception(tr("Invalid number of particles and bonds in line %1 of MOL/SDF file: %2")
                             .arg(stream.lineNumber())
                             .arg(stream.lineString().trimmed()));

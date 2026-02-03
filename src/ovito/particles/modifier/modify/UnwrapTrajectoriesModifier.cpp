@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -456,26 +456,33 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
 void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     ModificationNode::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x02);
-    stream << unwrappedUpToTime();
-    stream.endChunk();
-    stream.beginChunk(0x02);
-    stream.writeSizeT(unwrapRecords().size());
-    for(const auto& item : unwrapRecords()) {
-        OVITO_STATIC_ASSERT((std::is_same<qlonglong, qint64>::value));
-        stream << item.id;
-        stream << item.time;
-        stream << item.dimension;
-        stream << item.direction;
+
+    if(!excludeRecomputableData) {
+        stream.beginChunk(0x02);
+        stream << unwrappedUpToTime();
+        stream.endChunk();
+        stream.beginChunk(0x02);
+        stream.writeSizeT(unwrapRecords().size());
+        for(const auto& item : unwrapRecords()) {
+            OVITO_STATIC_ASSERT((std::is_same<qlonglong, qint64>::value));
+            stream << item.id;
+            stream << item.time;
+            stream << item.dimension;
+            stream << item.direction;
+        }
+        stream.writeSizeT(unflipRecords().size());
+        for(const auto& item : unflipRecords()) {
+            stream << item.time;
+            stream << item.flipState[0];
+            stream << item.flipState[1];
+            stream << item.flipState[2];
+        }
+        stream.endChunk();
     }
-    stream.writeSizeT(unflipRecords().size());
-    for(const auto& item : unflipRecords()) {
-        stream << item.time;
-        stream << item.flipState[0];
-        stream << item.flipState[1];
-        stream << item.flipState[2];
+    else {
+        stream.beginChunk(0x01);
+        stream.endChunk();
     }
-    stream.endChunk();
 }
 
 /******************************************************************************
@@ -484,22 +491,24 @@ void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, 
 void UnwrapTrajectoriesModificationNode::loadFromStream(ObjectLoadStream& stream)
 {
     ModificationNode::loadFromStream(stream);
-    stream.expectChunk(0x02);
-    stream >> _unwrappedUpToTime;
-    stream.closeChunk();
-    int version = stream.expectChunkRange(0x01, 1);
-    size_t numItems = stream.readSizeT();
-    _unwrapRecords.resize(numItems);
-    for(UnwrapRecord& item : _unwrapRecords) {
-        stream >> item.id >> item.time >> item.dimension >> item.direction;
-    }
-    // For backward compatibility with OVITO 3.10, which used a std::unordered_map for storing the unwrap records:
-    std::ranges::sort(_unwrapRecords, [](const UnwrapRecord& a, const UnwrapRecord& b) { return a.time < b.time; });
-    if(version >= 1) {
-        stream.readSizeT(numItems);
-        _unflipRecords.resize(numItems);
-        for(UnflipRecord& item : _unflipRecords) {
-            stream >> item.time >> item.flipState[0] >> item.flipState[1] >> item.flipState[2];
+
+    if(stream.expectChunkRange(0x01, 1) != 0) {
+        stream >> _unwrappedUpToTime;
+        stream.closeChunk();
+        int version = stream.expectChunkRange(0x01, 1);
+        size_t numItems = stream.readSizeT();
+        _unwrapRecords.resize(numItems);
+        for(UnwrapRecord& item : _unwrapRecords) {
+            stream >> item.id >> item.time >> item.dimension >> item.direction;
+        }
+        // For backward compatibility with OVITO 3.10, which used a std::unordered_map for storing the unwrap records:
+        std::ranges::sort(_unwrapRecords, [](const UnwrapRecord& a, const UnwrapRecord& b) { return a.time < b.time; });
+        if(version >= 1) {
+            stream.readSizeT(numItems);
+            _unflipRecords.resize(numItems);
+            for(UnflipRecord& item : _unflipRecords) {
+                stream >> item.time >> item.flipState[0] >> item.flipState[1] >> item.flipState[2];
+            }
         }
     }
     stream.closeChunk();

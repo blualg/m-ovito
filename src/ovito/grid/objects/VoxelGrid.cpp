@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGrid);
 OVITO_CLASSINFO(VoxelGrid, "DisplayName", "Voxel grid");
-DEFINE_RUNTIME_PROPERTY_FIELD(VoxelGrid, shape);
+DEFINE_PROPERTY_FIELD(VoxelGrid, shape);
 DEFINE_PROPERTY_FIELD(VoxelGrid, gridType);
 DEFINE_SHADOW_PROPERTY_FIELD(VoxelGrid, gridType);
 DEFINE_REFERENCE_FIELD(VoxelGrid, domain);
@@ -100,40 +100,30 @@ void VoxelGrid::initializeObject(ObjectInitializationFlags flags, const QString&
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    PropertyContainer::saveToStream(stream, excludeRecomputableData);
-
-    stream.beginChunk(0x01);
-    stream.writeSizeT(shape().size());
-    for(size_t d : shape())
-        stream.writeSizeT(d);
-    stream.endChunk();
-}
-
-/******************************************************************************
 * Loads the class' contents from the given stream.
 ******************************************************************************/
 void VoxelGrid::loadFromStream(ObjectLoadStream& stream)
 {
     PropertyContainer::loadFromStream(stream);
 
-    stream.expectChunk(0x01);
+    // For backward compatibility with OVITO 3.14.x and earlier: Load the grid shape.
+    if(stream.formatVersion() < 30016) {
+        stream.expectChunk(0x01);
 
-    size_t ndim = stream.readSizeT();
-    if(ndim != _shape.get().size())
-        throw Exception(tr("Invalid voxel grid dimensionality."));
+        size_t ndim = stream.readSizeT();
+        if(ndim != shape().size())
+            throw Exception(tr("Invalid voxel grid dimensionality."));
 
-    for(size_t& d : _shape.mutableValue())
-        stream.readSizeT(d);
+        for(size_t& d : _shape.mutableValue())
+            stream.readSizeT(d);
 
-    // If grid properties were excluded from the state file, reset grid dimensions to zero to match the current property container length.
+        stream.closeChunk();
+    }
+
+    // If grid properties were truncated in the state file, reset grid dimensions to zero
+    // to match the current property container length.
     if(elementCount() == 0)
-        _shape.mutableValue().fill(0);
-
-    stream.closeChunk();
+        setShape({0,0,0});
 }
 
 /******************************************************************************

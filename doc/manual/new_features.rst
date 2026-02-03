@@ -5,7 +5,7 @@ Changelog
 =========
 
 ----------------------------
-Version 3.15.0 (dd-mm-2025)
+Version 3.15.0 (dd-mm-2026)
 ----------------------------
 
 - Add MOL/SDF file importer
@@ -13,10 +13,16 @@ Version 3.15.0 (dd-mm-2025)
 - CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
 - mmCIF file importer: read sequence id from file into new particle property "Sequence"
 - Simulation cell and particle types can no longer be edited directly
-- New modifier: :ref:`particles.modifiers.edit_types`
-- New modifier :ref:`particles.modifiers.edit_simulation_cell`
-- New modifier :ref:`particles.modifiers.assign_bond_order`
+- Newly added modifiers:
+  * :ref:`particles.modifiers.edit_types`
+  * :ref:`particles.modifiers.edit_simulation_cell`
+  * :ref:`particles.modifiers.bond_order`
+  * :ref:`particles.modifiers.select_overlapping_particles`
+- Add "Molecule" mode to :ref:`particles.modifiers.expand_selection` modifier
+- Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
+  The old modifier will remain available for backwards compatibility.
 - Implement :ref:`particles.modifiers.assign_color` modifier for lines
+- Rename Coordination Analysis Modifier to :ref:`particles.modifiers.radial_distribution_function` - maintaining backwards compatibility
 - New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
 - New data inspector tab for :ref:`type lists <data_inspector.types>`
 - Display video duration estimate in :ref:`render settings panel <core.render_settings>`
@@ -25,9 +31,13 @@ Version 3.15.0 (dd-mm-2025)
 - Fix bug where the Find Rings modifier would report evenly sized rings in both directions
 - Reduce OVITO session state file sizes for long trajectories
 - Warn if user tries to export an empty scene to a glTF file via export_file()
-- ANARI progress refinement rendering in interactive Viewports
 - VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
+- VisRTX renderer: Support progressive refinement rendering in interactive viewports
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
+- :ref:`Import/export modifiers as text snippets <modifier_snippets>` via context menu in the pipeline editor
+- Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
+- Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
+- New modifier selector widget with improved usability and UI design
 
 .. sidebar::
 
@@ -108,7 +118,7 @@ Version 3.14.0 (21-Sep-2025)
 
   Send us your ideas and suggestions for new features or improvements in OVITO.
 
-- :ref:`particles.modifiers.coordination_analysis` modifier:
+- :ref:`particles.modifiers.radial_distribution_function` modifier:
 
   The modifier can now count the number of neighbors of different types separately, which is useful for analyzing the chemical composition of the local neighborhood. Furthermore, it allows to select other type classifications for the calculation of partial RDFs.
 
@@ -179,7 +189,7 @@ Version 3.14.0 (21-Sep-2025)
 Version 3.13.1 (08-Aug-2025)
 ----------------------------
 
-- :ref:`particles.modifiers.coordination_analysis` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the local neighborhood's chemical composition
+- :ref:`particles.modifiers.radial_distribution_function` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the local neighborhood's chemical composition
 - :ref:`LAMMPS data file reader/writer <file_formats.input.lammps_data>`: Added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, `bpm/sphere`
 - :ref:`GALAMOST file reader <file_formats.input>`: Added support for ``<force>`` and ``<virial>`` tags and graceful handling of unknown tags in the XML file
 - VTK XML file reader: Added support for reading surface meshes extracted by ParaView's `Extract Surface` filter
@@ -431,7 +441,7 @@ Version 3.11.2 (28-Nov-2024)
 ----------------------------
 
 - :ref:`particles.modifiers.affine_transformation` modifier: (pure) rotations are now applied to the ``Orientation`` property of particles if present
-- :ref:`particles.modifiers.coordination_analysis` modifier: Exclude types of unselected particles from partial RDF legend if :guilabel:`Use only selected particles` option is enabled
+- :ref:`particles.modifiers.radial_distribution_function` modifier: Exclude types of unselected particles from partial RDF legend if :guilabel:`Use only selected particles` option is enabled
 - Fixed crash when closing OVITO while :ref:`particles.modifiers.generate_trajectory_lines` modifier is still processing
 - Fixed GUI issue on Linux: Pressing enter key while focus is in a text field may toggle a parent group checkbox
 - |ovito-python| Added the :py:class:`ovito.traits.Matrix3` parameter trait type
@@ -673,7 +683,7 @@ Version 3.10.5 (17-Apr-2024)
 - Added new :ref:`standard particle property <particle-properties-list>` ``Vector Transparency``, which allows controlling the :ref:`transparency of vector glyphs <visual_elements.vectors>` on a per-particle basis
 - Fixed endless loop when trying to cancel SSH authentification dialog after opening an existing session state file
 - Fixed a bug that prevented user changes to particle type parameters in combination with the :ref:`particles.modifiers.unwrap_trajectories` modifier
-- :ref:`particles.modifiers.coordination_analysis` modifier: Lifted upper limit on the number of RDF bins
+- :ref:`particles.modifiers.radial_distribution_function` modifier: Lifted upper limit on the number of RDF bins
 - |ovito-python| Added option :py:attr:`OpenGLRenderer.order_independent_transparency <ovito.vis.OpenGLRenderer.order_independent_transparency>`
 - |ovito-python| Documented the capability of :py:func:`ovito.io.import_file` to load files from remote SSH and HTTPS servers
 - |ovito-pro| Corrected sun-sky light brightness scale of :ref:`rendering.ospray_renderer` to match old behavior (v3.10.0 regression)
@@ -1223,7 +1233,7 @@ Version 3.7.10 (09-Oct-2022)
 
 * Optimization of main window UI widgets to improve rapid animation playback at high frame rates.
 * Enhancements to the pipeline editor: Brief information display for some modifiers.
-* New right-click context menu in pipeline editor: :ref:`clone_pipeline` Added 'Copy to...' function for copying modifiers within and across pipelines.
+* New right-click context menu in pipeline editor: :ref:`clone_pipeline` Added 'Copy to pipeline...' function for copying modifiers within and across pipelines.
 * |ovito-pro| Standalone Python module: Run in headless mode by default. OVITO_GUI_MODE env variable requests :ref:`rendering.opengl_renderer` support.
 * |ovito-pro| PyPI package on Linux: Switched back to PySide6 version 6.2.4 for better backward compatibility with older Ubuntu distros.
 * |ovito-pro| Fixed loading of files opened via double click in case license validation dialog pops up.
@@ -1465,7 +1475,7 @@ Version 3.5.2 (26-May-2021)
 Version 3.5.1 (18-May-2021)
 ---------------------------
 
-* The :ref:`particles.modifiers.coordination_analysis` modifier has gained an option '*Only selected particles*', which restricts RDF calculation to a subset of particles.
+* The :ref:`particles.modifiers.radial_distribution_function` modifier has gained an option '*Only selected particles*', which restricts RDF calculation to a subset of particles.
 * The '*Generate neighbor bonds*' option of the :ref:`particles.modifiers.voronoi_analysis` modifier is now able to deal with small periodic simulation cells.
 * Fix: Wireframe line rendering issue in perspective viewports.
 * |ovito-pro| The :ref:`particles.modifiers.slice` modifier now accepts (*hkl)* Miller indices as input for defining the plane orientation. The plane position can be specified in terms of the interplanar spacing.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2025 OVITO GmbH, Germany
+//  Copyright 2026 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -522,7 +522,7 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
     bool hasP1 = false;
     for(int i = 0; i < 4; i++) {
         Ray3 edge(corners[quadVerts[i]], corners[quadVerts[(i+1)%4]]);
-        FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
+        FloatType t = plane.intersectionT(edge, Ovito::epsilon_v<FloatType>);
         if(t < 0 || t > 1)
             continue;
         if(!hasP1) {
@@ -554,7 +554,7 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
         if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
             FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
-            if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
+            if(std::abs(centerDistance) > Ovito::epsilon_v<FloatType> && distanceController())
                 distanceController()->setFloatValue(AnimationTime(0), centerDistance);
         }
     }
@@ -590,9 +590,8 @@ Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluati
                 std::vector<Point3> vertices;
                 auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
                     Ray3 edge(Point3::Origin() + b, d);
-                    FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-                    if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
-                        vertices.push_back(edge.point(t));
+                    FloatType t = plane.intersectionT(edge, Ovito::epsilon_v<FloatType>);
+                    if(t >= -Ovito::epsilon_v<FloatType> && t <= 1 + Ovito::epsilon_v<FloatType>) vertices.push_back(edge.point(t));
                 };
                 planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
                 planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(1));
