@@ -283,17 +283,17 @@ void ExpandSelectionModifier::ExpandSelectionMoleculeEngine::expandSelection(Tas
     BufferReadAccess<IdentifierIntType> moleculeIdArray(_moleculeIdProperty);
 
     // Collect all unique molecule IDs that are selected
-    std::vector<IdentifierIntType> selectedMolecules(10);
-    for(size_t i = 0; i < inputSelectionArray.size(); i++) {
-        progress.incrementValue();
-        if(inputSelectionArray[i] > 0 && std::ranges::find(selectedMolecules, moleculeIdArray[i]) == selectedMolecules.end()) {
+    std::vector<IdentifierIntType> selectedMolecules;
+    for(auto [i, selected] : Ovito::enumerate(inputSelectionArray)) {
+        progress.setValueIntermittent((qlonglong)i);
+        if(selected != 0 && std::ranges::find(selectedMolecules, moleculeIdArray[i]) == selectedMolecules.end()) {
             selectedMolecules.push_back(moleculeIdArray[i]);
         }
     }
 
     // Select all particles that have molecule IDs in the selectedMolecules list
-    for(size_t i = 0; i < inputSelectionArray.size(); i++) {
-        progress.incrementValue();
+    for(auto [i, selected] : Ovito::enumerate(inputSelectionArray)) {
+        progress.setValueIntermittent((qlonglong)i);
         if(std::ranges::find(selectedMolecules, moleculeIdArray[i]) != selectedMolecules.end()) {
             outputSelectionArray[i] = 1;
         }

@@ -66,37 +66,26 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->addWidget(bondModeSelectionUI->comboBox());
 
     // Setup stacked layout for the different parameter widgets.
-    QWidget* uniformCutoffParamsWidget = new QWidget();
-    QWidget* covalentRadiusParamsWidget = nullptr;
-    QWidget* vdwRadiiParamsWidget = new QWidget();
-    QWidget* pairCutoffParamsWidget = new QWidget();
-    if(uniformCutoffParamsWidget) layout2->addWidget(uniformCutoffParamsWidget);
-    if(covalentRadiusParamsWidget) layout2->addWidget(covalentRadiusParamsWidget);
-    if(vdwRadiiParamsWidget) layout2->addWidget(vdwRadiiParamsWidget);
-    if(pairCutoffParamsWidget) layout2->addWidget(pairCutoffParamsWidget);
+    _paramWidgets[CreateBondsModifier::UniformCutoff] = new QWidget();
+    _paramWidgets[CreateBondsModifier::VDWRadiusCutoff] = new QWidget();
+    _paramWidgets[CreateBondsModifier::PairCutoff] = new QWidget();
 
-    auto paramWidgets =
-        std::to_array({uniformCutoffParamsWidget, covalentRadiusParamsWidget, vdwRadiiParamsWidget, pairCutoffParamsWidget});
+    layout2->addWidget(_paramWidgets[CreateBondsModifier::UniformCutoff]);
+    layout2->addWidget(_paramWidgets[CreateBondsModifier::VDWRadiusCutoff]);
+    layout2->addWidget(_paramWidgets[CreateBondsModifier::PairCutoff]);
 
-    auto updateParamVisibility = [=, this](int index) {
-        for(int i = 0; i < paramWidgets.size(); ++i) {
-            if(paramWidgets[i]) paramWidgets[i]->setVisible(i == index);
-        }
-        container()->updateRolloutsLater();
-    };
-
-    // Show/hide parameters depending on the selected mode.
-    connect(bondModeSelectionUI->comboBox(), &QComboBox::currentIndexChanged, this, [=, this](int index) { updateParamVisibility(index); });
     // Set the correct list index when editor is populated.
-    connect(this, &CreateBondsModifierEditor::contentsChanged, this, [=, this]() {
+    connect(this, &CreateBondsModifierEditor::contentsChanged, this, [this]() {
         if(CreateBondsModifier* mod = static_object_cast<CreateBondsModifier>(editObject())) {
-            const int prevIndex = bondModeSelectionUI->comboBox()->currentIndex();
             const int currentIndex = (int)mod->cutoffMode();
-            bondModeSelectionUI->comboBox()->setCurrentIndex(currentIndex);
-            // The "currentIndexChanged" signal is not emitted when current index equals the previous index.
-            // Therefore we manually force the visibility update here.
-            if(prevIndex == currentIndex) {
-                updateParamVisibility(currentIndex);
+            bool visibilityChanged = false;
+            for(auto [key, widget] : _paramWidgets) {
+                const int index = (int)key;
+                visibilityChanged |= (widget->isVisible() != (currentIndex == index));
+                widget->setVisible(currentIndex == index);
+            }
+            if(visibilityChanged) {
+                container()->updateRolloutsLater();
             }
         }
     });
@@ -104,7 +93,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     int row = 0;
 
     // Uniform cutoff parameter.
-    auto* gridlayout = new QGridLayout(uniformCutoffParamsWidget);
+    auto* gridlayout = new QGridLayout(_paramWidgets[CreateBondsModifier::UniformCutoff]);
     gridlayout->setContentsMargins(0, 0, 0, 0);
     gridlayout->setColumnStretch(1, 1);
     auto* uniformCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
@@ -118,7 +107,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     // No settings
 
     // Van der Waals mode.
-    auto* vBoxLayout = new QVBoxLayout(vdwRadiiParamsWidget);
+    auto* vBoxLayout = new QVBoxLayout(_paramWidgets[CreateBondsModifier::VDWRadiusCutoff]);
     vBoxLayout->setContentsMargins(0, 0, 0, 0);
     BooleanParameterUI* skipHydrogenHydrogenBondsUI =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
@@ -134,7 +123,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     vBoxLayout->addWidget(_vdwTable);
 
     // Pair-wise cutoff mode.
-    vBoxLayout = new QVBoxLayout(pairCutoffParamsWidget);
+    vBoxLayout = new QVBoxLayout(_paramWidgets[CreateBondsModifier::PairCutoff]);
     vBoxLayout->setContentsMargins(0, 0, 0, 0);
 
     _pairCutoffTable = new QTableView();

@@ -28,7 +28,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SelectOverlappingParticlesModifier);
 OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "DisplayName", "Select overlapping atoms");
-OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "Description", "Deletes atoms that are closer than a specified distance.");
+OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "Description", "Selects particles that are very close to each other.");
 OVITO_CLASSINFO(SelectOverlappingParticlesModifier, "ModifierCategory", "Selection");
 
 DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, overlapDistance);
@@ -37,7 +37,7 @@ DEFINE_PROPERTY_FIELD(SelectOverlappingParticlesModifier, keepOne);
 
 SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, overlapDistance, "Overlap distance");
 SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, applyToSelection, "Use only selected particles");
-SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, keepOne, "On Overlap: Keep one");
+SET_PROPERTY_FIELD_LABEL(SelectOverlappingParticlesModifier, keepOne, "Keep one particle unselected on overlap");
 
 /******************************************************************************
  * Asks the modifier whether it can be applied to the given input data.
@@ -76,57 +76,58 @@ Future<PipelineFlowState> SelectOverlappingParticlesModifier::evaluateModifier(c
 
     // Output mask / selection property
     Particles* mutableParticles = state_l.expectMutableObject<Particles>();
-    Property* mutableSelectionProperty = mutableParticles->createProperty(Particles::SelectionProperty);
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> mutableSelectionPropertyAcc(mutableSelectionProperty);
-    std::ranges::fill(mutableSelectionPropertyAcc, 0);
+    Property* outputSelectionProperty = mutableParticles->createProperty(Particles::SelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelection(outputSelectionProperty);
+    std::ranges::fill(outputSelection, 0);
 
     BufferReadAccess<SelectionIntType> selectionAcc(selProperty);
 
     CutoffNeighborFinder neighborFinder(
         overlapDistance_l, particles->expectProperty(Particles::PositionProperty), state_l.getObject<SimulationCell>(), selProperty);
 
-    std::vector<size_t> neighs(5);
+    std::vector<size_t> neighs;
 
     std::optional<std::minstd_rand> rng;
     if(keepOne_l) {
         rng.emplace(1323);
     }
 
-    progress.setMaximum(particles->elementCount());
+    progress.setMaximum((qlonglong)particles->elementCount());
     for(size_t particleIndex = 0; particleIndex < particles->elementCount(); particleIndex++) {
-        progress.incrementValue();
+        progress.setValueIntermittent((qlonglong)particleIndex);
 
         // Skip particles that are not included in the analysis.
         if(selectionAcc && selectionAcc[particleIndex] == 0) continue;
         // Skip particles that have already been marked for deletion.
-        if(mutableSelectionPropertyAcc[particleIndex] != 0) continue;
+        if(outputSelection[particleIndex] != 0) continue;
 
         neighs.clear();
         neighs.emplace_back(particleIndex);
         for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next()) {
             const size_t neighIndex = neighQuery.current();
-            if(mutableSelectionPropertyAcc[neighIndex] == 0) {
+            if(outputSelection[neighIndex] == 0) {
                 neighs.emplace_back(neighIndex);
             }
         }
         if(keepOne_l) {
             OVITO_ASSERT(rng.has_value());
-            std::ranges::shuffle(neighs, *rng);
-            neighs.pop_back();
-            for(size_t neigh : neighs) {
-                mutableSelectionPropertyAcc[neigh] = 1;
+            if(neighs.size() > 1) {
+                const size_t keep = neighs[std::uniform_int_distribution<size_t>(0, neighs.size() - 1)(*rng)];
+                for(const size_t idx : neighs) {
+                    outputSelection[idx] = (idx == keep) ? 0 : 1;
+                }
             }
         }
         else {
             if(neighs.size() > 1) {
                 for(size_t neigh : neighs) {
-                    mutableSelectionPropertyAcc[neigh] = 1;
+                    outputSelection[neigh] = 1;
                 }
             }
         }
     }
-    mutableSelectionPropertyAcc.reset();
-    const size_t selectedCount = mutableSelectionProperty->nonzeroCount();
+    outputSelection.reset();
+    const size_t selectedCount = outputSelectionProperty->nonzeroCount();
     state_l.addAttribute(
         QStringLiteral("SelectOverlappingParticles.count"), QVariant::fromValue(selectedCount), request_l.modificationNode());
     state_l.setStatus(PipelineStatus(tr("%1 out of %2 elements selected (%3%)")
