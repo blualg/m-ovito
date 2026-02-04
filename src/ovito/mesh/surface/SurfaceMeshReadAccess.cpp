@@ -337,7 +337,7 @@ bool SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, const boo
     } callbackData{this, outputMesh, originalFaceMap, faceNormals};
 
     // Register an error handler callback.
-    gluTessCallback(tess.get(), GLU_TESS_ERROR_DATA, (_GLUfuncptr)(void(*)(int, void*))[](int errnum, void* polygon_data) {
+    gluTessCallback(tess.get(), GLU_TESS_ERROR_DATA, (_GLUfuncptr)+[](int errnum, void* polygon_data) { // Note: The + implicitly triggers conversion of lambda to function pointer
         GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
         if(errnum != GLU_TESS_NEED_COMBINE_CALLBACK)
             qWarning() << "WARNING: Could not tessellate surface mesh face - error code" << errnum;
@@ -345,19 +345,19 @@ bool SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, const boo
     });
 
     // Register the begin callback, which is called at the beginning of each new primitive.
-    gluTessCallback(tess.get(), GLU_TESS_BEGIN, (_GLUfuncptr)(void(*)(int))[](int type) {
+    gluTessCallback(tess.get(), GLU_TESS_BEGIN, (_GLUfuncptr)+[](int type) {
         OVITO_ASSERT(type == GL_TRIANGLES); // Must always be individual triangles because we have set a GLU_TESS_EDGE_FLAG callback.
     });
 
     // Register the edge flag callback, which is called to indicate whether the next edge is visible or not.
-    gluTessCallback(tess.get(), GLU_TESS_EDGE_FLAG_DATA, (_GLUfuncptr)(void(*)(bool, void*))[](bool flag, void* polygon_data) {
+    gluTessCallback(tess.get(), GLU_TESS_EDGE_FLAG_DATA, (_GLUfuncptr)+[](bool flag, void* polygon_data) {
         GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
         helper->edgeFlag = flag;
     });
 
 #if 0
     // Register the combine callback, which is called to create new vertices.
-    gluTessCallback(tess.get(), GLU_TESS_COMBINE_DATA, (_GLUfuncptr)(void(*)(double*, void**, float*, void**, void*))[](double coords[3], void* vertex_data[4], float weight[4], void** outData, void* polygon_data) {
+    gluTessCallback(tess.get(), GLU_TESS_COMBINE_DATA, (_GLUfuncptr)+[](double coords[3], void* vertex_data[4], float weight[4], void** outData, void* polygon_data) {
         GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
         qDebug() << "Tessellator combine callback called to create new vertex at" << coords[0] << coords[1] << coords[2];
 
@@ -379,7 +379,7 @@ bool SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, const boo
 #endif
 
     // Register the vertex callback, which is called for each vertex of the tessellated output.
-    gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, (_GLUfuncptr)(void(*)(void*,void*))[](void* vertex_data, void* polygon_data) {
+    gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, (_GLUfuncptr)+[](void* vertex_data, void* polygon_data) {
         GLUCallbackHelper* helper = static_cast<GLUCallbackHelper*>(polygon_data);
         intptr_t edge_index = reinterpret_cast<intptr_t>(vertex_data);
         OVITO_ASSERT(edge_index < 0 || edge_index < helper->self->edgeCount());
