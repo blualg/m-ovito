@@ -153,9 +153,9 @@ void MercuryDPMImporter::FrameLoader::loadFile()
     columnMapping.mapColumnToStandardProperty(4, Particles::VelocityProperty, 1);
     columnMapping.mapColumnToStandardProperty(5, Particles::VelocityProperty, 2);
     columnMapping.mapColumnToStandardProperty(6, Particles::RadiusProperty);
-    columnMapping.mapColumnToUserProperty(7, QStringLiteral("Angular Position"), Property::FloatDefault, 0);
-    columnMapping.mapColumnToUserProperty(8, QStringLiteral("Angular Position"), Property::FloatDefault, 1);
-    columnMapping.mapColumnToUserProperty(9, QStringLiteral("Angular Position"), Property::FloatDefault, 2);
+    columnMapping.mapColumnToStandardProperty(7, Particles::OrientationProperty, 0); // Note: Euler angles are temporarily stored in the Orientation property. Will be converted to quaternions below.
+    columnMapping.mapColumnToStandardProperty(8, Particles::OrientationProperty, 1);
+    columnMapping.mapColumnToStandardProperty(9, Particles::OrientationProperty, 2);
     columnMapping.mapColumnToStandardProperty(10, Particles::AngularVelocityProperty, 0);
     columnMapping.mapColumnToStandardProperty(11, Particles::AngularVelocityProperty, 1);
     columnMapping.mapColumnToStandardProperty(12, Particles::AngularVelocityProperty, 2);
@@ -201,6 +201,28 @@ void MercuryDPMImporter::FrameLoader::loadFile()
             return typeId;
         });
         typeProperty->sortElementTypesById();
+    }
+
+    // Convert Euler angles into quaternions.
+    if(BufferWriteAccess<QuaternionG, access_mode::read_write> orientations = particles()->expectMutableProperty(Particles::OrientationProperty)) {
+        for(QuaternionG& q : orientations) {
+            auto alpha = q.x();
+            auto beta = q.y();
+            auto gamma = q.z();
+            // Compute quaternion from ZYX Euler angles (gamma = rot. around Z, beta = rot. around Y, alpha = rot. around X).
+            // See eul2quat([gamma, beta, alpha], 'ZYX') in MATLAB documentation.
+            auto c1 = std::cos(gamma/2);
+            auto s1 = std::sin(gamma/2);
+            auto c2 = std::cos(beta/2);
+            auto s2 = std::sin(beta/2);
+            auto c3 = std::cos(alpha/2);
+            auto s3 = std::sin(alpha/2);
+            q.w() = c1 * c2 * c3 + s1 * s2 * s3;
+            q.x() = c1 * c2 * s3 - s1 * s2 * c3;
+            q.y() = c1 * s2 * c3 + s1 * c2 * s3;
+            q.z() = s1 * c2 * c3 - c1 * s2 * s3;
+        }
+        this_task::throwIfCanceled();
     }
 
     // Call base implementation to finalize the loaded particle data.
