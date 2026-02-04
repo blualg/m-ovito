@@ -42,9 +42,6 @@ namespace Ovito {
  * the requested number of nearest neighbors (ordered by increasing distance from the central particle).
  * Whether CutoffNeighborFinder or NearestNeighborFinder is the right choice depends on the application.
  *
- * The NearestNeighborFinder class must be initialized by a call to prepare(). This function sorts all input particles
- * in a binary search for fast nearest neighbor queries.
- *
  * After the NearestNeighborFinder has been initialized, one can find the nearest neighbors of some central
  * particle by constructing an instance of the NearestNeighborFinder::Query class. This is a light-weight class generates
  * the sorted list of nearest neighbors of a particle.
@@ -180,6 +177,18 @@ public:
 
         /// Returns the neighbor list.
         const BoundedPriorityQueue<Neighbor, std::less<Neighbor>, MAX_NEIGHBORS_LIMIT>& results() const { return queue; }
+
+        /// Applies a transformation to the neighbor vectors and resorts the neighbor list based on distance.
+        void applyDeformation(const Matrix3& tm) {
+            for(Neighbor& n : queue) {
+                n.delta = tm * n.delta;
+                n.distanceSq = n.delta.squaredLength();
+            }
+            queue.sort();
+        }
+
+        /// Returns a reference to the underlying NearestNeighborFinder object.
+        const NearestNeighborFinder& finder() const { return t; }
 
     private:
 

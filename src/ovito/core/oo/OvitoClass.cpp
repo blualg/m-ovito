@@ -201,12 +201,8 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool isNonessentia
                 if(OvitoClassPtr clazz = otherPlugin->findClass(className))
                     return clazz;
             }
-            if(!isNonessentialType) {
-                if(!pluginId.isEmpty())
-                    throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
-                else
-                    throw Exception(OvitoObject::tr("Required class '%1' not found in this program version.").arg(className));
-            }
+            if(!isNonessentialType)
+                throw Exception(OvitoObject::tr("Required class '%1' not found in this program version.").arg(className));
             else
                 return nullptr;
         }

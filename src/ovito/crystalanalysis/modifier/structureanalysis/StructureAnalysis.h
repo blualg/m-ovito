@@ -26,6 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
+#include <ovito/particles/util/NearestNeighborFinder.h>
 
 namespace Ovito {
 
@@ -101,7 +102,8 @@ public:
             ClusterGraph* clusterGraph,
             PropertyPtr outputStructures,
             std::vector<Matrix3> preferredCrystalOrientations = std::vector<Matrix3>(),
-            bool identifyPlanarDefects = true);
+            bool identifyPlanarDefects = true,
+            bool compensateForLowCARatio = false);
 
     /// Identifies the atomic structures.
     void identifyStructures(TaskProgress& progress);
@@ -202,7 +204,7 @@ public:
 private:
 
     /// Determines the coordination structure of a particle.
-    void determineLocalStructure(NearestNeighborFinder& neighList, size_t particleIndex);
+    bool determineLocalStructure(const NearestNeighborFinder::Query<MAX_NEIGHBORS>& neighQuery, size_t particleIndex, CoordinationStructureType restrictToStructure = COORD_OTHER);
 
     /// Prepares the list of coordination and lattice structures.
     static void initializeListOfStructures();
@@ -210,6 +212,7 @@ private:
 private:
 
     const LatticeStructureType _inputCrystalType;
+    bool _compensateForLowCARatio;
     bool _identifyPlanarDefects;
     const ConstPropertyPtr _positions;
     const PropertyPtr _structureTypes;

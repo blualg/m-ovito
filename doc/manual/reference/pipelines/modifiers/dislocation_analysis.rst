@@ -10,22 +10,22 @@ Dislocation analysis (DXA)
 This analysis modifier identifies all dislocation line defects in an atomistic crystal, determines their Burgers vectors,
 and outputs a line representation of the dislocations. The modifier implements the so-called
 *Dislocation Extraction Algorithm* (DXA), a computational method developed by the author of OVITO.
-The original DXA method has been described in the paper
+The first DXA method has been described in the paper
 
   | `A. Stukowski and K. Albe <http://iopscience.iop.org/0965-0393/18/8/085001/>`__.
   | `Modelling Simul. Mater. Sci. Eng. 18, 085001 (2010) <http://iopscience.iop.org/0965-0393/18/8/085001/>`__
 
-The current implementation in OVITO follows a newer, more general approach, which has been published in a follow-up paper:
+The current implementation found in OVITO ("DXA 1.0") follows a newer, more general approach, which has been published in a follow-up paper:
 
   | `A. Stukowski, V.V. Bulatov and A. Arsenlis <http://dx.doi.org/10.1088/0965-0393/20/8/085007>`__.
   | `Modelling Simul. Mater. Sci. Eng. 20, 085007 (2012) <http://dx.doi.org/10.1088/0965-0393/20/8/085007>`__
 
 Please cite the latter reference when publishing dislocation analysis results. A short overview on how the DXA works can be found toward the end of the page.
 
-The DXA transforms the original atomistic representation of a dislocated crystal into a line-based representation
-of the dislocation network. It determines the Burgers vector of each dislocation
+The DXA transforms the original atomistic crystal model into a line-based representation
+of the dislocation defects. It determines the Burgers vector of each dislocation
 and identifies dislocation junctions. The algorithm can recognize partial dislocations and also
-certain secondary grain boundary dislocations (e.g. twinning dislocations in FCC).
+certain secondary grain boundary dislocations, e.g. twinning dislocations in FCC.
 
 .. figure:: /images/modifiers/dislocation_analysis_example_input.png
   :figwidth: 25%
@@ -70,6 +70,16 @@ Input crystal type
   predefined families are assigned to the category "Other". Currently, the list of dislocation classes is hard-coded
   and cannot be changed by the user. Please contact the developers if you think that a new dislocation class should be
   added for a particular crystal type.
+
+Low c/a ratio
+  This option enable special treatment of hexagonal close-packed (HCP) structures with a low c/a ratio,
+  e.g., tungsten carbide. In such crystals, the common neighbor analysis (CNA) method fails to identify the correct structure type,
+  so the DXA needs to stretch the crystal lattice in the c-direction to compensate for the low c/a ratio.
+  Enabling this option should increase the recognition rate of HCP atoms in such structures
+  (higher value for the ``DislocationAnalysis.counts.HCP`` :ref:`output attribute <usage.global_attributes>`) and
+  thus improve the dislocation identification.
+
+  .. versionadded:: 3.15.0
 
 Trial circuit length
   This sets the maximum length of trial Burgers circuits, which are constructed
@@ -118,12 +128,12 @@ Mark dislocation core atoms |ovito-pro|
 
   .. versionadded:: 3.11.0
 
-Output interface mesh
+Output interface mesh (for debugging)
   Tells the analysis modifier to display the so-called interface mesh, a closed manifold which separates
   the good crystal region from the bad crystal region. The interface mesh is normally not of interest and
   this option exists only for debugging purposes.
 
-Generate perfect dislocations
+Perfect dislocations, no partials
   Restricts the identification to perfect dislocations. Normally, the DXA tries to identify
   partial dislocations (in FCC, HCP and diamond lattices). This option turns the identification
   of stacking faults, partial dislocations and also twinning dislocations off. As a result, the network produced by DXA will consist of perfect

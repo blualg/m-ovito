@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/concurrent/Task.h>
@@ -64,10 +63,12 @@ StructureAnalysis::StructureAnalysis(
         ConstPropertyPtr particleSelection,
         ClusterGraph* clusterGraph,
         PropertyPtr outputStructures, std::vector<Matrix3> preferredCrystalOrientations,
-        bool identifyPlanarDefects) :
+        bool identifyPlanarDefects,
+        bool compensateForLowCARatio) :
     _positions(positions),
     _simCell(simCell),
     _inputCrystalType(inputCrystalType),
+    _compensateForLowCARatio(compensateForLowCARatio),
     _structureTypes(std::move(outputStructures)),
     _structureTypesArray(_structureTypes),
     _particleSelection(std::move(particleSelection)),
@@ -457,38 +458,128 @@ void StructureAnalysis::initializeListOfStructures()
 }
 
 /******************************************************************************
+* Estimate the c-axis direction from 6 neighbor vectors that belong to the
+* top and bottom triangles in a non-ideal HCP lattice (e.g., tungsten carbide).
+* Uses maximum centroid separation as the splitting criterion.
+* Additionally, the function estimates the c/a ratio of the crystal.
+******************************************************************************/
+static std::pair<Vector3, FloatType> estimate_c_axis_and_ratio_from_6(const std::array<Vector3, 6>& vectors)
+{
+    FloatType bestDistanceSq = 0;
+    Vector3 best_caxis;
+    FloatType best_caRatio = 0;
+
+    // Try all combinations of 3+3 splits.
+    for(int a = 0; a < 4; ++a) {
+        for(int b = a+1; b < 5; ++b) {
+            for(int c = b+1; c < 6; ++c) {
+                std::array<int, 3> group1 = { a, b, c };
+                std::array<int, 3> group2;
+
+                int index = 0;
+                for(int i = 0; i < 6; ++i) {
+                    if(i != a && i != b && i != c)
+                        group2[index++] = i;
+                }
+
+                const Vector3 center1 = vectors[group1[0]] + vectors[group1[1]] + vectors[group1[2]];
+                const Vector3 center2 = vectors[group2[0]] + vectors[group2[1]] + vectors[group2[2]];
+                const Vector3 delta = center1 - center2;
+                FloatType distSq = delta.squaredLength();
+
+                if(distSq > bestDistanceSq) {
+                    bestDistanceSq = distSq;
+                    best_caxis = delta.normalized();
+                    const Vector3 proj1_top = vectors[group1[0]] - vectors[group1[0]].dot(best_caxis) * best_caxis;
+                    const Vector3 proj2_top = vectors[group1[1]] - vectors[group1[1]].dot(best_caxis) * best_caxis;
+                    const Vector3 proj3_top = vectors[group1[2]] - vectors[group1[2]].dot(best_caxis) * best_caxis;
+                    const Vector3 proj1_bot = vectors[group2[0]] - vectors[group2[0]].dot(best_caxis) * best_caxis;
+                    const Vector3 proj2_bot = vectors[group2[1]] - vectors[group2[1]].dot(best_caxis) * best_caxis;
+                    const Vector3 proj3_bot = vectors[group2[2]] - vectors[group2[2]].dot(best_caxis) * best_caxis;
+                    FloatType c = delta.length() / 3;
+                    FloatType a = (proj1_top - proj2_top).length() + (proj2_top - proj3_top).length() + (proj3_top - proj1_top).length() + (proj1_bot - proj2_bot).length() + (proj2_bot - proj3_bot).length() + (proj3_bot - proj1_bot).length();
+                    best_caRatio = c / (a / 6);
+                }
+            }
+        }
+    }
+
+    return { best_caxis.normalized(), best_caRatio };
+}
+
+/******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
 void StructureAnalysis::identifyStructures(TaskProgress& progress)
 {
-    // Prepare the neighbor list.
+    // Number of nearest neighbors we are interested in.
     int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
+
+    // Special case: hcp with low c/a ratio, where the neighbor shell structure is changed.
+    if(_compensateForLowCARatio) {
+        OVITO_ASSERT(maxNeighborListSize == 13);
+        maxNeighborListSize = 14;
+    }
+
+    // Prepare the neighbor list.
     NearestNeighborFinder neighFinder(maxNeighborListSize, positions(), cell(), _particleSelection.buffer());
 
     // Identify local structure around each particle.
     _maximumNeighborDistance = 0;
 
-    parallelFor(positions()->size(), 1024, progress, [this, &neighFinder](size_t index) {
-        determineLocalStructure(neighFinder, index);
+    parallelFor(positions()->size(), 1024, progress, [this, &neighFinder](size_t particleIndex) {
+        OVITO_ASSERT(_structureTypesArray[particleIndex] == COORD_OTHER);
+
+        // Skip atoms that are not included in the analysis.
+        if(_particleSelection && _particleSelection[particleIndex] == 0)
+            return;
+
+        // Construct local neighbor list builder.
+        NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery(neighFinder);
+
+        // Find N nearest neighbors of current atom.
+        neighQuery.findNeighbors(particleIndex);
+
+        // Perform extended CNA to classify local structure and map neighbors.
+        if(!determineLocalStructure(neighQuery, particleIndex)) {
+
+            // Special handling of HCP crystals with non-ideal c/a ratio after a first recognition attempt based on the standard a-CNA has failed:
+            // Try to apply a uniaxial deformation along the estimated c-axis to the neighbor vectors
+            // to obtain a configuration that has a nearly ideal c/a ratio. Then retry to structure identification.
+            if(_inputCrystalType == LATTICE_HCP && _compensateForLowCARatio) {
+                // Find the c-axis direction from the 6 nearest neighbor vectors.
+                // In a low c/a ratio hcp crystal, the 6 nearest neighbors are
+                // two triplets of atoms forming the top and bottom triangles above and below the basal plane.
+                // The c-axis is the vector connecting the centroids of these two triangles.
+                std::array<Vector3, 6> vectors;
+                for(int n = 0; n < 6; n++)
+                    vectors[n] = neighQuery.results()[n].delta;
+                const auto [c_axis, caRatio] = estimate_c_axis_and_ratio_from_6(vectors); // Estimate c-axis direction (unit vector).
+
+                // Determine the uniaxial deformation that maps the crystal to an ideal hcp lattice.
+                FloatType stretch = std::sqrt(8.0/3.0) / caRatio - 1;
+                Matrix3 stretchMatrix = Matrix3::Identity();
+                for(size_t i = 0; i < 3; ++i)
+                    for(size_t j = 0; j < 3; ++j)
+                        stretchMatrix(i,j) += stretch * c_axis[i] * c_axis[j];
+
+                // Apply the deformation to the neighbor vectors to obtain a crystal with a nearly ideal c/a ratio.
+                neighQuery.applyDeformation(stretchMatrix);
+
+                // Retry the CNA identification procedure with the new neighbor vectors.
+                determineLocalStructure(neighQuery, particleIndex, COORD_HCP);
+            }
+        }
     });
 }
 
 /******************************************************************************
 * Determines the coordination structure of a particle.
 ******************************************************************************/
-void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList, size_t particleIndex)
+bool StructureAnalysis::determineLocalStructure(const NearestNeighborFinder::Query<MAX_NEIGHBORS>& neighQuery, size_t particleIndex, CoordinationStructureType restrictToStructure)
 {
     OVITO_ASSERT(_structureTypesArray[particleIndex] == COORD_OTHER);
 
-    // Skip atoms that are not included in the analysis.
-    if(_particleSelection && _particleSelection[particleIndex] == 0)
-        return;
-
-    // Construct local neighbor list builder.
-    NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery(neighList);
-
-    // Find N nearest neighbors of current atom.
-    neighQuery.findNeighbors(particleIndex);
     int numNeighbors = neighQuery.results().size();
     int neighborIndices[MAX_NEIGHBORS];
     Vector3 neighborVectors[MAX_NEIGHBORS];
@@ -502,11 +593,11 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
     else if(_inputCrystalType == LATTICE_CUBIC_DIAMOND || _inputCrystalType == LATTICE_HEX_DIAMOND)
         nn = 16;
     else
-        return;
+        return false;
 
     // Early rejection of under-coordinated atoms:
     if(numNeighbors < nn)
-        return;
+        return false;
 
     FloatType localScaling = 0;
     FloatType localCutoff = 0;
@@ -517,21 +608,21 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         // Compute local scale factor.
         if(_inputCrystalType == LATTICE_FCC || _inputCrystalType == LATTICE_HCP) {
             for(int n = 0; n < 12; n++)
-                localScaling += sqrt(neighQuery.results()[n].distanceSq);
+                localScaling += std::sqrt(neighQuery.results()[n].distanceSq);
             localScaling /= 12;
-            localCutoff = localScaling * (1.0f + sqrt(2.0f)) * 0.5f;
+            localCutoff = localScaling * (1.0 + std::sqrt(2.0)) * 0.5;
         }
         else if(_inputCrystalType == LATTICE_BCC) {
             for(int n = 0; n < 8; n++)
-                localScaling += sqrt(neighQuery.results()[n].distanceSq);
+                localScaling += std::sqrt(neighQuery.results()[n].distanceSq);
             localScaling /= 8;
-            localCutoff = localScaling / (sqrt(3.0)/2.0) * 0.5 * (1.0 + sqrt(2.0));
+            localCutoff = localScaling / (std::sqrt(3.0)/2.0) * 0.5 * (1.0 + std::sqrt(2.0));
         }
-        FloatType localCutoffSquared =  localCutoff * localCutoff;
+        FloatType localCutoffSquared = localCutoff * localCutoff;
 
         // Make sure the (N+1)-th atom is beyond the cutoff radius (if it exists).
         if(numNeighbors > nn && neighQuery.results()[nn].distanceSq <= localCutoffSquared)
-            return;
+            return false;
 
         // Compute common neighbor bit-flag array.
         for(int ni1 = 0; ni1 < nn; ni1++) {
@@ -549,22 +640,23 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
             const Vector3& v0 = neighQuery.results()[i].delta;
             neighborVectors[i] = v0;
             neighborIndices[i] = neighQuery.results()[i].index;
-            NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery2(neighList);
+            NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery2(neighQuery.finder());
             neighQuery2.findNeighbors(neighborIndices[i]);
-            if(neighQuery2.results().size() < 4) return;
+            if(neighQuery2.results().size() < 4)
+                return false;
             for(size_t j = 0; j < 4; j++) {
                 Vector3 v = v0 + neighQuery2.results()[j].delta;
                 if(neighQuery2.results()[j].index == particleIndex && v.isZero())
                     continue;
                 if(outputIndex == 16)
-                    return;
+                    return false;
                 neighborIndices[outputIndex] = neighQuery2.results()[j].index;
                 neighborVectors[outputIndex] = v;
                 neighborArray.setNeighborBond(i, outputIndex, true);
                 outputIndex++;
             }
             if(outputIndex != i*3 + 7)
-                return;
+                return false;
         }
 
         // Compute local scale factor.
@@ -619,7 +711,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         else if(n421 == 6 && n422 == 6 && (_identifyPlanarDefects || _inputCrystalType == LATTICE_HCP)) {
             coordinationType = COORD_HCP;
         }
-        else return;
+        else return false;
     }
     else if(_inputCrystalType == LATTICE_BCC) {
         int n444 = 0;
@@ -653,14 +745,14 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         if(n666 == 8 && n444 == 6)
             coordinationType = COORD_BCC;
         else
-            return;
+            return false;
     }
     else if(_inputCrystalType == LATTICE_CUBIC_DIAMOND || _inputCrystalType == LATTICE_HEX_DIAMOND) {
         for(int ni = 0; ni < 4; ni++) {
             cnaSignatures[ni] = 0;
             unsigned int commonNeighbors;
             if(CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors) != 3)
-                return;
+                return false;
         }
         int n543 = 0;
         int n544 = 0;
@@ -695,7 +787,11 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         else if(n543 == 6 && n544 == 6 && (_identifyPlanarDefects || _inputCrystalType == LATTICE_HEX_DIAMOND)) {
             coordinationType = COORD_HEX_DIAMOND;
         }
-        else return;
+        else return false;
+    }
+
+    if(restrictToStructure != COORD_OTHER && restrictToStructure != coordinationType) {
+        return false;
     }
 
     // Initialize permutation.
@@ -751,15 +847,16 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
             FloatType prev_value = _maximumNeighborDistance;
             while(prev_value < localCutoff && !_maximumNeighborDistance.compare_exchange_weak(prev_value, localCutoff)) {}
 
-            return;
+            return true;
         }
         bitmapSort(neighborMapping + ni1 + 1, neighborMapping + nn, nn);
         if(!std::next_permutation(neighborMapping, neighborMapping + nn)) {
             // This should not happen.
             OVITO_ASSERT(false);
-            return;
+            return false;
         }
     }
+    return false;
 }
 
 /******************************************************************************

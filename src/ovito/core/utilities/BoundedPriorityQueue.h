@@ -51,6 +51,7 @@ class BoundedPriorityQueue
 {
 public:
     using value_type = T;
+    using iterator = typename std::array<value_type, QUEUE_SIZE_LIMIT>::iterator;
     using const_iterator = typename std::array<value_type, QUEUE_SIZE_LIMIT>::const_iterator;
 
     /// Constructor.
@@ -112,13 +113,19 @@ public:
     const_iterator begin() const { return _data.begin(); }
 
     /// Returns an iterator pointing to the element after the last element in the queue.
-    const_iterator end() const { return _data.begin() + _count; }
+    const_iterator end() const { return std::next(_data.begin(), _count); }
+
+    /// Returns an iterator pointing to the first element in the queue.
+    iterator begin() { return _data.begin(); }
+
+    /// Returns an iterator pointing to the element after the last element in the queue.
+    iterator end() { return std::next(_data.begin(), _count); }
 
     /// Returns the i-th entry in the queue.
     const value_type& operator[](int i) const { OVITO_ASSERT(i >= 0 && i < _count); return _data[i]; }
 
     /// Sort the entries of the queue.
-    void sort() { std::sort(_data.begin(), _data.begin() + _count, _comp); }
+    void sort() { std::sort(begin(), end(), _comp); }
 
 protected:
 
