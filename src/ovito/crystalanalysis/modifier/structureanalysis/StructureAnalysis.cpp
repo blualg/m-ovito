@@ -122,19 +122,19 @@ void StructureAnalysis::initializeListOfStructures()
     _latticeStructures[LATTICE_OTHER].maxNeighbors = 0;
 
     // FCC
-    Cluster::VecType fccVec[12] = {
-            Cluster::VecType( 0.5,  0.5,  0.0),
-            Cluster::VecType( 0.0,  0.5,  0.5),
-            Cluster::VecType( 0.5,  0.0,  0.5),
-            Cluster::VecType(-0.5, -0.5,  0.0),
-            Cluster::VecType( 0.0, -0.5, -0.5),
-            Cluster::VecType(-0.5,  0.0, -0.5),
-            Cluster::VecType(-0.5,  0.5,  0.0),
-            Cluster::VecType( 0.0, -0.5,  0.5),
-            Cluster::VecType(-0.5,  0.0,  0.5),
-            Cluster::VecType( 0.5, -0.5,  0.0),
-            Cluster::VecType( 0.0,  0.5, -0.5),
-            Cluster::VecType( 0.5,  0.0, -0.5)
+    VecType fccVec[12] = {
+            VecType( 0.5,  0.5,  0.0),
+            VecType( 0.0,  0.5,  0.5),
+            VecType( 0.5,  0.0,  0.5),
+            VecType(-0.5, -0.5,  0.0),
+            VecType( 0.0, -0.5, -0.5),
+            VecType(-0.5,  0.0, -0.5),
+            VecType(-0.5,  0.5,  0.0),
+            VecType( 0.0, -0.5,  0.5),
+            VecType(-0.5,  0.0,  0.5),
+            VecType( 0.5, -0.5,  0.0),
+            VecType( 0.0,  0.5, -0.5),
+            VecType( 0.5,  0.0, -0.5)
     };
     _coordinationStructures[COORD_FCC].numNeighbors = 12;
     for(int ni1 = 0; ni1 < 12; ni1++) {
@@ -154,26 +154,26 @@ void StructureAnalysis::initializeListOfStructures()
     _latticeStructures[LATTICE_FCC].maxNeighbors = 12;
 
     // HCP
-    Cluster::VecType hcpVec[18] = {
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/2.0, 0.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(0.0, -sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(sqrt(2.0)/2.0, 0.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(0.0, -sqrt(6.0)/6.0, sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+    VecType hcpVec[18] = {
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
+            VecType(-sqrt(2.0)/2.0, 0.0, 0.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(0.0, -sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
+            VecType(sqrt(2.0)/2.0, 0.0, 0.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
+            VecType(0.0, -sqrt(6.0)/6.0, sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
 
-            Cluster::VecType(0.0, sqrt(6.0)/6.0, sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0),
-            Cluster::VecType(0.0, sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0)
+            VecType(0.0, sqrt(6.0)/6.0, sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+            VecType(0.0, sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0)
     };
     _coordinationStructures[COORD_HCP].numNeighbors = 12;
     for(int ni1 = 0; ni1 < 12; ni1++) {
@@ -193,21 +193,21 @@ void StructureAnalysis::initializeListOfStructures()
     _latticeStructures[LATTICE_HCP].maxNeighbors = 12;
 
     // BCC
-    Cluster::VecType bccVec[14] = {
-            Cluster::VecType( 0.5,  0.5,  0.5),
-            Cluster::VecType(-0.5,  0.5,  0.5),
-            Cluster::VecType( 0.5,  0.5, -0.5),
-            Cluster::VecType(-0.5, -0.5,  0.5),
-            Cluster::VecType( 0.5, -0.5,  0.5),
-            Cluster::VecType(-0.5,  0.5, -0.5),
-            Cluster::VecType(-0.5, -0.5, -0.5),
-            Cluster::VecType( 0.5, -0.5, -0.5),
-            Cluster::VecType( 1.0,  0.0,  0.0),
-            Cluster::VecType(-1.0,  0.0,  0.0),
-            Cluster::VecType( 0.0,  1.0,  0.0),
-            Cluster::VecType( 0.0, -1.0,  0.0),
-            Cluster::VecType( 0.0,  0.0,  1.0),
-            Cluster::VecType( 0.0,  0.0, -1.0)
+    VecType bccVec[14] = {
+            VecType( 0.5,  0.5,  0.5),
+            VecType(-0.5,  0.5,  0.5),
+            VecType( 0.5,  0.5, -0.5),
+            VecType(-0.5, -0.5,  0.5),
+            VecType( 0.5, -0.5,  0.5),
+            VecType(-0.5,  0.5, -0.5),
+            VecType(-0.5, -0.5, -0.5),
+            VecType( 0.5, -0.5, -0.5),
+            VecType( 1.0,  0.0,  0.0),
+            VecType(-1.0,  0.0,  0.0),
+            VecType( 0.0,  1.0,  0.0),
+            VecType( 0.0, -1.0,  0.0),
+            VecType( 0.0,  0.0,  1.0),
+            VecType( 0.0,  0.0, -1.0)
     };
     _coordinationStructures[COORD_BCC].numNeighbors = 14;
     for(int ni1 = 0; ni1 < 14; ni1++) {
@@ -227,29 +227,29 @@ void StructureAnalysis::initializeListOfStructures()
     _latticeStructures[LATTICE_BCC].maxNeighbors = 14;
 
     // Cubic diamond
-    Cluster::VecType diamondCubicVec[] = {
-            Cluster::VecType(0.25, 0.25, 0.25),
-            Cluster::VecType(0.25, -0.25, -0.25),
-            Cluster::VecType(-0.25, -0.25, 0.25),
-            Cluster::VecType(-0.25, 0.25, -0.25),
+    VecType diamondCubicVec[] = {
+            VecType(0.25, 0.25, 0.25),
+            VecType(0.25, -0.25, -0.25),
+            VecType(-0.25, -0.25, 0.25),
+            VecType(-0.25, 0.25, -0.25),
 
-            Cluster::VecType(0, -0.5, 0.5),
-            Cluster::VecType(0.5, 0.5, 0),
-            Cluster::VecType(-0.5, 0, 0.5),
-            Cluster::VecType(-0.5, 0.5, 0),
-            Cluster::VecType(0, 0.5, 0.5),
-            Cluster::VecType(0.5, -0.5, 0),
-            Cluster::VecType(0.5, 0, 0.5),
-            Cluster::VecType(0.5, 0, -0.5),
-            Cluster::VecType(-0.5, -0.5, 0),
-            Cluster::VecType(0, -0.5, -0.5),
-            Cluster::VecType(0, 0.5, -0.5),
-            Cluster::VecType(-0.5, 0, -0.5),
+            VecType(0, -0.5, 0.5),
+            VecType(0.5, 0.5, 0),
+            VecType(-0.5, 0, 0.5),
+            VecType(-0.5, 0.5, 0),
+            VecType(0, 0.5, 0.5),
+            VecType(0.5, -0.5, 0),
+            VecType(0.5, 0, 0.5),
+            VecType(0.5, 0, -0.5),
+            VecType(-0.5, -0.5, 0),
+            VecType(0, -0.5, -0.5),
+            VecType(0, 0.5, -0.5),
+            VecType(-0.5, 0, -0.5),
 
-            Cluster::VecType(0.25, -0.25, 0.25),
-            Cluster::VecType(0.25, 0.25, -0.25),
-            Cluster::VecType(-0.25, 0.25, 0.25),
-            Cluster::VecType(-0.25, -0.25, -0.25)
+            VecType(0.25, -0.25, 0.25),
+            VecType(0.25, 0.25, -0.25),
+            VecType(-0.25, 0.25, 0.25),
+            VecType(-0.25, -0.25, -0.25)
     };
     _coordinationStructures[COORD_CUBIC_DIAMOND].numNeighbors = 16;
     for(int ni1 = 0; ni1 < 16; ni1++) {
@@ -273,44 +273,44 @@ void StructureAnalysis::initializeListOfStructures()
     _latticeStructures[LATTICE_CUBIC_DIAMOND].maxNeighbors = 16;
 
     // Hexagonal diamond
-    Cluster::VecType diamondHexVec[] = {
-            Cluster::VecType(-sqrt(2.0)/4, sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
-            Cluster::VecType(0, -sqrt(3.0/2.0)/3, -sqrt(3.0)/12),
-            Cluster::VecType(sqrt(2.0)/4, sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
-            Cluster::VecType(0, 0, sqrt(3.0)/4),
+    VecType diamondHexVec[] = {
+            VecType(-sqrt(2.0)/4, sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
+            VecType(0, -sqrt(3.0/2.0)/3, -sqrt(3.0)/12),
+            VecType(sqrt(2.0)/4, sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
+            VecType(0, 0, sqrt(3.0)/4),
 
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/2.0, 0.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(sqrt(2.0)/2.0, 0.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(0.0, -sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(0.0, -sqrt(6.0)/6.0, sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
+            VecType(-sqrt(2.0)/2.0, 0.0, 0.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/4.0, 0.0),
+            VecType(sqrt(2.0)/2.0, 0.0, 0.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/4.0, 0.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(0.0, -sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
+            VecType(0.0, -sqrt(6.0)/6.0, sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, sqrt(6.0)/12.0, sqrt(3.0)/3.0),
 
-            Cluster::VecType(-sqrt(2.0)/4, sqrt(3.0/2.0)/6, sqrt(3.0)/12),
-            Cluster::VecType(0, -sqrt(3.0/2.0)/3, sqrt(3.0)/12),
-            Cluster::VecType(sqrt(2.0)/4, sqrt(3.0/2.0)/6, sqrt(3.0)/12),
-            Cluster::VecType(0, 0, -sqrt(3.0)/4),
+            VecType(-sqrt(2.0)/4, sqrt(3.0/2.0)/6, sqrt(3.0)/12),
+            VecType(0, -sqrt(3.0/2.0)/3, sqrt(3.0)/12),
+            VecType(sqrt(2.0)/4, sqrt(3.0/2.0)/6, sqrt(3.0)/12),
+            VecType(0, 0, -sqrt(3.0)/4),
 
-            Cluster::VecType(-sqrt(2.0)/4, -sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
-            Cluster::VecType(0, sqrt(3.0/2.0)/3, -sqrt(3.0)/12),
-            Cluster::VecType(sqrt(2.0)/4, -sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
+            VecType(-sqrt(2.0)/4, -sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
+            VecType(0, sqrt(3.0/2.0)/3, -sqrt(3.0)/12),
+            VecType(sqrt(2.0)/4, -sqrt(3.0/2.0)/6, -sqrt(3.0)/12),
 
-            Cluster::VecType(-sqrt(2.0)/4, -sqrt(3.0/2.0)/6, sqrt(3.0)/12),
-            Cluster::VecType(0, sqrt(3.0/2.0)/3, sqrt(3.0)/12),
-            Cluster::VecType(sqrt(2.0)/4, -sqrt(3.0/2.0)/6, sqrt(3.0)/12),
+            VecType(-sqrt(2.0)/4, -sqrt(3.0/2.0)/6, sqrt(3.0)/12),
+            VecType(0, sqrt(3.0/2.0)/3, sqrt(3.0)/12),
+            VecType(sqrt(2.0)/4, -sqrt(3.0/2.0)/6, sqrt(3.0)/12),
 
-            Cluster::VecType(0.0, sqrt(6.0)/6.0, sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0),
-            Cluster::VecType(0.0, sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
-            Cluster::VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0)
+            VecType(0.0, sqrt(6.0)/6.0, sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0),
+            VecType(0.0, sqrt(6.0)/6.0, -sqrt(3.0)/3.0),
+            VecType(sqrt(2.0)/4.0, -sqrt(6.0)/12.0, -sqrt(3.0)/3.0),
+            VecType(-sqrt(2.0)/4.0, -sqrt(6.0)/12.0, sqrt(3.0)/3.0)
     };
     _coordinationStructures[COORD_HEX_DIAMOND].numNeighbors = 16;
     for(int ni1 = 0; ni1 < 16; ni1++) {
@@ -336,7 +336,7 @@ void StructureAnalysis::initializeListOfStructures()
     for(auto coordStruct = std::begin(_coordinationStructures); coordStruct != std::end(_coordinationStructures); ++coordStruct) {
         // Find two non-coplanar common neighbors for every neighbor bond.
         for(int neighIndex = 0; neighIndex < coordStruct->numNeighbors; neighIndex++) {
-            Cluster::MatType tm;
+            MatType tm;
             tm.column(0) = coordStruct->latticeVectors[neighIndex];
             bool found = false;
             for(int i1 = 0; i1 < coordStruct->numNeighbors && !found; i1++) {
@@ -369,23 +369,23 @@ void StructureAnalysis::initializeListOfStructures()
 
         // Find three non-coplanar neighbor vectors.
         int nindices[3];
-        Cluster::MatType tm1;
+        MatType tm1;
         int n = 0;
         for(int i = 0; i < coordStruct.numNeighbors && n < 3; i++) {
             tm1.column(n) = coordStruct.latticeVectors[i];
             if(n == 1) {
-                if(tm1.column(0).cross(tm1.column(1)).squaredLength() <= Ovito::epsilon)
+                if(tm1.column(0).cross(tm1.column(1)).squaredLength() <= Ovito::epsilon_v<MatType::element_type>)
                     continue;
             }
             else if(n == 2) {
-                if(std::abs(tm1.determinant()) <= Ovito::epsilon)
+                if(std::abs(tm1.determinant()) <= Ovito::epsilon_v<MatType::element_type>)
                     continue;
             }
             nindices[n++] = i;
         }
         OVITO_ASSERT(n == 3);
-        OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon);
-        Cluster::MatType tm1inverse = tm1.inverse();
+        OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon_v<MatType::element_type>);
+        MatType tm1inverse = tm1.inverse();
 
         // Find symmetry permutations.
         std::vector<int> permutation(latticeStruct->latticeVectors.size());
@@ -397,7 +397,7 @@ void StructureAnalysis::initializeListOfStructures()
             OVITO_ASSERT(changedFrom < coordStruct.numNeighbors);
             std::copy(permutation.begin(), permutation.end(), lastPermutation.begin());
             if(changedFrom <= nindices[2]) {
-                Cluster::MatType tm2;
+                MatType tm2;
                 tm2.column(0) = latticeStruct->latticeVectors[permutation[nindices[0]]];
                 tm2.column(1) = latticeStruct->latticeVectors[permutation[nindices[1]]];
                 tm2.column(2) = latticeStruct->latticeVectors[permutation[nindices[2]]];
@@ -411,7 +411,7 @@ void StructureAnalysis::initializeListOfStructures()
             int sortFrom = nindices[2];
             int invalidFrom;
             for(invalidFrom = changedFrom; invalidFrom < coordStruct.numNeighbors; invalidFrom++) {
-                Cluster::VecType v = symmetryPermutation.transformation * coordStruct.latticeVectors[invalidFrom];
+                VecType v = symmetryPermutation.transformation * coordStruct.latticeVectors[invalidFrom];
                 if(!v.equals(latticeStruct->latticeVectors[permutation[invalidFrom]]))
                     break;
             }
@@ -432,12 +432,12 @@ void StructureAnalysis::initializeListOfStructures()
         while(std::next_permutation(permutation.begin(), permutation.end()));
 
         OVITO_ASSERT(latticeStruct->permutations.size() >= 1);
-        OVITO_ASSERT(latticeStruct->permutations.front().transformation.equals(Cluster::MatType::Identity()));
+        OVITO_ASSERT(latticeStruct->permutations.front().transformation.equals(MatType::Identity()));
 
         // Determine products of symmetry transformations.
         for(int s1 = 0; s1 < latticeStruct->permutations.size(); s1++) {
             for(int s2 = 0; s2 < latticeStruct->permutations.size(); s2++) {
-                Cluster::MatType product = latticeStruct->permutations[s2].transformation * latticeStruct->permutations[s1].transformation;
+                MatType product = latticeStruct->permutations[s2].transformation * latticeStruct->permutations[s1].transformation;
                 for(int i = 0; i < latticeStruct->permutations.size(); i++) {
                     if(latticeStruct->permutations[i].transformation.equals(product)) {
                         latticeStruct->permutations[s1].product.push_back(i);
@@ -918,7 +918,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
                 OVITO_ASSERT(neighborAtomIndex != currentAtomIndex);
 
                 // Add vector pair to matrices for computing the cluster orientation.
-                const Cluster::VecType& latticeVector = latticeStructure.latticeVectors[permutation[neighborIndex]];
+                const VecType& latticeVector = latticeStructure.latticeVectors[permutation[neighborIndex]];
                 Vector3 spatialVector = cell().wrapVector(positionsArray[neighborAtomIndex] - positionsArray[currentAtomIndex]);
                 for(size_t i = 0; i < 3; i++) {
                     for(size_t j = 0; j < 3; j++) {
@@ -933,7 +933,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
 
                 // Select three non-coplanar atoms, which are all neighbors of the current neighbor.
                 // One of them is the current central atom, two are common neighbors.
-                Cluster::MatType tm1, tm2;
+                MatType tm1, tm2;
                 bool properOverlap = true;
                 for(int i = 0; i < 3; i++) {
                     int atomIndex;
@@ -959,9 +959,9 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
 
                 // Determine the misorientation matrix.
                 OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon);
-                Cluster::MatType tm2inverse;
+                MatType tm2inverse;
                 if(!tm2.inverse(tm2inverse)) continue;
-                Cluster::MatType transition = tm1 * tm2inverse;
+                MatType transition = tm1 * tm2inverse;
 
                 // Find the corresponding symmetry permutation.
                 for(int i = 0; i < latticeStructure.permutations.size(); i++) {
@@ -995,9 +995,9 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
             FloatType smallestDeviation = std::numeric_limits<FloatType>::max();
             const Cluster::MatType oldOrientation = cluster->orientation;
             for(int symmetryPermutationIndex = 0; symmetryPermutationIndex < latticeStructure.permutations.size(); symmetryPermutationIndex++) {
-                const Cluster::MatType& symmetryTMatrix = latticeStructure.permutations[symmetryPermutationIndex].transformation;
-                Cluster::MatType newOrientation = oldOrientation * symmetryTMatrix.inverse();
-                FloatType scaling = std::pow(std::abs(newOrientation.determinant()), 1.0/3.0);
+                const MatType& symmetryTMatrix = latticeStructure.permutations[symmetryPermutationIndex].transformation;
+                Cluster::MatType newOrientation = oldOrientation * symmetryTMatrix.inverse().toDataType<Cluster::MatType::element_type>();
+                auto scaling = std::pow(std::abs(newOrientation.determinant()), 1.0f/3.0f);
                 for(const Matrix3& preferredOrientation : _preferredCrystalOrientations) {
                     FloatType deviation = 0;
                     for(size_t i = 0; i < 3; i++)
@@ -1084,7 +1084,7 @@ void StructureAnalysis::connectClusters(TaskProgress& progress)
 
             // Select three non-coplanar atoms, which are all neighbors of the current neighbor.
             // One of them is the current central atom, two are common neighbors.
-            Cluster::MatType tm1, tm2;
+            MatType tm1, tm2;
             bool properOverlap = true;
             for(int i = 0; i < 3; i++) {
                 int ai;
@@ -1116,14 +1116,13 @@ void StructureAnalysis::connectClusters(TaskProgress& progress)
 
             // Determine the misorientation matrix.
             OVITO_ASSERT(std::abs(tm1.determinant()) > Ovito::epsilon);
-            //OVITO_ASSERT(std::abs(tm2.determinant()) > Ovito::epsilon);
-            Cluster::MatType tm1inverse;
+            MatType tm1inverse;
             if(!tm1.inverse(tm1inverse)) continue;
-            Cluster::MatType transition = tm2 * tm1inverse;
+            MatType transition = tm2 * tm1inverse;
 
             if(transition.isOrthogonalMatrix()) {
                 // Create a new transition between clusters.
-                ClusterTransition* t = clusterGraph()->createClusterTransition(cluster1, cluster2, transition);
+                ClusterTransition* t = clusterGraph()->createClusterTransition(cluster1, cluster2, transition.toDataType<ClusterTransition::MatType::element_type>());
                 t->area++;
                 t->reverse->area++;
             }
@@ -1168,9 +1167,9 @@ void StructureAnalysis::formSuperClusters(TaskProgress& progress)
 
                             // Check if the two clusters form a single crystal.
                             const LatticeStructure& latticeStructure = this->latticeStructure(t2->cluster2->structure);
-                            Cluster::MatType misorientation = t2->tm * t1->reverse->tm;
+                            auto misorientation = t2->tm * t1->reverse->tm;
                             for(const SymmetryPermutation& symElement : latticeStructure.permutations) {
-                                if(symElement.transformation.equals(misorientation, CA_TRANSITION_MATRIX_EPSILON)) {
+                                if(symElement.transformation.equals(misorientation.toDataType<MatType::element_type>(), CA_TRANSITION_MATRIX_EPSILON)) {
                                     clusterGraph()->createClusterTransition(t1->cluster2, t2->cluster2, misorientation, 2);
                                     break;
                                 }
