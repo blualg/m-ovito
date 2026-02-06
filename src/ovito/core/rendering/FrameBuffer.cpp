@@ -58,9 +58,10 @@ bool ImageInfo::guessFormatFromFilename()
     }
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
-        for(const QString& extension : videoFormat.extensions) {
+        for(const QString& extension : videoFormat.candidate->extensions) {
             if(filename().endsWith(QStringLiteral(".") + extension, Qt::CaseInsensitive)) {
-                setFormat(videoFormat.name);
+                // Safe: string_view points to string literal with static storage duration
+                setFormat(QByteArray::fromRawData(videoFormat.candidate->name.data(), videoFormat.candidate->name.size()));
                 return true;
             }
         }
@@ -76,12 +77,10 @@ bool ImageInfo::guessFormatFromFilename()
 bool ImageInfo::isMovie() const
 {
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-    for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
-        if(format() == videoFormat.name)
-            return true;
-    }
+    return std::ranges::any_of(VideoEncoder::supportedFormats(), [this](const auto& videoFormat) {
+        return format() == QByteArray::fromRawData(videoFormat.candidate->name.data(), videoFormat.candidate->name.size());
+    });
 #endif
-
     return false;
 }
 

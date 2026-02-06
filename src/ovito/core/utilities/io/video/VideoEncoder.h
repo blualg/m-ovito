@@ -26,19 +26,12 @@
 #include <ovito/core/Core.h>
 
 extern "C" {
-    struct AVFormatContext;
-    struct AVOutputFormat;
-    struct AVCodec;
-    struct AVStream;
-    struct AVCodecContext;
-    struct AVFrame;
-    struct AVFilterInOut;
-    struct AVFilterGraph;
-    struct AVFilterContext;
-    struct SwsContext;
+struct AVOutputFormat;
 };
 
 namespace Ovito {
+
+class VideoEncoderBackend;
 
 /**
  * \brief Wrapper class for the ffmpeg video encoding library.
@@ -48,34 +41,70 @@ class OVITO_CORE_EXPORT VideoEncoder : public QObject
     Q_OBJECT
 
 public:
+    /// List of supported video formats (containers, i.e. ffmpeg -demuxers)
+    struct CandidateFormat {
+        const std::string_view name;
+        const QString longName;
+        const QStringList extensions;
+    };
+
+    /// List of supported video codecs (encoders)
+    struct CandidateCodec {
+        const std::string_view name;
+        const std::string_view longName;
+        const std::string_view libName;
+    };
 
     /**
      * Describes an output format supported by the video encoding engine.
      */
-    class Format {
-    public:
-        QByteArray name;
-        QString longName;
-        QStringList extensions;
+    struct Format {
+        const CandidateFormat* candidate;
         const AVOutputFormat* avformat;
     };
 
-public:
+    // Available video encoding quality presets.
+    enum class Quality : uint8_t
+    {
+        Low,
+        Medium,
+        High
+    };
+    Q_ENUM(Quality)
 
+    /**
+     * \brief Abstract base class for the ffmpeg video encoding backend.
+     */
+    class VideoEncoderBackend : public QObject
+    {
+    public:
+        VideoEncoderBackend(QObject* parent = nullptr) : QObject(parent) {}
+
+        /// Opens a video file for writing.
+        virtual void openFile(
+            const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr) = 0;
+
+        /// Writes a single frame into the video file.
+        virtual void writeFrame(const QImage& image) = 0;
+
+        /// This closes the written video file.
+        virtual void closeFile() = 0;
+
+    protected:
+        /// Compares a format name to the list of supported formats and returns the corresponding CandidateFormat.
+        static const CandidateFormat* getCandidateFormat(std::string_view name);
+        /// Compares a codec name to the list of supported codecs and returns the corresponding CandidateCodec.
+        static const CandidateCodec* getCandidateCodec(std::string_view name);
+    };
+
+public:
+    enum class Backend : uint8_t
+    {
+        EXTERN,
+        OVITO
+    };
     /// Constructor.
     VideoEncoder(QObject* parent = nullptr);
-
-    /// Destructor.
-    virtual ~VideoEncoder() {
-        try {
-            closeFile();
-        }
-        catch(const Exception& ex) {
-            // Swallow exceptions in destructor
-            qWarning() << "Warning: Unexpected exception in VideoEncoder destructor:";
-            ex.logError();
-        }
-    }
 
     /// Opens a video file for writing.
     void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);
@@ -87,33 +116,20 @@ public:
     void closeFile();
 
     /// Returns the list of supported output formats.
-    static QList<Format> supportedFormats();
+    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt);
+
+    /// Returns the list of supported output codecs.
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt);
+
+    constexpr static const char* FFMPEG_PATH_SETTING = "renderer/ffmpeg_path";
+    constexpr static const char* FFMPEG_CODEC_SETTING = "renderer/ffmpeg_codec";
+    constexpr static const char* FFMPEG_USE_EXT_SETTING = "renderer/ffmpeg_use_external";
+    constexpr static const char* FFMPEG_QUALITY_SETTING = "renderer/ffmpeg_quality";
 
 private:
+    static Backend getBackend();
 
-    /// Initializes libavcodec, and register all codecs and formats.
-    static void initCodecs();
-
-    /// Returns the error string for the given error code.
-    static QString errorMessage(int errorCode);
-
-    std::shared_ptr<AVFormatContext> _formatContext;
-    std::unique_ptr<quint8[]> _pictureBuf;
-    std::vector<quint8> _outputBuf;
-    std::shared_ptr<AVFrame> _frame;
-    AVStream* _videoStream = nullptr;
-    const AVCodec* _codec = nullptr;
-    std::shared_ptr<AVCodecContext> _codecContext;
-    SwsContext* _imgConvertCtx = nullptr;
-    std::shared_ptr<AVFilterGraph> _filterGraph;
-    AVFilterContext* _bufferSourceCtx = nullptr;
-    AVFilterContext* _bufferSinkCtx = nullptr;
-    bool _isOpen = false;
-    int _numFrames = 0;
-    int _frameDuplication = 1;
-
-    /// The list of supported video formats.
-    static QList<Format> _supportedFormats;
+    std::unique_ptr<VideoEncoderBackend> _encoder;
 };
 
 }   // End of namespace
