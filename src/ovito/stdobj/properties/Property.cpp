@@ -356,7 +356,16 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     elementType->initializeType(
         [&]() {
             elementType->setNumericId(id);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
             elementType->setName(static_cast<QString>(name));
+#else
+            if constexpr(std::same_as<StringType, QString>)
+                elementType->setName(name);
+            else if constexpr(std::same_as<StringType, QStringView>)
+                elementType->setName(name.toString());
+            else
+                elementType->setName(QString(name));
+#endif
         },
         OwnerPropertyRef(&containerClass, this));
 
