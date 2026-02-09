@@ -229,7 +229,7 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
     QStringList args;
     args << "-hide_banner"
          << "-f" << "rawvideo"
-         << "-pixel_format" << "rgb24"
+         << "-pixel_format" << "rgb32"
          << "-video_size" << QStringLiteral("%1x%2").arg(width).arg(height) << "-framerate" << QString::number(framesPerSecond) << "-i"
          << "-"
          << "-c:v" << codecLib << "-pix_fmt" << "yuv420p"
@@ -246,6 +246,12 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
 
 void ExternalVideoEncoder::writeFrame(const QImage& image)
 {
+    if(image.width() % 2 != 0) {
+        throw Exception(tr("Image width must be even: %1").arg(image.width()));
+    }
+    if(image.height() % 2 != 0) {
+        throw Exception(tr("Image height must be even: %1").arg(image.height()));
+    }
     if(!_process) {
         throw Exception(tr("ffmpeg process not found!"));
     }
@@ -262,7 +268,7 @@ void ExternalVideoEncoder::writeFrame(const QImage& image)
     }
 
     // Convert image to RGB24 format
-    QImage rgb = image.convertToFormat(QImage::Format_RGB888);
+    QImage rgb = image.convertToFormat(QImage::Format_RGB32);
 
     // Write raw pixel data
     const uchar* bits = rgb.constBits();
