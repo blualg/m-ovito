@@ -115,8 +115,8 @@ OVITO can read the following file formats:
 
   * - PDB
     - Protein Data Bank (PDB) files.
-    - :ref:`particles <scene_objects.particles>`
-    -
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
+    - :ref:`Details <file_formats.input.pdb>`
 
   * - PDBx/mmCIF
     - The `PDBx/mmCIF <http://mmcif.wwpdb.org>`__ format stores
