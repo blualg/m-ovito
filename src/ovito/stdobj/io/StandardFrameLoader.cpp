@@ -31,13 +31,13 @@
 namespace Ovito {
 
 /******************************************************************************
-* Returns the simulation cell object, newly creating it first if necessary.
-******************************************************************************/
-SimulationCell* StandardFrameLoader::simulationCell()
+ * Returns the simulation cell object, newly creating it first if necessary unless create is false.
+ ******************************************************************************/
+SimulationCell* StandardFrameLoader::simulationCell(bool create)
 {
     if(!_simulationCell) {
         _simulationCell = state().getMutableObject<SimulationCell>();
-        if(!_simulationCell) {
+        if(!_simulationCell && create) {
             _simulationCell = state().createObject<SimulationCell>(pipelineNode(), AffineTransformation::Zero(), true, true, true, false);
             _isSimulationCellNewlyCreated = true;
         }

@@ -39,8 +39,8 @@ public:
     /// Constructor.
     using FileSourceImporter::FrameLoader::FrameLoader;
 
-    /// Returns the simulation cell object, newly creating it first if necessary.
-    SimulationCell* simulationCell();
+    /// Returns the simulation cell object, newly creating it first if necessary unless create is false.
+    SimulationCell* simulationCell(bool create = true);
 
     /// Removes any existing simulation cell object from the state.
     void removeSimulationCell();

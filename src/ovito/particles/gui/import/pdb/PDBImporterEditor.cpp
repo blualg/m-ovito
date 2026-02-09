@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/import/pdb/PDBImporter.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include "PDBImporterEditor.h"
 
 namespace Ovito {
@@ -57,8 +58,12 @@ void PDBImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     sublayout->addWidget(recenterCellUI->checkBox());
 
     // Generate bonds
-    BooleanParameterUI* generateBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBonds));
-    sublayout->addWidget(generateBondsUI->checkBox());
+    BooleanRadioButtonParameterUI* generateBondsUI =
+        createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBonds));
+    generateBondsUI->buttonTrue()->setText(tr("Generate bonds"));
+    sublayout->addWidget(generateBondsUI->buttonTrue());
+    generateBondsUI->buttonFalse()->setText(tr("Read bonds from file"));
+    sublayout->addWidget(generateBondsUI->buttonFalse());
 }
 
 }   // End of namespace

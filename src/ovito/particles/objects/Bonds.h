@@ -159,4 +159,18 @@ using BondInputColumnMapping = TypedInputColumnMapping<Bonds>;
 
 }   // End of namespace
 
+// Hash function for ParticleIndexPair
+namespace std {
+template<>
+struct hash<Ovito::ParticleIndexPair> {
+    size_t operator()(const Ovito::ParticleIndexPair& pair) const
+    {
+        size_t seed = 0;
+        boost::hash_combine(seed, pair[0]);
+        boost::hash_combine(seed, pair[1]);
+        return seed;
+    }
+};
+}  // namespace std
+
 Q_DECLARE_METATYPE(Ovito::BondInputColumnMapping);

@@ -276,9 +276,27 @@ void PDBImporter::FrameLoader::loadFile()
             }
         }
 
+        // Count the number of bonds in the structure.
+        size_t numBonds = 0;
+        // Allocate particle identifier map used to remap bond from id to index
+        std::unordered_map<int64_t, size_t> particleIdMap;
+        // Allocate bond set used to check for duplicate bonds
+        std::unordered_set<ParticleIndexPair> bondSet;
+        if(!_generateBonds) {
+            for(const auto& conect : structure.conect_map) {
+                numBonds += conect.second.size();
+            }
+            if(numBonds > 0) {
+                particleIdMap.reserve(natoms);
+                bondSet.reserve(numBonds);
+            }
+        }
+
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
         BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(Particles::PositionProperty);
+        BufferWriteAccess<int64_t, access_mode::discard_read_write> particleIdAccess =
+            particles()->createProperty(Particles::IdentifierProperty);
         Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
         Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
@@ -291,19 +309,31 @@ void PDBImporter::FrameLoader::loadFile()
         BufferWriteAccess<int32_t, access_mode::discard_write> atomNameAccess(atomNameProperty);
         BufferWriteAccess<int32_t, access_mode::discard_write> residueTypeAccess(residueTypeProperty);
         auto* posIter = posAccess.begin();
+        auto* particleIdIter = particleIdAccess.begin();
         auto* typeIter = typeAccess.begin();
         auto* atomNameIter = atomNameAccess.begin();
         auto* residueTypeIter = residueTypeAccess.begin();
 
         // Transfer atomic data from Gemmi to OVITO data structures.
         bool hasOccupancy = false;
+        size_t particleIndex = 0;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
                 this_task::throwIfCanceled();
                 int residueTypeId = (residue.name.empty() == false) ? addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
+                    if(!_generateBonds && numBonds > 0) {
+                        // Store particle identifier and index for bond remapping
+                        OVITO_ASSERT(!particleIdMap.contains(atom.serial));
+                        particleIdMap.emplace(atom.serial, particleIndex);
+                        particleIndex++;
+                    }
+
                     // Atomic position.
                     *posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
+
+                    // Particle identifier.
+                    *particleIdIter++ = atom.serial;
 
                     // Chemical type.
                     *typeIter++ = atom.element.ordinal();
@@ -394,6 +424,43 @@ void PDBImporter::FrameLoader::loadFile()
             // Use bounding box of atomic coordinates as non-periodic simulation cell.
             generateBoundingBox();
         }
+
+        // Read bonds from CONECT records
+        if(!_generateBonds && numBonds > 0) {
+            // Loop over all CONECT records
+            // Remap ids to indices
+            // Remove duplicate bonds
+            for(const auto& conect : structure.conect_map) {
+                const int pIdA = conect.first;
+                const auto iterA = particleIdMap.find(pIdA);
+                if(iterA == particleIdMap.end()) {
+                    throw Exception(tr("Invalid CONECT record: particle identifier %1 is unknown.").arg(pIdA));
+                }
+                OVITO_ASSERT(iterA->second < std::numeric_limits<int64_t>::max());
+                const int64_t indexA = (int64_t)iterA->second;
+                for(const int pIdB : conect.second) {
+                    const auto iterB = particleIdMap.find(pIdB);
+                    if(iterB == particleIdMap.end()) {
+                        throw Exception(tr("Invalid CONECT record: particle identifier %1 is unknown.").arg(pIdB));
+                    }
+                    OVITO_ASSERT(iterB->second < std::numeric_limits<int64_t>::max());
+                    const int64_t indexB = (int64_t)iterB->second;
+                    const ParticleIndexPair bond =
+                        (indexA < indexB) ? std::array<int64_t, 2>{{indexA, indexB}} : std::array<int64_t, 2>{{indexB, indexA}};
+                    bondSet.insert(bond);
+                }
+            }
+            // Create the bonds object that will store the generated bonds.
+            setBondCount(bondSet.size());
+            BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopology(bonds()->createProperty(Bonds::TopologyProperty));
+            auto* bondIter = bondTopology.begin();
+            for(const ParticleIndexPair& bond : bondSet) {
+                *bondIter++ = bond;
+            }
+            bondTopology.reset();
+            // Auto generate pbc flags for bonds
+            bonds()->generatePeriodicImageProperty(particles(), simulationCell(false));
+        }
         state().setStatus(tr("Number of atoms: %1").arg(natoms));
     }
     catch(const Exception&) {
@@ -411,12 +478,12 @@ void PDBImporter::FrameLoader::loadFile()
         }
     }
 
-    // Generate ad-hoc bonds between atoms based on their van der Waals radii.
-    if(_generateBonds)
+    // Generate ad-hoc bonds between atoms based on their van der Waals radii if bonds are not already read from CONECT records.
+    if(_generateBonds) {
         generateBonds(progress);
-    else
-        setBondCount(0);
+    }
 
+    state().setStatus(tr("Number of bonds: %1").arg(bonds()->elementCount()));
     // If the loaded particles are centered on the coordinate origin but the periodic simulation box corner is positioned at (0,0,0),
     // then shift the cell to center it on (0,0,0) too, leaving the particle coordinates as is.
     // correctOffcenterCell();

@@ -39,6 +39,8 @@ Version 3.15.0 (dd-mm-2026)
 - Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
 - New modifier selector widget with improved usability and UI design
 - MercuryDPM file reader: Support reading particle orientations stored as Euler angles and convert them to quaternions
+- Extend PDB file reader to read particle identifiers and bonds (CONECT records)
+- Fix PDB importer "generate bounding box" not working
 
 .. sidebar::
 
