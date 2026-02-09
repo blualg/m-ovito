@@ -33,7 +33,6 @@
 #include "GrainSegmentationModifier.h"
 
 #include <boost/intrusive/rbtree_algorithms.hpp>
-#include <unordered_set>
 
 namespace Ovito {
 
