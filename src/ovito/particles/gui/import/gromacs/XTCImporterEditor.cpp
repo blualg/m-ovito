@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
 void XTCImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("XTC reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("XTC reader"), rolloutParams, "manual:file_formats.input.xtc");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);

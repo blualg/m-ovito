@@ -12,35 +12,37 @@ Version 3.15.0 (dd-mm-2026)
 - Update gemmi to 0.7.3
 - CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
 - mmCIF file importer: read sequence id from file into new particle property "Sequence"
-- Simulation cell and particle types can no longer be edited directly
-- Newly added modifiers:
-  * :ref:`particles.modifiers.edit_types`
-  * :ref:`particles.modifiers.edit_simulation_cell`
-  * :ref:`particles.modifiers.bond_order`
-  * :ref:`particles.modifiers.select_overlapping_particles`
+- Simulation cell and particle types can no longer be edited directly - use the new :ref:`particles.modifiers.edit_simulation_cell` and :ref:`particles.modifiers.edit_types` modifiers instead
+- New modifiers:
+
+  - :ref:`particles.modifiers.edit_types`
+  - :ref:`particles.modifiers.edit_simulation_cell`
+  - :ref:`particles.modifiers.bond_order`
+  - :ref:`particles.modifiers.select_overlapping_particles`
+
 - Add "Molecule" mode to :ref:`particles.modifiers.expand_selection` modifier
 - Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
   The old modifier will remain available for backwards compatibility.
 - Implement :ref:`particles.modifiers.assign_color` modifier for lines
-- Rename Coordination Analysis Modifier to :ref:`particles.modifiers.radial_distribution_function` - maintaining backwards compatibility
+- Rename *Coordination analysis* modifier to :ref:`particles.modifiers.radial_distribution_function` modifier
 - New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
 - New data inspector tab for :ref:`type lists <data_inspector.types>`
 - Display video duration estimate in :ref:`render settings panel <core.render_settings>`
-- Memorize ParticlesVis radius scaling factor across program sessions
-- Fix bug where the Find Rings modifier would not find rings of size equal to max ring size
-- Fix bug where the Find Rings modifier would report evenly sized rings in both directions
+- Memorize :ref:`particles <visual_elements.particles>` radius scaling factor across program sessions
+- Fix bug where the :ref:`particles.modifiers.find_rings` modifier would not find rings of size equal to max ring size
+- Fix bug where the :ref:`particles.modifiers.find_rings` modifier would report evenly sized rings in both directions
 - Reduce OVITO session state file sizes for long trajectories
-- Warn if user tries to export an empty scene to a glTF file via export_file()
+- Warn if user tries to export an empty scene to a glTF file via :py:func:`~ovito.io.export_file`
 - VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
 - VisRTX renderer: Support progressive refinement rendering in interactive viewports
 - Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
 - :ref:`Import/export modifiers as text snippets <modifier_snippets>` via context menu in the pipeline editor
-- Include Software Bill of Materials (SBOM) in OVITO installers to document third-party software components used
+- Include a :ref:`Software Bill of Materials (SBOM) <sbom>` in OVITO installers to document third-party software components used
 - Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
 - New modifier selector widget with improved usability and UI design
 - MercuryDPM file reader: Support reading particle orientations stored as Euler angles and convert them to quaternions
-- Extend PDB file reader to read particle identifiers and bonds (CONECT records)
-- Fix PDB importer "generate bounding box" not working
+- Extend :ref:`PDB file reader <file_formats.input.pdb>` to read atom serial numbers and bonds (``CONECT`` records)
+- Fix: PDB file reader's "Generate bounding box" option not working
 
 .. sidebar::
 

@@ -70,6 +70,9 @@ protected:
         /// Returns the bonds container object, newly creating it first if necessary.
         Bonds* bonds();
 
+        /// Indicates whether the file loader has created a bonds container.
+        bool hasBonds() const { return _bonds != nullptr; }
+
         /// Returns the angles container object, newly creating it first if necessary.
         Angles* angles();
 

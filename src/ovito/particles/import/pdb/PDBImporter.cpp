@@ -483,7 +483,9 @@ void PDBImporter::FrameLoader::loadFile()
         generateBonds(progress);
     }
 
-    state().setStatus(tr("Number of bonds: %1").arg(bonds()->elementCount()));
+    if(hasBonds())
+        state().combineStatus(tr("Number of bonds: %1").arg(bonds()->elementCount()));
+
     // If the loaded particles are centered on the coordinate origin but the periodic simulation box corner is positioned at (0,0,0),
     // then shift the cell to center it on (0,0,0) too, leaving the particle coordinates as is.
     // correctOffcenterCell();

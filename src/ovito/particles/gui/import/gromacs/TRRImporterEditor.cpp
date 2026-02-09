@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(TRRImporter, TRRImporterEditor);
 void TRRImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("TRR reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("TRR reader"), rolloutParams, "manual:file_formats.input.trr");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);

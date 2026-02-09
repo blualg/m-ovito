@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(POSCARImporter, POSCARImporterEditor);
 void POSCARImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("POSCAR reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("POSCAR reader"), rolloutParams, "manual:file_formats.input.poscar");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);

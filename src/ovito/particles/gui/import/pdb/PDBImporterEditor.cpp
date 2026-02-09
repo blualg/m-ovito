@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(PDBImporter, PDBImporterEditor);
 void PDBImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("PDB reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("PDB reader"), rolloutParams, "manual:file_formats.input.pdb");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -58,11 +58,11 @@ void PDBImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     sublayout->addWidget(recenterCellUI->checkBox());
 
     // Generate bonds
-    BooleanRadioButtonParameterUI* generateBondsUI =
-        createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBonds));
-    generateBondsUI->buttonTrue()->setText(tr("Generate bonds"));
+    sublayout->addSpacing(8);
+    BooleanRadioButtonParameterUI* generateBondsUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBonds));
+    generateBondsUI->buttonTrue()->setText(tr("Generate distance-based bonds"));
     sublayout->addWidget(generateBondsUI->buttonTrue());
-    generateBondsUI->buttonFalse()->setText(tr("Read bonds from file"));
+    generateBondsUI->buttonFalse()->setText(tr("Load bonds from file"));
     sublayout->addWidget(generateBondsUI->buttonFalse());
 }
 

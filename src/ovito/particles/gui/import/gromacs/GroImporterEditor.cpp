@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
 void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("Gromacs reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("Gromacs reader"), rolloutParams, "manual:file_formats.input.gromacs");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);

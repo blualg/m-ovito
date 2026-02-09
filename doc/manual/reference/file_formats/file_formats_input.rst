@@ -16,6 +16,7 @@ Input file formats
   input/lammps_dump
   input/lammps_dump_grid
   input/lammps_dump_local
+  input/pdb
   input/poscar
   input/reaxff
   input/trr

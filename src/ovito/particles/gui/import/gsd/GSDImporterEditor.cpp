@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(GSDImporter, GSDImporterEditor);
 void GSDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("GSD reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("GSD reader"), rolloutParams, "manual:file_formats.input.gsd");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
