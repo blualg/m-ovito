@@ -42,13 +42,14 @@ class OVITO_PARTICLES_EXPORT PDBImporter : public ParticleImporter
         using ParticleImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual std::span<const SupportedFormat> supportedFormats() const override {
+        [[nodiscard]] virtual std::span<const SupportedFormat> supportedFormats() const override
+        {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.pdb *.pdb.gz"), tr("PDB Files") }};
             return formats;
         }
 
         /// Checks if the given file has format that can be read by this importer.
-        virtual bool checkFileFormat(const FileHandle& file) const override;
+        [[nodiscard]] virtual bool checkFileFormat(const FileHandle& file) const override;
     };
 
     OVITO_CLASS_META(PDBImporter, OOMetaClass)
@@ -63,7 +64,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds());
+        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds(), generateBoundingBox());
     }
 
     /// Scans the data file and builds a list of source frames.
@@ -77,7 +78,10 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell), _generateBonds(generateBonds) {}
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds, bool generateBoundingBox)
+            : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell, generateBoundingBox), _generateBonds(generateBonds)
+        {
+        }
 
     protected:
 
