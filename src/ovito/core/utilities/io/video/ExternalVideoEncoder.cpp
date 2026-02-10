@@ -187,11 +187,10 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
 
     // Special case for gif encoder -> stores all images and processes them later
     if((format && format->candidate->name == "gif") || filename.endsWith(".gif", Qt::CaseInsensitive)) {
-        _tempDir = std::make_unique<QTemporaryDir>();
-        if(!_tempDir->isValid()) {
-            throw Exception(tr("Failed to open temporary directory for gif encoder."));
-        }
+        _gifmode = true;
         _framesPerSecond = framesPerSecond;
+        _width = width;
+        _height = height;
         _outFilename = filename;
         return;
     }
@@ -258,11 +257,8 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
 void ExternalVideoEncoder::writeFrame(const QImage& image)
 {
     // Special case for gif encoder -> stores all images and processes them later
-    if(_tempDir) {
-        const QString& filename = _tempDir->filePath(QStringLiteral("image_%1.png").arg(_numFrames, 6, 10, QChar('0')));
-        qDebug() << "Writing frame" << _numFrames << "to" << filename;
-        image.save(filename);
-        _numFrames++;
+    if(_gifmode) {
+        _images.push_back(image.convertToFormat(QImage::Format_RGB32));
         return;
     }
 
@@ -322,32 +318,83 @@ void ExternalVideoEncoder::closeFile()
 
     _finalized = true;
 
-    if(_tempDir) {
+    if(_gifmode) {
         // Process all images in the temporary directory
         QSettings settings;
         const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "ffmpeg").toString();
 
         QStringList args;
+        QTemporaryFile paletteFile("palette.XXXXXX.png");
+        if(!paletteFile.open()) {
+            throw Exception(tr("Failed to open temporary file for palette generation."));
+        }
+        paletteFile.close();
+        qDebug() << "Writing palette to" << paletteFile.fileName();
 
         // Run palette generation
-        args << "-hide_banner" << "-framerate" << QString::number(_framesPerSecond) << "-i" << _tempDir->filePath("image_%06d.png") << "-vf"
-             << "palettegen=stats_mode=full" << "-update"
-             << "1" << _tempDir->filePath(QStringLiteral("palette.png"));
+        args << "-hide_banner" << "-f" << "rawvideo"
+             << "-pixel_format" << "rgb32" << "-video_size" << QStringLiteral("%1x%2").arg(_width).arg(_height) << "-framerate"
+             << QString::number(_framesPerSecond) << "-i" << "-" << "-vf"
+             << "palettegen=stats_mode=full" << "-y" << paletteFile.fileName();
         qDebug() << executable << args;
         if(executable.isEmpty()) {
             throw Exception(tr("ffmpeg (%1) path is not set.").arg(executable));
         }
         _process->start(executable, args);
+
+        // Wait for the process to start.
+        if(_process->state() == QProcess::Starting || _process->state() == QProcess::NotRunning) {
+            if(!_process->waitForStarted()) {
+                throw Exception(tr("Failed to start ffmpeg process."));
+            }
+        }
+
+        for(const QImage& image : _images) {
+            // Write raw pixel data
+            const uchar* bits = image.constBits();
+            const qint64 size = image.sizeInBytes();
+            _process->write((const char*)bits, size);
+        }
+
+        // Close the input pipe
+        _process->closeWriteChannel();
         finishCurrentProcess();
+
+        // VERIFY the palette file exists and has content
+        QFileInfo paletteInfo(paletteFile.fileName());
+        if(!paletteInfo.exists() || paletteInfo.size() == 0) {
+            throw Exception(tr("Palette file was not created properly"));
+        }
 
         args.clear();
 
         // Render the gif
-        args << "-hide_banner" << "-framerate" << QString::number(_framesPerSecond) << "-i" << _tempDir->filePath("image_%06d.png") << "-i"
-             << _tempDir->filePath("palette.png") << "-lavfi"
-             << "paletteuse=dither=floyd_steinberg" << _outFilename;
-
+        args << "-hide_banner" << "-f" << "rawvideo"
+             << "-pixel_format" << "rgb32" << "-video_size" << QStringLiteral("%1x%2").arg(_width).arg(_height) << "-framerate"
+             << QString::number(_framesPerSecond) << "-i" << "-" << "-i" << paletteFile.fileName() << "-lavfi"
+             << "paletteuse=dither=floyd_steinberg" << "-y" << _outFilename;
+        qDebug() << executable << args;
+        if(executable.isEmpty()) {
+            throw Exception(tr("ffmpeg (%1) path is not set.").arg(executable));
+        }
         _process->start(executable, args);
+
+        // Wait for the process to start.
+        if(_process->state() == QProcess::Starting || _process->state() == QProcess::NotRunning) {
+            if(!_process->waitForStarted()) {
+                throw Exception(tr("Failed to start ffmpeg process."));
+            }
+        }
+
+        for(const QImage& image : _images) {
+            // Write raw pixel data
+            const uchar* bits = image.constBits();
+            const qint64 size = image.sizeInBytes();
+            _process->write((const char*)bits, size);
+        }
+
+        // Close the input pipe
+        _process->closeWriteChannel();
         finishCurrentProcess();
     }
     else {

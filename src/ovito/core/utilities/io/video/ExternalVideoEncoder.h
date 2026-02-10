@@ -76,7 +76,10 @@ private:
     bool _finalized = false;
 
     /// Temporary file used for image storage and palette generation (gif encoder only)
-    std::unique_ptr<QTemporaryDir> _tempDir;
+    std::vector<QImage> _images;
+    bool _gifmode = false;
+    int _width = 0;
+    int _height = 0;
 
     float _framesPerSecond;
 
