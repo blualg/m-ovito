@@ -185,9 +185,22 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
     const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(codecName);
     const char* codecLib = codecPtr ? codecPtr->libName.data() : "libx264";
 
+    // Special case for gif encoder -> stores all images and processes them later
+    if((format && format->candidate->name == "gif") || filename.endsWith(".gif", Qt::CaseInsensitive)) {
+        _tempDir = std::make_unique<QTemporaryDir>();
+        if(!_tempDir->isValid()) {
+            throw Exception(tr("Failed to open temporary directory for gif encoder."));
+        }
+        _framesPerSecond = framesPerSecond;
+        _outFilename = filename;
+        return;
+    }
+
     const auto quality =
         (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
 
+    // Default streaming mode for video encoding
+    QStringList args;
     int crf = 23;
     if(std::strcmp(codecLib, "libx264") == 0) {
         if(quality == VideoEncoder::Quality::High) {
@@ -225,8 +238,6 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
     else {
         throw Exception(tr("Unsupported codec: %1").arg(codecLib));
     }
-
-    QStringList args;
     args << "-hide_banner"
          << "-f" << "rawvideo"
          << "-pixel_format" << "rgb32"
@@ -246,6 +257,16 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
 
 void ExternalVideoEncoder::writeFrame(const QImage& image)
 {
+    // Special case for gif encoder -> stores all images and processes them later
+    if(_tempDir) {
+        const QString& filename = _tempDir->filePath(QStringLiteral("image_%1.png").arg(_numFrames, 6, 10, QChar('0')));
+        qDebug() << "Writing frame" << _numFrames << "to" << filename;
+        image.save(filename);
+        _numFrames++;
+        return;
+    }
+
+    // Video mode - store each image individually
     if(image.width() % 2 != 0) {
         throw Exception(tr("Image width must be even: %1").arg(image.width()));
     }
@@ -277,16 +298,9 @@ void ExternalVideoEncoder::writeFrame(const QImage& image)
     _process->write((const char*)bits, size);
 }
 
-void ExternalVideoEncoder::finalize()
+/// finish current process
+void ExternalVideoEncoder::finishCurrentProcess()
 {
-    _finalized = true;
-    _process->closeWriteChannel();
-}
-
-void ExternalVideoEncoder::closeFile()
-{
-    finalize();
-
     if(!_process->waitForFinished(30 * 1000)) {
         Exception ex(tr("Failed to finish ffmpeg process"));
         ex.appendDetailMessage(QString::fromUtf8(_process->readAllStandardError()));
@@ -297,6 +311,48 @@ void ExternalVideoEncoder::closeFile()
         Exception ex(tr("ffmpeg failed with exit code:") + QString::number(_process->exitCode()));
         ex.appendDetailMessage(QString::fromUtf8(_process->readAllStandardError()));
         throw ex;
+    }
+}
+
+void ExternalVideoEncoder::closeFile()
+{
+    if(_finalized) {
+        return;
+    }
+
+    _finalized = true;
+
+    if(_tempDir) {
+        // Process all images in the temporary directory
+        QSettings settings;
+        const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "ffmpeg").toString();
+
+        QStringList args;
+
+        // Run palette generation
+        args << "-hide_banner" << "-framerate" << QString::number(_framesPerSecond) << "-i" << _tempDir->filePath("image_%06d.png") << "-vf"
+             << "palettegen=stats_mode=full" << "-update"
+             << "1" << _tempDir->filePath(QStringLiteral("palette.png"));
+        qDebug() << executable << args;
+        if(executable.isEmpty()) {
+            throw Exception(tr("ffmpeg (%1) path is not set.").arg(executable));
+        }
+        _process->start(executable, args);
+        finishCurrentProcess();
+
+        args.clear();
+
+        // Render the gif
+        args << "-hide_banner" << "-framerate" << QString::number(_framesPerSecond) << "-i" << _tempDir->filePath("image_%06d.png") << "-i"
+             << _tempDir->filePath("palette.png") << "-lavfi"
+             << "paletteuse=dither=floyd_steinberg" << _outFilename;
+
+        _process->start(executable, args);
+        finishCurrentProcess();
+    }
+    else {
+        _process->closeWriteChannel();
+        finishCurrentProcess();
     }
 }
 

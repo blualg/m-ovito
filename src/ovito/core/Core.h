@@ -101,6 +101,7 @@
 #include <QStringList>
 #include <QtDebug>
 #include <QTemporaryFile>
+#include <QTemporaryDir>
 #include <QtGlobal>
 #include <QThread>
 #include <QTimer>

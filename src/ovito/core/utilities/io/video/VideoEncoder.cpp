@@ -103,13 +103,13 @@ void VideoEncoder::writeFrame(const QImage& image) { _encoder->writeFrame(image)
 
 const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(std::string_view name)
 {
-    static const std::array<CandidateFormat, 5> CandidateFormats{
+    static const std::array<CandidateFormat, 4> CandidateFormats{
+        // {{
+        //      .name = "avi",
+        //      .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
+        //      .extensions = QStringList{QStringLiteral("avi")},
+        //  },
         {{
-             .name = "avi",
-             .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
-             .extensions = QStringList{QStringLiteral("avi")},
-         },
-         {
              .name = "mp4",
              .longName = QStringLiteral("MP4 (MPEG-4 Part 14)"),
              .extensions = QStringList{QStringLiteral("mp4")},

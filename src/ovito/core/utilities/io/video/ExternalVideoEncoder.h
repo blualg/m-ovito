@@ -65,16 +65,22 @@ public:
     /// Clears the list of supported codecs.
     static void clearCodecs() { _supportedCodecs.clear(); }
 
-private:
-    /// Finalizes the video file.
-    /// Does not block so that ffmpeg can finish writing the file in the background
-    void finalize();
+    /// finish current process
+    void finishCurrentProcess();
 
+private:
     /// Subprocess running ffmpeg
     QProcess* _process;
 
     /// Flag indicating that the encoder has been finalized - no more frames can be added
     bool _finalized = false;
+
+    /// Temporary file used for image storage and palette generation (gif encoder only)
+    std::unique_ptr<QTemporaryDir> _tempDir;
+
+    float _framesPerSecond;
+
+    QString _outFilename;
 
     /// The list of supported video formats.
     inline static QList<VideoEncoder::Format> _supportedFormats;

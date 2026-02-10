@@ -86,7 +86,6 @@ private:
     AVFilterContext* _bufferSourceCtx = nullptr;
     AVFilterContext* _bufferSinkCtx = nullptr;
     bool _isOpen = false;
-    int _numFrames = 0;
     int _frameDuplication = 1;
 
     /// The list of supported video formats.

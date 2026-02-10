@@ -95,6 +95,10 @@ public:
         static const CandidateFormat* getCandidateFormat(std::string_view name);
         /// Compares a codec name to the list of supported codecs and returns the corresponding CandidateCodec.
         static const CandidateCodec* getCandidateCodec(std::string_view name);
+
+    protected:
+        // Current frame number
+        int _numFrames = 0;
     };
 
 public:
