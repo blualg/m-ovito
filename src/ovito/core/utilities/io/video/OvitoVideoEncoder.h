@@ -49,7 +49,7 @@ class OVITO_CORE_EXPORT OvitoVideoEncoder : public VideoEncoder::VideoEncoderBac
 
 public:
     /// Constructor.
-    OvitoVideoEncoder(QObject* parent = nullptr);
+    OvitoVideoEncoder(const Task*, QObject* parent = nullptr);
 
     /// Destructor.
     virtual ~OvitoVideoEncoder();
@@ -87,6 +87,7 @@ private:
     AVFilterContext* _bufferSinkCtx = nullptr;
     bool _isOpen = false;
     int _frameDuplication = 1;
+    int _numFrames = 0;
 
     /// The list of supported video formats.
     inline static QList<VideoEncoder::Format> _supportedFormats;

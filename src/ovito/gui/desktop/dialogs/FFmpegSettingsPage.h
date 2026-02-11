@@ -30,14 +30,14 @@ namespace Ovito {
 /**
  * Page of the application settings dialog, which hosts rendering options.
  */
-class OVITO_GUI_EXPORT RenderSettingsPage : public ApplicationSettingsDialogPage
+class OVITO_GUI_EXPORT FFmpegSettingsPage : public ApplicationSettingsDialogPage
 {
     Q_OBJECT
-    OVITO_CLASS(RenderSettingsPage)
+    OVITO_CLASS(FFmpegSettingsPage)
 
 public:
     /// Default constructor.
-    explicit RenderSettingsPage() = default;
+    explicit FFmpegSettingsPage() = default;
 
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
@@ -46,14 +46,17 @@ public:
     virtual void saveValues(QTabWidget* tabWidget) override;
 
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-    virtual int pageSortingKey() const override { return 0; }
+    virtual int pageSortingKey() const override { return 20; }
 
 Q_SIGNALS:
+    /// Emitted when the path to the ffmpeg executable has been validated.
     void ffmpegPathValidated(bool isValid);
 
 private:
+    /// Validate the path to the ffmpeg executable.
     void validateFfmpegPath();
 
+    /// Refresh the list of available codecs.
     void refreshCodecCombobox();
 
 private:

@@ -30,13 +30,13 @@ namespace Ovito {
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
+VideoEncoder::VideoEncoder(const Task* task, QObject* parent) : QObject(parent)
 {
     if(getBackend() == Backend::OVITO) {
-        _encoder = std::make_unique<OvitoVideoEncoder>(parent);
+        _encoder = std::make_unique<OvitoVideoEncoder>(task, parent);
     }
     else {
-        _encoder = std::make_unique<ExternalVideoEncoder>(parent);
+        _encoder = std::make_unique<ExternalVideoEncoder>(task, parent);
     }
 }
 
@@ -103,13 +103,13 @@ void VideoEncoder::writeFrame(const QImage& image) { _encoder->writeFrame(image)
 
 const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(std::string_view name)
 {
-    static const std::array<CandidateFormat, 4> CandidateFormats{
-        // {{
-        //      .name = "avi",
-        //      .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
-        //      .extensions = QStringList{QStringLiteral("avi")},
-        //  },
+    static const std::array<const CandidateFormat, 5> CandidateFormats{
         {{
+             .name = "avi",
+             .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
+             .extensions = QStringList{QStringLiteral("avi")},
+         },
+         {
              .name = "mp4",
              .longName = QStringLiteral("MP4 (MPEG-4 Part 14)"),
              .extensions = QStringList{QStringLiteral("mp4")},
@@ -137,8 +137,8 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
 
 const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(std::string_view name)
 {
-    static constexpr std::array<CandidateCodec, 3> candidateCodecs{{
-        {.name = "av1", .longName = "Alliance for Open Media AV1", .libName = "libsvtav1"},
+    static const std::array<const CandidateCodec, 2> candidateCodecs{{
+        // {.name = "av1", .longName = "Alliance for Open Media AV1", .libName = "libsvtav1"},
         {.name = "h264", .longName = "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", .libName = "libx264"},
         {.name = "hevc", .longName = "H.265 / HEVC (High Efficiency Video Coding)", .libName = "libx265"},
     }};

@@ -40,7 +40,7 @@ namespace Ovito {
 /******************************************************************************
  * Constructor
  ******************************************************************************/
-OvitoVideoEncoder::OvitoVideoEncoder(QObject* parent) : VideoEncoder::VideoEncoderBackend(parent)
+OvitoVideoEncoder::OvitoVideoEncoder(const Task* task, QObject* parent) : VideoEncoder::VideoEncoderBackend(task, parent)
 {
     qDebug() << "OvitoVideoEncoder()";
     initCodecs();

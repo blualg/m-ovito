@@ -54,7 +54,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/ApplicationSettingsDialog.cpp
         dialogs/GeneralSettingsPage.cpp
         dialogs/ViewportSettingsPage.cpp
-        dialogs/RenderSettingsPage.cpp
+        dialogs/FFmpegSettingsPage.cpp
         dialogs/ModifierTemplatesPage.cpp
         dialogs/OverlayTemplatesPage.cpp
         dialogs/TemplatesPageBase.cpp

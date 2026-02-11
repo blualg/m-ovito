@@ -43,16 +43,16 @@ class OVITO_CORE_EXPORT VideoEncoder : public QObject
 public:
     /// List of supported video formats (containers, i.e. ffmpeg -demuxers)
     struct CandidateFormat {
-        const std::string_view name;
+        const QByteArray name;
         const QString longName;
         const QStringList extensions;
     };
 
     /// List of supported video codecs (encoders)
     struct CandidateCodec {
-        const std::string_view name;
-        const std::string_view longName;
-        const std::string_view libName;
+        const QByteArray name;
+        const QByteArray longName;
+        const QByteArray libName;
     };
 
     /**
@@ -78,7 +78,7 @@ public:
     class VideoEncoderBackend : public QObject
     {
     public:
-        VideoEncoderBackend(QObject* parent = nullptr) : QObject(parent) {}
+        VideoEncoderBackend(const Task* _task, QObject* parent = nullptr) : QObject(parent), _task(_task) {}
 
         /// Opens a video file for writing.
         virtual void openFile(
@@ -96,9 +96,8 @@ public:
         /// Compares a codec name to the list of supported codecs and returns the corresponding CandidateCodec.
         static const CandidateCodec* getCandidateCodec(std::string_view name);
 
-    protected:
-        // Current frame number
-        int _numFrames = 0;
+        /// The task that is currently running.
+        const Task* _task;
     };
 
 public:
@@ -108,7 +107,7 @@ public:
         OVITO
     };
     /// Constructor.
-    VideoEncoder(QObject* parent = nullptr);
+    VideoEncoder(const Task* task = nullptr, QObject* parent = nullptr);
 
     /// Opens a video file for writing.
     void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);

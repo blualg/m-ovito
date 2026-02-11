@@ -28,7 +28,7 @@
 namespace Ovito {
 
 /**
- * \brief Wrapper class for the ffmpeg video encoding using an external process.
+ * \brief Wrapper class for the FFmpeg video encoding using an external process.
  */
 class OVITO_CORE_EXPORT ExternalVideoEncoder : public VideoEncoder::VideoEncoderBackend
 {
@@ -36,7 +36,10 @@ class OVITO_CORE_EXPORT ExternalVideoEncoder : public VideoEncoder::VideoEncoder
 
 public:
     /// Constructor.
-    ExternalVideoEncoder(QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(parent) { qDebug() << "ExternalVideoEncoder()"; }
+    ExternalVideoEncoder(const Task* task, QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(task, parent)
+    {
+        qDebug() << "ExternalVideoEncoder()";
+    }
 
     /// Destructor.
     /// Calls closeFile() to ensure that the external process is terminated - might block for up to 30s;
@@ -65,11 +68,14 @@ public:
     /// Clears the list of supported codecs.
     static void clearCodecs() { _supportedCodecs.clear(); }
 
-    /// finish current process
-    void finishCurrentProcess();
-
 private:
-    /// Subprocess running ffmpeg
+    /// finish current process
+    static void finishFFmpegProcess(QProcess* process, int timeout = 30 * 1000, const Task* task = nullptr);
+
+    /// start subproces
+    static void startFFmpegProcess(QProcess* process, const QStringList& command, int timeout = 30 * 1000);
+
+    /// Subprocess running FFmpeg
     QProcess* _process;
 
     /// Flag indicating that the encoder has been finalized - no more frames can be added
