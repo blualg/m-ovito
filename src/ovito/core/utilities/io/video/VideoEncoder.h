@@ -97,10 +97,10 @@ public:
         static const CandidateCodec* getCandidateCodec(std::string_view name);
     };
 
-    enum class Backend : uint8_t // VIDTODO: Nach oben zu Quality enum verschieben? Groß/Kleinschreibung angleichen?
+    enum class Backend : uint8_t  // VIDTODO: Nach oben zu Quality enum verschieben? Groß/Kleinschreibung angleichen?
     {
-        EXTERN, // VIDTODO: "EXTERNAL" vielleicht besser, mehr konsistent mit "ExternalVideoEncoder" Klassenname?
-        OVITO // VIDTODO: Ist "OVITO" ein guter Bezeichner? "INTERN" oder "BUILTIN" vielleicht besser, also Gegenteil zu "EXTERN"?
+        EXTERNAL,  // VIDTODO: "EXTERNAL" vielleicht besser, mehr konsistent mit "ExternalVideoEncoder" Klassenname?
+        INTERNAL   // VIDTODO: Ist "OVITO" ein guter Bezeichner? "INTERN" oder "BUILTIN" vielleicht besser, also Gegenteil zu "EXTERN"?
     };
     /// Constructor.
     VideoEncoder(QObject* parent = nullptr);
@@ -115,11 +115,14 @@ public:
     void closeFile();
 
     /// Returns the list of supported output formats.
-    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, const QString& path = "");
+    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, QStringView path = {});
 
     /// Returns the list of supported output codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt,
-                                                                      const QString& path = ""); // VIDTODO: Hier lieber QStringView parameter? Falls doch 'const QString&': Default Parameterwert "" ist ungünstig. glaube ich, weil dann stets eine Runtime-Konvertierung von const char* zu QString erfolgt. Lieber {} als Defaultwert nehmen. Gleiches gilt für supportedFormats() oben.
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(
+        std::optional<Backend> backend = std::nullopt,
+        QStringView path = {});  // VIDTODO: Hier lieber QStringView parameter? Falls doch 'const QString&': Default Parameterwert "" ist
+                                 // ungünstig. glaube ich, weil dann stets eine Runtime-Konvertierung von const char* zu QString erfolgt.
+                                 // Lieber {} als Defaultwert nehmen. Gleiches gilt für supportedFormats() oben.
 
     /// Clears the list of supported codecs.
     static void clearCodecs();
@@ -132,7 +135,7 @@ public:
 private:
     static Backend getBackend();
 
-    std::unique_ptr<VideoEncoderBackend> _encoder; // VIDTODO: Lieber "_backend" ?
+    std::unique_ptr<VideoEncoderBackend> _backend;  // VIDTODO: Lieber "_backend" ?
 };
 
 }   // End of namespace

@@ -20,19 +20,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "ExternalVideoEncoder.h"
+#include "ExternalVideoEncoderBackend.h"
 
 namespace Ovito {
 
-ExternalVideoEncoder::~ExternalVideoEncoder()
+ExternalVideoEncoderBackend::~ExternalVideoEncoderBackend()
 {
-    qDebug() << "~ExternalVideoEncoder()";
+    qDebug() << "~ExternalVideoEncoderBackend()";
     try {
         closeFile();
     }
     catch(const Exception& ex) {
         // Swallow exceptions in destructor
-        qWarning() << "Warning: Unexpected exception in ExternalVideoEncoder destructor:";
+        qWarning() << tr("Warning: Unexpected exception in ExternalVideoEncoderBackend destructor:");
         ex.logError();
     }
 }
@@ -40,27 +40,32 @@ ExternalVideoEncoder::~ExternalVideoEncoder()
 /******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> ExternalVideoEncoder::supportedFormats(const QString& path)
+QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStringView path)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
     if(!_supportedFormats.empty()) return _supportedFormats;
 
     QProcess process;
-    startFFmpegProcess(&process, QStringList() << "-hide_banner" << "-formats", path);
+    startFFmpegProcess(&process, QStringList() << QStringLiteral("-hide_banner") << QStringLiteral("-formats"), path);
     finishFFmpegProcess(&process, 5 * 1000);
 
-    for(auto line : process.readAllStandardOutput() | std::views::split('\n')) { // VIDTODO: Wieso hier stets '\n' und unten in supportedCodecs() plattformabhängig "sep"?
-#if 0
-        // VIDTODO: Statt for-loop lieber folgendes?
-        // Tokenize line, skip first token (contains flags), and check second token for format name.
-        auto tokens = line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
+#ifdef Q_OS_WIN
+    static constexpr std::string_view sep = "\r\n";
+#else
+    static constexpr std::string_view sep = "\n";
+#endif
+    // VIDTODO: Wieso hier stets '\n' und unten in supportedCodecs() plattformabhängig "sep"?
+    for(auto line : process.readAllStandardOutput() | std::views::split(sep)) {
+#if 1
+        auto tokens =
+            line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
         if(tokens.begin() != tokens.end()) {
             if(const VideoEncoder::CandidateFormat* candidate = getCandidateFormat(std::string_view(*tokens.begin()))) {
                 _supportedFormats.push_back({.candidate = candidate, .avformat = nullptr});
             }
         }
-#endif
+#else
         size_t tokenIndex = 0;
         for(auto token : line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); })) {
             // Second token is the name of the format
@@ -75,6 +80,7 @@ QList<VideoEncoder::Format> ExternalVideoEncoder::supportedFormats(const QString
             }
             tokenIndex++;
         }
+#endif
     }
 
     return _supportedFormats;
@@ -83,14 +89,14 @@ QList<VideoEncoder::Format> ExternalVideoEncoder::supportedFormats(const QString
 /******************************************************************************
  * Returns the list of supported output codecs.
  ******************************************************************************/
-QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoder::supportedCodecs(const QString& path)
+QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supportedCodecs(QStringView path)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
     if(!_supportedCodecs.empty()) return _supportedCodecs;
 
     QProcess process;
-    startFFmpegProcess(&process, QStringList() << "-hide_banner" << "-encoders", path);
+    startFFmpegProcess(&process, QStringList() << QStringLiteral("-hide_banner") << QStringLiteral("-encoders"), path);
     finishFFmpegProcess(&process, 5 * 1000);
 
 #ifdef Q_OS_WIN
@@ -121,10 +127,11 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoder::supportedCodecs
     return _supportedCodecs;
 }
 
-void ExternalVideoEncoder::startFFmpegProcess(QProcess* process, const QStringList& command, const QString& path, const int timeout)
+void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path, const int timeout)
 {
     QSettings settings;
-    const QString& executable = path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "ffmpeg").toString() : path;
+    const QString& executable =
+        path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString();
     qDebug() << executable << command;
     if(executable.isEmpty()) {
         throw Exception(tr("FFmpeg (%1) path is not set.").arg(executable));
@@ -144,7 +151,7 @@ void ExternalVideoEncoder::startFFmpegProcess(QProcess* process, const QStringLi
 }
 
 /// finish current process
-void ExternalVideoEncoder::finishFFmpegProcess(QProcess* process, const int timeout)
+void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const int timeout)
 {
     if(!process) {
         return;
@@ -182,12 +189,14 @@ void ExternalVideoEncoder::finishFFmpegProcess(QProcess* process, const int time
     }
 }
 
-void ExternalVideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
+void ExternalVideoEncoderBackend::openFile(
+    const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
     _process = new QProcess(this);
 
     // Special case for gif encoder -> stores all images and processes them later
-    if((format && format->candidate->name == "gif") || filename.endsWith(".gif", Qt::CaseInsensitive)) {
+    if((format && format->candidate->name == QByteArrayLiteral("gif")) ||
+       filename.endsWith(QByteArrayLiteral(".gif"), Qt::CaseInsensitive)) {
         _gifmode = true;
         _framesPerSecond = framesPerSecond;
         _width = width;
@@ -212,7 +221,7 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
     // Default streaming mode for video encoding
     QStringList args;
     int crf = 23;
-    if(codecLib == "libx264") {
+    if(codecLib == QByteArrayLiteral("libx264")) {
         if(quality == VideoEncoder::Quality::High) {
             crf = 19;
         }
@@ -223,7 +232,7 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
             crf = 26;
         }
     }
-    else if(codecLib == "libx265") {
+    else if(codecLib == QByteArrayLiteral("libx265")) {
         if(quality == VideoEncoder::Quality::High) {
             crf = 17;
         }
@@ -237,19 +246,16 @@ void ExternalVideoEncoder::openFile(const QString& filename, int width, int heig
     else {
         throw Exception(tr("Unsupported codec: %1").arg(codecLib));
     }
-    args << "-hide_banner"
-         << "-f" << "rawvideo"
-         << "-pixel_format" << "rgb32"
-         << "-video_size" << QStringLiteral("%1x%2").arg(width).arg(height) << "-framerate" << QString::number(framesPerSecond) << "-i"
-         << "-"
-         << "-c:v" << codecLib << "-pix_fmt" << "yuv420p"
-         << "-crf" << QString::number(crf) << "-preset" << "slow"
-         << "-y" << filename;
+    args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
+         << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(width).arg(height)
+         << QStringLiteral("-framerate") << QString::number(framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
+         << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << QStringLiteral("-crf")
+         << QString::number(crf) << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
 
     startFFmpegProcess(_process, args);
 }
 
-void ExternalVideoEncoder::writeFrame(const QImage& image)
+void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
 {
     // Special case for gif encoder -> stores all images and processes them later
     if(_gifmode) {
@@ -281,7 +287,7 @@ void ExternalVideoEncoder::writeFrame(const QImage& image)
     _process->write((const char*)bits, size);
 }
 
-void ExternalVideoEncoder::closeFile()
+void ExternalVideoEncoderBackend::closeFile()
 {
     if(_finalized) {
         return;
@@ -305,10 +311,10 @@ void ExternalVideoEncoder::closeFile()
         qDebug() << "Writing palette to" << paletteFile.fileName();
 
         // Run palette generation
-        args << "-hide_banner" << "-f" << "rawvideo"
-             << "-pixel_format" << "rgb32" << "-video_size" << QStringLiteral("%1x%2").arg(_width).arg(_height) << "-framerate"
-             << QString::number(_framesPerSecond) << "-i" << "-" << "-vf"
-             << "palettegen=stats_mode=full" << "-y" << paletteFile.fileName();
+        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
+             << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+             << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
+             << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName();
 
         startFFmpegProcess(_process, args);
 
@@ -332,10 +338,11 @@ void ExternalVideoEncoder::closeFile()
         args.clear();
 
         // Render the gif
-        args << "-hide_banner" << "-f" << "rawvideo"
-             << "-pixel_format" << "rgb32" << "-video_size" << QStringLiteral("%1x%2").arg(_width).arg(_height) << "-framerate"
-             << QString::number(_framesPerSecond) << "-i" << "-" << "-i" << paletteFile.fileName() << "-lavfi"
-             << "paletteuse=dither=floyd_steinberg" << "-y" << _outFilename;
+        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
+             << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+             << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
+             << QStringLiteral("-i") << paletteFile.fileName() << QStringLiteral("-lavfi")
+             << QStringLiteral("paletteuse=dither=floyd_steinberg") << QStringLiteral("-y") << _outFilename;
 
         startFFmpegProcess(_process, args);
 

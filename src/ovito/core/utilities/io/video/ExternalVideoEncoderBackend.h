@@ -30,17 +30,20 @@ namespace Ovito {
 /**
  * \brief Wrapper class for the FFmpeg video encoding using an external process.
  */
-class OVITO_CORE_EXPORT ExternalVideoEncoder : public VideoEncoder::VideoEncoderBackend
+class OVITO_CORE_EXPORT ExternalVideoEncoderBackend : public VideoEncoder::VideoEncoderBackend
 {
     Q_OBJECT
 
 public:
     /// Constructor.
-    ExternalVideoEncoder(QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(parent) { qDebug() << "ExternalVideoEncoder()"; }
+    ExternalVideoEncoderBackend(QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(parent)
+    {
+        qDebug() << "ExternalVideoEncoderBackend()";
+    }
 
     /// Destructor.
     /// Calls closeFile() to ensure that the external process is terminated - might block for up to 30s;
-    virtual ~ExternalVideoEncoder();
+    virtual ~ExternalVideoEncoderBackend();
 
     /// Opens a video file for writing.
     virtual void openFile(
@@ -57,10 +60,10 @@ public:
     // static QList<VideoEncoder::Format> supportedFormatsFiltered();
 
     /// Returns the list of supported output formats.
-    static QList<VideoEncoder::Format> supportedFormats(const QString& path);
+    static QList<VideoEncoder::Format> supportedFormats(QStringView path);
 
     /// Returns the list of supported codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(const QString& path);
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(QStringView path);
 
     /// Clears the list of supported codecs.
     static void clearCodecs() { _supportedCodecs.clear(); }
@@ -70,7 +73,7 @@ private:
     static void finishFFmpegProcess(QProcess* process, int timeout = 30 * 1000);
 
     /// start subproces
-    static void startFFmpegProcess(QProcess* process, const QStringList& command, const QString& path = "", int timeout = 30 * 1000);
+    static void startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path = {}, int timeout = 30 * 1000);
 
     /// Subprocess running FFmpeg
     QProcess* _process;

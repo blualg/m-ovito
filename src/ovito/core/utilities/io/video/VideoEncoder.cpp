@@ -22,8 +22,8 @@
 
 #include <ovito/core/Core.h>
 #include "VideoEncoder.h"
-#include "OvitoVideoEncoder.h"
-#include "ExternalVideoEncoder.h"
+#include "InternalVideoEncoderBackend.h"
+#include "ExternalVideoEncoderBackend.h"
 
 namespace Ovito {
 
@@ -32,11 +32,11 @@ namespace Ovito {
 ******************************************************************************/
 VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 {
-    if(getBackend() == Backend::OVITO) {
-        _encoder = std::make_unique<OvitoVideoEncoder>(parent);
+    if(getBackend() == Backend::INTERNAL) {
+        _backend = std::make_unique<InternalVideoEncoderBackend>(parent);
     }
     else {
-        _encoder = std::make_unique<ExternalVideoEncoder>(parent);
+        _backend = std::make_unique<ExternalVideoEncoderBackend>(parent);
     }
 }
 
@@ -44,21 +44,21 @@ VideoEncoder::Backend VideoEncoder::getBackend()
 {
     QSettings settings;
     qDebug() << "VideoEncoder::getBackend():" << settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()
-             << ((settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? "Backend::EXTERN" : "Backend::OVITO");
-    return (settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? Backend::EXTERN : Backend::OVITO;
+             << ((settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? "Backend::EXTERNAL" : "Backend::INTERNAL");
+    return (settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? Backend::EXTERNAL : Backend::INTERNAL;
 }
 
 /******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend, const QString& path)
+QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend, QStringView path)
 {
     const Backend b = backend ? *backend : getBackend();
-    if(b == Backend::OVITO) {
-        return OvitoVideoEncoder::supportedFormats();
+    if(b == Backend::INTERNAL) {
+        return InternalVideoEncoderBackend::supportedFormats();
     }
-    else if(b == Backend::EXTERN) {
-        return ExternalVideoEncoder::supportedFormats(path);
+    else if(b == Backend::EXTERNAL) {
+        return ExternalVideoEncoderBackend::supportedFormats(path);
     }
     else {
         OVITO_ASSERT(false);
@@ -69,14 +69,14 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend
 /******************************************************************************
  * Returns the list of supported output codecs.
  ******************************************************************************/
-QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend, const QString& path)
+QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend, QStringView path)
 {
     const Backend b = backend ? *backend : getBackend();
-    if(b == Backend::OVITO) {
+    if(b == Backend::INTERNAL) {
         return {};
     }
-    else if(b == Backend::EXTERN) {
-        return ExternalVideoEncoder::supportedCodecs(path);
+    else if(b == Backend::EXTERNAL) {
+        return ExternalVideoEncoderBackend::supportedCodecs(path);
     }
     else {
         OVITO_ASSERT(false);
@@ -88,44 +88,44 @@ QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::op
 ******************************************************************************/
 void VideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
-    _encoder->openFile(filename, width, height, framesPerSecond);
+    _backend->openFile(filename, width, height, framesPerSecond);
 }
 
 /******************************************************************************
 * This closes the written video file.
 ******************************************************************************/
-void VideoEncoder::closeFile() { _encoder->closeFile(); }
+void VideoEncoder::closeFile() { _backend->closeFile(); }
 
 /******************************************************************************
 * Writes a single frame into the video file.
 ******************************************************************************/
-void VideoEncoder::writeFrame(const QImage& image) { _encoder->writeFrame(image); }
+void VideoEncoder::writeFrame(const QImage& image) { _backend->writeFrame(image); }
 
 const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(std::string_view name)
 {
     static const std::array<const CandidateFormat, 5> CandidateFormats{
         {{
-             .name = "avi", // VIDTODO: Use QByteArrayLiteral macro
+             .name = QByteArrayLiteral("avi"),  // VIDTODO: Use QByteArrayLiteral macro
              .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
              .extensions = QStringList{QStringLiteral("avi")},
          },
          {
-             .name = "mp4",
+             .name = QByteArrayLiteral("mp4"),
              .longName = QStringLiteral("MP4 (MPEG-4 Part 14)"),
              .extensions = QStringList{QStringLiteral("mp4")},
          },
          {
-             .name = "mov",
+             .name = QByteArrayLiteral("mov"),
              .longName = QStringLiteral("QuickTime / MOV"),
              .extensions = QStringList{QStringLiteral("mov")},
          },
          {
-             .name = "matroska",
+             .name = QByteArrayLiteral("matroska"),
              .longName = QStringLiteral("Matroska"),
              .extensions = QStringList{QStringLiteral("mkv")},
          },
          {
-             .name = "gif",
+             .name = QByteArrayLiteral("gif"),
              .longName = QStringLiteral("CompuServe Graphics Interchange Format (GIF)"),
              .extensions = QStringList{QStringLiteral("gif")},
          }}};
@@ -139,8 +139,12 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
 {
     static const std::array<const CandidateCodec, 2> candidateCodecs{{
         // {.name = "av1", .longName = "Alliance for Open Media AV1", .libName = "libsvtav1"},
-        {.name = "h264", .longName = "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", .libName = "libx264"}, // VIDTODO: Use QByteArrayLiteral macro
-        {.name = "hevc", .longName = "H.265 / HEVC (High Efficiency Video Coding)", .libName = "libx265"},
+        {.name = QByteArrayLiteral("h264"),
+         .longName = QByteArrayLiteral("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
+         .libName = QByteArrayLiteral("libx264")},  // VIDTODO: Use QByteArrayLiteral macro
+        {.name = QByteArrayLiteral("hevc"),
+         .longName = QByteArrayLiteral("H.265 / HEVC (High Efficiency Video Coding)"),
+         .libName = QByteArrayLiteral("libx265")},
     }};
 
     const auto it = std::ranges::find(candidateCodecs, name, &CandidateCodec::libName);
@@ -149,6 +153,6 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
 }
 
 /// Clears the list of supported codecs.
-void VideoEncoder::clearCodecs() { ExternalVideoEncoder::clearCodecs(); }
+void VideoEncoder::clearCodecs() { ExternalVideoEncoderBackend::clearCodecs(); }
 
 }   // End of namespace

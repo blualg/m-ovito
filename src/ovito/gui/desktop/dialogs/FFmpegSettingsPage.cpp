@@ -93,9 +93,9 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     codecInfoLabel->setText(
         tr(".avi and .mov files do not support H.265 codec. Please use .mkv or .mp4. Otherwise, a fallback codec (H.264) will be used."));
     codecInfoLabel->setWordWrap(true);
-    codecInfoLabel->setVisible(_ffmpegCodecName == "libx265");
+    codecInfoLabel->setVisible(_ffmpegCodecName == QByteArrayLiteral("libx265"));
     connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this, codecInfoLabel](bool valid) {
-        codecInfoLabel->setVisible(valid && _ffmpegCodecName == "libx265");
+        codecInfoLabel->setVisible(valid && _ffmpegCodecName == QByteArrayLiteral("libx265"));
     });
 
     // Keep space for the label
@@ -106,13 +106,13 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout1->addWidget(codecInfoLabel, row++, 0, 1, 3);
     // Store selection
     connect(_ffmpegCodec, &QComboBox::activated, this, [this, codecInfoLabel](int index) {
-        const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERN : VideoEncoder::Backend::OVITO;
+        const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
         const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : "";
         const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
         if(index < 0 || index > codecs.size()) return;
         const VideoEncoder::CandidateCodec* codec = codecs[index];
         _ffmpegCodecName = codec->libName;
-        codecInfoLabel->setVisible(_ffmpegCodecName == "libx265");
+        codecInfoLabel->setVisible(_ffmpegCodecName == QByteArrayLiteral("libx265"));
     });
 
     _ffmpegQualityBox = new QComboBox(page);
@@ -137,7 +137,7 @@ void FFmpegSettingsPage::refreshCodecCombobox()
     qDebug() << "refreshCodecCombobox()";
     _ffmpegCodec->clear();
     qDebug() << "Current codec name" << _ffmpegCodecName;
-    const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERN : VideoEncoder::Backend::OVITO;
+    const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
     const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : "";
     if(path.isEmpty()) {
         return;
@@ -250,9 +250,11 @@ void FFmpegSettingsPage::validateFfmpegPath()
                 return;
             }
 
-            const QString output = process->readAllStandardOutput();
-            if(exitCode == 0 && output.contains("FFmpeg version", Qt::CaseInsensitive)) {
-                const QString versionString = output.section('\n', 0, 0).trimmed();
+            const QByteArray output = process->readAllStandardOutput();
+            if(exitCode == 0 && output.contains(QByteArrayLiteral("ffmpeg version"))) {
+                const qsizetype newlinePos = output.indexOf('\n');
+                const QByteArray firstLine = (newlinePos != -1) ? output.left(newlinePos).trimmed() : output.trimmed();
+                const QString versionString = QString::fromUtf8(firstLine);
                 // qDebug() << tr("'%1 (%2)' found:\n%3").arg(userInput).arg(path).arg(versionString);
                 _statusLabel->setStatus(
                     PipelineStatus(PipelineStatus::Success, tr("%1 (%2) found:\n%3").arg(userInput).arg(path).arg(versionString)));

@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include "OvitoVideoEncoder.h"
+#include "InternalVideoEncoderBackend.h"
 
 extern "C" {
 #include <libavutil/mathematics.h>
@@ -40,9 +40,9 @@ namespace Ovito {
 /******************************************************************************
  * Constructor
  ******************************************************************************/
-OvitoVideoEncoder::OvitoVideoEncoder(QObject* parent) : VideoEncoder::VideoEncoderBackend(parent)
+InternalVideoEncoderBackend::InternalVideoEncoderBackend(QObject* parent) : VideoEncoder::VideoEncoderBackend(parent)
 {
-    qDebug() << "OvitoVideoEncoder()";
+    qDebug() << "InternalVideoEncoderBackend()";
     initCodecs();
 
 #ifndef OVITO_DEBUG
@@ -53,15 +53,15 @@ OvitoVideoEncoder::OvitoVideoEncoder(QObject* parent) : VideoEncoder::VideoEncod
 /******************************************************************************
  * Destructor.
  ******************************************************************************/
-OvitoVideoEncoder::~OvitoVideoEncoder()
+InternalVideoEncoderBackend::~InternalVideoEncoderBackend()
 {
-    qDebug() << "~OvitoVideoEncoder()";
+    qDebug() << "~InternalVideoEncoderBackend()";
     try {
         closeFile();
     }
     catch(const Exception& ex) {
         // Swallow exceptions in destructor
-        qWarning() << "Warning: Unexpected exception in OvitoVideoEncoder destructor:";
+        qWarning() << tr("Warning: Unexpected exception in InternalVideoEncoderBackend destructor:");
         ex.logError();
     }
 }
@@ -69,7 +69,7 @@ OvitoVideoEncoder::~OvitoVideoEncoder()
 /******************************************************************************
  * Initializes libavcodec, and register all codecs and formats.
  ******************************************************************************/
-void OvitoVideoEncoder::initCodecs()
+void InternalVideoEncoderBackend::initCodecs()
 {
 #if LIBAVFORMAT_VERSION_MAJOR < 58
     static std::once_flag initFlag;
@@ -80,7 +80,7 @@ void OvitoVideoEncoder::initCodecs()
 /******************************************************************************
  * Returns the error string for the given error code.
  ******************************************************************************/
-QString OvitoVideoEncoder::errorMessage(int errorCode)
+QString InternalVideoEncoderBackend::errorMessage(int errorCode)
 {
     char errbuf[512];
     if(::av_strerror(errorCode, errbuf, sizeof(errbuf)) < 0) {
@@ -92,7 +92,7 @@ QString OvitoVideoEncoder::errorMessage(int errorCode)
 /******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> OvitoVideoEncoder::supportedFormats()
+QList<VideoEncoder::Format> InternalVideoEncoderBackend::supportedFormats()
 {
     if(!_supportedFormats.empty()) return _supportedFormats;
 
@@ -122,7 +122,8 @@ QList<VideoEncoder::Format> OvitoVideoEncoder::supportedFormats()
 /******************************************************************************
  * Opens a video file for writing.
  ******************************************************************************/
-void OvitoVideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
+void InternalVideoEncoderBackend::openFile(
+    const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
     int errCode;
 
@@ -377,7 +378,7 @@ void OvitoVideoEncoder::openFile(const QString& filename, int width, int height,
 /******************************************************************************
  * This closes the written video file.
  ******************************************************************************/
-void OvitoVideoEncoder::closeFile()
+void InternalVideoEncoderBackend::closeFile()
 {
     if(!_formatContext) {
         OVITO_ASSERT(!_isOpen);
@@ -495,7 +496,7 @@ void OvitoVideoEncoder::closeFile()
 /******************************************************************************
  * Writes a single frame into the video file.
  ******************************************************************************/
-void OvitoVideoEncoder::writeFrame(const QImage& image)
+void InternalVideoEncoderBackend::writeFrame(const QImage& image)
 {
     OVITO_ASSERT(_isOpen);
     if(!_isOpen) return;
