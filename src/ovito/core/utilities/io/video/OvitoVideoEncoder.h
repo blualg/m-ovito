@@ -43,7 +43,7 @@ namespace Ovito {
 /**
  * \brief Wrapper class for the ffmpeg video encoding library.
  */
-class OVITO_CORE_EXPORT OvitoVideoEncoder : public VideoEncoder::VideoEncoderBackend
+class OVITO_CORE_EXPORT OvitoVideoEncoder : public VideoEncoder::VideoEncoderBackend // VIDTODO: Klassenname lieber "InternalVideoEncoder" (konsistent mit "ExternalVideoEncoder")? Und lieber "...EncoderBackend", damit klar ist, dass es sich um eine konkrete Implementierung eines BACKENDS handelt (bessere Abgrenzung zu "VideoEncoder" Klasse)?
 {
     Q_OBJECT
 

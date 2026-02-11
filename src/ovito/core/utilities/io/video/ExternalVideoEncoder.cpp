@@ -42,13 +42,25 @@ ExternalVideoEncoder::~ExternalVideoEncoder()
  ******************************************************************************/
 QList<VideoEncoder::Format> ExternalVideoEncoder::supportedFormats(const QString& path)
 {
+    OVITO_ASSERT(this_task::isMainThread());
+
     if(!_supportedFormats.empty()) return _supportedFormats;
 
     QProcess process;
     startFFmpegProcess(&process, QStringList() << "-hide_banner" << "-formats", path);
     finishFFmpegProcess(&process, 5 * 1000);
 
-    for(auto line : process.readAllStandardOutput() | std::views::split('\n')) {
+    for(auto line : process.readAllStandardOutput() | std::views::split('\n')) { // VIDTODO: Wieso hier stets '\n' und unten in supportedCodecs() plattformabhängig "sep"?
+#if 0
+        // VIDTODO: Statt for-loop lieber folgendes?
+        // Tokenize line, skip first token (contains flags), and check second token for format name.
+        auto tokens = line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
+        if(tokens.begin() != tokens.end()) {
+            if(const VideoEncoder::CandidateFormat* candidate = getCandidateFormat(std::string_view(*tokens.begin()))) {
+                _supportedFormats.push_back({.candidate = candidate, .avformat = nullptr});
+            }
+        }
+#endif
         size_t tokenIndex = 0;
         for(auto token : line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); })) {
             // Second token is the name of the format
@@ -73,6 +85,8 @@ QList<VideoEncoder::Format> ExternalVideoEncoder::supportedFormats(const QString
  ******************************************************************************/
 QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoder::supportedCodecs(const QString& path)
 {
+    OVITO_ASSERT(this_task::isMainThread());
+
     if(!_supportedCodecs.empty()) return _supportedCodecs;
 
     QProcess process;

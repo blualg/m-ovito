@@ -105,7 +105,7 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
 {
     static const std::array<const CandidateFormat, 5> CandidateFormats{
         {{
-             .name = "avi",
+             .name = "avi", // VIDTODO: Use QByteArrayLiteral macro
              .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
              .extensions = QStringList{QStringLiteral("avi")},
          },
@@ -139,7 +139,7 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
 {
     static const std::array<const CandidateCodec, 2> candidateCodecs{{
         // {.name = "av1", .longName = "Alliance for Open Media AV1", .libName = "libsvtav1"},
-        {.name = "h264", .longName = "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", .libName = "libx264"},
+        {.name = "h264", .longName = "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", .libName = "libx264"}, // VIDTODO: Use QByteArrayLiteral macro
         {.name = "hevc", .longName = "H.265 / HEVC (High Efficiency Video Coding)", .libName = "libx265"},
     }};
 

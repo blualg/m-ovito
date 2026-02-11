@@ -75,7 +75,7 @@ public:
     /**
      * \brief Abstract base class for the ffmpeg video encoding backend.
      */
-    class VideoEncoderBackend : public QObject
+    class VideoEncoderBackend : public QObject // VIDTODO: Ist QObject als Basisklasse notwendig?
     {
     public:
         VideoEncoderBackend(QObject* parent = nullptr) : QObject(parent) {}
@@ -97,10 +97,10 @@ public:
         static const CandidateCodec* getCandidateCodec(std::string_view name);
     };
 
-    enum class Backend : uint8_t
+    enum class Backend : uint8_t // VIDTODO: Nach oben zu Quality enum verschieben? Groß/Kleinschreibung angleichen?
     {
-        EXTERN,
-        OVITO
+        EXTERN, // VIDTODO: "EXTERNAL" vielleicht besser, mehr konsistent mit "ExternalVideoEncoder" Klassenname?
+        OVITO // VIDTODO: Ist "OVITO" ein guter Bezeichner? "INTERN" oder "BUILTIN" vielleicht besser, also Gegenteil zu "EXTERN"?
     };
     /// Constructor.
     VideoEncoder(QObject* parent = nullptr);
@@ -119,7 +119,7 @@ public:
 
     /// Returns the list of supported output codecs.
     static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt,
-                                                                      const QString& path = "");
+                                                                      const QString& path = ""); // VIDTODO: Hier lieber QStringView parameter? Falls doch 'const QString&': Default Parameterwert "" ist ungünstig. glaube ich, weil dann stets eine Runtime-Konvertierung von const char* zu QString erfolgt. Lieber {} als Defaultwert nehmen. Gleiches gilt für supportedFormats() oben.
 
     /// Clears the list of supported codecs.
     static void clearCodecs();
@@ -132,7 +132,7 @@ public:
 private:
     static Backend getBackend();
 
-    std::unique_ptr<VideoEncoderBackend> _encoder;
+    std::unique_ptr<VideoEncoderBackend> _encoder; // VIDTODO: Lieber "_backend" ?
 };
 
 }   // End of namespace
