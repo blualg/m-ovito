@@ -456,4 +456,9 @@ QString Application::applicationFilePath() const
     return qApp ? QCoreApplication::applicationFilePath() : ovitoAppFileName();
 }
 
+/******************************************************************************
+ * Emits the settingsChanged() signal.
+ ******************************************************************************/
+void Application::emitSettingsChangedSignal() { Q_EMIT settingsChanged(); }
+
 }   // End of namespace

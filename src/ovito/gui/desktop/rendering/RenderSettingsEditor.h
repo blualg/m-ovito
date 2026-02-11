@@ -73,6 +73,9 @@ private Q_SLOTS:
     /// Updates the displayed video length based on the current render settings.
     void updateVideoLengthDisplay();
 
+    /// Updates the external FFmpeg label.
+    void updateExternalFFmpegLabel();
+
 private:
 
     /// Reference to the currently active viewport.
@@ -81,6 +84,7 @@ private:
     QComboBox* _sizePresetsBox;
     QCheckBox* _viewportPreviewModeBox;
     QLabel* _videoLengthLabel;
+    QLabel* _externalFFmpegLabel;
 };
 
 }   // End of namespace

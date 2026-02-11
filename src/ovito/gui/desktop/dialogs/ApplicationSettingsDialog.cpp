@@ -110,6 +110,9 @@ void ApplicationSettingsDialog::onOk()
 
         // Close dialog box.
         accept();
+
+        // Emit the settingsChanged() signal.
+        Application::instance()->emitSettingsChangedSignal();
     });
 }
 

@@ -139,24 +139,23 @@ void FFmpegSettingsPage::refreshCodecCombobox()
     qDebug() << "Current codec name" << _ffmpegCodecName;
     const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERN : VideoEncoder::Backend::OVITO;
     const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : "";
+    if(path.isEmpty()) {
+        return;
+    }
+
     const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
     if(codecs.empty()) {
         _statusLabel->setStatus(PipelineStatus(
             PipelineStatus::Error, tr("External FFmpeg does not support required codecs, the built-in FFmpeg library will be used.")));
         _externalFFmpeg = false;
     }
-    try {
-        for(const auto [i, codec] : Ovito::enumerate(codecs)) {
-            _ffmpegCodec->addItem(codec->longName);
-            qDebug() << "codec name" << _ffmpegCodecName << codec->name << (codec->name == _ffmpegCodecName);
-            if(codec->libName == _ffmpegCodecName) {
-                _ffmpegCodec->setCurrentIndex((int)i);
-            }
+
+    for(const auto [i, codec] : Ovito::enumerate(codecs)) {
+        _ffmpegCodec->addItem(codec->longName);
+        qDebug() << "codec name" << _ffmpegCodecName << codec->name << (codec->name == _ffmpegCodecName);
+        if(codec->libName == _ffmpegCodecName) {
+            _ffmpegCodec->setCurrentIndex((int)i);
         }
-    }
-    catch(const Exception& ex) {
-        _statusLabel->setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join("\n")));
-        _externalFFmpeg = false;
     }
 }
 
