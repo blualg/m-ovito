@@ -192,13 +192,17 @@ IF(ZLIB_FOUND)
     ENDIF()
     # Additionally, build zstd's zlib-wrapper source files, because the OVITO code uses zstd through this compatibility layer.
     TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
-    TARGET_SOURCES(Core PRIVATE
+    SET(ZSTD_ZLIBWRAPPER_SOURCES
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzlib.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzread.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzwrite.c"
     )
+    # Define STDC for the zstd zlibWrapper source files, because newer zlib versions (1.3+) no longer define
+    # this macro in zconf.h, but the zlibWrapper code in gzguts.h still relies on it to include standard headers.
+    SET_SOURCE_FILES_PROPERTIES(${ZSTD_ZLIBWRAPPER_SOURCES} PROPERTIES COMPILE_DEFINITIONS "STDC")
+    TARGET_SOURCES(Core PRIVATE ${ZSTD_ZLIBWRAPPER_SOURCES})
 ELSE()
     MESSAGE(WARNING "zlib library not found. OVITO will be built without I/O support for gzip compressed files.")
 ENDIF()
