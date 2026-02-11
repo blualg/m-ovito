@@ -54,9 +54,25 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     layout1->addWidget(new QLabel(tr("FFmpeg executable:")), row, 0);
     _ffmpegPath = new EnterLineEdit(page);
-    layout1->addWidget(_ffmpegPath, row++, 1, 1, 2);
+    layout1->addWidget(_ffmpegPath, row, 1);
     // Load default from settings
     _ffmpegPath->setText(ffmpegPath);
+
+    // Select the FFmpeg executable using the file menu
+    auto* selectExecutablePathButton = new QPushButton(QStringLiteral("..."));
+    connect(selectExecutablePathButton, &QPushButton::clicked, this, [this, page]() {
+        TaskManager::setNativeDialogActive(true);
+        const QString path = QFileDialog::getOpenFileName(page, tr("Select FFmpeg Executable"), _ffmpegPath->text().trimmed());
+        TaskManager::setNativeDialogActive(false);
+        qDebug() << "path" << path;
+        if(!path.isEmpty()) {
+            _ffmpegPath->setText(path);
+            validateFfmpegPath();
+        }
+    });
+    selectExecutablePathButton->setToolTip(tr("Pick FFmpeg executable..."));
+    layout1->addWidget(selectExecutablePathButton, row++, 2);
+
     // Validate ffmpeg on when path is changed
     connect(_ffmpegPath, &EnterLineEdit::editingFinished, this, &FFmpegSettingsPage::validateFfmpegPath);
     connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this](bool valid) { _externalFFmpeg = valid; });
@@ -118,6 +134,7 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
 void FFmpegSettingsPage::refreshCodecCombobox()
 {
+    qDebug() << "refreshCodecCombobox()";
     _ffmpegCodec->clear();
     qDebug() << "Current codec name" << _ffmpegCodecName;
     const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERN : VideoEncoder::Backend::OVITO;
@@ -145,6 +162,8 @@ void FFmpegSettingsPage::refreshCodecCombobox()
 
 void FFmpegSettingsPage::validateFfmpegPath()
 {
+    qDebug() << "validateFfmpegPath()";
+    VideoEncoder::clearCodecs();
     // User input
     const QString userInput = _ffmpegPath->text().trimmed();
     // qDebug() << "userInput" << userInput;

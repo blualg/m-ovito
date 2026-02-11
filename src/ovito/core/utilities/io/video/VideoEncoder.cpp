@@ -148,4 +148,7 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
     return (it == candidateCodecs.end()) ? nullptr : &(*it);
 }
 
+/// Clears the list of supported codecs.
+void VideoEncoder::clearCodecs() { ExternalVideoEncoder::clearCodecs(); }
+
 }   // End of namespace

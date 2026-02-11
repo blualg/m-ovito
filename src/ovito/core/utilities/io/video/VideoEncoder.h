@@ -121,6 +121,9 @@ public:
     static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt,
                                                                       const QString& path = "");
 
+    /// Clears the list of supported codecs.
+    static void clearCodecs();
+
     constexpr static const char* FFMPEG_PATH_SETTING = "renderer/ffmpeg_path";
     constexpr static const char* FFMPEG_CODEC_SETTING = "renderer/ffmpeg_codec";
     constexpr static const char* FFMPEG_USE_EXT_SETTING = "renderer/ffmpeg_use_external";

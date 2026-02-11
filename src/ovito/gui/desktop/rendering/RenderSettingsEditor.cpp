@@ -45,7 +45,7 @@ DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 
 // Predefined output image dimensions.
-static const int imageSizePresets[][2] = {
+static constexpr inline int imageSizePresets[][2] = {
     {600, 600},
     {800, 600},
     {1024, 768},
