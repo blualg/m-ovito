@@ -130,7 +130,7 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
              .extensions = QStringList{QStringLiteral("gif")},
          }}};
 
-    const auto* it = std::ranges::find(CandidateFormats, name, &CandidateFormat::name);
+    const auto it = std::ranges::find(CandidateFormats, name, &CandidateFormat::name);
 
     return (it == CandidateFormats.end()) ? nullptr : &(*it);
 }
@@ -143,7 +143,7 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
         {.name = "hevc", .longName = "H.265 / HEVC (High Efficiency Video Coding)", .libName = "libx265"},
     }};
 
-    const auto* it = std::ranges::find(candidateCodecs, name, &CandidateCodec::name);
+    const auto it = std::ranges::find(candidateCodecs, name, &CandidateCodec::name);
 
     return (it == candidateCodecs.end()) ? nullptr : &(*it);
 }
