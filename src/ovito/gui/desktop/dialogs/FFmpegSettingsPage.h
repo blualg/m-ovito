@@ -65,7 +65,7 @@ private:
     QComboBox* _ffmpegCodec;
     QComboBox* _ffmpegQualityBox;
     QByteArray _ffmpegCodecName;
-    bool _externalffmpeg;
+    bool _externalFFmpeg;
 };
 
 }  // namespace Ovito

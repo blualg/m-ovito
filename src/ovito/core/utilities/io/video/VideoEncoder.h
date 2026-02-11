@@ -78,7 +78,7 @@ public:
     class VideoEncoderBackend : public QObject
     {
     public:
-        VideoEncoderBackend(const Task* _task, QObject* parent = nullptr) : QObject(parent), _task(_task) {}
+        VideoEncoderBackend(QObject* parent = nullptr) : QObject(parent) {}
 
         /// Opens a video file for writing.
         virtual void openFile(
@@ -95,19 +95,15 @@ public:
         static const CandidateFormat* getCandidateFormat(std::string_view name);
         /// Compares a codec name to the list of supported codecs and returns the corresponding CandidateCodec.
         static const CandidateCodec* getCandidateCodec(std::string_view name);
-
-        /// The task that is currently running.
-        const Task* _task;
     };
 
-public:
     enum class Backend : uint8_t
     {
         EXTERN,
         OVITO
     };
     /// Constructor.
-    VideoEncoder(const Task* task = nullptr, QObject* parent = nullptr);
+    VideoEncoder(QObject* parent = nullptr);
 
     /// Opens a video file for writing.
     void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);
@@ -119,10 +115,11 @@ public:
     void closeFile();
 
     /// Returns the list of supported output formats.
-    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt);
+    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, const QString& path = "");
 
     /// Returns the list of supported output codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt);
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt,
+                                                                      const QString& path = "");
 
     constexpr static const char* FFMPEG_PATH_SETTING = "renderer/ffmpeg_path";
     constexpr static const char* FFMPEG_CODEC_SETTING = "renderer/ffmpeg_codec";

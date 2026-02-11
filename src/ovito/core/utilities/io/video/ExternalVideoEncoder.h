@@ -36,10 +36,7 @@ class OVITO_CORE_EXPORT ExternalVideoEncoder : public VideoEncoder::VideoEncoder
 
 public:
     /// Constructor.
-    ExternalVideoEncoder(const Task* task, QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(task, parent)
-    {
-        qDebug() << "ExternalVideoEncoder()";
-    }
+    ExternalVideoEncoder(QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(parent) { qDebug() << "ExternalVideoEncoder()"; }
 
     /// Destructor.
     /// Calls closeFile() to ensure that the external process is terminated - might block for up to 30s;
@@ -60,20 +57,20 @@ public:
     // static QList<VideoEncoder::Format> supportedFormatsFiltered();
 
     /// Returns the list of supported output formats.
-    static QList<VideoEncoder::Format> supportedFormats();
+    static QList<VideoEncoder::Format> supportedFormats(const QString& path);
 
     /// Returns the list of supported codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs();
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(const QString& path);
 
     /// Clears the list of supported codecs.
     static void clearCodecs() { _supportedCodecs.clear(); }
 
 private:
     /// finish current process
-    static void finishFFmpegProcess(QProcess* process, int timeout = 30 * 1000, const Task* task = nullptr);
+    static void finishFFmpegProcess(QProcess* process, int timeout = 30 * 1000);
 
     /// start subproces
-    static void startFFmpegProcess(QProcess* process, const QStringList& command, int timeout = 30 * 1000);
+    static void startFFmpegProcess(QProcess* process, const QStringList& command, const QString& path = "", int timeout = 30 * 1000);
 
     /// Subprocess running FFmpeg
     QProcess* _process;

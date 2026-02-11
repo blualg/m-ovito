@@ -49,7 +49,7 @@ class OVITO_CORE_EXPORT OvitoVideoEncoder : public VideoEncoder::VideoEncoderBac
 
 public:
     /// Constructor.
-    OvitoVideoEncoder(const Task*, QObject* parent = nullptr);
+    OvitoVideoEncoder(QObject* parent = nullptr);
 
     /// Destructor.
     virtual ~OvitoVideoEncoder();

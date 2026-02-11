@@ -30,13 +30,13 @@ namespace Ovito {
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-VideoEncoder::VideoEncoder(const Task* task, QObject* parent) : QObject(parent)
+VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 {
     if(getBackend() == Backend::OVITO) {
-        _encoder = std::make_unique<OvitoVideoEncoder>(task, parent);
+        _encoder = std::make_unique<OvitoVideoEncoder>(parent);
     }
     else {
-        _encoder = std::make_unique<ExternalVideoEncoder>(task, parent);
+        _encoder = std::make_unique<ExternalVideoEncoder>(parent);
     }
 }
 
@@ -51,14 +51,14 @@ VideoEncoder::Backend VideoEncoder::getBackend()
 /******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend)
+QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend, const QString& path)
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::OVITO) {
         return OvitoVideoEncoder::supportedFormats();
     }
     else if(b == Backend::EXTERN) {
-        return ExternalVideoEncoder::supportedFormats();
+        return ExternalVideoEncoder::supportedFormats(path);
     }
     else {
         OVITO_ASSERT(false);
@@ -69,14 +69,14 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend
 /******************************************************************************
  * Returns the list of supported output codecs.
  ******************************************************************************/
-QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend)
+QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend, const QString& path)
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::OVITO) {
         return {};
     }
     else if(b == Backend::EXTERN) {
-        return ExternalVideoEncoder::supportedCodecs();
+        return ExternalVideoEncoder::supportedCodecs(path);
     }
     else {
         OVITO_ASSERT(false);
@@ -143,7 +143,7 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
         {.name = "hevc", .longName = "H.265 / HEVC (High Efficiency Video Coding)", .libName = "libx265"},
     }};
 
-    const auto it = std::ranges::find(candidateCodecs, name, &CandidateCodec::name);
+    const auto it = std::ranges::find(candidateCodecs, name, &CandidateCodec::libName);
 
     return (it == candidateCodecs.end()) ? nullptr : &(*it);
 }

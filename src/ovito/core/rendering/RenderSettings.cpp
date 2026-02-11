@@ -258,7 +258,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         if(imageFilename().isEmpty())
             throw Exception(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
 
-        videoEncoderPtr = std::make_unique<VideoEncoder>(this_task::get());
+        videoEncoderPtr = std::make_unique<VideoEncoder>();
         videoEncoder = videoEncoderPtr.get();
         float fps = framesPerSecond();
         if(fps <= 0)
