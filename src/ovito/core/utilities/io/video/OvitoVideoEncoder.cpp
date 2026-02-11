@@ -84,7 +84,7 @@ QString OvitoVideoEncoder::errorMessage(int errorCode)
 {
     char errbuf[512];
     if(::av_strerror(errorCode, errbuf, sizeof(errbuf)) < 0) {
-        return QString("Unknown FFMPEG error.");
+        return QStringLiteral("Unknown FFMPEG error.");
     }
     return QString::fromLocal8Bit(errbuf);
 }
