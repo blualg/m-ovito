@@ -81,6 +81,8 @@ MACRO(OVITO_ADD_STANDARD_COMPILE_OPTIONS target_name)
     ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         # We are using MPL compile-time string literals in our code. Disable the resulting compiler warning ("warning: multi-character character constant [-Wmultichar]").
         TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-multichar")
+        # Silence informational notes about ABI changes for parameter passing on aarch64 (e.g. std::pair<double,double>).
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-psabi")
         IF(CYGWIN)
             # Linking fails without -O3
             TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-O3")
