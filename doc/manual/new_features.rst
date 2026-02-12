@@ -39,6 +39,7 @@ Version 3.15.0 (dd-mm-2026)
 - Fixed broken "partition by bond/particle selection" modes in *Bond Analysis* modifier
 - New modifier selector widget with improved usability and UI design
 - MercuryDPM file reader: Support reading particle orientations stored as Euler angles and convert them to quaternions
+- Add support for user provided external FFmpeg applications giving access to modern codecs
 
 .. sidebar::
 

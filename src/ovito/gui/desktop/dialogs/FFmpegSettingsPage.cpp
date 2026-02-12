@@ -63,7 +63,7 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         infoLabel->setOpenExternalLinks(true);
         layout1->addWidget(infoLabel, row++, 0, 1, 3);
 
-        layout1->addWidget(new QLabel(tr("EFFmpeg executable:")), row, 0);
+        layout1->addWidget(new QLabel(tr("FFmpeg executable:")), row, 0);
         _ffmpegPath = new EnterLineEdit(page);
         _ffmpegPath->setText(ffmpegPath);
         layout1->addWidget(_ffmpegPath, row, 1);
