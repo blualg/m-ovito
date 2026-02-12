@@ -15,8 +15,8 @@ External encoder
 
 FFmpeg executable
   Here you can provide the path to the FFmpeg executable on your computer. You can either type in a full filesystem path to the executable or, if FFmpeg is in your ``PATH``,
-  just the name of the executable. Alternatively, you can use the "..." button to select the FFmpeg executable using a file selection dialog.
-  Note that the executable must be named either ``ffmpeg`` or ``ffmpeg.exe`` (case insensitive).
+  just the name of the executable. Alternatively, you can use the :menuselection:`...` button to select the FFmpeg executable using a file selection dialog.
+  In any case, the executable must be named either ``ffmpeg`` or ``ffmpeg.exe`` (case insensitive).
 
   Once an FFmpeg executable is selected, OVITO will automatically validate it. If the selected executable is not valid, the built-in FFmpeg encoder of OVITO will be used.
   The outcome of the validation is displayed in the status field. If successful, the resolved path and FFmpeg version string will be displayed.
