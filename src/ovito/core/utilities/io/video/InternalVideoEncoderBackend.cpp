@@ -42,7 +42,6 @@ namespace Ovito {
  ******************************************************************************/
 InternalVideoEncoderBackend::InternalVideoEncoderBackend()
 {
-    qDebug() << "InternalVideoEncoderBackend()";
     initCodecs();
 
 #ifndef OVITO_DEBUG
@@ -55,7 +54,6 @@ InternalVideoEncoderBackend::InternalVideoEncoderBackend()
  ******************************************************************************/
 InternalVideoEncoderBackend::~InternalVideoEncoderBackend()
 {
-    qDebug() << "~InternalVideoEncoderBackend()";
     try {
         closeFile();
     }

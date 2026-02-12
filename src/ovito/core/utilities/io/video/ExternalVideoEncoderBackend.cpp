@@ -30,7 +30,6 @@ namespace Ovito {
  ******************************************************************************/
 ExternalVideoEncoderBackend::~ExternalVideoEncoderBackend()
 {
-    qDebug() << "~ExternalVideoEncoderBackend()";
     try {
         closeFile();
     }
@@ -104,8 +103,6 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
             const VideoEncoder::CandidateCodec* candidate = getCandidateCodec(std::string_view(*tokens.begin()));
             if(candidate != nullptr) {
                 _supportedCodecs.push_back(candidate);
-                qDebug() << "Supported codec:" << std::string_view(*tokens.begin()) << candidate->name << candidate->longName
-                         << candidate->libName;
             }
         }
     }
@@ -123,7 +120,6 @@ void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QS
     QSettings settings;
     const QString& executable =
         path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString();
-    qDebug() << executable << command;
     if(executable.isEmpty()) {
         throw Exception(VideoEncoder::tr("FFmpeg (%1) path is not set.").arg(executable));
     }
@@ -159,7 +155,6 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
         process->waitForFinished(pollingInterval);
         time += pollingInterval;
         if(this_task::get() && this_task::get()->isCanceled()) {
-            qDebug() << "Canceled";
             process->terminate();
         }
         if(timeout > 0 && time > timeout) {
@@ -211,7 +206,6 @@ inline bool isAvi(const QString& filename, VideoEncoder::Format* format)
 void ExternalVideoEncoderBackend::openFile(
     const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
-    qDebug() << "ExternalVideoEncoderBackend::openFile()" << _parent;
     _process = new QProcess(_parent);
 
     // Special case for gif encoder -> stores all images and processes them later
@@ -224,6 +218,8 @@ void ExternalVideoEncoderBackend::openFile(
         return;
     }
 
+    // Default streaming mode for video encoding
+
     // Grab settings
     QSettings settings;
     const QByteArray& codecName = settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
@@ -235,12 +231,11 @@ void ExternalVideoEncoderBackend::openFile(
     // Fallback to libx264 for avi and mov containers - no support for libx265
     const QByteArray& codecLib = (isMov(filename, format) || isAvi(filename, format)) ? QByteArrayLiteral("libx264") : codecPtr->libName;
 
-    qDebug() << "codecName" << codecName << "codecLib" << codecLib;
-
+    // Read quality
     const auto quality =
         (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
 
-    // Default streaming mode for video encoding
+    // Configure codec quality / bitrate
     QStringList args;
     int crf = 23;
     if(codecLib == QByteArrayLiteral("libx264")) {
@@ -338,7 +333,6 @@ void ExternalVideoEncoderBackend::closeFile()
             throw Exception(VideoEncoder::tr("Failed to open temporary file for palette generation."));
         }
         paletteFile.close();
-        qDebug() << "Writing palette to" << paletteFile.fileName();
 
         // Run palette generation
         args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
@@ -362,7 +356,7 @@ void ExternalVideoEncoderBackend::closeFile()
         // Confirm the palette file exists and has content
         const QFileInfo paletteInfo(paletteFile.fileName());
         if(!paletteInfo.exists() || paletteInfo.size() == 0) {
-            throw Exception(VideoEncoder::tr("Palette file was not created properly"));
+            throw Exception(VideoEncoder::tr("Gif palette file was not created properly"));
         }
 
         args.clear();
