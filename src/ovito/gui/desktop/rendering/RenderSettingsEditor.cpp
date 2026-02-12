@@ -38,6 +38,8 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/utilities/io/video/VideoEncoder.h>
 #include <ovito/gui/desktop/dialogs/FFmpegSettingsPage.h>
+
+#include <algorithm>
 #include "RenderSettingsEditor.h"
 
 namespace Ovito {
@@ -349,13 +351,17 @@ void RenderSettingsEditor::onSwitchRenderer()
         "OSPRayRenderer",
         "OffscreenAnariRenderer"
     };
-    std::sort(rendererClasses.begin(), rendererClasses.end(), [&displayOrdering](OvitoClassPtr a, OvitoClassPtr b) {
+    std::ranges::sort(rendererClasses, [&displayOrdering](OvitoClassPtr a, OvitoClassPtr b) {
         int ia = displayOrdering.indexOf(a->name());
         int ib = displayOrdering.indexOf(b->name());
-        if(ia == -1 && ib == -1) return a->displayName() < b->displayName();
-        else if(ia == -1) return false;
-        else if(ib == -1) return true;
-        else return ia < ib;
+        if(ia == -1 && ib == -1)
+            return a->displayName() < b->displayName();
+        else if(ia == -1)
+            return false;
+        else if(ib == -1)
+            return true;
+        else
+            return ia < ib;
     });
 
     QDialog dlg(container());
