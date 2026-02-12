@@ -259,7 +259,7 @@ void ExternalVideoEncoder::writeFrame(const QImage& image)
 
     // Video mode - store each image individually
     if(image.width() % 2 != 0) {
-        throw Exception(tr("Image width must be even: %1").arg(image.width()));
+        throw Exception(tr("Image width must be even: %1").arg(image.width())); // VIDTODO: Hier sollte noch eine Begründung für den Nutzer folgen
     }
     if(image.height() % 2 != 0) {
         throw Exception(tr("Image height must be even: %1").arg(image.height()));

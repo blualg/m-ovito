@@ -500,6 +500,8 @@ void RenderSettingsEditor::updateExternalFFmpegLabel()
     RenderSettings* renderSettings = static_object_cast<RenderSettings>(editObject());
     if(!renderSettings) return;
 
+    // VIDTODO: Label vielleicht nur dann anzeigen, wenn der Nutzer einen Ausgabedateinamen gewählt hat?
+    // VIDTODO: Label sollte einen Action-Link enthalten, der direkt zur FFmpegSettingsPage führt. Siehe StructureListParameterUI::createNotesLabel() für ein Beispiel.
     if(renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
        renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
         QSettings settings;
