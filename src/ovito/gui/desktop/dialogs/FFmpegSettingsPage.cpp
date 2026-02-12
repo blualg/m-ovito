@@ -74,7 +74,6 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
             TaskManager::setNativeDialogActive(true);
             const QString path = QFileDialog::getOpenFileName(page, tr("Select FFmpeg Executable"), _ffmpegPath->text().trimmed());
             TaskManager::setNativeDialogActive(false);
-            qDebug() << "path" << path;
             if(!path.isEmpty()) {
                 _ffmpegPath->setText(path);
                 validateFfmpegPath();
