@@ -128,7 +128,8 @@ public:
     void createQtApplication(bool supportGui);
 
 Q_SIGNALS:
-    /// Emitted when the application settings have changed.
+
+    /// Emitted when the application settings have potentially changed.
     void settingsChanged();
 
 protected:
