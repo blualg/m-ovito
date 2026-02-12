@@ -290,10 +290,11 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
 
     // Video mode - store each image individually
     if(image.width() % 2 != 0) {
-        throw Exception(VideoEncoder::tr("Image width must be even: %1").arg(image.width()));
+        throw Exception(VideoEncoder::tr("The selected codec requires the image width to be even. Current width: %1").arg(image.width()));
     }
     if(image.height() % 2 != 0) {
-        throw Exception(VideoEncoder::tr("Image height must be even: %1").arg(image.height()));
+        throw Exception(
+            VideoEncoder::tr("The selected codec requires the image height to be odd. Current  height: %1").arg(image.height()));
     }
     if(!_process) {
         throw Exception(VideoEncoder::tr("FFmpeg process not found!"));

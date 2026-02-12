@@ -53,7 +53,8 @@ Q_SIGNALS:
     void ffmpegPathValidated(bool isValid);
 
 private:
-    /// Validate the path to the ffmpeg executable.
+    /// Validates the user provided FFmpeg executable.
+    /// Falls back to the built-in FFmpeg library if the path or executable is invalid.
     void validateFfmpegPath();
 
     /// Refresh the list of available codecs.

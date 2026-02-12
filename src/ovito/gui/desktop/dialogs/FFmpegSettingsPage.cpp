@@ -39,121 +39,137 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(FFmpegSettingsPage);
 void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {
     QWidget* page = new QWidget();
-    tabWidget->addTab(page, tr("FFmpeg"));  // VIDTODO: Ich bin mit "FFmpeg" als Tabnamen nicht ganz glücklich. Wissen wirklich alle Nutzer
-                                            // sofort was FFmpeg ist und was damit gemeint ist? Vielleicht lieber "Video Encoding" oder so ?
+    tabWidget->addTab(page, tr("Video Encoding"));
     auto* layout = new QVBoxLayout(page);
-    auto* layout1 = new QGridLayout();
     int row = 0;
 
     // Load current settings
     QSettings settings;
     _ffmpegCodecName = settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
-    qDebug() << "Current codec name" << _ffmpegCodecName;
     const QString& ffmpegPath = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString();
     _externalFFmpeg = settings.value(VideoEncoder::FFMPEG_USE_EXT_SETTING, false).toBool();
-    int ffmpegQuality = settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
+    const int ffmpegQuality = settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
 
-    layout1->addWidget(new QLabel(tr("FFmpeg executable:")), row, 0);
-    _ffmpegPath = new EnterLineEdit(page);
-    _ffmpegPath->setText(ffmpegPath);
-    layout1->addWidget(_ffmpegPath, row, 1);
+    {
+        auto* exeGroupBox = new QGroupBox(tr("External encoder (optional)"), page);
+        layout->addWidget(exeGroupBox);
+        auto* layout1 = new QGridLayout(exeGroupBox);
 
-    // Select the FFmpeg executable using a file selection dialog.
-    auto* selectExecutablePathButton = new QPushButton(QStringLiteral("..."));
-    connect(selectExecutablePathButton, &QPushButton::clicked, this, [this, page]() {
-        TaskManager::setNativeDialogActive(true);
-        const QString path = QFileDialog::getOpenFileName(page, tr("Select FFmpeg Executable"), _ffmpegPath->text().trimmed());
-        TaskManager::setNativeDialogActive(false);
-        qDebug() << "path" << path;
-        if(!path.isEmpty()) {
-            _ffmpegPath->setText(path);
-            validateFfmpegPath();
-        }
-    });
-    selectExecutablePathButton->setToolTip(tr("Pick FFmpeg executable..."));
-    layout1->addWidget(selectExecutablePathButton, row++, 2);
+        auto* infoLabel =
+            new QLabel(tr("Please provide the path to the FFmpeg executable on your computer or leave it empty to use the "
+                          "built-in FFmpeg encoder of OVITO, which does not support more modern codecs. You can download FFmpeg from <a "
+                          "href=\"https://ffmpeg.org/download.html\">ffmpeg.org/download</a>."));
+        infoLabel->setWordWrap(true);
+        infoLabel->setOpenExternalLinks(true);
+        layout1->addWidget(infoLabel, row++, 0, 1, 3);
 
-    // Validate ffmpeg on when path is changed
-    connect(_ffmpegPath, &EnterLineEdit::editingFinished, this, &FFmpegSettingsPage::validateFfmpegPath);
-    connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this](bool valid) { _externalFFmpeg = valid; });
+        layout1->addWidget(new QLabel(tr("EFFmpeg executable:")), row, 0);
+        _ffmpegPath = new EnterLineEdit(page);
+        _ffmpegPath->setText(ffmpegPath);
+        layout1->addWidget(_ffmpegPath, row, 1);
 
-    // Status label.
-    _statusLabel = new StatusWidget(page);
-    _statusLabel->setWordWrap(true);
-    layout1->addWidget(_statusLabel, row++, 0, 1, 3);
+        // Select the FFmpeg executable using a file selection dialog.
+        auto* selectExecutablePathButton = new QPushButton(QStringLiteral("..."));
+        connect(selectExecutablePathButton, &QPushButton::clicked, this, [this, page]() {
+            TaskManager::setNativeDialogActive(true);
+            const QString path = QFileDialog::getOpenFileName(page, tr("Select FFmpeg Executable"), _ffmpegPath->text().trimmed());
+            TaskManager::setNativeDialogActive(false);
+            qDebug() << "path" << path;
+            if(!path.isEmpty()) {
+                _ffmpegPath->setText(path);
+                validateFfmpegPath();
+            }
+        });
+        selectExecutablePathButton->setToolTip(tr("Pick FFmpeg executable..."));
+        layout1->addWidget(selectExecutablePathButton, row++, 2);
 
-    // Setup codecs:
-    _ffmpegCodec = new QComboBox(page);
-    layout1->addWidget(new QLabel(tr("Codec:")), row, 0);
-    layout1->addWidget(_ffmpegCodec, row++, 1);  // VIDTODO: Lieber zwei Grid-Spalten breit, also bis zum rechten Rand?
-    // Refresh combobox when ffmpeg path is changed
-    connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, &FFmpegSettingsPage::refreshCodecCombobox);
+        // Validate ffmpeg on when path is changed
+        connect(_ffmpegPath, &EnterLineEdit::editingFinished, this, &FFmpegSettingsPage::validateFfmpegPath);
+        connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this](bool valid) { _externalFFmpeg = valid; });
 
-    auto* codecInfoLabel = new QLabel(page);
-    codecInfoLabel->setText(
-        tr(".avi and .mov files do not support H.265 codec. Please use .mkv or .mp4. Otherwise, a fallback codec (H.264) will be used."));
-    // VIDTODO: Text evtl. noch etwas verbessern. Er springt thematisch etwas zu stark hin und her, was das Verständnis erschwert (erst
-    // AVI/MOV, dann MKV/MP4, dann erneut AVI/MOV). Vorschlag: "Note: The H.265 codec does not work with .avi and .mov file formats
-    // (fallback is H.264). Only .mkv and .mp4 file formats will use the H.265 codec."
-    codecInfoLabel->setWordWrap(true);
-    codecInfoLabel->setVisible(
-        _ffmpegCodecName ==
-        QByteArrayLiteral("libx265"));  // VIDTODO: Hier lieber konstant setVisible(false)? Ich frage mich, wieso hier nicht auch die Angabe
-                                        // eines externen FFmpeg als weiteres Kriterium mit einbezogen wird (so wie im folgenden Lambda).
-    connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this, codecInfoLabel](bool valid) {
-        codecInfoLabel->setVisible(valid && _ffmpegCodecName == QByteArrayLiteral("libx265"));
-    });
-
-    // Keep space for the label
-    QSizePolicy sp = codecInfoLabel->sizePolicy();
-    sp.setRetainSizeWhenHidden(true);
-    codecInfoLabel->setSizePolicy(sp);
-
-    layout1->addWidget(codecInfoLabel, row++, 0, 1, 3);  // VIDTODO: Einrücken, so dass es bündig mit der Combobox darüber ist.
-    // Store selection
-    connect(_ffmpegCodec, &QComboBox::activated, this, [this, codecInfoLabel](int index) {
-        const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
-        const QString& path =
-            _externalFFmpeg
-                ? _ffmpegPath->text().trimmed()
-                : "";  // VIDTODO: Nie "", immer QString(), um dynamische Konvertierung von C-String zu QString zur Laufzeit zu vermeiden.
-                       // Der QString-Konstruktor kann ja nicht ahnen, dass er mit einem leeren C-String aufgerufen wird.
-        const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
-        if(index < 0 || index > codecs.size()) return;
-        const VideoEncoder::CandidateCodec* codec = codecs[index];
-        _ffmpegCodecName = codec->libName;
-        codecInfoLabel->setVisible(_ffmpegCodecName == QByteArrayLiteral("libx265"));
-    });
-
-    _ffmpegQualityBox = new QComboBox(page);
-    QMetaEnum metaEnum = QMetaEnum::fromType<VideoEncoder::Quality>();
-    for(int i = 0; i < metaEnum.keyCount(); ++i) {
-        _ffmpegQualityBox->addItem(metaEnum.key(i), metaEnum.value(i));
+        // Status label.
+        _statusLabel = new StatusWidget(page);
+        _statusLabel->setWordWrap(true);
+        layout1->addWidget(_statusLabel, row++, 0, 1, 3);
     }
-    _ffmpegQualityBox->setCurrentIndex(ffmpegQuality);  // VIDTODO: Möglicher Bug wenn QMetaEnum die Enums nicht in Reihenfolge 0, 1, 2, ...
-                                                        // liefert. Nutze QComboBox::findData()
 
-    layout1->addWidget(new QLabel(tr("Quality preset:")), row, 0);
-    layout1->addWidget(_ffmpegQualityBox, row++, 1);
+    {
+        // Setup codecs:
+        auto* codecSettingsGroupBox = new QGroupBox(tr("Codec settings"), page);
+        layout->addWidget(codecSettingsGroupBox);
+        auto* layout1 = new QGridLayout(codecSettingsGroupBox);
+        // Have the combo boxes (col 1) take up as much space as possible.
+        layout1->setColumnStretch(0, 0);
+        layout1->setColumnStretch(1, 1);
+        int row = 0;
 
-    layout->addLayout(layout1);
+        _ffmpegCodec = new QComboBox(page);
+        layout1->addWidget(new QLabel(tr("Codec:")), row, 0);
+        layout1->addWidget(_ffmpegCodec, row++, 1, 1, 2);
+        // Refresh combobox when ffmpeg path is changed
+        connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, &FFmpegSettingsPage::refreshCodecCombobox);
+
+        // Codec / format warning
+        auto* codecInfoLabel = new QLabel(page);
+        codecInfoLabel->setText(tr(
+            "Note: The H.265 codec does not work with .avi and .mov file formats (fallback is H.264). Only .mkv and .mp4 file formats will "
+            "use the more modern H.265 codec."));
+        codecInfoLabel->setWordWrap(true);
+        codecInfoLabel->setVisible(false);
+        connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this, codecInfoLabel](bool valid) {
+            codecInfoLabel->setVisible(valid && _ffmpegCodecName == QByteArrayLiteral("libx265"));
+        });
+
+        // Keep space for the label
+        QSizePolicy sp = codecInfoLabel->sizePolicy();
+        sp.setRetainSizeWhenHidden(true);
+        codecInfoLabel->setSizePolicy(sp);
+
+        layout1->addWidget(codecInfoLabel, row++, 1, 1, 2);
+
+        // Store selection
+        connect(_ffmpegCodec, &QComboBox::activated, this, [this, codecInfoLabel](int index) {
+            const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
+            const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : QString();
+            const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
+            if(index < 0 || index > codecs.size()) return;
+            const VideoEncoder::CandidateCodec* codec = codecs[index];
+            _ffmpegCodecName = codec->libName;
+            codecInfoLabel->setVisible(_ffmpegCodecName == QByteArrayLiteral("libx265"));
+        });
+
+        _ffmpegQualityBox = new QComboBox(page);
+        QMetaEnum metaEnum = QMetaEnum::fromType<VideoEncoder::Quality>();
+        for(int i = 0; i < metaEnum.keyCount(); ++i) {
+            _ffmpegQualityBox->addItem(metaEnum.key(i), metaEnum.value(i));
+        }
+        _ffmpegQualityBox->setCurrentIndex(_ffmpegQualityBox->findData(ffmpegQuality));
+
+        layout1->addWidget(new QLabel(tr("Quality preset:")), row, 0);
+        layout1->addWidget(_ffmpegQualityBox, row++, 1, 1, 2);
+    }
+
     layout->addStretch();
 
     // Validate path on startup
-    validateFfmpegPath();
+    // Use a single shot timer to avoid blocking during opening of the application settings dialog.
+    QTimer::singleShot(0, this, &FFmpegSettingsPage::validateFfmpegPath);
 }
 
 void FFmpegSettingsPage::refreshCodecCombobox()
 {
-    qDebug() << "refreshCodecCombobox()";
+    // Clear box
     _ffmpegCodec->clear();
-    qDebug() << "Current codec name" << _ffmpegCodecName;
+
+    // Get backend and path
     const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
     const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : "";
     if(path.isEmpty()) {
+        _ffmpegCodec->setDisabled(true);
         return;
     }
 
+    // Get codec list
     const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
     if(codecs.empty()) {
         _statusLabel->setStatus(PipelineStatus(
@@ -161,72 +177,61 @@ void FFmpegSettingsPage::refreshCodecCombobox()
         _externalFFmpeg = false;
     }
 
+    // Fill combobox from codecs and select current codec
     for(const auto [i, codec] : Ovito::enumerate(codecs)) {
         _ffmpegCodec->addItem(codec->longName);
-        qDebug() << "codec name" << _ffmpegCodecName << codec->name << (codec->name == _ffmpegCodecName);
         if(codec->libName == _ffmpegCodecName) {
             _ffmpegCodec->setCurrentIndex((int)i);
         }
     }
 
-    // VIDTODO: Combobox sollte disabled werden wenn keine Einträge da sind und das widget nicht benutzbar ist.
+    // Disable combobox if no codecs are available.
+    _ffmpegCodec->setDisabled(codecs.empty());
 }
 
+/******************************************************************************
+ * Validates the user provided FFmpeg executable.
+ * Falls back to the built-in FFmpeg library if the path or executable is invalid.
+ ******************************************************************************/
 void FFmpegSettingsPage::validateFfmpegPath()
 {
-    qDebug() << "validateFfmpegPath()";
     VideoEncoder::clearCodecs();
     // User input
     const QString userInput = _ffmpegPath->text().trimmed();
-    // qDebug() << "userInput" << userInput;
 
     // Check path is empty
     if(userInput.isEmpty()) {
-        // VIDTODO: Die aktuelle Meldung ist evtl. nicht ausreichend, um dem Nutzer zu erklären, was zu tun ist. Vielleicht besser eine
-        // Aufforderung?:
-        //
-        // "Please provide the path to the FFmpeg executable on your computer or leave it empty to use the built-in FFmpeg encoder of OVITO,
-        // which does not support all codecs." Oder so ähnlich. Evtl. könnte diese Meldung auch einen Hyperlink auf die FFmpeg homepage
-        // enthalten, so dass man direkter die Software herunterladen kann unter Windows.
-        //
-        // Ich wäre auch einverstanden damit, diese allgemeine Aufforderung dauerhaft anzuzuzeigen - oberhalb des Inputfeldes. Dann könnte
-        // die "Statusmeldung" hier kürzer und direkter ausfallen, so wie sie im Moment gewählt ist.
         _statusLabel->setStatus(PipelineStatus(tr("FFmpeg path is empty, the built-in FFmpeg library will be used.")));
-        ffmpegPathValidated(false);  // VIDTODO: Das Q_EMIT Schlüsselwort voranstellen, damit klar ist, dass hier ein Signal emittiert wird.
+        Q_EMIT ffmpegPathValidated(false);
         return;
     }
 
     // Resolve the path
     const QString path = QStandardPaths::findExecutable(userInput);
-    // qDebug() << "path" << path;
 
     // Check if file exists
     QFileInfo fileInfo(path);
     if(!fileInfo.exists()) {
-        // qDebug() << tr("'%1 (%2)' does not exist.").arg(userInput).arg(path);
-        _statusLabel->setStatus(PipelineStatus(
-            PipelineStatus::Error, tr("%1 does not exist, the built-in FFmpeg library will be used.").arg(userInput).arg(path)));
-        ffmpegPathValidated(false);
+        _statusLabel->setStatus(
+            PipelineStatus(PipelineStatus::Error, tr("%1 does not exist, the built-in FFmpeg library will be used.").arg(path)));
+        Q_EMIT ffmpegPathValidated(false);
         return;
     }
 
     // Check if file is executable.
     if(!fileInfo.isExecutable()) {
-        // qDebug() << tr("'%1 (%2)' is not executable.").arg(userInput).arg(path);
-        _statusLabel->setStatus(PipelineStatus(
-            PipelineStatus::Error, tr("%1 (%2) is not executable, the built-in FFmpeg library will be used.").arg(userInput).arg(path)));
-        ffmpegPathValidated(false);
+        _statusLabel->setStatus(
+            PipelineStatus(PipelineStatus::Error, tr("%1 is not executable. The built-in FFmpeg library will be used.").arg(path)));
+        Q_EMIT ffmpegPathValidated(false);
         return;
     }
 
     // Match the name before attempting to run the executable.
     if(!(path.endsWith("ffmpeg", Qt::CaseInsensitive) || path.endsWith("ffmpeg.exe", Qt::CaseInsensitive))) {
-        // qDebug() << tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid, the built-in ffmpeg library will be used.");
         _statusLabel->setStatus(
             PipelineStatus(PipelineStatus::Error,
-                           tr("Provided path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid, the built-in FFmpeg library will be "
-                              "used.")));  // VIDTODO: Das sollten zwei getrennte Sätze sein. "Provided" kann man streichen.
-        ffmpegPathValidated(false);
+                           tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid. The built-in FFmpeg library will be used.")));
+        Q_EMIT ffmpegPathValidated(false);
         return;
     }
 
@@ -237,40 +242,18 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Setup timeout timer (ms)
     constexpr int timeout = 3 * 1000;
-    QTimer* timeoutTimer = new QTimer();
-    timeoutTimer->setSingleShot(true);
-    timeoutTimer->setInterval(timeout);
-
-    // Handle timeout
-    connect(timeoutTimer, &QTimer::timeout, this, [process, userInput, path, timeoutTimer, this]() {
-        process->kill();
-        process->deleteLater();  // VIDTODO: Wieso deleteLater() und nicht direkt "delete process;"?
-        timeoutTimer->deleteLater();
-        // qDebug() << tr("Timeout while checking: '%1 (%2)'.").arg(userInput).arg(path);
-        _statusLabel->setStatus(
-            PipelineStatus(PipelineStatus::Error,
-                           tr("Timeout while checking: %1 (%2), the built-in FFmpeg library will be used.").arg(userInput).arg(path)));
-        ffmpegPathValidated(false);
-        return;
-    });
+    QTimer::singleShot(timeout, process, &QProcess::kill);
 
     // Handle process finished
     connect(
         process,
         QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-        this,  // VIDTODO: Da hier "this" als Context-Objekt für die Lambda-Funktion verwendet wird, könnte es zu einem Problem kommen, wenn
-               // das finished Signal erst nach Schließen des Dialogs eintrifft. Dann würde der Handler nie ausgeführt und der QProcess
-               // leaken.
-        [process, timeoutTimer, userInput, path, this](int exitCode, QProcess::ExitStatus exitStatus) {
-            timeoutTimer->stop();
-            timeoutTimer->deleteLater();
-
+        this,
+        [process, userInput, path, this](int exitCode, QProcess::ExitStatus exitStatus) {
             if(exitStatus != QProcess::NormalExit) {
-                // qDebug() << tr("%1 (%2) did not exit normally.").arg(userInput).arg(path);
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error,
-                    tr("%1 (%2) did not exit normally, the built-in FFmpeg library will be used.").arg(userInput).arg(path)));
-                ffmpegPathValidated(false);
+                    PipelineStatus::Error, tr("%1 did not exit normally. The built-in FFmpeg library will be used.").arg(path)));
+                Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;
             }
@@ -280,25 +263,15 @@ void FFmpegSettingsPage::validateFfmpegPath()
                 const qsizetype newlinePos = output.indexOf('\n');
                 const QByteArray firstLine = (newlinePos != -1) ? output.left(newlinePos).trimmed() : output.trimmed();
                 const QString versionString = QString::fromUtf8(firstLine);
-                // qDebug() << tr("'%1 (%2)' found:\n%3").arg(userInput).arg(path).arg(versionString);
-                _statusLabel->setStatus(
-                    PipelineStatus(PipelineStatus::Success, tr("%1 (%2) found:\n%3").arg(userInput).arg(path).arg(versionString)));
-                // VIDTODO: Ich würde auf die erneute Ausgabe von userInput verzichten, es reicht den absoluten Pfad zu nennen.
-                // Im Moment ergeben sich zumindest unnötig lange Wiederholungen, wenn der Nutzer das ffmpeg executable über den file
-                // selection dialog auswählt:
-                //
-                // /opt/homebrew/Cellar/ffmpeg/8.0.1_3/bin/ffmpeg (/opt/homebrew/Cellar/ffmpeg/8.0.1_3/bin/ffmpeg) found:
-                // ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
-                ffmpegPathValidated(true);
+                _statusLabel->setStatus(PipelineStatus(PipelineStatus::Success, tr("%1 found:\n%2").arg(path).arg(versionString)));
+                Q_EMIT ffmpegPathValidated(true);
                 process->deleteLater();
                 return;
             }
             else {
-                // qDebug() << tr("'%1 (%2)' is not a valid ffmpeg executable.").arg(userInput).arg(path);
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error,
-                    tr("%1 (%2) is not a valid FFmpeg executable, the built-in FFmpeg library will be used.").arg(userInput).arg(path)));
-                ffmpegPathValidated(false);
+                    PipelineStatus::Error, tr("%1 is not a valid FFmpeg executable. The built-in FFmpeg library will be used.").arg(path)));
+                Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;
             }
@@ -306,7 +279,6 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Start the provided process
     process->start(path, QStringList() << "-version");
-    timeoutTimer->start();
 }
 
 /******************************************************************************
@@ -315,10 +287,6 @@ void FFmpegSettingsPage::validateFfmpegPath()
 void FFmpegSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     QSettings settings;
-    qDebug() << VideoEncoder::FFMPEG_PATH_SETTING << _ffmpegPath->text().trimmed();
-    qDebug() << VideoEncoder::FFMPEG_CODEC_SETTING << _ffmpegCodecName;
-    qDebug() << VideoEncoder::FFMPEG_USE_EXT_SETTING << _externalFFmpeg;
-    qDebug() << VideoEncoder::FFMPEG_QUALITY_SETTING << _ffmpegQualityBox->currentData().toInt();
     settings.setValue(VideoEncoder::FFMPEG_PATH_SETTING, _ffmpegPath->text().trimmed());
     settings.setValue(VideoEncoder::FFMPEG_CODEC_SETTING, _ffmpegCodecName);
     settings.setValue(VideoEncoder::FFMPEG_USE_EXT_SETTING, _externalFFmpeg);

@@ -37,6 +37,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/utilities/io/video/VideoEncoder.h>
+#include <ovito/gui/desktop/dialogs/FFmpegSettingsPage.h>
 #include "RenderSettingsEditor.h"
 
 namespace Ovito {
@@ -204,9 +205,17 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
         // External / internal FFmpeg label.
         _externalFFmpegLabel = new QLabel();
+        _externalFFmpegLabel->setWordWrap(true);
         QFont smallFont = _externalFFmpegLabel->font();
         smallFont.setPointSizeF(smallFont.pointSizeF() * 3 / 4);
         _externalFFmpegLabel->setFont(smallFont);
+
+        // Configure hyperlink into application into settings menu
+        _externalFFmpegLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+        connect(_externalFFmpegLabel, &QLabel::linkActivated, this, [this]() {
+            ApplicationSettingsDialog dlg(ui(), &FFmpegSettingsPage::OOClass());
+            dlg.exec();
+        });
 
         // Keep space for the label
         QSizePolicy sp = _externalFFmpegLabel->sizePolicy();
@@ -298,6 +307,8 @@ void RenderSettingsEditor::onChooseImageFilename()
             settings->setSaveToFile(true);
         });
     }
+    // Update the ffmpeg label
+    updateExternalFFmpegLabel();
 }
 
 /******************************************************************************
@@ -496,18 +507,16 @@ void RenderSettingsEditor::updateVideoLengthDisplay()
 
 void RenderSettingsEditor::updateExternalFFmpegLabel()
 {
-    qDebug() << "updateExternalFFmpegLabel()";
     RenderSettings* renderSettings = static_object_cast<RenderSettings>(editObject());
     if(!renderSettings) return;
 
-    // VIDTODO: Label vielleicht nur dann anzeigen, wenn der Nutzer einen Ausgabedateinamen gewählt hat?
-    // VIDTODO: Label sollte einen Action-Link enthalten, der direkt zur FFmpegSettingsPage führt. Siehe StructureListParameterUI::createNotesLabel() für ein Beispiel.
-    if(renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
-       renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
+    if(renderSettings->saveToFile() && (renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
+                                        renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL)) {
         QSettings settings;
         bool externalFFmpeg = settings.value(VideoEncoder::FFMPEG_USE_EXT_SETTING, false).toBool();
         _externalFFmpegLabel->setVisible(true);
-        _externalFFmpegLabel->setText(externalFFmpeg ? tr("Using external FFmpeg executable.") : tr("Using internal FFmpeg executable."));
+        _externalFFmpegLabel->setText(externalFFmpeg ? tr("Using external FFmpeg executable (<a href=\"settings\">configure</a>).")
+                                                     : tr("Using internal FFmpeg executable (<a href=\"settings\">configure</a>)."));
     }
     else {
         // When rendering a single frame, hide the external ffmpeg display.
