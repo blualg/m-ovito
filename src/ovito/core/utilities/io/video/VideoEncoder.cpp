@@ -33,13 +33,16 @@ namespace Ovito {
 VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 {
     if(getBackend() == Backend::INTERNAL) {
-        _backend = std::make_unique<InternalVideoEncoderBackend>(parent);
+        _backend = std::make_unique<InternalVideoEncoderBackend>();
     }
     else {
-        _backend = std::make_unique<ExternalVideoEncoderBackend>(parent);
+        _backend = std::make_unique<ExternalVideoEncoderBackend>(this);
     }
 }
 
+/******************************************************************************
+ * Returns the backend to be used for encoding.
+ ******************************************************************************/
 VideoEncoder::Backend VideoEncoder::getBackend()
 {
     QSettings settings;
@@ -101,11 +104,14 @@ void VideoEncoder::closeFile() { _backend->closeFile(); }
 ******************************************************************************/
 void VideoEncoder::writeFrame(const QImage& image) { _backend->writeFrame(image); }
 
+/******************************************************************************
+ *  Returns the list of supported output formats from the backend.
+ ******************************************************************************/
 const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(std::string_view name)
 {
     static const std::array<const CandidateFormat, 5> CandidateFormats{
         {{
-             .name = QByteArrayLiteral("avi"),  // VIDTODO: Use QByteArrayLiteral macro
+             .name = QByteArrayLiteral("avi"),
              .longName = QStringLiteral("AVI (Audio Video Interleaved)"),
              .extensions = QStringList{QStringLiteral("avi")},
          },
@@ -135,13 +141,15 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
     return (it == CandidateFormats.end()) ? nullptr : &(*it);
 }
 
+/******************************************************************************
+ *  Returns the list of supported output codecs from the backend.
+ ******************************************************************************/
 const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(std::string_view name)
 {
     static const std::array<const CandidateCodec, 2> candidateCodecs{{
-        // {.name = "av1", .longName = "Alliance for Open Media AV1", .libName = "libsvtav1"},
         {.name = QByteArrayLiteral("h264"),
          .longName = QByteArrayLiteral("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
-         .libName = QByteArrayLiteral("libx264")},  // VIDTODO: Use QByteArrayLiteral macro
+         .libName = QByteArrayLiteral("libx264")},
         {.name = QByteArrayLiteral("hevc"),
          .longName = QByteArrayLiteral("H.265 / HEVC (High Efficiency Video Coding)"),
          .libName = QByteArrayLiteral("libx265")},

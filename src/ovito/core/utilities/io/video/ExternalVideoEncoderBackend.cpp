@@ -24,6 +24,10 @@
 
 namespace Ovito {
 
+/******************************************************************************
+ * Destructor.
+ * Calls closeFile() to ensure that the external process is terminated - will block until finished.
+ ******************************************************************************/
 ExternalVideoEncoderBackend::~ExternalVideoEncoderBackend()
 {
     qDebug() << "~ExternalVideoEncoderBackend()";
@@ -32,7 +36,7 @@ ExternalVideoEncoderBackend::~ExternalVideoEncoderBackend()
     }
     catch(const Exception& ex) {
         // Swallow exceptions in destructor
-        qWarning() << tr("Warning: Unexpected exception in ExternalVideoEncoderBackend destructor:");
+        qWarning() << VideoEncoder::tr("Warning: Unexpected exception in ExternalVideoEncoderBackend destructor:");
         ex.logError();
     }
 }
@@ -46,6 +50,7 @@ QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStrin
 
     if(!_supportedFormats.empty()) return _supportedFormats;
 
+    // Run ffmpeg to get the list of supported formats
     QProcess process;
     startFFmpegProcess(&process, QStringList() << QStringLiteral("-hide_banner") << QStringLiteral("-formats"), path);
     finishFFmpegProcess(&process, 5 * 1000);
@@ -55,9 +60,9 @@ QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStrin
 #else
     static constexpr std::string_view sep = "\n";
 #endif
-    // VIDTODO: Wieso hier stets '\n' und unten in supportedCodecs() plattformabhängig "sep"?
+    // Extract the list of supported formats from the output
+    // Stored in the second column of the terminal output
     for(auto line : process.readAllStandardOutput() | std::views::split(sep)) {
-#if 1
         auto tokens =
             line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
         if(tokens.begin() != tokens.end()) {
@@ -65,22 +70,6 @@ QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStrin
                 _supportedFormats.push_back({.candidate = candidate, .avformat = nullptr});
             }
         }
-#else
-        size_t tokenIndex = 0;
-        for(auto token : line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); })) {
-            // Second token is the name of the format
-            if(tokenIndex == 1) {
-                const VideoEncoder::CandidateFormat* candidate = getCandidateFormat(std::string_view(token));
-                if(candidate != nullptr) {
-                    _supportedFormats.push_back({.candidate = candidate, .avformat = nullptr});
-                }
-            }
-            else if(tokenIndex > 1) {
-                break;
-            }
-            tokenIndex++;
-        }
-#endif
     }
 
     return _supportedFormats;
@@ -95,6 +84,7 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
 
     if(!_supportedCodecs.empty()) return _supportedCodecs;
 
+    // Run ffmpeg to get the list of supported encoders
     QProcess process;
     startFFmpegProcess(&process, QStringList() << QStringLiteral("-hide_banner") << QStringLiteral("-encoders"), path);
     finishFFmpegProcess(&process, 5 * 1000);
@@ -105,28 +95,29 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
     static constexpr std::string_view sep = "\n";
 #endif
 
+    // Extract the list of supported formats from the encoders
+    // Stored in the second column of the terminal output
     for(auto line : process.readAllStandardOutput() | std::views::split(sep)) {
-        size_t tokenIndex = 0;
-        for(auto token : line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); })) {
-            // Second token is the name of the format
-            if(tokenIndex == 1) {
-                const VideoEncoder::CandidateCodec* candidate = getCandidateCodec(std::string_view(token));
-                if(candidate != nullptr) {
-                    _supportedCodecs.push_back(candidate);
-                    qDebug() << "Supported codec:" << std::string_view(token) << candidate->name << candidate->longName
-                             << candidate->libName;
-                }
+        auto tokens =
+            line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
+        if(tokens.begin() != tokens.end()) {
+            const VideoEncoder::CandidateCodec* candidate = getCandidateCodec(std::string_view(*tokens.begin()));
+            if(candidate != nullptr) {
+                _supportedCodecs.push_back(candidate);
+                qDebug() << "Supported codec:" << std::string_view(*tokens.begin()) << candidate->name << candidate->longName
+                         << candidate->libName;
             }
-            else if(tokenIndex > 1) {
-                break;
-            }
-            tokenIndex++;
         }
     }
-
     return _supportedCodecs;
 }
 
+/******************************************************************************
+ * Start subprocess with the path executable with a given command
+ * If path.isEmpty() the path is read from QSettings[VideoEncoder::FFMPEG_PATH_SETTING]
+ * Timeout is the maximum time for the process to start up
+ * Throws an exception if the process does not start successfully
+ ******************************************************************************/
 void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path, const int timeout)
 {
     QSettings settings;
@@ -134,7 +125,7 @@ void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QS
         path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString();
     qDebug() << executable << command;
     if(executable.isEmpty()) {
-        throw Exception(tr("FFmpeg (%1) path is not set.").arg(executable));
+        throw Exception(VideoEncoder::tr("FFmpeg (%1) path is not set.").arg(executable));
     }
     // Start the process
     process->start(executable, command);
@@ -142,7 +133,7 @@ void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QS
     // Wait for the process to start.
     if(process->state() == QProcess::Starting || process->state() == QProcess::NotRunning) {
         if(!process->waitForStarted(timeout)) {
-            Exception ex(tr("Failed to start FFmpeg process: %1 %2.").arg(executable).arg(command.join(" ")));
+            Exception ex(VideoEncoder::tr("Failed to start FFmpeg process: %1 %2.").arg(executable).arg(command.join(" ")));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
             throw ex;
@@ -150,7 +141,12 @@ void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QS
     }
 }
 
-/// finish current process
+/******************************************************************************
+ * Finishes the provided sub-process
+ * Blocks until the process is finished or the timeout is reached
+ * Negative timeout lead to blocking until the process is finished
+ * Throws an exception if the process does not finish successfully
+ ******************************************************************************/
 void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const int timeout)
 {
     if(!process) {
@@ -167,7 +163,7 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
             process->terminate();
         }
         if(timeout > 0 && time > timeout) {
-            Exception ex(tr("Failed to finish FFmpeg process: Timeout reached"));
+            Exception ex(VideoEncoder::tr("Failed to finish FFmpeg process: Timeout reached"));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
             throw ex;
@@ -175,29 +171,33 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
     } while(process->state() == QProcess::Running);
 
     if(process->exitStatus() == QProcess::CrashExit) {
-        Exception ex(tr("FFmpeg crashed"));
+        Exception ex(VideoEncoder::tr("FFmpeg crashed"));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
         throw ex;
     }
 
     if(process->exitCode() != 0) {
-        Exception ex(tr("FFmpeg failed with exit code:") + QString::number(process->exitCode()));
+        Exception ex(VideoEncoder::tr("FFmpeg failed with exit code:") + QString::number(process->exitCode()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
         throw ex;
     }
 }
 
+/******************************************************************************
+ * Opens a video file for writing.
+ ******************************************************************************/
 void ExternalVideoEncoderBackend::openFile(
     const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
 {
-    _process = new QProcess(this);
+    qDebug() << "ExternalVideoEncoderBackend::openFile()" << _parent;
+    _process = new QProcess(_parent);
 
     // Special case for gif encoder -> stores all images and processes them later
     if((format && format->candidate->name == QByteArrayLiteral("gif")) ||
        filename.endsWith(QByteArrayLiteral(".gif"), Qt::CaseInsensitive)) {
-        _gifmode = true;
+        _gifMode = true;
         _framesPerSecond = framesPerSecond;
         _width = width;
         _height = height;
@@ -211,7 +211,7 @@ void ExternalVideoEncoderBackend::openFile(
     qDebug() << "codecName" << codecName;
     const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(codecName);
     if(!codecPtr) {
-        throw Exception(tr("Video encoder (%1) not found.").arg(codecName));
+        throw Exception(VideoEncoder::tr("Video encoder (%1) not found.").arg(codecName));
     }
     const QByteArray& codecLib = codecPtr->libName;
 
@@ -244,7 +244,7 @@ void ExternalVideoEncoderBackend::openFile(
         }
     }
     else {
-        throw Exception(tr("Unsupported codec: %1").arg(codecLib));
+        throw Exception(VideoEncoder::tr("Unsupported codec: %1").arg(codecLib));
     }
     args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
          << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(width).arg(height)
@@ -255,27 +255,30 @@ void ExternalVideoEncoderBackend::openFile(
     startFFmpegProcess(_process, args);
 }
 
+/******************************************************************************
+ * Writes a single frame into the video file / cache in the case of gif.
+ ******************************************************************************/
 void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
 {
     // Special case for gif encoder -> stores all images and processes them later
-    if(_gifmode) {
+    if(_gifMode) {
         _images.push_back(image.convertToFormat(QImage::Format_RGB32));
         return;
     }
 
     // Video mode - store each image individually
     if(image.width() % 2 != 0) {
-        throw Exception(tr("Image width must be even: %1").arg(image.width()));
+        throw Exception(VideoEncoder::tr("Image width must be even: %1").arg(image.width()));
     }
     if(image.height() % 2 != 0) {
-        throw Exception(tr("Image height must be even: %1").arg(image.height()));
+        throw Exception(VideoEncoder::tr("Image height must be even: %1").arg(image.height()));
     }
     if(!_process) {
-        throw Exception(tr("FFmpeg process not found!"));
+        throw Exception(VideoEncoder::tr("FFmpeg process not found!"));
     }
 
     if(_finalized) {
-        throw Exception(tr("Cannot write frame after finalize"));
+        throw Exception(VideoEncoder::tr("Cannot write frame after finalize"));
     }
 
     // Convert image to RGB24 format
@@ -287,6 +290,10 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
     _process->write((const char*)bits, size);
 }
 
+/******************************************************************************
+ * Closes the written video file.
+ * Blocks until the work is finished.
+ ******************************************************************************/
 void ExternalVideoEncoderBackend::closeFile()
 {
     if(_finalized) {
@@ -295,7 +302,7 @@ void ExternalVideoEncoderBackend::closeFile()
 
     _finalized = true;
 
-    if(_gifmode) {
+    if(_gifMode) {
         // Process all images in the temporary directory
         QSettings settings;
         const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "FFmpeg").toString();
@@ -305,7 +312,7 @@ void ExternalVideoEncoderBackend::closeFile()
         // Temporary file for palette generation
         QTemporaryFile paletteFile("palette.XXXXXX.png");
         if(!paletteFile.open()) {
-            throw Exception(tr("Failed to open temporary file for palette generation."));
+            throw Exception(VideoEncoder::tr("Failed to open temporary file for palette generation."));
         }
         paletteFile.close();
         qDebug() << "Writing palette to" << paletteFile.fileName();
@@ -325,14 +332,14 @@ void ExternalVideoEncoderBackend::closeFile()
             _process->write((const char*)bits, size);
         }
 
-        // Close the input pipe
+        // Close the input pipe -> signal ffmpeg to finish
         _process->closeWriteChannel();
         finishFFmpegProcess(_process, -1);
 
         // Confirm the palette file exists and has content
         const QFileInfo paletteInfo(paletteFile.fileName());
         if(!paletteInfo.exists() || paletteInfo.size() == 0) {
-            throw Exception(tr("Palette file was not created properly"));
+            throw Exception(VideoEncoder::tr("Palette file was not created properly"));
         }
 
         args.clear();

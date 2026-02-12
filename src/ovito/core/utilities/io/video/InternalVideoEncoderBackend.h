@@ -40,19 +40,14 @@ struct SwsContext;
 
 namespace Ovito {
 
-// VIDTODO: Klassenname lieber "InternalVideoEncoder" (konsistent mit "ExternalVideoEncoder")? Und lieber "...EncoderBackend", damit klar
-// ist, dass es sich um eine konkrete Implementierung eines BACKENDS handelt (bessere Abgrenzung zu "VideoEncoder" Klasse)?
-
 /**
  * \brief Wrapper class for the ffmpeg video encoding library.
  */
 class OVITO_CORE_EXPORT InternalVideoEncoderBackend : public VideoEncoder::VideoEncoderBackend
 {
-    Q_OBJECT
-
 public:
     /// Constructor.
-    InternalVideoEncoderBackend(QObject* parent = nullptr);
+    InternalVideoEncoderBackend();
 
     /// Destructor.
     virtual ~InternalVideoEncoderBackend();

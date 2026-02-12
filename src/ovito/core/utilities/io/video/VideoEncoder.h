@@ -75,10 +75,10 @@ public:
     /**
      * \brief Abstract base class for the ffmpeg video encoding backend.
      */
-    class VideoEncoderBackend : public QObject // VIDTODO: Ist QObject als Basisklasse notwendig?
+    class VideoEncoderBackend
     {
     public:
-        VideoEncoderBackend(QObject* parent = nullptr) : QObject(parent) {}
+        VideoEncoderBackend(QObject* parent = nullptr) {}
 
         /// Opens a video file for writing.
         virtual void openFile(
@@ -97,10 +97,10 @@ public:
         static const CandidateCodec* getCandidateCodec(std::string_view name);
     };
 
-    enum class Backend : uint8_t  // VIDTODO: Nach oben zu Quality enum verschieben? Groß/Kleinschreibung angleichen?
+    enum class Backend : uint8_t
     {
-        EXTERNAL,  // VIDTODO: "EXTERNAL" vielleicht besser, mehr konsistent mit "ExternalVideoEncoder" Klassenname?
-        INTERNAL   // VIDTODO: Ist "OVITO" ein guter Bezeichner? "INTERN" oder "BUILTIN" vielleicht besser, also Gegenteil zu "EXTERN"?
+        EXTERNAL,
+        INTERNAL
     };
     /// Constructor.
     VideoEncoder(QObject* parent = nullptr);
@@ -114,15 +114,11 @@ public:
     /// This closes the written video file.
     void closeFile();
 
-    /// Returns the list of supported output formats.
+    /// Returns the list of supported output formats  from the backend.
     static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, QStringView path = {});
 
-    /// Returns the list of supported output codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(
-        std::optional<Backend> backend = std::nullopt,
-        QStringView path = {});  // VIDTODO: Hier lieber QStringView parameter? Falls doch 'const QString&': Default Parameterwert "" ist
-                                 // ungünstig. glaube ich, weil dann stets eine Runtime-Konvertierung von const char* zu QString erfolgt.
-                                 // Lieber {} als Defaultwert nehmen. Gleiches gilt für supportedFormats() oben.
+    /// Returns the list of supported output codecs from the backend.
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt, QStringView path = {});
 
     /// Clears the list of supported codecs.
     static void clearCodecs();
@@ -135,7 +131,7 @@ public:
 private:
     static Backend getBackend();
 
-    std::unique_ptr<VideoEncoderBackend> _backend;  // VIDTODO: Lieber "_backend" ?
+    std::unique_ptr<VideoEncoderBackend> _backend;
 };
 
 }   // End of namespace

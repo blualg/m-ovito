@@ -32,32 +32,24 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ExternalVideoEncoderBackend : public VideoEncoder::VideoEncoderBackend
 {
-    Q_OBJECT
-
 public:
     /// Constructor.
-    ExternalVideoEncoderBackend(QObject* parent = nullptr) : VideoEncoder::VideoEncoderBackend(parent)
-    {
-        qDebug() << "ExternalVideoEncoderBackend()";
-    }
+    ExternalVideoEncoderBackend(QObject* parent = nullptr) : _parent(parent) { qDebug() << "ExternalVideoEncoderBackend()"; }
 
     /// Destructor.
-    /// Calls closeFile() to ensure that the external process is terminated - might block for up to 30s;
+    /// Calls closeFile() to ensure that the external process is terminated - will block until finished
     virtual ~ExternalVideoEncoderBackend();
 
     /// Opens a video file for writing.
     virtual void openFile(
         const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr) override;
 
-    /// Writes a single frame into the video file.
+    /// Writes a single frame into the video file / cache in the case of gif.
     virtual void writeFrame(const QImage& image) override;
 
     /// This closes the written video file.
-    /// Blocks up to 30s until the work is finished.
+    /// Blocks until the work is finished.
     virtual void closeFile() override;
-
-    /// Returns the list of supported output formats filtered by the current codec.
-    // static QList<VideoEncoder::Format> supportedFormatsFiltered();
 
     /// Returns the list of supported output formats.
     static QList<VideoEncoder::Format> supportedFormats(QStringView path);
@@ -69,33 +61,38 @@ public:
     static void clearCodecs() { _supportedCodecs.clear(); }
 
 private:
-    /// finish current process
+    /// Finishes the provided sub-process
+    /// Blocks until the process is finished or the timeout is reached
+    /// Negative timeout lead to blocking until the process is finished
+    /// Throws an exception if the process does not finish successfully
     static void finishFFmpegProcess(QProcess* process, int timeout = 30 * 1000);
 
-    /// start subproces
+    /// Start subprocess with the path executable with a given command
+    /// If path.isEmpty() the path is read from QSettings[VideoEncoder::FFMPEG_PATH_SETTING]
+    /// Timeout is the maximum time for the process to start up
     static void startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path = {}, int timeout = 30 * 1000);
 
     /// Subprocess running FFmpeg
     QProcess* _process;
+
+    /// Parent object for _process lifetime management
+    QObject* _parent;
 
     /// Flag indicating that the encoder has been finalized - no more frames can be added
     bool _finalized = false;
 
     /// Temporary file used for image storage and palette generation (gif encoder only)
     std::vector<QImage> _images;
-    bool _gifmode = false;
+
+    /// When rendering gif we need to cache all images for 2 pass encoding
+    bool _gifMode = false;
     int _width = 0;
     int _height = 0;
-
     float _framesPerSecond;
-
     QString _outFilename;
 
     /// The list of supported video formats.
     inline static QList<VideoEncoder::Format> _supportedFormats;
-
-    /// The filtered list of supported video codecs.
-    // inline static QList<VideoEncoder::Format> _supportedFormatsFiltered;
 
     /// The list of supported video codecs.
     inline static QList<const VideoEncoder::CandidateCodec*> _supportedCodecs;
