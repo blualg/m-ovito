@@ -185,6 +185,26 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
     }
 }
 
+namespace {
+inline bool isGif(const QString& filename, VideoEncoder::Format* format)
+{
+    return (format && format->candidate->name == QByteArrayLiteral("gif")) ||
+           filename.endsWith(QStringLiteral(".gif"), Qt::CaseInsensitive);
+}
+
+inline bool isMov(const QString& filename, VideoEncoder::Format* format)
+{
+    return (format && format->candidate->name == QByteArrayLiteral("mov")) ||
+           filename.endsWith(QStringLiteral(".mov"), Qt::CaseInsensitive);
+}
+
+inline bool isAvi(const QString& filename, VideoEncoder::Format* format)
+{
+    return (format && format->candidate->name == QByteArrayLiteral("avi")) ||
+           filename.endsWith(QStringLiteral(".avi"), Qt::CaseInsensitive);
+}
+}  // namespace
+
 /******************************************************************************
  * Opens a video file for writing.
  ******************************************************************************/
@@ -195,8 +215,7 @@ void ExternalVideoEncoderBackend::openFile(
     _process = new QProcess(_parent);
 
     // Special case for gif encoder -> stores all images and processes them later
-    if((format && format->candidate->name == QByteArrayLiteral("gif")) ||
-       filename.endsWith(QByteArrayLiteral(".gif"), Qt::CaseInsensitive)) {
+    if(isGif(filename, format)) {
         _gifMode = true;
         _framesPerSecond = framesPerSecond;
         _width = width;
@@ -208,12 +227,15 @@ void ExternalVideoEncoderBackend::openFile(
     // Grab settings
     QSettings settings;
     const QByteArray& codecName = settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
-    qDebug() << "codecName" << codecName;
     const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(codecName);
     if(!codecPtr) {
         throw Exception(VideoEncoder::tr("Video encoder (%1) not found.").arg(codecName));
     }
-    const QByteArray& codecLib = codecPtr->libName;
+
+    // Fallback to libx264 for avi and mov containers - no support for libx265
+    const QByteArray& codecLib = (isMov(filename, format) || isAvi(filename, format)) ? QByteArrayLiteral("libx264") : codecPtr->libName;
+
+    qDebug() << "codecName" << codecName << "codecLib" << codecLib;
 
     const auto quality =
         (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
