@@ -57,7 +57,7 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
         auto* infoLabel =
             new QLabel(tr("Please provide the path to the FFmpeg executable on your computer or leave it empty to use the "
-                          "built-in FFmpeg encoder of OVITO, which does not support more modern codecs. You can download FFmpeg from <a "
+                          "integrated encoder of OVITO, which does not support all high-quality codecs. You can obtain FFmpeg from <a "
                           "href=\"https://ffmpeg.org/download.html\">ffmpeg.org/download</a>."));
         infoLabel->setWordWrap(true);
         infoLabel->setOpenExternalLinks(true);
@@ -94,13 +94,23 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     {
         // Setup codecs:
-        auto* codecSettingsGroupBox = new QGroupBox(tr("Codec settings"), page);
+        auto* codecSettingsGroupBox = new QGroupBox(tr("Encoding settings"), page);
         layout->addWidget(codecSettingsGroupBox);
         auto* layout1 = new QGridLayout(codecSettingsGroupBox);
         // Have the combo boxes (col 1) take up as much space as possible.
         layout1->setColumnStretch(0, 0);
         layout1->setColumnStretch(1, 1);
         int row = 0;
+
+        _ffmpegQualityBox = new QComboBox(page);
+        QMetaEnum metaEnum = QMetaEnum::fromType<VideoEncoder::Quality>();
+        for(int i = 0; i < metaEnum.keyCount(); ++i) {
+            _ffmpegQualityBox->addItem(metaEnum.key(i), metaEnum.value(i));
+        }
+        _ffmpegQualityBox->setCurrentIndex(_ffmpegQualityBox->findData(ffmpegQuality));
+
+        layout1->addWidget(new QLabel(tr("Quality preset:")), row, 0);
+        layout1->addWidget(_ffmpegQualityBox, row++, 1, 1, 2);
 
         _ffmpegCodec = new QComboBox(page);
         layout1->addWidget(new QLabel(tr("Codec:")), row, 0);
@@ -110,9 +120,7 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
         // Codec / format warning
         auto* codecInfoLabel = new QLabel(page);
-        codecInfoLabel->setText(tr(
-            "Note: The H.265 codec does not work with .avi and .mov file formats (fallback is H.264). Only .mkv and .mp4 file formats will "
-            "use the more modern H.265 codec."));
+        codecInfoLabel->setText(tr("Note: The H.265 codec does not work with .avi and .mov file formats; fallback is H.264."));
         codecInfoLabel->setWordWrap(true);
         codecInfoLabel->setVisible(false);
         connect(this, &FFmpegSettingsPage::ffmpegPathValidated, this, [this, codecInfoLabel](bool valid) {
@@ -131,21 +139,11 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
             const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
             const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : QString();
             const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
-            if(index < 0 || index > codecs.size()) return;
+            if(index < 0 || index > codecs.size()) return; // VIDTODO: Sollte >= sein?
             const VideoEncoder::CandidateCodec* codec = codecs[index];
             _ffmpegCodecName = codec->libName;
             codecInfoLabel->setVisible(_ffmpegCodecName == QByteArrayLiteral("libx265"));
         });
-
-        _ffmpegQualityBox = new QComboBox(page);
-        QMetaEnum metaEnum = QMetaEnum::fromType<VideoEncoder::Quality>();
-        for(int i = 0; i < metaEnum.keyCount(); ++i) {
-            _ffmpegQualityBox->addItem(metaEnum.key(i), metaEnum.value(i));
-        }
-        _ffmpegQualityBox->setCurrentIndex(_ffmpegQualityBox->findData(ffmpegQuality));
-
-        layout1->addWidget(new QLabel(tr("Quality preset:")), row, 0);
-        layout1->addWidget(_ffmpegQualityBox, row++, 1, 1, 2);
     }
 
     layout->addStretch();
@@ -162,8 +160,10 @@ void FFmpegSettingsPage::refreshCodecCombobox()
 
     // Get backend and path
     const VideoEncoder::Backend backend = _externalFFmpeg ? VideoEncoder::Backend::EXTERNAL : VideoEncoder::Backend::INTERNAL;
-    const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : "";
+    const QString& path = _externalFFmpeg ? _ffmpegPath->text().trimmed() : QString();
     if(path.isEmpty()) {
+        // VIDTODO: Besser als eine Leere Box fände ich, wenn die Combobox im Fall des integrierten Encoders den dann verwendeten Codec anzeigen würde (nur Anzeige, keine Auswahlmöglichkeit).
+        // Vermutlich "MPEG-4 Video" oder so. Oder wissen wir einfach nicht, welche Codec da verwendet wird?
         _ffmpegCodec->setDisabled(true);
         return;
     }
@@ -196,7 +196,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
 {
     VideoEncoder::clearCodecs();
     // User input
-    const QString userInput = _ffmpegPath->text().trimmed();
+    const QString userInput = _ffmpegPath->text().trimmed(); // VIDTODO: Evtl. QDir::fromNativeSeparators() hier verwenden?
 
     // Check path is empty
     if(userInput.isEmpty()) {
@@ -212,7 +212,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     QFileInfo fileInfo(path);
     if(!fileInfo.exists()) {
         _statusLabel->setStatus(
-            PipelineStatus(PipelineStatus::Error, tr("%1 does not exist, the built-in FFmpeg library will be used.").arg(path)));
+            PipelineStatus(PipelineStatus::Error, tr("%1 does not exist. The internal video encoder will be used.").arg(path))); // VIDTODO: "path" ist ein leerer String wenn QStandardPaths::findExecutable das Executable nicht finden konnte.
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -220,7 +220,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     // Check if file is executable.
     if(!fileInfo.isExecutable()) {
         _statusLabel->setStatus(
-            PipelineStatus(PipelineStatus::Error, tr("%1 is not executable. The built-in FFmpeg library will be used.").arg(path)));
+            PipelineStatus(PipelineStatus::Error, tr("%1 is not executable. The internal video encoder will be used.").arg(path)));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -229,7 +229,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     if(!(path.endsWith("ffmpeg", Qt::CaseInsensitive) || path.endsWith("ffmpeg.exe", Qt::CaseInsensitive))) {
         _statusLabel->setStatus(
             PipelineStatus(PipelineStatus::Error,
-                           tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid. The built-in FFmpeg library will be used.")));
+                           tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid. The internal video encoder will be used.")));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -237,7 +237,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     _statusLabel->setStatus(PipelineStatus(tr("Checking FFmpeg executable...")));
 
     // Background process used for checking if ffmpeg is executable
-    QProcess* process = new QProcess();
+    QProcess* process = new QProcess(); // VIDTODO: Evtl parent=this, damit der Prozess automatisch gekillt wird beim Schließen des Dialogs?
 
     // Setup timeout timer (ms)
     constexpr int timeout = 3 * 1000;
@@ -246,12 +246,12 @@ void FFmpegSettingsPage::validateFfmpegPath()
     // Handle process finished
     connect(
         process,
-        QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), // VIDTODO: QOverload unnötig
         this,
         [process, userInput, path, this](int exitCode, QProcess::ExitStatus exitStatus) {
             if(exitStatus != QProcess::NormalExit) {
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error, tr("%1 did not exit normally. The built-in FFmpeg library will be used.").arg(path)));
+                    PipelineStatus::Error, tr("%1 did not exit normally. The integrated video encoder will be used.").arg(path)));
                 Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;
@@ -262,14 +262,14 @@ void FFmpegSettingsPage::validateFfmpegPath()
                 const qsizetype newlinePos = output.indexOf('\n');
                 const QByteArray firstLine = (newlinePos != -1) ? output.left(newlinePos).trimmed() : output.trimmed();
                 const QString versionString = QString::fromUtf8(firstLine);
-                _statusLabel->setStatus(PipelineStatus(PipelineStatus::Success, tr("%1 found:\n%2").arg(path).arg(versionString)));
+                _statusLabel->setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %1:\n%2").arg(path).arg(versionString))); // VIDTODO: Sollen wir hier evtl QDir::toNativeSeparators(path) verwenden, damit die Windows-Nutzer ihre gewohnte Darstellung haben?
                 Q_EMIT ffmpegPathValidated(true);
                 process->deleteLater();
                 return;
             }
             else {
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error, tr("%1 is not a valid FFmpeg executable. The built-in FFmpeg library will be used.").arg(path)));
+                    PipelineStatus::Error, tr("%1 is not a valid FFmpeg executable. The integrated video encoder will be used.").arg(path)));
                 Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;

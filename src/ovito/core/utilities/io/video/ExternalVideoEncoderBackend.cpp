@@ -119,9 +119,9 @@ void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QS
 {
     QSettings settings;
     const QString& executable =
-        path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString();
+        path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString(); // VIDTODO: Ist es Absicht, dass hier "ffmpeg" auf einmal als Default-Wert verwendet wird?
     if(executable.isEmpty()) {
-        throw Exception(VideoEncoder::tr("FFmpeg (%1) path is not set.").arg(executable));
+        throw Exception(VideoEncoder::tr("FFmpeg (%1) path is not set.").arg(executable)); // VIDTODO: executable ist ein leerer String, sollte also nicht in der Fehlermeldung auftauchen.
     }
     // Start the process
     process->start(executable, command);
@@ -150,7 +150,7 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
     }
 
     int time = 0;
-    constexpr int pollingInterval = 100;
+    constexpr int pollingInterval = 20; // ms
     do {
         process->waitForFinished(pollingInterval);
         time += pollingInterval;
@@ -158,22 +158,23 @@ void ExternalVideoEncoderBackend::finishFFmpegProcess(QProcess* process, const i
             process->terminate();
         }
         if(timeout > 0 && time > timeout) {
-            Exception ex(VideoEncoder::tr("Failed to finish FFmpeg process: Timeout reached"));
+            Exception ex(VideoEncoder::tr("FFmpeg video encoding process did not finish: Timeout reached"));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
             throw ex;
         }
-    } while(process->state() == QProcess::Running);
+    }
+    while(process->state() == QProcess::Running);
 
     if(process->exitStatus() == QProcess::CrashExit) {
-        Exception ex(VideoEncoder::tr("FFmpeg crashed"));
+        Exception ex(VideoEncoder::tr("External FFmpeg video encoding process crashed."));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
         throw ex;
     }
 
     if(process->exitCode() != 0) {
-        Exception ex(VideoEncoder::tr("FFmpeg failed with exit code:") + QString::number(process->exitCode()));
+        Exception ex(VideoEncoder::tr("External FFmpeg video encoding process failed with exit code: %1").arg(process->exitCode()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
         ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
         throw ex;
@@ -203,13 +204,12 @@ inline bool isAvi(const QString& filename, VideoEncoder::Format* format)
 /******************************************************************************
  * Opens a video file for writing.
  ******************************************************************************/
-void ExternalVideoEncoderBackend::openFile(
-    const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
+void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, int height, float framesPerSecond)
 {
     _process = new QProcess(_parent);
 
     // Special case for gif encoder -> stores all images and processes them later
-    if(isGif(filename, format)) {
+    if(isGif(filename, nullptr)) {
         _gifMode = true;
         _framesPerSecond = framesPerSecond;
         _width = width;
@@ -225,18 +225,17 @@ void ExternalVideoEncoderBackend::openFile(
     const QByteArray& codecName = settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
     const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(codecName);
     if(!codecPtr) {
-        throw Exception(VideoEncoder::tr("Video encoder (%1) not found.").arg(codecName));
+        throw Exception(VideoEncoder::tr("Video encoder '%1' not found. It may not be supported by the current FFmpeg backend.").arg(codecName));
     }
 
     // Fallback to libx264 for avi and mov containers - no support for libx265
-    const QByteArray& codecLib = (isMov(filename, format) || isAvi(filename, format)) ? QByteArrayLiteral("libx264") : codecPtr->libName;
+    const QByteArray& codecLib = (isMov(filename, nullptr) || isAvi(filename, nullptr)) ? QByteArrayLiteral("libx264") : codecPtr->libName;
 
     // Read quality
     const auto quality =
         (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
 
     // Configure codec quality / bitrate
-    QStringList args;
     int crf = 23;
     if(codecLib == QByteArrayLiteral("libx264")) {
         if(quality == VideoEncoder::Quality::High) {
@@ -261,8 +260,9 @@ void ExternalVideoEncoderBackend::openFile(
         }
     }
     else {
-        throw Exception(VideoEncoder::tr("Unsupported codec: %1").arg(codecLib));
+        throw Exception(VideoEncoder::tr("Selected codec is not supported by this OVITO version: %1").arg(codecLib));
     }
+    QStringList args;
     args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
          << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(width).arg(height)
          << QStringLiteral("-framerate") << QString::number(framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
@@ -279,30 +279,30 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
 {
     // Special case for gif encoder -> stores all images and processes them later
     if(_gifMode) {
-        _images.push_back(image.convertToFormat(QImage::Format_RGB32));
+        _images.push_back(image.convertToFormat(QImage::Format_RGB32)); // VIDTODO: Der integrierte FFmpeg encoder von OVITO schafft es, animierte GIFs mit transparentem Hintergrund zu erzeugen. Der externe Encoder schafft es momentan nicht. Wäre es evtl doch möglich durch Verwendung von RGBA32 statt RGB32?
         return;
     }
 
     // Video mode - store each image individually
     if(image.width() % 2 != 0) {
-        throw Exception(VideoEncoder::tr("The selected codec requires the image width to be even. Current width: %1").arg(image.width()));
+        throw Exception(VideoEncoder::tr("The selected video codec requires the image width to be even. Current width: %1").arg(image.width()));
     }
     if(image.height() % 2 != 0) {
         throw Exception(
-            VideoEncoder::tr("The selected codec requires the image height to be odd. Current  height: %1").arg(image.height()));
+            VideoEncoder::tr("The selected video codec requires the image height to be odd. Current  height: %1").arg(image.height())); // VIDTODO: "odd" ?
     }
-    if(!_process) {
+    if(!_process) { // VIDTODO: Is dieser Check sinnvoll? _process wird aktuell nirgends auf null initialisiert.
         throw Exception(VideoEncoder::tr("FFmpeg process not found!"));
     }
 
     if(_finalized) {
-        throw Exception(VideoEncoder::tr("Cannot write frame after finalize"));
+        throw Exception(VideoEncoder::tr("Cannot write another video frame after finalize has been called."));
     }
 
-    // Convert image to RGB24 format
+    // Convert image to RGB24 format // VIDTODO: RGB32?
     QImage rgb = image.convertToFormat(QImage::Format_RGB32);
 
-    // Write raw pixel data
+    // Send raw pixel data to FFmpeg process
     const uchar* bits = rgb.constBits();
     const qint64 size = rgb.sizeInBytes();
     _process->write((const char*)bits, size);
@@ -321,7 +321,7 @@ void ExternalVideoEncoderBackend::closeFile()
     _finalized = true;
 
     if(_gifMode) {
-        // Process all images in the temporary directory
+        // Process all images in the temporary directory // VIDTODO: Kommentar aktualisieren
         QSettings settings;
         const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "FFmpeg").toString();
 
@@ -330,7 +330,7 @@ void ExternalVideoEncoderBackend::closeFile()
         // Temporary file for palette generation
         QTemporaryFile paletteFile("palette.XXXXXX.png");
         if(!paletteFile.open()) {
-            throw Exception(VideoEncoder::tr("Failed to open temporary file for palette generation."));
+            throw Exception(VideoEncoder::tr("Failed to open temporary file for GIF color palette generation."));
         }
         paletteFile.close();
 
@@ -338,12 +338,12 @@ void ExternalVideoEncoderBackend::closeFile()
         args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
              << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
-             << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName();
+             << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName(); // VIDTODO: Wissen wir, ob FFmpeg unter Windows den Dateipfad mit "/" oder "\" erwartet? Evtl. müssten wir hier sonst noch eine Anpassung vornehmen.
 
         startFFmpegProcess(_process, args);
 
         for(const QImage& image : _images) {
-            // Write raw pixel data
+            // Send raw pixel data to FFmpeg process
             const uchar* bits = image.constBits();
             const qint64 size = image.sizeInBytes();
             _process->write((const char*)bits, size);
@@ -356,7 +356,7 @@ void ExternalVideoEncoderBackend::closeFile()
         // Confirm the palette file exists and has content
         const QFileInfo paletteInfo(paletteFile.fileName());
         if(!paletteInfo.exists() || paletteInfo.size() == 0) {
-            throw Exception(VideoEncoder::tr("Gif palette file was not created properly"));
+            throw Exception(VideoEncoder::tr("Something went wrong. GIF color palette file was not created by FFmpeg. Expected path: %1").arg(paletteFile.fileName()));
         }
 
         args.clear();
@@ -371,7 +371,7 @@ void ExternalVideoEncoderBackend::closeFile()
         startFFmpegProcess(_process, args);
 
         for(const QImage& image : _images) {
-            // Write raw pixel data
+            // Send raw pixel data to FFmpeg process
             const uchar* bits = image.constBits();
             const qint64 size = image.sizeInBytes();
             _process->write((const char*)bits, size);

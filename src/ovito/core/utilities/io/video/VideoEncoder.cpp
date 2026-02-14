@@ -86,10 +86,11 @@ QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::op
     }
     return {};
 }
+
 /******************************************************************************
 * Opens a video file for writing.
 ******************************************************************************/
-void VideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
+void VideoEncoder::openFile(const QString& filename, int width, int height, float framesPerSecond)
 {
     _backend->openFile(filename, width, height, framesPerSecond);
 }
@@ -142,7 +143,7 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
 }
 
 /******************************************************************************
- *  Returns the list of supported output codecs from the backend.
+ * Returns the list of supported output codecs from the backend.
  ******************************************************************************/
 const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(std::string_view name)
 {
@@ -160,7 +161,9 @@ const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandid
     return (it == candidateCodecs.end()) ? nullptr : &(*it);
 }
 
-/// Clears the list of supported codecs.
+/******************************************************************************
+* Clears the list of supported codecs.
+******************************************************************************/
 void VideoEncoder::clearCodecs() { ExternalVideoEncoderBackend::clearCodecs(); }
 
 }   // End of namespace

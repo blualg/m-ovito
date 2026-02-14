@@ -41,8 +41,7 @@ public:
     virtual ~ExternalVideoEncoderBackend();
 
     /// Opens a video file for writing.
-    virtual void openFile(
-        const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr) override;
+    virtual void openFile(const QString& filename, int width, int height, float framesPerSecond) override;
 
     /// Writes a single frame into the video file / cache in the case of gif.
     virtual void writeFrame(const QImage& image) override;
@@ -81,7 +80,7 @@ private:
     /// Flag indicating that the encoder has been finalized - no more frames can be added
     bool _finalized = false;
 
-    /// Temporary file used for image storage and palette generation (gif encoder only)
+    /// Temporary file used for image storage and palette generation (gif encoder only) // VIDTODO: "file" ? Kommentar evtl. aktualisieren
     std::vector<QImage> _images;
 
     /// When rendering gif we need to cache all images for 2 pass encoding

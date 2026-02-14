@@ -59,7 +59,7 @@ InternalVideoEncoderBackend::~InternalVideoEncoderBackend()
     }
     catch(const Exception& ex) {
         // Swallow exceptions in destructor
-        qWarning() << VideoEncoder::tr("Warning: Unexpected exception in InternalVideoEncoderBackend destructor:");
+        qWarning() << VideoEncoder::tr("Warning: Unexpected exception in internal encoder destructor:");
         ex.logError();
     }
 }
@@ -82,7 +82,7 @@ QString InternalVideoEncoderBackend::errorMessage(int errorCode)
 {
     char errbuf[512];
     if(::av_strerror(errorCode, errbuf, sizeof(errbuf)) < 0) {
-        return QStringLiteral("Unknown FFMPEG error.");
+        return QStringLiteral("Unknown FFmpeg error.");
     }
     return QString::fromLocal8Bit(errbuf);
 }
@@ -120,8 +120,7 @@ QList<VideoEncoder::Format> InternalVideoEncoderBackend::supportedFormats()
 /******************************************************************************
  * Opens a video file for writing.
  ******************************************************************************/
-void InternalVideoEncoderBackend::openFile(
-    const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format)
+void InternalVideoEncoderBackend::openFile(const QString& filename, int width, int height, float framesPerSecond)
 {
     int errCode;
 
@@ -154,14 +153,9 @@ void InternalVideoEncoderBackend::openFile(
     // Note: FFmpeg always uses UTF-8 encoding - even on Windows platform.
     QByteArray encodedFilename = filename.toUtf8();
 
-    const AVOutputFormat* outputFormat;
-    if(format == nullptr) {
-        // Auto detect the output format from the file name.
-        outputFormat = ::av_guess_format(nullptr, encodedFilename.constData(), nullptr);
-        if(!outputFormat) throw Exception(VideoEncoder::tr("Could not deduce video output format from file extension."));
-    }
-    else
-        outputFormat = format->avformat;
+    // Auto detect the output format from the file name.
+    const AVOutputFormat* outputFormat = ::av_guess_format(nullptr, encodedFilename.constData(), nullptr);
+    if(!outputFormat) throw Exception(VideoEncoder::tr("Could not deduce video output format from file extension."));
 
     // Odd image widths lead to artifacts when writing animated GIFs.
     // Round to nearest integer in case.

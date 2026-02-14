@@ -137,7 +137,7 @@ QWidget* SimulationCellInspectionApplet::createWidget()
         boxLayout->addWidget(stackedWidget);
 
         // Connect radio button selection
-        QObject::connect(buttonGroup, QOverload<int>::of(&QButtonGroup::idClicked), stackedWidget, &QStackedWidget::setCurrentIndex);
+        QObject::connect(buttonGroup, qOverload<int>(&QButtonGroup::idClicked), stackedWidget, &QStackedWidget::setCurrentIndex);
 
         // Set default view
         cellVectorsButton->setChecked(true);

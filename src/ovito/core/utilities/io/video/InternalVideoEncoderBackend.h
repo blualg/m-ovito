@@ -53,8 +53,7 @@ public:
     virtual ~InternalVideoEncoderBackend();
 
     /// Opens a video file for writing.
-    virtual void openFile(
-        const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr) override;
+    virtual void openFile(const QString& filename, int width, int height, float framesPerSecond) override;
 
     /// Writes a single frame into the video file.
     virtual void writeFrame(const QImage& image) override;

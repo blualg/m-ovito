@@ -521,8 +521,8 @@ void RenderSettingsEditor::updateExternalFFmpegLabel()
         QSettings settings;
         bool externalFFmpeg = settings.value(VideoEncoder::FFMPEG_USE_EXT_SETTING, false).toBool();
         _externalFFmpegLabel->setVisible(true);
-        _externalFFmpegLabel->setText(externalFFmpeg ? tr("Using external FFmpeg executable (<a href=\"settings\">configure</a>).")
-                                                     : tr("Using internal FFmpeg executable (<a href=\"settings\">configure</a>)."));
+        _externalFFmpegLabel->setText(externalFFmpeg ? tr("Using external video encoder. <a href=\"settings\">Configure...</a>")
+                                                     : tr("Using internal video encoder. <a href=\"settings\">Configure...</a>"));
     }
     else {
         // When rendering a single frame, hide the external ffmpeg display.
