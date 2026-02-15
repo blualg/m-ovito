@@ -15,7 +15,7 @@ The settings dialog has several tabs:
 
   General <general_settings>
   Viewports <viewport_settings>
-  Video Encoding <video_encoder_settings>
+  Video encoding <video_encoder_settings>
   modifier_templates
   Particles <particle_settings>
   Python <python_settings>
