@@ -177,8 +177,6 @@ IF(ZLIB_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
     TARGET_LINK_LIBRARIES(Core PRIVATE ZLIB::ZLIB)
-    GET_TARGET_PROPERTY(ZLIB_LIBRARY_LOCATION ZLIB::ZLIB LOCATION)
-    MESSAGE(STATUS "Using zlib library ${ZLIB_LIBRARY_LOCATION}")
 
     # Also activate support for zstd compressed files.
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
@@ -187,16 +185,10 @@ IF(ZLIB_FOUND)
         OVITO_FIND_PACKAGE(zstd REQUIRED)
         TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd)
     ELSE()
-        # In non-Conda builds, we use the statically built zstd library by default from our 3rdparty/ directory.
+        # In non-Conda builds, we use the statically built zstd library from our 3rdparty/ directory.
         # We use the static library version to avoid an extra deployment step when building the release packages of OVITO.
         # Note: The static lib must have been built with the -fPIC option.
-        IF(NOT OVITO_ZSTD_USE_SHARED_LIB)
-            TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
-        ELSE()
-            TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_shared)
-            GET_TARGET_PROPERTY(ZSTD_LIBRARY_LOCATION zstd::libzstd_shared LOCATION)
-            MESSAGE(STATUS "Using shared zstd library ${ZSTD_LIBRARY_LOCATION}")
-        ENDIF()
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
     ENDIF()
     # Additionally, build zstd's zlib-wrapper source files, because the OVITO code uses zstd through this compatibility layer.
     TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
@@ -365,13 +357,6 @@ IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
         GET_TARGET_PROPERTY(ZLIB_LIBRARY_LOCATION ZLIB::ZLIB LOCATION)
         GET_FILENAME_COMPONENT(ZLIB_LIBRARY_PATH "${ZLIB_LIBRARY_LOCATION}" PATH)
         OVITO_INSTALL_SHARED_LIB("${ZLIB_LIBRARY_PATH}/../bin/zlib.dll")
-    ENDIF()
-    IF(OVITO_ZSTD_USE_SHARED_LIB AND NOT OVITO_BUILD_CONDA AND NOT EMSCRIPTEN)
-        # Deploy the zstd shared library.
-        IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
-            GET_TARGET_PROPERTY(ZSTD_LIBRARY_LOCATION zstd::libzstd_shared LOCATION)
-            OVITO_INSTALL_SHARED_LIB("${ZSTD_LIBRARY_LOCATION}")
-        ENDIF()
     ENDIF()
 ENDIF()
 

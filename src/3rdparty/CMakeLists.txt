@@ -31,13 +31,8 @@ IF(NOT OVITO_BUILD_CONDA)
     SET(ZSTD_BUILD_PROGRAMS OFF)
     SET(ZSTD_BUILD_TESTS OFF)
     SET(ZSTD_BUILD_CONTRIB OFF)
-    IF(OVITO_ZSTD_USE_SHARED_LIB)
-        SET(ZSTD_BUILD_STATIC OFF)
-        SET(ZSTD_BUILD_SHARED ON)
-    ELSE()
-        SET(ZSTD_BUILD_STATIC ON)
-        SET(ZSTD_BUILD_SHARED OFF)
-    ENDIF()
+    SET(ZSTD_BUILD_STATIC ON)
+    SET(ZSTD_BUILD_SHARED OFF)
 
     # Declare zstd using the local git submodule. Set EXCLUDE_FROM_ALL to avoid installation of zstd build artifacts together with the main OVITO build.
     FetchContent_Declare(zstd SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake EXCLUDE_FROM_ALL)
@@ -46,12 +41,7 @@ IF(NOT OVITO_BUILD_CONDA)
     FetchContent_MakeAvailable(zstd)
 
     # Create an alias for compatibility with existing code in core/CMakeLists.txt that references zstd::libzstd_static.
-    IF(OVITO_ZSTD_USE_SHARED_LIB)
-        ADD_LIBRARY(zstd::libzstd_shared ALIAS libzstd_shared)
-        ADD_LIBRARY(zstd::libzstd ALIAS libzstd_shared)
-    ELSE()
-        ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
-    ENDIF()
+    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
 
     # Get the full version from the zstd sub-project.
     LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake/CMakeModules")

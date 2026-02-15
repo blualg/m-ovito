@@ -29,17 +29,6 @@
     #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 
-// Check that the required compression libraries are available when building OVITO Basic/Pro editions.
-// Only unbranded OVITO open source editions may be built without support for compressed files.
-#if defined(OVITO_BUILD_BASIC) || defined(OVITO_BUILD_PROFESSIONAL)
-    #ifndef OVITO_ZLIB_SUPPORT
-        #error "OVITO Basic/Pro editions must be built with I/O support for gzip compressed files (*.gz). Please make sure that the zlib development library is installed on your system and re-build OVITO with zlib support enabled."
-    #endif
-    #ifndef OVITO_ZSTD_SUPPORT
-        #error "OVITO Basic/Pro editions must be built with I/O support for zstandard compressed files (*.zst). Please make sure that the zstd development library is installed on your system and re-build OVITO with zstd support enabled."
-    #endif
-#endif
-
 namespace Ovito {
 
 /******************************************************************************
@@ -59,6 +48,11 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
 #ifndef OVITO_ZSTD_SUPPORT
         if(_filename.endsWith(".zst", Qt::CaseInsensitive))
             throw Exception(FileManager::tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for zstandard compressed files (*.zst)."));
+#else
+    #if defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM)
+        if(_filename.endsWith(".zst", Qt::CaseInsensitive))
+            qWarning() << "Warning: Support for zstandard compressed files (*.zst) is currently broken on linux-aarch64 builds of OVITO.";
+    #endif
 #endif
 #ifdef OVITO_ZLIB_SUPPORT
         // When reading consecutive frames from the same compressed trajectory file, try to re-use an existing open file stream.
