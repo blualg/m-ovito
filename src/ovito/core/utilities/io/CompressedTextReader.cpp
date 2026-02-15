@@ -29,6 +29,17 @@
     #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 
+// Check that the required compression libraries are available when building OVITO Basic/Pro editions.
+// Only unbranded OVITO open source editions may be built without support for compressed files.
+#if defined(OVITO_BUILD_BASIC) || defined(OVITO_BUILD_PROFESSIONAL)
+    #ifndef OVITO_ZLIB_SUPPORT
+        #error "OVITO Basic/Pro editions must be built with I/O support for gzip compressed files (*.gz). Please make sure that the zlib development library is installed on your system and re-build OVITO with zlib support enabled."
+    #endif
+    #ifndef OVITO_ZSTD_SUPPORT
+        #error "OVITO Basic/Pro editions must be built with I/O support for zstandard compressed files (*.zst). Please make sure that the zstd development library is installed on your system and re-build OVITO with zstd support enabled."
+    #endif
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
