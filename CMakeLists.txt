@@ -108,6 +108,7 @@ OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)
 OPTION(OVITO_USE_CUDA "Build with native CUDA support" "OFF")
+OPTION(OVITO_ZSTD_USE_SHARED_LIB "Build and use a dynamically linked zstd library" "OFF")
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")
