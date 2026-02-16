@@ -92,6 +92,8 @@ QString InternalVideoEncoderBackend::errorMessage(int errorCode)
  ******************************************************************************/
 QList<VideoEncoder::Format> InternalVideoEncoderBackend::supportedFormats()
 {
+    OVITO_ASSERT(this_task::isMainThread());
+
     if(!_supportedFormats.empty()) return _supportedFormats;
 
     initCodecs();
@@ -115,6 +117,35 @@ QList<VideoEncoder::Format> InternalVideoEncoderBackend::supportedFormats()
     }
 
     return _supportedFormats;
+}
+/******************************************************************************
+ * Returns the list of supported output codecs.
+ ******************************************************************************/
+QList<const VideoEncoder::CandidateCodec*> InternalVideoEncoderBackend::supportedCodecs()
+{
+    OVITO_ASSERT(this_task::isMainThread());
+
+    if(!_supportedCodecs.empty()) return _supportedCodecs;
+
+    initCodecs();
+
+    const QList<VideoEncoder::Format>& formats = supportedFormats();
+    for(const VideoEncoder::Format& format : formats) {
+        // Skip empty formats
+        if(!format.avformat || !format.avformat->video_codec) continue;
+        // Skip GIF codecs
+        if(format.avformat->video_codec == AV_CODEC_ID_GIF) continue;
+
+        const VideoEncoder::CandidateCodec* candidate =
+            getCandidateCodec(std::string_view(avcodec_descriptor_get(format.avformat->video_codec)->name));
+        // Only add unique codecs
+        if(candidate != nullptr &&
+           std::ranges::none_of(_supportedCodecs, [&](const auto* c) { return c->libName == candidate->libName; })) {
+            _supportedCodecs.push_back(candidate);
+        }
+    }
+
+    return _supportedCodecs;
 }
 
 /******************************************************************************

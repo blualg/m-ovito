@@ -80,7 +80,7 @@ private:
     /// Flag indicating that the encoder has been finalized - no more frames can be added
     bool _finalized = false;
 
-    /// Temporary file used for image storage and palette generation (gif encoder only) // VIDTODO: "file" ? Kommentar evtl. aktualisieren
+    /// Cache images for 2 pass gif generation (gif encoder only)
     std::vector<QImage> _images;
 
     /// When rendering gif we need to cache all images for 2 pass encoding

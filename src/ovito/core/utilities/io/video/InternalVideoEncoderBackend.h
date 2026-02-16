@@ -64,6 +64,9 @@ public:
     /// Returns the list of supported output formats.
     static QList<VideoEncoder::Format> supportedFormats();
 
+    /// Returns the list of supported codecs.
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs();
+
 private:
     /// Initializes libavcodec, and register all codecs and formats.
     static void initCodecs();
@@ -88,6 +91,9 @@ private:
 
     /// The list of supported video formats.
     inline static QList<VideoEncoder::Format> _supportedFormats;
+
+    /// The list of supported video codecs.
+    inline static QList<const VideoEncoder::CandidateCodec*> _supportedCodecs;
 };
 
 }  // namespace Ovito

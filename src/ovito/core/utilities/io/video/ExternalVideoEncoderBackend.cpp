@@ -101,7 +101,9 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
             line | std::views::split(' ') | std::views::filter([](auto&& r) { return !std::ranges::empty(r); }) | std::views::drop(1);
         if(tokens.begin() != tokens.end()) {
             const VideoEncoder::CandidateCodec* candidate = getCandidateCodec(std::string_view(*tokens.begin()));
-            if(candidate != nullptr) {
+            // Only add unique codecs
+            if(candidate != nullptr &&
+               std::ranges::none_of(_supportedCodecs, [&](const auto* c) { return c->libName == candidate->libName; })) {
                 _supportedCodecs.push_back(candidate);
             }
         }
@@ -118,10 +120,9 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
 void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path, const int timeout)
 {
     QSettings settings;
-    const QString& executable =
-        path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, QStringLiteral("ffmpeg")).toString() : path.toString(); // VIDTODO: Ist es Absicht, dass hier "ffmpeg" auf einmal als Default-Wert verwendet wird?
+    const QString& executable = path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString() : path.toString();
     if(executable.isEmpty()) {
-        throw Exception(VideoEncoder::tr("FFmpeg (%1) path is not set.").arg(executable)); // VIDTODO: executable ist ein leerer String, sollte also nicht in der Fehlermeldung auftauchen.
+        throw Exception(VideoEncoder::tr("FFmpeg path is not set."));
     }
     // Start the process
     process->start(executable, command);
@@ -229,46 +230,63 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
     }
 
     // Fallback to libx264 for avi and mov containers - no support for libx265
-    const QByteArray& codecLib = (isMov(filename, nullptr) || isAvi(filename, nullptr)) ? QByteArrayLiteral("libx264") : codecPtr->libName;
+    const QByteArray& codecLib =
+        ((isMov(filename, nullptr) || isAvi(filename, nullptr)) && codecPtr->libName == QByteArrayLiteral("libx265"))
+            ? QByteArrayLiteral("libx264")
+            : codecPtr->libName;
 
     // Read quality
     const auto quality =
         (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
 
     // Configure codec quality / bitrate
-    int crf = 23;
+    QStringList qualityArgs;
     if(codecLib == QByteArrayLiteral("libx264")) {
+        qualityArgs << QStringLiteral("-crf");
         if(quality == VideoEncoder::Quality::High) {
-            crf = 19;
+            qualityArgs << QStringLiteral("19");
         }
         else if(quality == VideoEncoder::Quality::Medium) {
-            crf = 22;
+            qualityArgs << QStringLiteral("22");
         }
         else if(quality == VideoEncoder::Quality::Low) {
-            crf = 26;
+            qualityArgs << QStringLiteral("26");
         }
     }
     else if(codecLib == QByteArrayLiteral("libx265")) {
+        qualityArgs << QStringLiteral("-crf");
         if(quality == VideoEncoder::Quality::High) {
-            crf = 17;
+            qualityArgs << QStringLiteral("17");
         }
         else if(quality == VideoEncoder::Quality::Medium) {
-            crf = 20;
+            qualityArgs << QStringLiteral("20");
         }
         else if(quality == VideoEncoder::Quality::Low) {
-            crf = 24;
+            qualityArgs << QStringLiteral("24");
+        }
+    }
+    else if(codecLib == QByteArrayLiteral("mpeg4")) {
+        if(quality == VideoEncoder::Quality::High) {
+            qualityArgs << QStringLiteral("-qmin") << QStringLiteral("3") << QStringLiteral("-qmax") << QStringLiteral("3");
+        }
+        else if(quality == VideoEncoder::Quality::Medium) {
+            qualityArgs << QStringLiteral("-qmin") << QStringLiteral("4") << QStringLiteral("-qmax") << QStringLiteral("5");
+        }
+        else if(quality == VideoEncoder::Quality::Low) {
+            qualityArgs << QStringLiteral("-qmin") << QStringLiteral("6") << QStringLiteral("-qmax") << QStringLiteral("8");
         }
     }
     else {
         throw Exception(VideoEncoder::tr("Selected codec is not supported by this OVITO version: %1").arg(codecLib));
     }
     QStringList args;
-    args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
+    args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pix_fmt")
          << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(width).arg(height)
          << QStringLiteral("-framerate") << QString::number(framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
-         << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << QStringLiteral("-crf")
-         << QString::number(crf) << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
+         << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << qualityArgs
+         << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
 
+    qDebug() << args;
     startFFmpegProcess(_process, args);
 }
 
@@ -279,7 +297,7 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
 {
     // Special case for gif encoder -> stores all images and processes them later
     if(_gifMode) {
-        _images.push_back(image.convertToFormat(QImage::Format_RGB32)); // VIDTODO: Der integrierte FFmpeg encoder von OVITO schafft es, animierte GIFs mit transparentem Hintergrund zu erzeugen. Der externe Encoder schafft es momentan nicht. Wäre es evtl doch möglich durch Verwendung von RGBA32 statt RGB32?
+        _images.push_back(image.convertToFormat(QImage::Format_ARGB32));
         return;
     }
 
@@ -289,22 +307,22 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
     }
     if(image.height() % 2 != 0) {
         throw Exception(
-            VideoEncoder::tr("The selected video codec requires the image height to be odd. Current  height: %1").arg(image.height())); // VIDTODO: "odd" ?
-    }
-    if(!_process) { // VIDTODO: Is dieser Check sinnvoll? _process wird aktuell nirgends auf null initialisiert.
-        throw Exception(VideoEncoder::tr("FFmpeg process not found!"));
+            VideoEncoder::tr("The selected video codec requires the image height to be even. Current height: %1").arg(image.height()));
     }
 
     if(_finalized) {
         throw Exception(VideoEncoder::tr("Cannot write another video frame after finalize has been called."));
     }
 
-    // Convert image to RGB24 format // VIDTODO: RGB32?
+    // Convert image to RGB32 format
     QImage rgb = image.convertToFormat(QImage::Format_RGB32);
 
     // Send raw pixel data to FFmpeg process
     const uchar* bits = rgb.constBits();
     const qint64 size = rgb.sizeInBytes();
+
+    OVITO_ASSERT(_process);
+    OVITO_ASSERT(_process->state() == QProcess::Running);
     _process->write((const char*)bits, size);
 }
 
@@ -321,7 +339,7 @@ void ExternalVideoEncoderBackend::closeFile()
     _finalized = true;
 
     if(_gifMode) {
-        // Process all images in the temporary directory // VIDTODO: Kommentar aktualisieren
+        // Generate gif from the cached images
         QSettings settings;
         const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "FFmpeg").toString();
 
@@ -335,10 +353,10 @@ void ExternalVideoEncoderBackend::closeFile()
         paletteFile.close();
 
         // Run palette generation
-        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
-             << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pix_fmt")
+             << QStringLiteral("rgba") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
-             << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName(); // VIDTODO: Wissen wir, ob FFmpeg unter Windows den Dateipfad mit "/" oder "\" erwartet? Evtl. müssten wir hier sonst noch eine Anpassung vornehmen.
+             << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName();
 
         startFFmpegProcess(_process, args);
 
@@ -362,8 +380,8 @@ void ExternalVideoEncoderBackend::closeFile()
         args.clear();
 
         // Render the gif
-        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pixel_format")
-             << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+        args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pix_fmt")
+             << QStringLiteral("rgba") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
              << QStringLiteral("-i") << paletteFile.fileName() << QStringLiteral("-lavfi")
              << QStringLiteral("paletteuse=dither=floyd_steinberg") << QStringLiteral("-y") << _outFilename;
@@ -385,6 +403,7 @@ void ExternalVideoEncoderBackend::closeFile()
         // Close the input pipe (non-gif mode)
         _process->closeWriteChannel();
         finishFFmpegProcess(_process, -1);
+        qDebug() << QString::fromUtf8(_process->readAllStandardOutput());
     }
 }
 

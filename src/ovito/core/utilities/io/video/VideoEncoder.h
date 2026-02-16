@@ -31,8 +31,6 @@ struct AVOutputFormat;
 
 namespace Ovito {
 
-class VideoEncoderBackend; // VIDTODO: Das ist vermutlich falsch (und unnötig?) - ist ja eigentlich eine nested class VideoEncoder::VideoEncoderBackend
-
 /**
  * \brief Wrapper class for the ffmpeg video encoding library.
  */
@@ -78,9 +76,7 @@ public:
     class VideoEncoderBackend
     {
     public:
-        VideoEncoderBackend(QObject* parent = nullptr) {} // VIDTODO: parent Parameter kann hier entfernt werden. Bzw. der gesamte Constructor der Basisklasse.
-
-        virtual ~VideoEncoderBackend() = default; // VIDTODO: Jetzt wo QObject nicht mehr Basisklasse ist, muss ein virtual destructor definiert werden.
+        virtual ~VideoEncoderBackend() = default;
 
         /// Opens a video file for writing.
         virtual void openFile(const QString& filename, int width, int height, float framesPerSecond) = 0;

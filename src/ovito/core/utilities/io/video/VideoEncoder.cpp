@@ -46,8 +46,6 @@ VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 VideoEncoder::Backend VideoEncoder::getBackend()
 {
     QSettings settings;
-    qDebug() << "VideoEncoder::getBackend():" << settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()
-             << ((settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? "Backend::EXTERNAL" : "Backend::INTERNAL");
     return (settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? Backend::EXTERNAL : Backend::INTERNAL;
 }
 
@@ -76,7 +74,7 @@ QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::op
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::INTERNAL) {
-        return {};
+        return InternalVideoEncoderBackend::supportedCodecs();
     }
     else if(b == Backend::EXTERNAL) {
         return ExternalVideoEncoderBackend::supportedCodecs(path);
@@ -137,6 +135,7 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
              .extensions = QStringList{QStringLiteral("gif")},
          }}};
 
+    // Suggestion from clang-tidy: "'const auto it' can be declared as 'const auto *const it' (fix available)" does not work with MSVC
     const auto it = std::ranges::find(CandidateFormats, name, &CandidateFormat::name);
 
     return (it == CandidateFormats.end()) ? nullptr : &(*it);
@@ -147,15 +146,24 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
  ******************************************************************************/
 const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(std::string_view name)
 {
-    static const std::array<const CandidateCodec, 2> candidateCodecs{{
-        {.name = QByteArrayLiteral("h264"),
-         .longName = QByteArrayLiteral("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
-         .libName = QByteArrayLiteral("libx264")},
-        {.name = QByteArrayLiteral("hevc"),
-         .longName = QByteArrayLiteral("H.265 / HEVC (High Efficiency Video Coding)"),
-         .libName = QByteArrayLiteral("libx265")},
-    }};
+    static const std::array<const CandidateCodec, 3> candidateCodecs{
+        {{
+             .name = QByteArrayLiteral("h264"),
+             .longName = QByteArrayLiteral("H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"),
+             .libName = QByteArrayLiteral("libx264"),
+         },
+         {
+             .name = QByteArrayLiteral("hevc"),
+             .longName = QByteArrayLiteral("H.265 / HEVC (High Efficiency Video Coding)"),
+             .libName = QByteArrayLiteral("libx265"),
+         },
+         {
+             .name = QByteArrayLiteral("mpeg4"),
+             .longName = QByteArrayLiteral("MPEG-4 part 2"),
+             .libName = QByteArrayLiteral("mpeg4"),
+         }}};
 
+    // Suggestion from clang-tidy: "'const auto it' can be declared as 'const auto *const it' (fix available)" does not work with MSVC
     const auto it = std::ranges::find(candidateCodecs, name, &CandidateCodec::libName);
 
     return (it == candidateCodecs.end()) ? nullptr : &(*it);
