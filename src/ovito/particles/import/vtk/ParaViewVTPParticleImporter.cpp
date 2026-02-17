@@ -256,8 +256,8 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         this_task::throwIfCanceled();
     }
 
-    // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
     if(typeProperty) {
+        // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
@@ -277,6 +277,13 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                     ++radius;
                 }
             }
+        }
+    }
+    else {
+        // If the VTP file did not contain the "shapetype" point attribute, still create the "Particle type" property in OVITO to allow users to assign a custom shape in the visualization.
+        typeProperty = container->createProperty(DataBuffer::Initialized, Particles::TypeProperty);
+        if(typeProperty->elementTypes().empty()) {
+            addNumericType(Particles::OOClass(), typeProperty, 0, {}); // Create a default particle type with numeric ID 0
         }
     }
 

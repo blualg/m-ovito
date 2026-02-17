@@ -43,6 +43,7 @@ Version 3.15.0 (dd-mm-2026)
 - MercuryDPM file reader: Support reading particle orientations stored as Euler angles and convert them to quaternions
 - Extend :ref:`PDB file reader <file_formats.input.pdb>` to read atom serial numbers and bonds (``CONECT`` records)
 - Fix: PDB file reader's "Generate bounding box" option not working
+- Aspherix file reader: Always create "Particle type" property even if type information is missing in the file to allow users to assign a custom particle shape in the visualization
 
 .. sidebar::
 
