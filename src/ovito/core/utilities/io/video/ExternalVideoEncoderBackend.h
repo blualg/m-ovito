@@ -34,7 +34,7 @@ class OVITO_CORE_EXPORT ExternalVideoEncoderBackend : public VideoEncoder::Video
 {
 public:
     /// Constructor.
-    ExternalVideoEncoderBackend(QObject* parent = nullptr) : _parent(parent) { qDebug() << "ExternalVideoEncoderBackend()"; }
+    ExternalVideoEncoderBackend(QObject* parent = nullptr) : _parent(parent) {}
 
     /// Destructor.
     /// Calls closeFile() to ensure that the external process is terminated - will block until finished
@@ -72,7 +72,7 @@ private:
     static void startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path = {}, int timeout = 30 * 1000);
 
     /// Subprocess running FFmpeg
-    QProcess* _process;
+    QProcess* _process = nullptr;
 
     /// Parent object for _process lifetime management
     QObject* _parent;

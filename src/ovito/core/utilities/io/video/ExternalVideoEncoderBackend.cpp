@@ -286,7 +286,6 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
          << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << qualityArgs
          << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
 
-    qDebug() << args;
     startFFmpegProcess(_process, args);
 }
 
@@ -403,7 +402,6 @@ void ExternalVideoEncoderBackend::closeFile()
         // Close the input pipe (non-gif mode)
         _process->closeWriteChannel();
         finishFFmpegProcess(_process, -1);
-        qDebug() << QString::fromUtf8(_process->readAllStandardOutput());
     }
 }
 
