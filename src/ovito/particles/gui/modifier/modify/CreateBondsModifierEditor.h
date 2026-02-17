@@ -94,6 +94,7 @@ private:
     QTableView* _pairCutoffTable;
     PairCutoffTableModel* _pairCutoffTableModel;
     QTableWidget* _vdwTable;
+    BooleanParameterUI* _onlyIntraMoleculeBondsUI;
 
     boost::container::flat_map<
         CreateBondsModifier::CutoffMode,

@@ -21,17 +21,40 @@ by an existing bond.
 
   Output
 
-The modifier supports four modes of operation that use different criteria to decide which particles to connect by a bond:
+Modes of operation
+""""""""""""""""""
+
+The modifier supports four modes of operation to determine which pairs of particles should be connected by bonds:
 
 Uniform cutoff distance
-  The same uniform cutoff distance is used to create bonds between pairs of particles, irrespective of their respective type(s).
+  A uniform distance threshold is used to create bonds between pairs of particles. The species of the particles is not taken into account in this mode.
+
+Covalent radii
+  Bond creation follows a two-step process: First, an initial set of bonds is created based on a type-dependent distance criterion,
+  for all pairs of particles that have a distance :math:`r_{ij} < r_{ij}^\text{Eq} + \epsilon`. Here, :math:`r_{ij}^\text{Eq}` is the sum of the
+  covalent radii of particles :math:`i` and :math:`j`. These radii are taken from `[J. Comput. Chem. 12, 891-898, 1991] <https://doi.org/10.1002/jcc.540120716>`__.
+  The padding :math:`\epsilon` has a constant value of :math:`0.4` (assuming Angstrom units).
+
+  This typically leads to some atoms with over-coordinated bonds. Therefore, a second processing step removes excess bonds again. Here, the maximum coordination
+  tabulated in `[J. Comput. Chem. 37, 1191-1205, 2016] <https://doi.org/10.1002/jcc.24309>`__ is used as a target such that no atoms have
+  excess bonds. To this end, the most elongated bonds relative to their equilibrium length are selected for removal.
+
+  To look up covalent radii and maximum coordination values, this method requires chemical particle types to be defined, i.e.,
+  the names of all particle types must match chemical symbols. Otherwise, the modifier will report an error and won't create any bonds.
+
+  This bond creation algorithm is described in greater detail in the reference paper:
+
+    | `S. Artemova et al. <https://doi.org/10.1002/jcc.24309>`__
+    | `Automatic Molecular Structure Perception for the Universal Force Field <https://doi.org/10.1002/jcc.24309>`__
+    | `Journal of Computational Chemistry, 37, 1191-1205 (2016) <https://doi.org/10.1002/jcc.24309>`__
+    | `doi:10.1002/jcc.24309`
 
 Van der Waals radii
-  A bond is created between two atoms if their separation is less than 60% of the sum of their van der Waals radii. This standard criterion has been
-  adopted from the popular software :program:`VMD`. The Van der Waals radii of all particle types of the system are displayed in the table. OVITO initializes these
-  values during file import based on the chemical element names found in the input file. If needed, you can override the standard Van der Waals radius of each atom type
-  in the :ref:`particle type <scene_objects.particle_types>` editor or, permanently, in the :ref:`application settings <application_settings.particles>` dialog.
-  The *Create bonds* modifier will only create bonds between pairs of particles which both have a positive Van der Waals radius.
+  A bond is created between two atoms if their separation is less than 60% of the sum of their van der Waals radii. This criterion has been
+  adopted from the popular visualization software :program:`VMD`. The Van der Waals radii of all particle types of the system are displayed in the table. OVITO initializes these
+  values during file import based on the chemical element symbols found in the input file. If needed, you can override the standard Van der Waals radius of each atom type
+  using the :ref:`particles.modifiers.edit_types` modifier or, permanently, in the :ref:`application settings <application_settings.particles>`.
+  Bonds are only created between pairs of particles which both have a positive Van der Waals radius.
 
   Furthermore, the option :guilabel:`Don't generate H-H bonds` is turned on by default, which means the modifier will not generate any bonds connecting
   two hydrogen atoms, i.e., which both have a particle type named "H" - even if they fulfill the distance-based criterion.
@@ -41,26 +64,6 @@ Pair-wise cutoffs
   The table lists all pair-wise type combinations defined for the current system, and some of the cutoff values in the third column may already be pre-initialized according to the Van der Waals
   criterion described above. A positive cutoff value is needed to create bonds between pairs of particles of the given type(s).
   Note that this mode is only available if particle types have been defined for the system, i.e., the particle property ``Particle Type`` exists.
-
-Covalent radii
-  The bond creation algorithm uses a two-step process. First, all bonds are created based on a distance criterion, 
-  where particles that have a distance :math:`r_{ij} < r_{ij}^\text{Eq} + \epsilon` are bonded. Here, :math:`r_{ij}^\text{Eq}` is the sum of the 
-  covalent radii of particles :math:`i` and :math:`j`. These radii are taken from `[J. Comput. Chem. 12, 891-898, 1991] <https://doi.org/10.1002/jcc.540120716>`__.
-  :math:`\epsilon` is set to a constant value of :math:`0.4`. 
-  
-  This creates some over-coordinated bonds. Therefore, a second processing step is taken to remove excess bonds. Here, the maximum coordination
-  tabulated in `[J. Comput. Chem. 37, 1191-1205, 2016] <https://doi.org/10.1002/jcc.24309>`__ is used as a target such that no atom has 
-  excess bonds. To this end, the most elongated bonds relative to their equilibrium length are selected and removed.
-
-  To look up covalent radii and maxium coordination values, this method requires particles types to be defined and their names to 
-  match the symbols in the periodic table exactly.
-
-  This method is described in greater detail in the original reference paper:
-
-    | `S. Artemova et al. <https://doi.org/10.1002/jcc.24309>`__
-    | `Automatic Molecular Structure Perception for the Universal Force Field <https://doi.org/10.1002/jcc.24309>`__
-    | `Journal of Computational Chemistry, 37, 1191-1205 (2016) <https://doi.org/10.1002/jcc.24309>`__
-    | `doi:10.1002/jcc.24309`
 
 The option :guilabel:`Suppress inter-molecular bonds` restricts generation of bonds to particles that
 are part of the same molecule, i.e. which have matching values of the ``Molecule Identifier`` property.
@@ -81,7 +84,7 @@ you can adjust the visual representation of individual bonds.
 
 .. attention::
 
-  In case the modifier generated more than 1,000,000 bonds, it will show a warning message and automatically turn off the display
+  In case the modifier generated more than 2,000,000 bonds, it will show a warning message and automatically turn off the display
   of the bonds as a precaution, because rendering too many bonds in the interactive viewports of OVITO on a slow machine could take exceedingly long and freeze
   the entire program. If desired, you can manually show the bonds again by re-enabling the :ref:`bonds visual element <visual_elements.bonds>` in the pipeline editor.
 

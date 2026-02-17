@@ -1,8 +1,8 @@
 .. _credits:
 
-=====================
-Licensing information
-=====================
+===================
+License information
+===================
 
 *OVITO Basic* in binary form is published by the software vendor `OVITO GmbH, Germany, <https://www.ovito.org>`__ under the terms of the `MIT License <https://gitlab.com/stuko/ovito/-/blob/master/LICENSE.MIT.txt>`__.
 Program packages are built from source code available under the terms of the :ref:`GNU General Public License (v3) <appendix.GPL>` and the

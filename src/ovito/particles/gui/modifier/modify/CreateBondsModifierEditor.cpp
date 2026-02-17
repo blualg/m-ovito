@@ -142,9 +142,8 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->setContentsMargins(4, 4, 4, 4);
     layout2->setSpacing(6);
 
-    BooleanParameterUI* onlyIntraMoleculeBondsUI =
-        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
-    layout2->addWidget(onlyIntraMoleculeBondsUI->checkBox());
+    _onlyIntraMoleculeBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
+    layout2->addWidget(_onlyIntraMoleculeBondsUI->checkBox());
 
     // Lower cutoff parameter.
     row = 0;
@@ -157,7 +156,6 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->addLayout(gridlayout);
 
     // Status label.
-    layout1->addSpacing(10);
     layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the bonds vis element.
@@ -168,11 +166,11 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
                                         rolloutParams.after(rollout).collapse().setTitle(tr("New bond type")));
 
     // Update pair-wise cutoff table whenever a modifier has been loaded into the editor.
-    connect(this, &CreateBondsModifierEditor::contentsReplaced, this, &CreateBondsModifierEditor::updatePairCutoffList);
-    connect(this, &CreateBondsModifierEditor::contentsChanged, this, &CreateBondsModifierEditor::updatePairCutoffListValues);
+    connect(this, &PropertiesEditor::contentsReplaced, this, &CreateBondsModifierEditor::updatePairCutoffList);
+    connect(this, &PropertiesEditor::contentsChanged, this, &CreateBondsModifierEditor::updatePairCutoffListValues);
 
     // Update van der Waals radius list.
-    connect(this, &CreateBondsModifierEditor::contentsReplaced, this, &CreateBondsModifierEditor::updateVanDerWaalsList);
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &CreateBondsModifierEditor::updateVanDerWaalsList);
 }
 
 /******************************************************************************
@@ -277,7 +275,8 @@ void CreateBondsModifierEditor::updateVanDerWaalsList()
 
     // Obtain the list of particle types and their van der Waals radii from the modifier's input.
     const PipelineFlowState& inputState = getPipelineInput();
-    if(const Particles* particles = inputState.getObject<Particles>()) {
+    const Particles* particles = inputState.getObject<Particles>();
+    if(particles) {
         if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
             // Count number of table entries.
             for(const ElementType* type : typeProperty->elementTypes()) {
@@ -310,6 +309,8 @@ void CreateBondsModifierEditor::updateVanDerWaalsList()
         _vdwTable->setItem(0, 0, emptyItem);
     }
     _vdwTable->resizeColumnToContents(0);
+
+    _onlyIntraMoleculeBondsUI->setEnabled(particles && particles->getProperty(Particles::MoleculeProperty));
 }
 
 }   // End of namespace
