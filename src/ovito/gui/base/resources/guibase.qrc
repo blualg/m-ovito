@@ -22,6 +22,7 @@
 	<file>icons/ovito-light/actions/help_user_manual.svg</file>
 	<file>icons/ovito-light/actions/help_scripting_manual.svg</file>
 	<file>icons/ovito-light/actions/help_system_info.svg</file>
+	<file>icons/ovito-light/actions/help_request_feature.svg</file>
 
 	<file>icons/ovito-light/actions/edit_undo.svg</file>
 	<file>icons/ovito-light/actions/edit_redo.svg</file>
@@ -147,6 +148,7 @@
 	<file>icons/ovito-dark/actions/help_user_manual.svg</file>
 	<file>icons/ovito-dark/actions/help_scripting_manual.svg</file>
 	<file>icons/ovito-dark/actions/help_system_info.svg</file>
+	<file>icons/ovito-dark/actions/help_request_feature.svg</file>
 
 	<file>icons/ovito-dark/actions/edit_undo.svg</file>
 	<file>icons/ovito-dark/actions/edit_redo.svg</file>

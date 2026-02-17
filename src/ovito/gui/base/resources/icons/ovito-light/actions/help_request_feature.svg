@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg9123"
+   sodipodi:docname="help_request_feature.svg"
+   width="512"
+   height="512"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata9129">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs9127" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1309"
+     inkscape:window-height="456"
+     id="namedview9125"
+     showgrid="false"
+     inkscape:zoom="0.4609375"
+     inkscape:cx="-297.22034"
+     inkscape:cy="256"
+     inkscape:window-x="74"
+     inkscape:window-y="901"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg9123"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <path
+     d="M 225.88422,456.68301 Q 213.3582,444.15699 213.3582,426.56723 h 85.28362 q 0,17.58976 -12.52604,30.11578 -12.52603,12.52603 -30.11578,12.52603 -17.58975,0 -30.11578,-12.52603 z m -55.16783,-51.43668 v -42.64181 h 170.56724 v 42.64181 z m 5.33023,-63.96271 q -36.77856,-21.85393 -58.36599,-58.63249 -21.587413,-36.77855 -21.587413,-79.95339 0,-66.62782 46.639483,-113.2673 Q 189.37217,42.790964 256,42.790964 q 66.62783,0 113.2673,46.639476 46.63948,46.63948 46.63948,113.2673 0,43.17484 -21.5874,79.95339 -21.58741,36.77856 -58.36599,58.63249 z"
+     id="path132"
+     style="fill:#505050;fill-opacity:1;stroke-width:0.533022" />
+</svg>
