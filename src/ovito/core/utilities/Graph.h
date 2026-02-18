@@ -24,8 +24,8 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -72,6 +72,8 @@ public:
         }
 
         bool operator==(const Edge& other) const { return node1 == other.node1 && node2 == other.node2; }
+
+        bool operator<(const Edge& other) const { return node1 < other.node1 || (node1 == other.node1 && node2 < other.node2); }
     };
 
     /// Hash function for edges
@@ -99,7 +101,7 @@ public:
         _nodeProperties[id] = std::move(property);
         // Ensure the node exists in the adjacency list even if it has no edges
         if(_adjacency.find(id) == _adjacency.end()) {
-            _adjacency[id] = std::unordered_set<NodeId>();
+            _adjacency[id] = std::set<NodeId>();
         }
     }
 
@@ -181,7 +183,7 @@ public:
     /******************************************************************************
      * Returns the set of neighbors of a node.
      ******************************************************************************/
-    [[nodiscard]] const std::unordered_set<NodeId>& neighbors(NodeId id) const
+    [[nodiscard]] const std::set<NodeId>& neighbors(NodeId id) const
     {
         auto it = _adjacency.find(id);
         OVITO_ASSERT(it != _adjacency.end());
@@ -310,13 +312,13 @@ public:
 
 private:
     /// Storage for node properties
-    std::unordered_map<NodeId, NodeProperty> _nodeProperties;
+    std::map<NodeId, NodeProperty> _nodeProperties;
 
     /// Storage for edge properties
-    std::unordered_map<Edge, EdgeProperty, EdgeHash> _edgeProperties;
+    std::map<Edge, EdgeProperty> _edgeProperties;
 
     /// Adjacency list: maps each node to its neighbors
-    std::unordered_map<NodeId, std::unordered_set<NodeId>> _adjacency;
+    std::map<NodeId, std::set<NodeId>> _adjacency;
 };
 
 /******************************************************************************
@@ -340,14 +342,13 @@ public:
     using EdgeProperty = EdgePropertyType;
     using NodeProperty = NodePropertyType;
     using Edge = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::Edge;
-    using EdgeHash = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::EdgeHash;
     using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
     using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
 
     /******************************************************************************
      * Private constructor for creating a subgraph from a graph.
      ******************************************************************************/
-    UndirectedSubgraph(std::shared_ptr<const GraphType> parent, const std::unordered_set<NodeId>& nodes)
+    UndirectedSubgraph(std::shared_ptr<const GraphType> parent, const std::set<NodeId>& nodes)
         : _parentGraph(std::move(parent)), _nodes(nodes)
     {
         OVITO_ASSERT(_parentGraph);
@@ -355,7 +356,7 @@ public:
         // Build adjacency list and edge set from parent graph
         for(NodeId node : _nodes) {
             OVITO_ASSERT(_parentGraph->contains(node));
-            _adjacency[node] = std::unordered_set<NodeId>();
+            _adjacency[node] = std::set<NodeId>();
         }
 
         // Add all edges between nodes in the subgraph
@@ -385,7 +386,7 @@ public:
      * Private constructor for creating a filtered subgraph from another subgraph.
      * Creates a new topology with only the specified nodes and their edges.
      ******************************************************************************/
-    UndirectedSubgraph(std::shared_ptr<const SubgraphType> parent, const std::unordered_set<NodeId>& nodes)
+    UndirectedSubgraph(std::shared_ptr<const SubgraphType> parent, const std::set<NodeId>& nodes)
         : _parentSubgraph(std::move(parent)), _nodes(nodes)
     {
         OVITO_ASSERT(_parentSubgraph);
@@ -393,7 +394,7 @@ public:
         // Build adjacency list and edge set from parent subgraph
         for(NodeId node : _nodes) {
             OVITO_ASSERT(_parentSubgraph->contains(node));
-            _adjacency[node] = std::unordered_set<NodeId>();
+            _adjacency[node] = std::set<NodeId>();
         }
 
         // Add all edges between nodes in this subgraph that exist in parent
@@ -417,12 +418,11 @@ public:
     template<typename Container>
     [[nodiscard]] static std::shared_ptr<SubgraphType> fromGraph(std::shared_ptr<const GraphType> parent, const Container& nodeIds)
     {
-        std::unordered_set<NodeId> nodeSet(nodeIds.begin(), nodeIds.end());
+        std::set<NodeId> nodeSet(nodeIds.begin(), nodeIds.end());
         return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent), nodeSet));
     }
 
-    [[nodiscard]] static std::shared_ptr<SubgraphType> fromGraph(std::shared_ptr<const GraphType> parent,
-                                                                 const std::unordered_set<NodeId>& nodeIds)
+    [[nodiscard]] static std::shared_ptr<SubgraphType> fromGraph(std::shared_ptr<const GraphType> parent, const std::set<NodeId>& nodeIds)
     {
         return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent), nodeIds));
     }
@@ -519,7 +519,7 @@ public:
     /******************************************************************************
      * Returns the set of neighbors of a node in this subgraph.
      ******************************************************************************/
-    [[nodiscard]] const std::unordered_set<NodeId>& neighbors(NodeId id) const
+    [[nodiscard]] const std::set<NodeId>& neighbors(NodeId id) const
     {
         // Prioritize own data if available
         if(!_adjacency.empty()) {
@@ -744,7 +744,7 @@ public:
     /******************************************************************************
      * Returns a vector of all node IDs in the subgraph.
      ******************************************************************************/
-    [[nodiscard]] const std::unordered_set<NodeId>& nodes() const
+    [[nodiscard]] const std::set<NodeId>& nodes() const
     {
         // Prioritize own data if available
         if(!_nodes.empty()) {
@@ -758,7 +758,7 @@ public:
             OVITO_ASSERT(_parentGraph);
             // When created without own topology, must return parent's nodes
             // Note: This is a design limitation - we'd need to cache parent's nodes to return a reference
-            static const std::unordered_set<NodeId> emptySet;
+            static const std::set<NodeId> emptySet;
             OVITO_ASSERT(false && "Cannot return nodes by reference from parent graph");
             return emptySet;
         }
@@ -767,7 +767,7 @@ public:
     /******************************************************************************
      * Returns a vector of all edges in the subgraph.
      ******************************************************************************/
-    [[nodiscard]] const std::unordered_set<Edge, EdgeHash>& edges() const
+    [[nodiscard]] const std::set<Edge>& edges() const
     {
         // Prioritize own data if available
         if(!_edges.empty()) {
@@ -781,7 +781,7 @@ public:
             OVITO_ASSERT(_parentGraph);
             // When created without own topology, must return parent's edges
             // Note: This is a design limitation - we'd need to cache parent's edges to return a reference
-            static const std::unordered_set<Edge, EdgeHash> emptySet;
+            static const std::set<Edge> emptySet;
             OVITO_ASSERT(false && "Cannot return edges by reference from parent graph");
             return emptySet;
         }
@@ -842,19 +842,19 @@ private:
     std::shared_ptr<const SubgraphType> _parentSubgraph;
 
     /// Set of nodes in this subgraph (only set when created from graph)
-    std::unordered_set<NodeId> _nodes;
+    std::set<NodeId> _nodes;
 
     /// Set of edges in this subgraph (only set when created from graph)
-    std::unordered_set<Edge, EdgeHash> _edges;
+    std::set<Edge> _edges;
 
     /// Adjacency list for this subgraph (only set when created from graph)
-    std::unordered_map<NodeId, std::unordered_set<NodeId>> _adjacency;
+    std::map<NodeId, std::set<NodeId>> _adjacency;
 
     /// Local overrides for edge properties (copy-on-write)
-    std::unordered_map<Edge, EdgeProperty, EdgeHash> _edgePropertyOverrides;
+    std::map<Edge, EdgeProperty> _edgePropertyOverrides;
 
     /// Local overrides for node properties (copy-on-write)
-    std::unordered_map<NodeId, NodeProperty> _nodePropertyOverrides;
+    std::map<NodeId, NodeProperty> _nodePropertyOverrides;
 };
 
 /******************************************************************************
@@ -900,7 +900,7 @@ UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createConnectedComponentSub
     OVITO_ASSERT(!this->weak_from_this().expired());
 
     std::vector<std::shared_ptr<SubgraphType>> components;
-    std::unordered_set<NodeId> visited;
+    std::set<NodeId> visited;
 
     // Iterate through all nodes to find connected components
     for(const auto& [nodeId, _] : _nodeProperties) {
@@ -968,7 +968,7 @@ UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(const Con
     OVITO_ASSERT(!this->weak_from_this().expired());
 
     // Convert container to unordered_set and verify all nodes exist
-    std::unordered_set<NodeId> filteredNodes;
+    std::set<NodeId> filteredNodes;
     for(const NodeId& id : nodeIds) {
         OVITO_ASSERT(contains(id));
         filteredNodes.insert(id);
@@ -1008,7 +1008,7 @@ void findCyclesDFS(NodeId current,
                    size_t minSize,
                    size_t maxSize,
                    NeighborFunc&& getNeighbors,
-                   std::unordered_set<NodeId>& visited,
+                   std::set<NodeId>& visited,
                    std::vector<NodeId>& path,
                    std::vector<std::vector<NodeId>>& allCycles)
 {
@@ -1072,16 +1072,16 @@ std::vector<NodeId> UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::findCyc
     }
 
     std::vector<std::vector<NodeId>> allCycles;
-    std::unordered_set<NodeId> visited;
+    std::set<NodeId> visited;
     std::vector<NodeId> path;
 
     // Lambda to get neighbors for a given node
-    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& {
+    auto getNeighbors = [this](NodeId nodeId) -> const std::set<NodeId>& {
         auto it = _adjacency.find(nodeId);
         if(it != _adjacency.end()) {
             return it->second;
         }
-        static const std::unordered_set<NodeId> emptySet;
+        static const std::set<NodeId> emptySet;
         return emptySet;
     };
 
@@ -1120,14 +1120,14 @@ std::vector<NodeId> UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::find
     }
 
     std::vector<std::vector<NodeId>> allCycles;
-    std::unordered_set<NodeId> visited;
+    std::set<NodeId> visited;
     std::vector<NodeId> path;
 
     // Lambda to get neighbors for a given node
-    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& { return neighbors(nodeId); };
+    auto getNeighbors = [this](NodeId nodeId) -> const std::set<NodeId>& { return neighbors(nodeId); };
 
     // Get all nodes in the subgraph
-    const std::unordered_set<NodeId>& subgraphNodes = nodes();
+    const std::set<NodeId>& subgraphNodes = nodes();
 
     // Start DFS from each node to find all cycles
     for(NodeId nodeId : subgraphNodes) {
