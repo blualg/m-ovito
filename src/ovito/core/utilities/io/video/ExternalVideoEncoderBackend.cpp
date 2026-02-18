@@ -25,6 +25,21 @@
 namespace Ovito {
 
 /******************************************************************************
+ * Constructor.
+ ******************************************************************************/
+ExternalVideoEncoderBackend::ExternalVideoEncoderBackend(QObject* parent) : _parent(parent)
+{
+    // Read OVITO_FFMPEG_EXE / FFMPEG_PATH_SETTING
+    _executable = getExecutablePath();
+
+    // Read OVITO_FFMPEG_CODEC / FFMPEG_CODEC_SETTING
+    _codecName = getCodecName();
+
+    // Read OVITO_FFMPEG_QUALITY / FFMPEG_QUALITY_SETTING
+    _quality = getQuality();
+}
+
+/******************************************************************************
  * Destructor.
  * Calls closeFile() to ensure that the external process is terminated - will block until finished.
  ******************************************************************************/
@@ -41,9 +56,79 @@ ExternalVideoEncoderBackend::~ExternalVideoEncoderBackend()
 }
 
 /******************************************************************************
+ * Get the executable - from env variable in scripting mode or app settings in GUI mode
+ ******************************************************************************/
+QString ExternalVideoEncoderBackend::getExecutablePath()
+{
+    const QProcessEnvironment& env = QProcessEnvironment::systemEnvironment();
+    const QSettings settings;
+
+    // Read OVITO_FFMPEG_EXE / FFMPEG_PATH_SETTING
+    if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_EXE)) {
+        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_EXE);
+        return env.value(VideoEncoder::OVITO_FFMPEG_EXE);
+    }
+    else {
+        qDebug() << "From settings:" << settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString();
+        return settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString();
+    }
+}
+
+/******************************************************************************
+ * Get the codec name - from env variable in scripting mode or app settings in GUI mode
+ ******************************************************************************/
+QByteArray ExternalVideoEncoderBackend::getCodecName()
+{
+    const QProcessEnvironment& env = QProcessEnvironment::systemEnvironment();
+    const QSettings settings;
+
+    // Read OVITO_FFMPEG_CODEC / FFMPEG_CODEC_SETTING
+    if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_CODEC)) {
+        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_CODEC);
+        return env.value(VideoEncoder::OVITO_FFMPEG_CODEC).toUtf8();
+    }
+    else {
+        qDebug() << "From settings:" << settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
+        return settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
+    }
+}
+
+/******************************************************************************
+ * Get the rendering quality - from env variable in scripting mode or app settings in GUI mode
+ ******************************************************************************/
+VideoEncoder::Quality ExternalVideoEncoderBackend::getQuality()
+{
+    const QProcessEnvironment& env = QProcessEnvironment::systemEnvironment();
+    const QSettings settings;
+    qDebug() << "this_task::get()" << this_task::get();
+    qDebug() << "this_task::isScripting()" << this_task::isScripting();
+    qDebug() << "env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY)" << env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY);
+
+    // Read OVITO_FFMPEG_QUALITY / FFMPEG_QUALITY_SETTING
+    if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY)) {
+        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_QUALITY);
+        const QString& quality = env.value(VideoEncoder::OVITO_FFMPEG_QUALITY).toLower();
+        if(quality == "low")
+            return VideoEncoder::Quality::Low;
+        else if(quality == "medium")
+            return VideoEncoder::Quality::Medium;
+        else if(quality == "high")
+            return VideoEncoder::Quality::High;
+        else
+            throw Exception(VideoEncoder::tr("Invalid quality setting '%1'. Expected one of 'low', 'medium' or 'high'.").arg(quality));
+    }
+    else {
+        qDebug()
+            << "From settings:"
+            << (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
+        return (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
+    }
+}
+
+/******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStringView path)
+QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(const QString& path)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
@@ -77,7 +162,7 @@ QList<VideoEncoder::Format> ExternalVideoEncoderBackend::supportedFormats(QStrin
 /******************************************************************************
  * Returns the list of supported output codecs.
  ******************************************************************************/
-QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supportedCodecs(QStringView path)
+QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supportedCodecs(const QString& path)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
@@ -117,20 +202,18 @@ QList<const VideoEncoder::CandidateCodec*> ExternalVideoEncoderBackend::supporte
  * Timeout is the maximum time for the process to start up
  * Throws an exception if the process does not start successfully
  ******************************************************************************/
-void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path, const int timeout)
+void ExternalVideoEncoderBackend::startFFmpegProcess(QProcess* process, const QStringList& command, const QString& path, const int timeout)
 {
-    QSettings settings;
-    const QString& executable = path.isEmpty() ? settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString() : path.toString();
-    if(executable.isEmpty()) {
+    if(path.isEmpty()) {
         throw Exception(VideoEncoder::tr("FFmpeg path is not set."));
     }
     // Start the process
-    process->start(executable, command);
+    process->start(path, command);
 
     // Wait for the process to start.
     if(process->state() == QProcess::Starting || process->state() == QProcess::NotRunning) {
         if(!process->waitForStarted(timeout)) {
-            Exception ex(VideoEncoder::tr("Failed to start FFmpeg process: %1 %2.").arg(executable).arg(command.join(" ")));
+            Exception ex(VideoEncoder::tr("Failed to start FFmpeg process: %1 %2.").arg(path).arg(command.join(" ")));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardOutput()));
             ex.appendDetailMessage(QString::fromUtf8(process->readAllStandardError()));
             throw ex;
@@ -222,11 +305,10 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
     // Default streaming mode for video encoding
 
     // Grab settings
-    QSettings settings;
-    const QByteArray& codecName = settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
-    const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(codecName);
+    const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(_codecName);
     if(!codecPtr) {
-        throw Exception(VideoEncoder::tr("Video encoder '%1' not found. It may not be supported by the current FFmpeg backend.").arg(codecName));
+        throw Exception(
+            VideoEncoder::tr("Video encoder '%1' not found. It may not be supported by the current FFmpeg backend.").arg(_codecName));
     }
 
     // Fallback to libx264 for avi and mov containers - no support for libx265
@@ -235,44 +317,40 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
             ? QByteArrayLiteral("libx264")
             : codecPtr->libName;
 
-    // Read quality
-    const auto quality =
-        (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
-
     // Configure codec quality / bitrate
     QStringList qualityArgs;
     if(codecLib == QByteArrayLiteral("libx264")) {
         qualityArgs << QStringLiteral("-crf");
-        if(quality == VideoEncoder::Quality::High) {
+        if(_quality == VideoEncoder::Quality::High) {
             qualityArgs << QStringLiteral("19");
         }
-        else if(quality == VideoEncoder::Quality::Medium) {
+        else if(_quality == VideoEncoder::Quality::Medium) {
             qualityArgs << QStringLiteral("22");
         }
-        else if(quality == VideoEncoder::Quality::Low) {
+        else if(_quality == VideoEncoder::Quality::Low) {
             qualityArgs << QStringLiteral("26");
         }
     }
     else if(codecLib == QByteArrayLiteral("libx265")) {
         qualityArgs << QStringLiteral("-crf");
-        if(quality == VideoEncoder::Quality::High) {
+        if(_quality == VideoEncoder::Quality::High) {
             qualityArgs << QStringLiteral("17");
         }
-        else if(quality == VideoEncoder::Quality::Medium) {
+        else if(_quality == VideoEncoder::Quality::Medium) {
             qualityArgs << QStringLiteral("20");
         }
-        else if(quality == VideoEncoder::Quality::Low) {
+        else if(_quality == VideoEncoder::Quality::Low) {
             qualityArgs << QStringLiteral("24");
         }
     }
     else if(codecLib == QByteArrayLiteral("mpeg4")) {
-        if(quality == VideoEncoder::Quality::High) {
+        if(_quality == VideoEncoder::Quality::High) {
             qualityArgs << QStringLiteral("-qmin") << QStringLiteral("3") << QStringLiteral("-qmax") << QStringLiteral("3");
         }
-        else if(quality == VideoEncoder::Quality::Medium) {
+        else if(_quality == VideoEncoder::Quality::Medium) {
             qualityArgs << QStringLiteral("-qmin") << QStringLiteral("4") << QStringLiteral("-qmax") << QStringLiteral("5");
         }
-        else if(quality == VideoEncoder::Quality::Low) {
+        else if(_quality == VideoEncoder::Quality::Low) {
             qualityArgs << QStringLiteral("-qmin") << QStringLiteral("6") << QStringLiteral("-qmax") << QStringLiteral("8");
         }
     }
@@ -286,7 +364,7 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
          << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << qualityArgs
          << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
 
-    startFFmpegProcess(_process, args);
+    startFFmpegProcess(_process, args, _executable);
 }
 
 /******************************************************************************
@@ -339,9 +417,6 @@ void ExternalVideoEncoderBackend::closeFile()
 
     if(_gifMode) {
         // Generate gif from the cached images
-        QSettings settings;
-        const QString& executable = settings.value(VideoEncoder::FFMPEG_PATH_SETTING, "FFmpeg").toString();
-
         QStringList args;
 
         // Temporary file for palette generation
@@ -357,7 +432,7 @@ void ExternalVideoEncoderBackend::closeFile()
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
              << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName();
 
-        startFFmpegProcess(_process, args);
+        startFFmpegProcess(_process, args, _executable);
 
         for(const QImage& image : _images) {
             // Send raw pixel data to FFmpeg process
@@ -385,7 +460,7 @@ void ExternalVideoEncoderBackend::closeFile()
              << QStringLiteral("-i") << paletteFile.fileName() << QStringLiteral("-lavfi")
              << QStringLiteral("paletteuse=dither=floyd_steinberg") << QStringLiteral("-y") << _outFilename;
 
-        startFFmpegProcess(_process, args);
+        startFFmpegProcess(_process, args, _executable);
 
         for(const QImage& image : _images) {
             // Send raw pixel data to FFmpeg process

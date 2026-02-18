@@ -111,19 +111,27 @@ public:
     /// This closes the written video file.
     void closeFile();
 
-    /// Returns the list of supported output formats  from the backend.
-    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, QStringView path = {});
+    /// Returns the list of supported output formats from the backend.
+    static QList<Format> supportedFormats(std::optional<Backend> backend = std::nullopt, std::optional<QString> path = std::nullopt);
 
     /// Returns the list of supported output codecs from the backend.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt, QStringView path = {});
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(std::optional<Backend> backend = std::nullopt,
+                                                                      std::optional<QString> path = std::nullopt);
 
     /// Clears the list of supported codecs.
     static void clearCodecs();
 
+    /// Keys used in QSettings to configure the FFmpeg backend.
     constexpr static const char* FFMPEG_PATH_SETTING = "renderer/ffmpeg_path";
     constexpr static const char* FFMPEG_CODEC_SETTING = "renderer/ffmpeg_codec";
     constexpr static const char* FFMPEG_USE_EXT_SETTING = "renderer/ffmpeg_use_external";
     constexpr static const char* FFMPEG_QUALITY_SETTING = "renderer/ffmpeg_quality";
+
+    /// Environment variable used to configure the FFmpeg backend.
+    constexpr static const char* OVITO_FFMPEG_CODEC = "OVITO_FFMPEG_CODEC";
+    constexpr static const char* OVITO_FFMPEG_EXE = "OVITO_FFMPEG_EXE";
+    constexpr static const char* OVITO_FFMPEG_QUALITY = "OVITO_FFMPEG_QUALITY";
+    constexpr static const char* OVITO_FFMPEG_USE_EXT = "OVITO_FFMPEG_USE_EXT";
 
 private:
     static Backend getBackend();

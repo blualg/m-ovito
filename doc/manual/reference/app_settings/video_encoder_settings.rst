@@ -35,14 +35,15 @@ Quality preset
 
   For external FFmpeg executables, the presets adjust the ``crf`` parameter of the ``ffmpeg`` command line interface. For
   `H.264`, the ``crf`` value ranges from ``26`` (quality: low) to ``19`` (quality: high). For `H.265`, the ``crf`` value ranges from ``24`` (quality: low) to ``17`` (quality: high).
-  The built-in FFmpeg encoder of OVITO uses these presets to set FFmpeg's ``q_min`` and ``q_max`` parameters, ranging from ``3`` (quality: high) to ``8`` (quality: low).
+  The `MPEG-4` codec used by the built-in FFmpeg encoder of OVITO uses these presets to set FFmpeg's ``q_min`` and ``q_max`` parameters, ranging from ``3`` (quality: high) to ``8`` (quality: low).
   Note that previous versions of OVITO defaulted to the "high" quality preset.
 
 Codec
   Select the video encoding algorithm (codec). OVITO checks the provided FFmpeg executable for supported codecs and lists them in the combo box.
-  Currently, `H.264` and `H.265` codecs are supported by OVITO. The `H.264` codec offers widespread compatibility and good performance. The more modern `H.265` (`HEVC`) codec
-  is supported by newer players and can be used to further reduce file sizes at visually comparable quality.
+  Currently, `H.264`, `H.265`, and `MPEG-4` codecs are supported by OVITO. The `H.264` codec offers widespread compatibility and good performance. The more modern `H.265` (`HEVC`) codec
+  is supported by newer players and can be used to further reduce file sizes at visually comparable quality. The `MPEG-4` codec should only be 
+  used for legacy devices that do not support newer codecs.
 
   However, the `H.265` codec does not work with ``.avi`` and ``.mov`` output file formats. OVITO will automatically fall back to the `H.264` codec in this case.
 
-  If the selected FFmpeg executable does not provide any of the supported codecs, the built-in FFmpeg encoder will be used.
+  If the selected FFmpeg executable does not provide any supported codec, the built-in FFmpeg encoder will be used.

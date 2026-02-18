@@ -34,7 +34,7 @@ class OVITO_CORE_EXPORT ExternalVideoEncoderBackend : public VideoEncoder::Video
 {
 public:
     /// Constructor.
-    ExternalVideoEncoderBackend(QObject* parent = nullptr) : _parent(parent) {}
+    ExternalVideoEncoderBackend(QObject* parent = nullptr);
 
     /// Destructor.
     /// Calls closeFile() to ensure that the external process is terminated - will block until finished
@@ -51,13 +51,20 @@ public:
     virtual void closeFile() override;
 
     /// Returns the list of supported output formats.
-    static QList<VideoEncoder::Format> supportedFormats(QStringView path);
+    static QList<VideoEncoder::Format> supportedFormats(const QString& path);
 
     /// Returns the list of supported codecs.
-    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(QStringView path);
+    static QList<const VideoEncoder::CandidateCodec*> supportedCodecs(const QString& path);
 
     /// Clears the list of supported codecs.
     static void clearCodecs() { _supportedCodecs.clear(); }
+
+    // Get the executable - from env variable in scripting mode or app settings in GUI mode
+    static QString getExecutablePath();
+    // Get the codec name - from env variable in scripting mode or app settings in GUI mode
+    static QByteArray getCodecName();
+    // Get the rendering quality - from env variable in scripting mode or app settings in GUI mode
+    static VideoEncoder::Quality getQuality();
 
 private:
     /// Finishes the provided sub-process
@@ -69,7 +76,12 @@ private:
     /// Start subprocess with the path executable with a given command
     /// If path.isEmpty() the path is read from QSettings[VideoEncoder::FFMPEG_PATH_SETTING]
     /// Timeout is the maximum time for the process to start up
-    static void startFFmpegProcess(QProcess* process, const QStringList& command, QStringView path = {}, int timeout = 30 * 1000);
+    static void startFFmpegProcess(QProcess* process, const QStringList& command, const QString& path, int timeout = 30 * 1000);
+
+    /// Parameters read from environment variables or QSettings
+    QString _executable;
+    QByteArray _codecName;
+    VideoEncoder::Quality _quality;
 
     /// Subprocess running FFmpeg
     QProcess* _process = nullptr;

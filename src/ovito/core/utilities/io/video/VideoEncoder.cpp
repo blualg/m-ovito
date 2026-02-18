@@ -45,21 +45,29 @@ VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
  ******************************************************************************/
 VideoEncoder::Backend VideoEncoder::getBackend()
 {
-    QSettings settings;
-    return (settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? Backend::EXTERNAL : Backend::INTERNAL;
+    const QProcessEnvironment& env = QProcessEnvironment::systemEnvironment();
+    const QSettings settings;
+    // Read FFMPEG_USE_EXT_SETTING / OVITO_FFMPEG_USE_EXT
+    if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_USE_EXT)) {
+        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_USE_EXT);
+        return env.value(VideoEncoder::OVITO_FFMPEG_USE_EXT) == "True" ? Backend::EXTERNAL : Backend::INTERNAL;
+    }
+    else {
+        return (settings.value(FFMPEG_USE_EXT_SETTING, false).toBool()) ? Backend::EXTERNAL : Backend::INTERNAL;
+    }
 }
 
 /******************************************************************************
  * Returns the list of supported output formats.
  ******************************************************************************/
-QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend, QStringView path)
+QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend> backend, std::optional<QString> path)
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::INTERNAL) {
         return InternalVideoEncoderBackend::supportedFormats();
     }
     else if(b == Backend::EXTERNAL) {
-        return ExternalVideoEncoderBackend::supportedFormats(path);
+        return ExternalVideoEncoderBackend::supportedFormats(path.value_or(ExternalVideoEncoderBackend::getExecutablePath()));
     }
     else {
         OVITO_ASSERT(false);
@@ -70,14 +78,14 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend
 /******************************************************************************
  * Returns the list of supported output codecs.
  ******************************************************************************/
-QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend, QStringView path)
+QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::optional<Backend> backend, std::optional<QString> path)
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::INTERNAL) {
         return InternalVideoEncoderBackend::supportedCodecs();
     }
     else if(b == Backend::EXTERNAL) {
-        return ExternalVideoEncoderBackend::supportedCodecs(path);
+        return ExternalVideoEncoderBackend::supportedCodecs(path.value_or(ExternalVideoEncoderBackend::getExecutablePath()));
     }
     else {
         OVITO_ASSERT(false);
