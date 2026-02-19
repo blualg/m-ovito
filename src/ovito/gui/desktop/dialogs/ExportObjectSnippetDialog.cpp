@@ -50,14 +50,15 @@ ExportObjectSnippetDialog::ExportObjectSnippetDialog(const std::vector<OORef<Ref
     textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     layout->addWidget(textEdit);
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close | QDialogButtonBox::Help, Qt::Horizontal, this);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
         actionManager()->openHelpTopic("manual:object_snippets.export_snippet_dialog");
     });
     QPushButton* copyToClipboardBtn = buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole);
     copyToClipboardBtn->setDefault(true);
-    connect(copyToClipboardBtn, &QPushButton::clicked, [textEdit]() {
+    connect(copyToClipboardBtn, &QPushButton::clicked, this, [textEdit, this]() {
         QApplication::clipboard()->setText(textEdit->toPlainText());
+        accept();
     });
     layout->addWidget(buttonBox);
 

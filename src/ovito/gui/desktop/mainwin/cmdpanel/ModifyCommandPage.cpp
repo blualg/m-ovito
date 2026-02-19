@@ -308,11 +308,28 @@ void ModifyCommandPage::onExportModifierSnippet()
         std::ranges::reverse(descriptions);
         if(objects.empty())
             throw Exception(tr("No modifiers selected. Please select at least one modifier to export."));
-        ExportObjectSnippetDialog(objects,
+        ExportObjectSnippetDialog dlg(objects,
             tr("OVITO Modifier Snippet: %1").arg(descriptions.join(" | ")), tr(
             "The following text snippet represents the selected OVITO modifier(s). "
             "You can save it to a file for later reuse, copy it to the clipboard, or share it with others. "
-            "The snippet can be imported back into OVITO to exactly recreate the modifier(s)."), this->ui(), this).exec();
+            "The snippet can be imported back into OVITO to exactly recreate the modifier(s)."), this->ui(), this);
+
+        if(dlg.exec() == QDialog::Accepted) {
+            // Display tooltip that confirms the snippet has been copied to the clipboard.
+            // For positioning the tooltip, use the location of the selected item(s) in the pipeline editor list widget (_pipelineWidget).
+            // If multiple items are selected, use the position of the first selected item.
+            QPoint tooltipPos;
+            if(!_pipelineWidget->selectionModel()->selectedIndexes().isEmpty()) {
+                QModelIndex firstSelectedIndex = _pipelineWidget->selectionModel()->selectedIndexes().first();
+                QRect itemRect = _pipelineWidget->visualRect(firstSelectedIndex);
+                tooltipPos = _pipelineWidget->viewport()->mapToGlobal(itemRect.bottomLeft());
+            }
+            else {
+                // If no item is selected, show the tooltip at the current cursor position.
+                tooltipPos = QCursor::pos();
+            }
+            QToolTip::showText(tooltipPos, tr("Modifier snippet copied to clipboard"), this, QRect(), 3000);
+        }
     });
 }
 
