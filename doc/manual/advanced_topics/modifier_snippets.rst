@@ -41,6 +41,11 @@ containing a human-readable description of the exported modifiers and an encoded
 Click the :guilabel:`Copy to clipboard` button to copy the snippet text. You can then paste it into an
 email, online chat, or save it to a text file for later use.
 
+.. caution::
+
+   The :ref:`particles.modifiers.manual_selection` modifier cannot be saved as a snippet. It will lose its selection
+   state during the export process.
+
 .. _object_snippets.import_snippet_dialog:
 
 Importing modifiers from a snippet
