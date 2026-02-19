@@ -96,6 +96,10 @@ void PropertiesEditor::aboutToBeDeleted()
     // Detach from edited object. This is necessary to send the editingStopped signal to the edited object.
     setEditObject(nullptr);
 
+    // Destroy all GUI components associated with the editor instance.
+    _rollouts.clear();
+    _parameterUIs.clear();
+
     RefMaker::aboutToBeDeleted();
 }
 

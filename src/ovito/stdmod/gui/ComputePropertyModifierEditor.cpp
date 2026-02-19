@@ -282,25 +282,26 @@ void ComputePropertyModifierEditor::updateExpressionFields()
 ******************************************************************************/
 void ComputePropertyModifierEditor::onExpressionEditingFinished()
 {
-    ComputePropertyModifier* mod = static_object_cast<ComputePropertyModifier>(editObject());
-    int index;
-    QString expr;
-    if(mod->useMultilineFields()) {
-        AutocompleteTextEdit* edit = static_cast<AutocompleteTextEdit*>(sender());
-        index = expressionTextEdits.indexOf(edit);
-        expr = edit->toPlainText();
+    if(ComputePropertyModifier* mod = static_object_cast<ComputePropertyModifier>(editObject())) {
+        int index;
+        QString expr;
+        if(mod->useMultilineFields()) {
+            AutocompleteTextEdit* edit = static_cast<AutocompleteTextEdit*>(sender());
+            index = expressionTextEdits.indexOf(edit);
+            expr = edit->toPlainText();
+        }
+        else {
+            AutocompleteLineEdit* edit = static_cast<AutocompleteLineEdit*>(sender());
+            index = expressionLineEdits.indexOf(edit);
+            expr = edit->text();
+        }
+        OVITO_ASSERT(index >= 0);
+        performTransaction(tr("Change expression"), [mod, expr, index]() {
+            QStringList expressions = mod->expressions();
+            expressions[index] = expr;
+            mod->setExpressions(expressions);
+        });
     }
-    else {
-        AutocompleteLineEdit* edit = static_cast<AutocompleteLineEdit*>(sender());
-        index = expressionLineEdits.indexOf(edit);
-        expr = edit->text();
-    }
-    OVITO_ASSERT(index >= 0);
-    performTransaction(tr("Change expression"), [mod, expr, index]() {
-        QStringList expressions = mod->expressions();
-        expressions[index] = expr;
-        mod->setExpressions(expressions);
-    });
 }
 
 }   // End of namespace
