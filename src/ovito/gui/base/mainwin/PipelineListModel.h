@@ -122,7 +122,7 @@ public:
     const OORef<SceneNode>& selectedSceneNode() const { return _selectedSceneNode; }
 
     /// Inserts the given modifier(s) into the currently selected pipeline.
-    void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
+    void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr, bool initializeModifiers = true);
 
     /// Sets the item in the modification list that should be selected on the next list update.
     void setNextObjectToSelect(RefTarget* obj) {

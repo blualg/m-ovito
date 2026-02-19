@@ -351,7 +351,10 @@ void ModifyCommandPage::onImportModifierSnippet()
                 modifierGroup->setCollapsed(true);
                 modifierGroup->setTitle(tr("Imported modifiers"));
             }
-            _pipelineListModel->applyModifiers(modifiers, modifierGroup);
+            // Note: Set initializeModifiers=false, because the deserialized modifiers are
+            // already in a fully initialized state. Re-initializing them can cause problems,
+            // such as changing existing settings.
+            _pipelineListModel->applyModifiers(modifiers, modifierGroup, false);
         });
     });
 }

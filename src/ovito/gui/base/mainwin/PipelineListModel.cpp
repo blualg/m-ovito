@@ -405,7 +405,7 @@ void PipelineListModel::onPipelineEvent(RefTarget* source, const ReferenceEvent&
 /******************************************************************************
 * Inserts the given modifier(s) into the currently selected pipeline.
 ******************************************************************************/
-void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group)
+void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group, bool initializeModifiers)
 {
     if(modifiers.empty() || !selectedPipeline())
         return;
@@ -448,7 +448,8 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
                 modNode->setModifier(modifier);
                 modNode->setInput(pnode);
                 modNode->setModifierGroup(modifierGroup);
-                modifier->initializeModifier(ModifierInitializationRequest(time, false, true, modNode));
+                if(initializeModifiers)
+                    modifier->initializeModifier(ModifierInitializationRequest(time, false, true, modNode));
                 setNextObjectToSelect(modNode);
                 for(RefMaker* dependent : dependentsList) {
                     if(ModificationNode* predecessorModNode = dynamic_object_cast<ModificationNode>(dependent)) {
