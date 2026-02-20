@@ -49,7 +49,6 @@ VideoEncoder::Backend VideoEncoder::getBackend()
     const QSettings settings;
     // Read FFMPEG_USE_EXT_SETTING / OVITO_FFMPEG_USE_EXT
     if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_USE_EXT)) {
-        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_USE_EXT);
         return env.value(VideoEncoder::OVITO_FFMPEG_USE_EXT) == "True" ? Backend::EXTERNAL : Backend::INTERNAL;
     }
     else {

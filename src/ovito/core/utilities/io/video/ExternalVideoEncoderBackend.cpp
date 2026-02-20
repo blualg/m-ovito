@@ -65,11 +65,9 @@ QString ExternalVideoEncoderBackend::getExecutablePath()
 
     // Read OVITO_FFMPEG_EXE / FFMPEG_PATH_SETTING
     if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_EXE)) {
-        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_EXE);
         return env.value(VideoEncoder::OVITO_FFMPEG_EXE);
     }
     else {
-        qDebug() << "From settings:" << settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString();
         return settings.value(VideoEncoder::FFMPEG_PATH_SETTING, {}).toString();
     }
 }
@@ -84,11 +82,9 @@ QByteArray ExternalVideoEncoderBackend::getCodecName()
 
     // Read OVITO_FFMPEG_CODEC / FFMPEG_CODEC_SETTING
     if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_CODEC)) {
-        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_CODEC);
         return env.value(VideoEncoder::OVITO_FFMPEG_CODEC).toUtf8();
     }
     else {
-        qDebug() << "From settings:" << settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
         return settings.value(VideoEncoder::FFMPEG_CODEC_SETTING, {}).value<QByteArray>();
     }
 }
@@ -100,13 +96,9 @@ VideoEncoder::Quality ExternalVideoEncoderBackend::getQuality()
 {
     const QProcessEnvironment& env = QProcessEnvironment::systemEnvironment();
     const QSettings settings;
-    qDebug() << "this_task::get()" << this_task::get();
-    qDebug() << "this_task::isScripting()" << this_task::isScripting();
-    qDebug() << "env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY)" << env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY);
 
     // Read OVITO_FFMPEG_QUALITY / FFMPEG_QUALITY_SETTING
     if(this_task::get() && this_task::isScripting() & env.contains(VideoEncoder::OVITO_FFMPEG_QUALITY)) {
-        qDebug() << "From env:" << env.value(VideoEncoder::OVITO_FFMPEG_QUALITY);
         const QString& quality = env.value(VideoEncoder::OVITO_FFMPEG_QUALITY).toLower();
         if(quality == "low")
             return VideoEncoder::Quality::Low;
@@ -118,9 +110,6 @@ VideoEncoder::Quality ExternalVideoEncoderBackend::getQuality()
             throw Exception(VideoEncoder::tr("Invalid quality setting '%1'. Expected one of 'low', 'medium' or 'high'.").arg(quality));
     }
     else {
-        qDebug()
-            << "From settings:"
-            << (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
         return (VideoEncoder::Quality)settings.value(VideoEncoder::FFMPEG_QUALITY_SETTING, (int)VideoEncoder::Quality::Medium).value<int>();
     }
 }
@@ -303,6 +292,12 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
     }
 
     // Default streaming mode for video encoding
+    if(width % 2 != 0) {
+        throw Exception(VideoEncoder::tr("The selected video codec requires the image width to be even. Current width: %1").arg(width));
+    }
+    if(height % 2 != 0) {
+        throw Exception(VideoEncoder::tr("The selected video codec requires the image height to be even. Current height: %1").arg(height));
+    }
 
     // Grab settings
     const VideoEncoder::CandidateCodec* codecPtr = VideoEncoderBackend::getCandidateCodec(_codecName);
@@ -378,15 +373,6 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
     if(_gifMode) {
         _images.push_back(image.convertToFormat(QImage::Format_ARGB32));
         return;
-    }
-
-    // Video mode - store each image individually
-    if(image.width() % 2 != 0) {
-        throw Exception(VideoEncoder::tr("The selected video codec requires the image width to be even. Current width: %1").arg(image.width()));
-    }
-    if(image.height() % 2 != 0) {
-        throw Exception(
-            VideoEncoder::tr("The selected video codec requires the image height to be even. Current height: %1").arg(image.height()));
     }
 
     if(_finalized) {
