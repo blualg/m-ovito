@@ -330,6 +330,7 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
         else if(_quality == VideoEncoder::Quality::Low) {
             qualityArgs << QStringLiteral("26");
         }
+        qualityArgs << QStringLiteral("-preset") << QStringLiteral("slow");
     }
     else if(codecLib == QByteArrayLiteral("libx265")) {
         qualityArgs << QStringLiteral("-crf");
@@ -342,6 +343,7 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
         else if(_quality == VideoEncoder::Quality::Low) {
             qualityArgs << QStringLiteral("24");
         }
+        qualityArgs << QStringLiteral("-preset") << QStringLiteral("slow");
     }
     else if(codecLib == QByteArrayLiteral("mpeg4")) {
         if(_quality == VideoEncoder::Quality::High) {
@@ -362,7 +364,7 @@ void ExternalVideoEncoderBackend::openFile(const QString& filename, int width, i
          << QStringLiteral("rgb32") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(width).arg(height)
          << QStringLiteral("-framerate") << QString::number(framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
          << QStringLiteral("-c:v") << codecLib << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p") << qualityArgs
-         << QStringLiteral("-preset") << QStringLiteral("slow") << QStringLiteral("-y") << filename;
+         << QStringLiteral("-y") << filename;
 
     startFFmpegProcess(_process, args, _executable);
 }
@@ -399,7 +401,12 @@ void ExternalVideoEncoderBackend::writeFrame(const QImage& image)
     const qint64 size = rgb.sizeInBytes();
 
     OVITO_ASSERT(_process);
-    OVITO_ASSERT(_process->state() == QProcess::Running);
+    if(_process->state() != QProcess::Running) {
+        Exception ex(VideoEncoder::tr("FFFmpeg process not running."));
+        ex.appendDetailMessage(QString::fromUtf8(_process->readAllStandardOutput()));
+        ex.appendDetailMessage(QString::fromUtf8(_process->readAllStandardError()));
+    }
+
     _process->write((const char*)bits, size);
 }
 

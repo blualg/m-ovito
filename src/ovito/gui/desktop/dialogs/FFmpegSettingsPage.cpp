@@ -173,16 +173,24 @@ void FFmpegSettingsPage::refreshCodecCombobox()
         _externalFFmpeg = false;
     }
 
+    // Tracks whether the currently set codec was found
+    bool codecFound = false;
     // Fill combobox from codecs and select current codec
     for(const auto [i, codec] : Ovito::enumerate(codecs)) {
         _ffmpegCodec->addItem(codec->longName);
         if(codec->libName == _ffmpegCodecName) {
             _ffmpegCodec->setCurrentIndex((int)i);
+            codecFound = true;
         }
     }
 
     // Disable combobox if no codecs are available.
     _ffmpegCodec->setDisabled(codecs.size() < 2);
+    OVITO_ASSERT(codecs.size() > 0);
+    if(!codecFound) {
+        _ffmpegCodec->setCurrentIndex(0);
+        _ffmpegCodecName = codecs[0]->libName;
+    }
 }
 
 /******************************************************************************
