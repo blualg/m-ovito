@@ -18,6 +18,7 @@ Windows:
   Windows 10 (21H2 or later), Windows 11 (21H2 or later) on x86_64 processor architecture.
 Linux:
   Ubuntu 21.04+, ALT Linux 10+, RHEL 9+, Debian 11+, Fedora 34+, or compatible distributions with glibc >= 2.28, running on x86_64 processors.
+  Additionally, aarch64 (ARM64) processors are supported on distributions with glibc >= 2.39 (e.g. Ubuntu 24.04+, Fedora 40+, Debian 13+).
 macOS:
   macOS 14.0+, Apple Silicon (arm64 architecture).
 
@@ -29,7 +30,7 @@ Installation instructions
 Download a binary program package for *OVITO Basic* or *OVITO Pro* from `www.ovito.org <https://www.ovito.org/#download>`__.
 
 *Linux*:
-    Extract the downloaded `.tar.xz` archive using the tar utility: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
+    Extract the downloaded `.tar.xz` archive using the tar utility (e.g. :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz` for x86_64 or :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-aarch64.tar.xz` for ARM64).
     This creates a subdirectory containing the program files. Change to that directory and run the application: :command:`./bin/ovito`.
 
 *Windows*:
