@@ -22,42 +22,51 @@
 
 #pragma once
 
-
-#include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
 
 namespace Ovito {
 
 /**
- * Page of the application settings dialog, which hosts particle-related options.
+ * Page of the application settings dialog, which hosts rendering options.
  */
-class ParticleSettingsPage : public ApplicationSettingsDialogPage
+class OVITO_GUI_EXPORT FFmpegSettingsPage : public ApplicationSettingsDialogPage
 {
-    OVITO_CLASS(ParticleSettingsPage)
     Q_OBJECT
+    OVITO_CLASS(FFmpegSettingsPage)
 
 public:
+    /// Default constructor.
+    explicit FFmpegSettingsPage() = default;
 
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
     /// \brief Lets the settings page to save all values entered by the user.
-    /// \param settingsDialog The settings dialog box.
     virtual void saveValues(QTabWidget* tabWidget) override;
 
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-    virtual int pageSortingKey() const override { return 50; }
+    virtual int pageSortingKey() const override { return 20; }
 
-public Q_SLOTS:
-
-    /// Restores the built-in default particle colors and sizes.
-    void restoreBuiltinParticlePresets();
+Q_SIGNALS:
+    /// Emitted when the path to the ffmpeg executable has been validated.
+    void ffmpegPathValidated(bool isValid);
 
 private:
+    /// Validates the user provided FFmpeg executable.
+    /// Falls back to the built-in FFmpeg library if the path or executable is invalid.
+    void validateFfmpegPath();
 
-    QTreeWidget* _predefTypesTable;
-    QTreeWidgetItem* _particleTypesItem;
-    QTreeWidgetItem* _structureTypesItem;
+    /// Refresh the list of available codecs.
+    void refreshCodecCombobox();
+
+private:
+    StatusWidget* _statusLabel;
+    QLineEdit* _ffmpegPath;
+    QComboBox* _ffmpegCodec;
+    QComboBox* _ffmpegQualityBox;
+    QByteArray _ffmpegCodecName;
+    bool _externalFFmpeg;
 };
 
-}   // End of namespace
+}  // namespace Ovito

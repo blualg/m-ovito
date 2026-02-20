@@ -223,6 +223,8 @@ ENDIF()
 # Link to video encoding lib.
 IF(FFMPEG_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/video/VideoEncoder.cpp)
+    TARGET_SOURCES(Core PRIVATE utilities/io/video/InternalVideoEncoderBackend.cpp)
+    TARGET_SOURCES(Core PRIVATE utilities/io/video/ExternalVideoEncoderBackend.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_VIDEO_OUTPUT_SUPPORT)
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE __STDC_CONSTANT_MACROS __STDC_LIMIT_MACROS)
     TARGET_LINK_LIBRARIES(Core PRIVATE "${FFMPEG_LIBRARIES}")

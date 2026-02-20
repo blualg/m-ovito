@@ -77,7 +77,7 @@ protected:
 public:
 
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-    virtual int pageSortingKey() const override { return 4; }
+    virtual int pageSortingKey() const override { return 40; }
 };
 
 }   // End of namespace

@@ -116,6 +116,9 @@ public:
     /// Returns the human-readable name of the application.
     static QString applicationName();
 
+    /// Emits the settingsChanged() signal.
+    void emitSettingsChangedSignal();
+
 #ifndef Q_OS_WASM
     /// Returns the application-wide network access manager object.
     QNetworkAccessManager* networkAccessManager();
@@ -123,6 +126,11 @@ public:
 
     /// Create the global Qt application object.
     void createQtApplication(bool supportGui);
+
+Q_SIGNALS:
+
+    /// Emitted when the application settings have potentially changed.
+    void settingsChanged();
 
 protected:
 

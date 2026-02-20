@@ -48,19 +48,19 @@ public:
     }
 
     /// Returns the width of the image in pixels.
-    int imageWidth() const { return _imageWidth; }
+    [[nodiscard]] int imageWidth() const { return _imageWidth; }
 
     /// Sets the width of the image in pixels.
     void setImageWidth(int width) { OVITO_ASSERT(width >= 0); _imageWidth = width; }
 
     /// Returns the height of the image in pixels.
-    int imageHeight() const { return _imageHeight; }
+    [[nodiscard]] int imageHeight() const { return _imageHeight; }
 
     /// Sets the height of the image to be rendered in pixels.
     void setImageHeight(int height) { OVITO_ASSERT(height >= 0); _imageHeight = height; }
 
     /// Returns the filename of the image on disk.
-    const QString& filename() const { return _filename; }
+    [[nodiscard]] const QString& filename() const { return _filename; }
 
     /// Sets the filename of the image on disk.
     void setFilename(const QString& filename) {
@@ -69,7 +69,7 @@ public:
     }
 
     /// Returns the format of the image on disk.
-    const QByteArray& format() const { return _format; }
+    [[nodiscard]] const QByteArray& format() const { return _format; }
 
     /// Sets the format of the image on disk.
     void setFormat(const QByteArray& format) { _format = format; }
@@ -78,7 +78,7 @@ public:
     bool guessFormatFromFilename();
 
     /// Returns whether the selected file format is a video format.
-    bool isMovie() const;
+    [[nodiscard]] bool isMovie() const;
 
 private:
 

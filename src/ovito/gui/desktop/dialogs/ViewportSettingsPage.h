@@ -46,7 +46,7 @@ public:
     virtual void saveValues(QTabWidget* tabWidget) override;
 
     /// Returns an integer value that is used to sort the dialog pages in ascending order.
-    virtual int pageSortingKey() const override { return 2; }
+    virtual int pageSortingKey() const override { return 10; }
 
 private Q_SLOTS:
 

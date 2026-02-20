@@ -36,6 +36,10 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/utilities/io/video/VideoEncoder.h>
+#include <ovito/gui/desktop/dialogs/FFmpegSettingsPage.h>
+
+#include <algorithm>
 #include "RenderSettingsEditor.h"
 
 namespace Ovito {
@@ -45,14 +49,14 @@ DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 
 // Predefined output image dimensions.
-static const int imageSizePresets[][2] = {
-        { 320, 240 },
-        { 640, 480 },
-        { 600, 600 },
-        { 800, 600 },
-        { 1024, 768 },
-        { 1000, 1000 },
-        { 1600, 1200 },
+static constexpr inline int imageSizePresets[][2] = {
+    {600, 600},
+    {800, 600},
+    {1024, 768},
+    {1280, 720},
+    {1000, 1000},
+    {1600, 1200},
+    {1920, 1080},
 };
 
 /******************************************************************************
@@ -200,6 +204,30 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         StringParameterUI* imageFilenameUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(RenderSettings::imageFilename));
         imageFilenameUI->setEnabled(false);
         layout2->addWidget(imageFilenameUI->textBox(), 1, 0, 1, 2);
+
+        // External / internal FFmpeg label.
+        _externalFFmpegLabel = new QLabel();
+        _externalFFmpegLabel->setWordWrap(true);
+        QFont smallFont = _externalFFmpegLabel->font();
+        smallFont.setPointSizeF(smallFont.pointSizeF() * 3 / 4);
+        _externalFFmpegLabel->setFont(smallFont);
+
+        // Configure hyperlink into application into settings menu
+        _externalFFmpegLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+        connect(_externalFFmpegLabel, &QLabel::linkActivated, this, [this]() {
+            ApplicationSettingsDialog dlg(ui(), &FFmpegSettingsPage::OOClass());
+            dlg.exec();
+        });
+
+        // Keep space for the label
+        QSizePolicy sp = _externalFFmpegLabel->sizePolicy();
+        sp.setRetainSizeWhenHidden(true);
+        _externalFFmpegLabel->setSizePolicy(sp);
+
+        layout2->addWidget(_externalFFmpegLabel, 2, 0, 1, 2);
+
+        connect(this, &RenderSettingsEditor::contentsChanged, this, &RenderSettingsEditor::updateExternalFFmpegLabel);
+        connect(Application::instance(), &Application::settingsChanged, this, &RenderSettingsEditor::updateExternalFFmpegLabel);
     }
 
     // Background
@@ -281,6 +309,8 @@ void RenderSettingsEditor::onChooseImageFilename()
             settings->setSaveToFile(true);
         });
     }
+    // Update the ffmpeg label
+    updateExternalFFmpegLabel();
 }
 
 /******************************************************************************
@@ -321,13 +351,17 @@ void RenderSettingsEditor::onSwitchRenderer()
         "OSPRayRenderer",
         "OffscreenAnariRenderer"
     };
-    std::sort(rendererClasses.begin(), rendererClasses.end(), [&displayOrdering](OvitoClassPtr a, OvitoClassPtr b) {
+    std::ranges::sort(rendererClasses, [&displayOrdering](OvitoClassPtr a, OvitoClassPtr b) {
         int ia = displayOrdering.indexOf(a->name());
         int ib = displayOrdering.indexOf(b->name());
-        if(ia == -1 && ib == -1) return a->displayName() < b->displayName();
-        else if(ia == -1) return false;
-        else if(ib == -1) return true;
-        else return ia < ib;
+        if(ia == -1 && ib == -1)
+            return a->displayName() < b->displayName();
+        else if(ia == -1)
+            return false;
+        else if(ib == -1)
+            return true;
+        else
+            return ia < ib;
     });
 
     QDialog dlg(container());
@@ -475,6 +509,26 @@ void RenderSettingsEditor::updateVideoLengthDisplay()
         _videoLengthLabel->setText(QStringLiteral(u"Video duration:\n%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0')));
     else
         _videoLengthLabel->setText(tr("Video duration:\n< 1 sec"));
+}
+
+void RenderSettingsEditor::updateExternalFFmpegLabel()
+{
+    RenderSettings* renderSettings = static_object_cast<RenderSettings>(editObject());
+    if(!renderSettings) return;
+
+    if(renderSettings->saveToFile() && (renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
+                                        renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL)) {
+        QSettings settings;
+        bool externalFFmpeg = settings.value(VideoEncoder::FFMPEG_USE_EXT_SETTING, false).toBool();
+        _externalFFmpegLabel->setVisible(true);
+        _externalFFmpegLabel->setText(externalFFmpeg ? tr("Using external video encoder. <a href=\"settings\">Configure...</a>")
+                                                     : tr("Using internal video encoder. <a href=\"settings\">Configure...</a>"));
+    }
+    else {
+        // When rendering a single frame, hide the external ffmpeg display.
+        _externalFFmpegLabel->setVisible(false);
+        return;
+    }
 }
 
 }   // End of namespace

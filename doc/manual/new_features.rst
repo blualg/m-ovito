@@ -45,6 +45,7 @@ Version 3.15.0 (dd-mm-2026)
 - Fix: PDB file reader's "Generate bounding box" option not working
 - Aspherix file reader: Always create "Particle type" property even if type information is missing in the file to allow users to assign a custom particle shape in the visualization
 - Added support for :ref:`Linux aarch64 platform <installation.requirements>` (ARM64 architecture)
+- Add support for user provided external FFmpeg applications giving access to modern codecs
 
 .. sidebar::
 

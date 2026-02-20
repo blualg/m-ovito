@@ -52,12 +52,11 @@ SaveImageFileDialog::SaveImageFileDialog(QWidget* parent, const QString& caption
     if(includeVideoFormats) {
         // Add video formats.
         for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
-            QString filterString = videoFormat.longName + " (";
-            for(const QString& ext : videoFormat.extensions)
-                filterString += "*." + ext;
+            QString filterString = videoFormat.candidate->longName + " (";
+            for(const QString& ext : videoFormat.candidate->extensions) filterString += "*." + ext;
             filterString += ")";
             filterStrings << filterString;
-            _formatList << videoFormat.name;
+            _formatList << QByteArray::fromRawData(videoFormat.candidate->name.data(), videoFormat.candidate->name.size());
         }
     }
 #endif

@@ -57,7 +57,7 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindowUI& ui, OvitoClas
     }
 
     // Sort pages.
-    std::sort(_pages.begin(), _pages.end(), [](const auto& page1, const auto& page2) { return page1->pageSortingKey() < page2->pageSortingKey(); });
+    std::ranges::sort(_pages, [](const auto& page1, const auto& page2) { return page1->pageSortingKey() < page2->pageSortingKey(); });
 
     // Show pages in dialog.
     int defaultPage = 0;
@@ -97,19 +97,22 @@ void ApplicationSettingsDialog::onOk()
     handleExceptions([&]() {
 
         // Let all pages validate the changes the user made to the settings.
-        for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
+        for(const auto& page : _pages) {
             if(!page->validateValues(_tabWidget)) {
                 return;
             }
         }
 
         // Let all pages save their settings.
-        for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
+        for(const auto& page : _pages) {
             page->saveValues(_tabWidget);
         }
 
         // Close dialog box.
         accept();
+
+        // Emit the settingsChanged() signal.
+        Application::instance()->emitSettingsChangedSignal();
     });
 }
 
@@ -122,7 +125,7 @@ void ApplicationSettingsDialog::onCancel()
 
     handleExceptions([&]() {
         // Let all pages restore their settings to the old values.
-        for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
+        for(const auto& page : _pages)
             page->restoreValues(_tabWidget);
     });
 }
