@@ -88,7 +88,7 @@ void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor* field, 
 {
     PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 
-    if(field == PROPERTY_FIELD(PropertiesEditor::editObject)) {
+    if(field == PROPERTY_FIELD(PropertiesEditor::editObject) && !shouldIgnoreChanges()) {
 
         ElementType* etype = static_object_cast<ElementType>(newTarget);
 

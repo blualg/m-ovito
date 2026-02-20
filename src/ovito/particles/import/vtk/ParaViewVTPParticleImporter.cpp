@@ -117,6 +117,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     PropertyPtr roundnessProperty;
     PropertyPtr typeProperty;
     PropertyPtr tensorProperty;
+    PropertyPtr asphericalShapeProperty;
     int vtkHeaderType = 8; // Assume UInt64 by default
 
     // Parse the elements of the XML file.
@@ -171,8 +172,10 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         if(!_isBodiesFile) {
                             if(property->typeId() == Particles::SuperquadricRoundnessProperty)
                                 roundnessProperty = property;
-                            if(property->typeId() == Particles::TypeProperty)
+                            else if(property->typeId() == Particles::TypeProperty)
                                 typeProperty = property;
+                            else if(property->typeId() == Particles::AsphericalShapeProperty)
+                                asphericalShapeProperty = property;
                             else if(property->name() == QStringLiteral("Tensor"))
                                 tensorProperty = property;
 
@@ -256,8 +259,20 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         this_task::throwIfCanceled();
     }
 
+    // Reset the "Radius" property of particles with an aspherical shape to zero to get correct scaling
+    // in case the user assigns a custom particle shape.
+    if(asphericalShapeProperty) {
+        if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = container->getMutableProperty(Particles::RadiusProperty)) {
+            auto* radius = radiusArray.begin() + baseParticleIndex;
+            for(auto& shape : BufferReadAccess<Vector3G>(asphericalShapeProperty).subrange(baseParticleIndex)) {
+                if(shape != Vector3G::Zero()) *radius = 0;
+                ++radius;
+            }
+        }
+    }
+
+    // Also reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
     if(typeProperty) {
-        // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))

@@ -400,7 +400,7 @@ bool RenderSettingsEditor::referenceEvent(RefTarget* source, const ReferenceEven
 ******************************************************************************/
 void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(activeViewport)) {
+    if(field == PROPERTY_FIELD(activeViewport) && !shouldIgnoreChanges()) {
         _viewportPreviewModeBox->setEnabled(activeViewport() != nullptr);
         _viewportPreviewModeBox->setChecked(activeViewport() && activeViewport()->renderPreviewMode());
     }
