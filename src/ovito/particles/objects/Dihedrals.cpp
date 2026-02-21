@@ -92,9 +92,9 @@ void Dihedrals::OOMetaClass::initialize()
     const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
     const QStringList onetwothreefourList = QStringList() << "1" << "2" << "3" << "4";
 
-    registerStandardProperty(TypeProperty, tr("Dihedral Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
-    registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abcdList);
-    registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), Property::Int64, onetwothreefourList);
+    registerStandardProperty(TypeProperty, QStringLiteral("Dihedral Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
+    registerStandardProperty(TopologyProperty, QStringLiteral("Topology"), Property::Int64, abcdList);
+    registerStandardProperty(ParticleIdentifiersProperty, QStringLiteral("Particle Identifiers"), Property::Int64, onetwothreefourList);
 }
 
 }   // End of namespace

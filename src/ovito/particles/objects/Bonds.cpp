@@ -364,17 +364,17 @@ void Bonds::OOMetaClass::initialize()
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
     const QStringList onetwoList = QStringList() << "1" << "2";
 
-    registerStandardProperty(TypeProperty, tr("Bond Type"), Property::Int32, emptyList, &BondType::OOClass(), tr("Bond types"));
-    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
-    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Bond colors"));
-    registerStandardProperty(LengthProperty, tr("Length"), Property::FloatDefault, emptyList, nullptr, tr("Lengths"));
-    registerStandardProperty(OrderProperty, tr("Bond Order"), Property::FloatGraphics, emptyList, nullptr, tr("Bond orders"));
-    registerStandardProperty(FunctionalGroupProperty, tr("Functional Group"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Functional Group"));
-    registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abList);
-    registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), Property::Int32, xyzList);
-    registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
-    registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), Property::Int64, onetwoList);
-    registerStandardProperty(WidthProperty, tr("Width"), Property::FloatGraphics, emptyList, nullptr, tr("Widths"));
+    registerStandardProperty(TypeProperty, QStringLiteral("Bond Type"), Property::Int32, emptyList, &BondType::OOClass(), tr("Bond types"));
+    registerStandardProperty(SelectionProperty, QStringLiteral("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, QStringLiteral("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Bond colors"));
+    registerStandardProperty(LengthProperty, QStringLiteral("Length"), Property::FloatDefault, emptyList, nullptr, tr("Lengths"));
+    registerStandardProperty(OrderProperty, QStringLiteral("Bond Order"), Property::FloatGraphics, emptyList, nullptr, tr("Bond orders"));
+    registerStandardProperty(FunctionalGroupProperty, QStringLiteral("Functional Group"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Functional groups"));
+    registerStandardProperty(TopologyProperty, QStringLiteral("Topology"), Property::Int64, abList);
+    registerStandardProperty(PeriodicImageProperty, QStringLiteral("Periodic Image"), Property::Int32, xyzList);
+    registerStandardProperty(TransparencyProperty, QStringLiteral("Transparency"), Property::FloatGraphics, emptyList);
+    registerStandardProperty(ParticleIdentifiersProperty, QStringLiteral("Particle Identifiers"), Property::Int64, onetwoList);
+    registerStandardProperty(WidthProperty, QStringLiteral("Width"), Property::FloatGraphics, emptyList, nullptr, tr("Widths"));
 }
 
 /******************************************************************************

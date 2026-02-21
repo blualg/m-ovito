@@ -43,11 +43,11 @@ void Vectors::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
-    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
-    registerStandardProperty(DirectionProperty, tr("Direction"), Property::FloatDefault, xyzList);
-    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
-    registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
-    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, QStringLiteral("Color"), Property::FloatGraphics, rgbList);
+    registerStandardProperty(DirectionProperty, QStringLiteral("Direction"), Property::FloatDefault, xyzList);
+    registerStandardProperty(PositionProperty, QStringLiteral("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(TransparencyProperty, QStringLiteral("Transparency"), Property::FloatGraphics, emptyList);
+    registerStandardProperty(SelectionProperty, QStringLiteral("Selection"), Property::IntSelection, emptyList);
 }
 
 /******************************************************************************

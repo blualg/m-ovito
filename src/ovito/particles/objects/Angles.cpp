@@ -92,9 +92,9 @@ void Angles::OOMetaClass::initialize()
     const QStringList abcList = QStringList() << "A" << "B" << "C";
     const QStringList onetwothreeList = QStringList() << "1" << "2" << "3";
 
-    registerStandardProperty(TypeProperty, tr("Angle Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Angle types"));
-    registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abcList);
-    registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), Property::Int64, onetwothreeList);
+    registerStandardProperty(TypeProperty, QStringLiteral("Angle Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Angle types"));
+    registerStandardProperty(TopologyProperty, QStringLiteral("Topology"), Property::Int64, abcList);
+    registerStandardProperty(ParticleIdentifiersProperty, QStringLiteral("Particle Identifiers"), Property::Int64, onetwothreeList);
 }
 
 }   // End of namespace

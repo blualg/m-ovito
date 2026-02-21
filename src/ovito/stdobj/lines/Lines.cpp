@@ -52,13 +52,13 @@ void Lines::OOMetaClass::initialize()
     const QStringList rgbList = QStringList() << "R"
                                               << "G"
                                               << "B";
-    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
-    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
-    registerStandardProperty(Position1Property, tr("Position1"), Property::FloatDefault, xyzList);
-    registerStandardProperty(Position2Property, tr("Position2"), Property::FloatDefault, xyzList);
-    registerStandardProperty(SampleTimeProperty, tr("Time"), Property::Int32, emptyList);
-    registerStandardProperty(SectionProperty, tr("Section"), Property::Int64, emptyList);
-    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, QStringLiteral("Color"), Property::FloatGraphics, rgbList);
+    registerStandardProperty(PositionProperty, QStringLiteral("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(Position1Property, QStringLiteral("Position1"), Property::FloatDefault, xyzList);
+    registerStandardProperty(Position2Property, QStringLiteral("Position2"), Property::FloatDefault, xyzList);
+    registerStandardProperty(SampleTimeProperty, QStringLiteral("Time"), Property::Int32, emptyList);
+    registerStandardProperty(SectionProperty, QStringLiteral("Section"), Property::Int64, emptyList);
+    registerStandardProperty(SelectionProperty, QStringLiteral("Selection"), Property::IntSelection, emptyList);
 }
 
 /******************************************************************************
