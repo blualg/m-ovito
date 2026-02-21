@@ -20,6 +20,8 @@ the chemical species and separation of the atoms.
 The visual representation of bonds is controlled by the :ref:`bonds visual element <visual_elements.bonds>` settings,
 which appears in the top section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
+.. _scene_objects.bonds.properties:
+
 Bond properties
 """""""""""""""
 
