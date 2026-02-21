@@ -264,11 +264,8 @@
 	<file>mainwin/window_icon_128@2x.png</file>
 	<file>mainwin/window_icon_256.png</file>
 
-	<file>mainwin/status/status_error.png</file>
-	<file>mainwin/status/status_error@2x.png</file>
-	<file>mainwin/status/status_info.png</file>
-	<file>mainwin/status/status_warning.png</file>
-	<file>mainwin/status/status_warning@2x.png</file>
+	<file>mainwin/status/status_error.svg</file>
+	<file>mainwin/status/status_warning.svg</file>
 	<file>mainwin/status/status_none.png</file>
 	<file>mainwin/status/status_pending.gif</file>
 

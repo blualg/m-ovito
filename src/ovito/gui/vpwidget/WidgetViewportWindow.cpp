@@ -125,7 +125,7 @@ void WidgetViewportWindow::displayRenderingIssues(const QString& rendererName, c
         QLabel*& indicator = _issueIndicators[rendererName];
         if(!indicator) {
             indicator = new QLabel(widget());
-            indicator->setPixmap(QPixmap(":/guibase/mainwin/status/status_error@2x.png"));
+            indicator->setPixmap(QIcon(":/guibase/mainwin/status/status_error.svg").pixmap(22, 22));
             indicator->setMargin(4);
             indicator->show();
             OVITO_ASSERT(!indicator->isHidden());

@@ -53,7 +53,7 @@ void PropertyInspectionApplet::createBaseWidgets()
             onFilterExpressionEntered();
     });
 
-    _filterStatusAction = _filterExpressionEdit->addAction(QIcon(":/guibase/mainwin/status/status_error.png"), QLineEdit::LeadingPosition);
+    _filterStatusAction = _filterExpressionEdit->addAction(QIcon(":/guibase/mainwin/status/status_error.svg"), QLineEdit::LeadingPosition);
     _filterStatusAction->setVisible(false);
 
     _tableView = new CopyableTableView();

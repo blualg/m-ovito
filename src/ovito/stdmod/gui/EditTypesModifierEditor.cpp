@@ -617,7 +617,7 @@ std::optional<int> EditTypesModifierEditor::askForUniqueTypeId() const
     idSpinner->setIntValue(uniqueId);
     mainLayout->addWidget(idSpinner, 1, 1);
 
-    QAction* errorAction = idBox->addAction(QIcon(":/guibase/mainwin/status/status_error.png"), QLineEdit::TrailingPosition);
+    QAction* errorAction = idBox->addAction(QIcon(":/guibase/mainwin/status/status_error.svg"), QLineEdit::TrailingPosition);
     errorAction->setVisible(false);
     errorAction->setToolTip(tr("A type with this numeric ID already exists. Please choose a different ID."));
 

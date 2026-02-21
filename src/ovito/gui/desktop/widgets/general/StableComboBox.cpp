@@ -30,7 +30,7 @@ namespace Ovito {
 ******************************************************************************/
 const QIcon& StableComboBox::warningIcon()
 {
-    static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
+    static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.svg"));
     return warningIcon;
 }
 

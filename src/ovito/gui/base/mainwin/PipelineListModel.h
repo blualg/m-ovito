@@ -74,7 +74,7 @@ public:
     virtual QHash<int, QByteArray> roleNames() const override;
 
     /// Returns the icon size to be used by the list widget.
-    QSize iconSize() const { return _statusInfoIcon.size(); }
+    constexpr QSize iconSize() const { return QSize(22, 22); }
 
     /// Returns the associated selection model.
     QItemSelectionModel* selectionModel() const { return _selectionModel; }
@@ -282,9 +282,8 @@ private:
     OOWeakRef<Pipeline> _previouslySelectedPipeline;
 
     // Status icons:
-    QPixmap _statusInfoIcon;
-    QPixmap _statusWarningIcon;
-    QPixmap _statusErrorIcon;
+    QIcon _statusWarningIcon;
+    QIcon _statusErrorIcon;
     QPixmap _statusNoneIcon;
     mutable QMovie _statusPendingIcon;
     QIcon _modifierGroupCollapsed;

@@ -147,9 +147,8 @@ private:
     bool _needListUpdate = false;
 
     // Status icons:
-    QPixmap _statusInfoIcon;
-    QPixmap _statusWarningIcon;
-    QPixmap _statusErrorIcon;
+    QIcon _statusWarningIcon;
+    QIcon _statusErrorIcon;
     QPixmap _statusNoneIcon;
 
     /// Font used for section headers.

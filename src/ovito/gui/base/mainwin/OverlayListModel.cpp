@@ -34,9 +34,8 @@ namespace Ovito {
 OverlayListModel::OverlayListModel(QObject* parent, UserInterface& ui) :
     QAbstractListModel(parent),
     UserInterfaceComponent<UserInterface>(ui),
-    _statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
-    _statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
-    _statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
+    _statusWarningIcon(":/guibase/mainwin/status/status_warning.svg"),
+    _statusErrorIcon(":/guibase/mainwin/status/status_error.svg"),
     _statusNoneIcon(":/guibase/mainwin/status/status_none.png")
 {
     _selectionModel = new QItemSelectionModel(this);

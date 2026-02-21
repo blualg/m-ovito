@@ -42,9 +42,8 @@ namespace Ovito {
 PipelineListModel::PipelineListModel(UserInterface& ui, QObject* parent) :
     QAbstractListModel(parent),
     UserInterfaceComponent<UserInterface>(ui),
-    _statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
-    _statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
-    _statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
+    _statusWarningIcon(":/guibase/mainwin/status/status_warning.svg"),
+    _statusErrorIcon(":/guibase/mainwin/status/status_error.svg"),
     _statusNoneIcon(":/guibase/mainwin/status/status_none.png"),
     _statusPendingIcon(":/guibase/mainwin/status/status_pending.gif"),
     _sectionHeaderFont(QGuiApplication::font()),
@@ -684,8 +683,8 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
             }
             if(item->isObjectItem()) {
                 switch(item->status().type()) {
-                case PipelineStatus::Warning: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png")); break;
-                case PipelineStatus::Error: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_error.png")); break;
+                case PipelineStatus::Warning: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_warning.svg")); break;
+                case PipelineStatus::Error: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_error.svg")); break;
                 default: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_none.png"));
                 }
                 continue;

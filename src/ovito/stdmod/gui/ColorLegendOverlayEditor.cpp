@@ -310,7 +310,7 @@ void ColorLegendOverlayEditor::updateColorMappingsList()
             if(index >= 0)
                 _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.svg"), overlay->modifier()->objectTitle());
                 _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
             _label1PUI->setEnabled(true);
@@ -323,7 +323,7 @@ void ColorLegendOverlayEditor::updateColorMappingsList()
             if(index >= 0)
                 _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->colorMapping()->sourceProperty().nameWithComponent());
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.svg"), overlay->colorMapping()->sourceProperty().nameWithComponent());
                 _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
             _label1PUI->setEnabled(true);
@@ -336,17 +336,17 @@ void ColorLegendOverlayEditor::updateColorMappingsList()
             if(index >= 0)
                 _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrPath());
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.svg"), overlay->sourceProperty().dataTitleOrPath());
                 _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
         }
         else {
-            _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
+            _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.svg"), tr("<none>"));
             _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
         }
     }
     if(_colorMappingsComboBox->count() == 0)
-        _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
+        _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.svg"), tr("<none>"));
 }
 
 /******************************************************************************
