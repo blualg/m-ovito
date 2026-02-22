@@ -412,6 +412,11 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
     // Assign the visual element, which renders the trajectory lines.
     trajectoryLines->setVisElement(std::move(trajectoryVis));
 
+    // Finish write access to trajectory line properties before returning from the coroutine.
+    trajPosProperty.reset();
+    trajTimeProperty.reset();
+    trajIdProperty.reset();
+
     co_return trajectoryLines;
 }
 

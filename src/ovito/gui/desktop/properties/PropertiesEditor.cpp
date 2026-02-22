@@ -236,12 +236,14 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(oldTarget) {
             oldTarget->editingStopped(ui());
         }
-        Q_EMIT contentsReplaced(editObject());
-        Q_EMIT contentsChanged(editObject());
+        if(!shouldIgnoreChanges()) {
+            Q_EMIT contentsReplaced(editObject());
+            Q_EMIT contentsChanged(editObject());
+        }
         if(newTarget) {
             newTarget->editingStarted(ui());
         }
-        if(!isBeingDeleted()) {
+        if(!shouldIgnoreChanges()) {
             emitPipelineInputChangedSignal(this, ui());
             emitPipelineOutputChangedSignal(this, ui());
         }
