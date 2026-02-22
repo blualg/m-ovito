@@ -205,7 +205,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Check path is empty
     if(userInput.isEmpty()) {
-        _statusLabel->setStatus(PipelineStatus(tr("FFmpeg path is empty, the built-in FFmpeg library will be used.")));
+        _statusLabel->setStatus(PipelineStatus(tr("No FFmpeg executable specified, the built-in video encoder of OVITO will be used.")));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -215,7 +215,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Check path is empty
     if(path.isEmpty()) {
-        _statusLabel->setStatus(PipelineStatus(tr("%1 not found, the built-in FFmpeg library will be used.").arg(userInput)));
+        _statusLabel->setStatus(PipelineStatus(tr("%1 not found, the built-in video encoder of OVITO will be used.").arg(userInput)));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
