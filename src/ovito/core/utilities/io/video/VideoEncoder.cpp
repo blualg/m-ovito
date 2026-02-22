@@ -113,7 +113,7 @@ void VideoEncoder::writeFrame(const QImage& image) { _backend->writeFrame(image)
 /******************************************************************************
  *  Returns the list of supported output formats from the backend.
  ******************************************************************************/
-const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(std::string_view name)
+const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandidateFormat(QByteArrayView name)
 {
     static const std::array<const CandidateFormat, 5> CandidateFormats{
         {{
@@ -151,7 +151,7 @@ const VideoEncoder::CandidateFormat* VideoEncoder::VideoEncoderBackend::getCandi
 /******************************************************************************
  * Returns the list of supported output codecs from the backend.
  ******************************************************************************/
-const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(std::string_view name)
+const VideoEncoder::CandidateCodec* VideoEncoder::VideoEncoderBackend::getCandidateCodec(QByteArrayView name)
 {
     static const std::array<const CandidateCodec, 3> candidateCodecs{
         {{

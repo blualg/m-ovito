@@ -89,9 +89,9 @@ public:
 
     protected:
         /// Compares a format name to the list of supported formats and returns the corresponding CandidateFormat.
-        static const CandidateFormat* getCandidateFormat(std::string_view name);
+        static const CandidateFormat* getCandidateFormat(QByteArrayView name);
         /// Compares a codec name to the list of supported codecs and returns the corresponding CandidateCodec.
-        static const CandidateCodec* getCandidateCodec(std::string_view name);
+        static const CandidateCodec* getCandidateCodec(QByteArrayView name);
     };
 
     enum class Backend : uint8_t
