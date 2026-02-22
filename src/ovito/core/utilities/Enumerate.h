@@ -46,7 +46,7 @@ requires r::view<V> class enumerate_view
     V base_ = {};
 
     template <bool>
-    class sentinel;
+    struct sentinel;
 
     template <bool Const>
     struct iterator {
@@ -74,7 +74,7 @@ requires r::view<V> class enumerate_view
         template<bool>
         friend struct iterator;
         template <bool>
-        friend class sentinel;
+        friend struct sentinel;
 
       public:
         using iterator_category = decltype(detail::iter_cat<Base>());

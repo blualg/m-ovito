@@ -78,7 +78,7 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
         };
         OVITO_STATIC_ASSERT(std::size(burgersVectors) == std::size(predefinedLineColors));
         for(size_t i = 0; i < std::size(burgersVectors); i++) {
-            if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
+            if(b.equals(burgersVectors[i], GraphicsFloatType(1e-6)) || b.equals(-burgersVectors[i], GraphicsFloatType(1e-6)))
                 return predefinedLineColors[i];
         }
     }
@@ -105,29 +105,29 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
                 Color(0.5f,0.5f,0.5f),
         };
         static constexpr Cluster::VecType burgersVectors[] = {
-                { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(-1.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(1.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(2.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(-2.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(2.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(1.0/6.0), FloatType(-2.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(1.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(2.0/6.0), FloatType(-1.0/6.0) },
-                { FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(-1.0/6.0) },
-                { FloatType(2.0/6.0), FloatType(-1.0/6.0), FloatType(1.0/6.0) },
-                { FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(-1.0/6.0) },
-                { FloatType(2.0/6.0), FloatType(1.0/6.0), FloatType(1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(-2.0/6.0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(-2.0/6.0), GraphicsFloatType(1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(-1.0/6.0), GraphicsFloatType(2.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(-1.0/6.0), GraphicsFloatType(-2.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(2.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(-2.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(2.0/6.0), GraphicsFloatType(1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(2.0/6.0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(2.0/6.0), GraphicsFloatType(-1.0/6.0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(2.0/6.0), GraphicsFloatType(-1.0/6.0), GraphicsFloatType(1.0/6.0) },
+                { GraphicsFloatType(2.0/6.0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(2.0/6.0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(1.0/6.0) },
 
-                { 0, FloatType(1.0/6.0), FloatType(1.0/6.0) },
-                { 0, FloatType(1.0/6.0), FloatType(-1.0/6.0) },
-                { FloatType(1.0/6.0), 0, FloatType(1.0/6.0) },
-                { FloatType(1.0/6.0), 0, FloatType(-1.0/6.0) },
-                { FloatType(1.0/6.0), FloatType(1.0/6.0), 0 },
-                { FloatType(1.0/6.0), FloatType(-1.0/6.0), 0 },
+                { GraphicsFloatType(0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(1.0/6.0) },
+                { GraphicsFloatType(0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(0), GraphicsFloatType(1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(0), GraphicsFloatType(-1.0/6.0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(1.0/6.0), GraphicsFloatType(0) },
+                { GraphicsFloatType(1.0/6.0), GraphicsFloatType(-1.0/6.0), GraphicsFloatType(0) },
         };
         OVITO_STATIC_ASSERT(std::size(burgersVectors) == std::size(predefinedLineColors));
         for(size_t i = 0; i < std::size(burgersVectors); i++) {
-            if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
+            if(b.equals(burgersVectors[i], GraphicsFloatType(1e-6)) || b.equals(-burgersVectors[i], GraphicsFloatType(1e-6)))
                 return predefinedLineColors[i];
         }
     }
