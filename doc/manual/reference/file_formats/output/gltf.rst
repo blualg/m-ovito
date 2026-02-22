@@ -13,7 +13,7 @@ or it can be embedded into web pages.
   :width: 100%
 
 *glTF* is a triangle mesh-based format, which means round objects in OVITO, such as particle spheres and bond cylinders, must be
-converted to triangle meshes before they can be exported. The parameter  :guilabel:`Mesh resolution level` controls the number of triangles
+converted to triangle meshes before they can be exported. The parameter :guilabel:`Mesh resolution level` controls the number of triangles
 used to approximate the surface of round geometries. The higher the resolution, the more triangles are generated and the smoother the surface will look.
 The default value of 3 is usually sufficient for most applications.
 

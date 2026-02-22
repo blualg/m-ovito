@@ -121,7 +121,7 @@ many cases. To address this issue, at least partially, the modifier provides thr
 
 If an edge of a Voronoi face is shorter than the specified :guilabel:`Edge length threshold`, then this edge is not counted toward
 the order of the Voronoi face. Furthermore, if the face's area is below the area threshold, then the face is
-not included in the computed Voronoi index and it also not counted toward the coordination number of the central particle.
+not included in the computed Voronoi index and it is also not counted toward the coordination number of the central particle.
 
 The threshold face area can either be specified as an absolute value or relative to the total surface area of the Voronoi polyhedron.
 The purpose of these thresholds is to exclude very small faces/edges, which occur sporadically

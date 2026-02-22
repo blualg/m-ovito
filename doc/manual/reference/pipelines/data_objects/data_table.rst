@@ -3,7 +3,7 @@
 Data tables
 -----------
 
-Data tables in OVITO consists of numeric data organized into one or more data columns. 
+Data tables in OVITO consist of numeric data organized into one or more data columns. 
 Each row of the data table represents one data point, and OVITO can plot the data points in various ways, for 
 example in the form of scatter plots, curve plots or bar charts.
 

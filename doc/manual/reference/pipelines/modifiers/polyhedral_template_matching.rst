@@ -94,7 +94,7 @@ If such a mapping exists, a RMSD value is calculated, which is a measure of the 
 The structural type with the lowest RMSD value is finally assigned to the particle.
 A histogram of the RMSD values for all structures and all particles is shown in the side panel.
 
-The modifier allows to set a global RMSD cutoff, which limits the assignment of structural types to a range of RMSD values. Particles whose RMSD
+The modifier allows you to set a global RMSD cutoff, which limits the assignment of structural types to a range of RMSD values. Particles whose RMSD
 exceeds the threshold are assigned the *Other* structure type.
 By adjusting the RMSD cutoff, the level of robustness can be adjusted.
 A higher RMSD cutoff will lead to more identifications (and fewer "defect" atoms), though possibly at the expense of false positives.
@@ -114,7 +114,7 @@ after translation and rotation. It is proportional to the reciprocal local inter
 The PTM modifier provides an option to output the local interatomic distance (or nearest neighbor distance) as a new particle property, which is computed from the internal scale factor for those atoms
 that match one of the known structure types.
 Note that you can compute a local lattice constant (including hydrostatic strain) from the interatomic distance by dividing it by the
-factor :math:`\sqrt{1/2}` (for FCC, HCP), :math:`\sqrt{3/4}` (for BCC), or :math:`\sqrt{3/16}` (for cubic diamond and hexagonal diamond) using, e.g., the :ref:`particles.modifiers.compute_property` modifier
+factor :math:`\sqrt{1/2}` (for FCC, HCP), :math:`\sqrt{3/4}` (for BCC), or :math:`\sqrt{3/16}` (for cubic diamond and hexagonal diamond) using, e.g., the :ref:`particles.modifiers.compute_property` modifier.
 
 .. _particles.modifiers.polyhedral_template_matching.orientations:
 

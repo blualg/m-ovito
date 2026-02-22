@@ -33,7 +33,7 @@ Interpolation mode
 
 If the :guilabel:`Smoothing window size` is set to 1, the modifier will generate additional
 intermediate frames in between consecutive snapshots of the input trajectory via linear interpolation. 
-This mode can be used to create more smoothly looking animations from coarse simulation snapshot sequences.
+This mode can be used to create smoother-looking animations from coarse simulation snapshot sequences.
 
 .. image:: /images/modifiers/smooth_trajectory_interpolation.svg
   :width: 50%

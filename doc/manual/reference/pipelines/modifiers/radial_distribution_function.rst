@@ -42,7 +42,7 @@ for all pair-wise combinations of particle types.
 The computed partial RDFs are normalized such that the
 summation of the partial RDFs, weighted by the product of the two corresponding elemental concentrations, yields the total
 RDF. For example, for a binary system with two particle species :math:`\alpha` and :math:`\beta`,
-the modifier computes a set of three partials functions :math:`g_{\alpha \alpha}`, :math:`g_{\alpha \beta}`
+the modifier computes a set of three partial functions :math:`g_{\alpha \alpha}`, :math:`g_{\alpha \beta}`
 and :math:`g_{\beta \beta}`, which add up to the total distribution as follows:
 
   :math:`g(r) = c_{\alpha}^2 g_{\alpha \alpha}(r) + 2 c_{\alpha} c_{\beta} g_{\alpha \beta}(r) + c_{\beta}^2 g_{\beta \beta}(r)`
@@ -62,7 +62,7 @@ Computing RDF for a subset of particles
 
 The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected subset of particles.
 
-This is useful if you want to calculate the coordination numbers of the RDF only for a part of the system or certain particle species.
+This is useful if you want to calculate the coordination numbers or the RDF only for a part of the system or certain particle species.
 If this option is enabled, unselected particles will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero,
 they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF(s).
 

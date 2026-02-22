@@ -78,7 +78,7 @@ and you will have to define a new attribute that derives its value from the orig
 
 This can be accomplished by inserting a :ref:`Python script <particles.modifiers.python_script>` modifier
 into the data pipeline. This modifier executes a simple, user-defined Python function that computes the value of our
-new attribute based on the existing attributes(s)::
+new attribute based on the existing attribute(s)::
 
   def modify(frame, data):
       bcc_count = data.attributes['CommonNeighborAnalysis.counts.BCC']

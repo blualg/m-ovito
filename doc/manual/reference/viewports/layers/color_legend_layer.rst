@@ -58,7 +58,7 @@ You have the choice between decimal notation (``%f``), exponential notation (``%
 automatic mode (``%g``), which picks the best representation depending on the value's magnitude.
 The format string also gives you explicit control over the displayed numeric precision, i.e., the number of digits that
 appear after the decimal point. Use ``%.2f``, for example, to always show two digits after the decimal point.
-The format string must follow the rules of the standard  `printf() C function <https://en.cppreference.com/w/cpp/io/c/fprintf>`__.
+The format string must follow the rules of the standard `printf() C function <https://en.cppreference.com/w/cpp/io/c/fprintf>`__.
 
 .. tip::
 

@@ -9,7 +9,7 @@ Vectors
 
 A vectors :ref:`data object <scene_objects>` stores one or more vectors to be added
 to the data collection for visualization. Users can create arrow glyphs programmatically
-using the Python :py:attr:`DataCollection.DataCollection.vectors.create() <ovito.data.DataCollection.vectors>`
+using the Python :py:attr:`DataCollection.vectors.create() <ovito.data.DataCollection.vectors>`
 method.
 
 Each vector is defined by a base point (property `Position`) and a direction (property `Direction`). More

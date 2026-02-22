@@ -9,7 +9,7 @@ GSD/HOOMD file reader
 
   User interface of the GSD file reader, which appears as part of a pipeline's :ref:`file source <scene_objects.file_source>`.
 
-Binary file format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ molecular dynamic simulation code.
+Binary file format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ molecular dynamics simulation code.
 For a specification of the file format, see the `GSD (General Simulation Data) website <https://gsd.readthedocs.io>`__.
 
 OVITO loads `all data chunks <https://gsd.readthedocs.io/en/latest/schema-hoomd.html#data-chunks>`__ from the following categories of a GSD file:

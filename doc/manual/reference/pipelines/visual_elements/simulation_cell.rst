@@ -20,7 +20,7 @@ Visible in rendered images
 
 Line width
   OVITO renders the simulation cell edges as thin cylinders of finite diameter.
-  This parameters controls the diameter of these cylinders in units of length of the simulation.
+  This parameter controls the diameter of these cylinders in units of length of the simulation.
   When importing a new simulation cell, the line width is automatically configured by OVITO depending on
   the overall size of the simulation cell.
 

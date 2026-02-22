@@ -26,7 +26,7 @@ on your local computer is transferred as a :ref:`OVITO session state file <usage
 which means all settings will be precisely preserved when the bundle is unpacked and run on the remote machine.
 
 The generated file bundle contains the necessary job submission scripts and Conda environment files
-to execute the rendering task on the remote computing cluster. The rendering job will be performed by a
+to execute the rendering task on the remote computing cluster. The rendering job will be performed by an
 auto-generated Python script, which uses the OVITO Python module to load the session state on the cluster
 and render the animation frames. The script is designed to use multiple compute nodes in parallel
 to distribute the rendering work and will combine the resulting frame sequence into a final video file at the end.
@@ -176,11 +176,11 @@ are some common questions and answers to help you address potential issues:
 
 **Which operating systems on the target machine are supported?**
     Remote rendering is currently only supported on Linux-based computer clusters.
-    For preparing the bundle you can use *OVITO Pro* running on Linux, MacOS, and Windows machines.
+    For preparing the bundle you can use *OVITO Pro* running on Linux, macOS, and Windows machines.
 
 **Are other conda-like package managers supported?**
-    Yes, the rendering process has also been tested with :program:`micromamba`` and should
-    work with :program:`microconda` or :program:`anaconda` as well. Please note that if you choose to
+    Yes, the rendering process has also been tested with :program:`micromamba` and should
+    work with :program:`miniconda` or :program:`anaconda` as well. Please note that if you choose to
     use a conda alternative, you will need to replace all instances of the
     :command:`conda` command.
 

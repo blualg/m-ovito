@@ -41,7 +41,7 @@ detects if the loaded XYZ file contains more than one frame.
 .. _file_formats.input.xyz.simulation_cell:
 
 Simulation cell and boundary conditions
-"""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""
 
 Since the basic XYZ file format doesn't contain any information about a simulation cell or boundary conditions,
 OVITO assumes that the XYZ file describes a non-periodic system.
@@ -130,7 +130,7 @@ For example::
   Properties="species:S:1:pos:R:3:vel:R:3:flagged:I:1"
 
 indicates that the first file column represents atomic species, the next three columns represent atomic positions,
-the next three velocities, and the last is an single integer called *flagged*. With this columns definition, the line ::
+the next three velocities, and the last is a single integer called *flagged*. With this columns definition, the line ::
 
   Si        4.08000000      4.08000000      1.36000000   0.00000000      0.00000000      0.00000000       1
 
@@ -216,7 +216,7 @@ The XYZ file reader accepts the following optional keyword parameters in a call 
   :param rescale_reduced_coords: If set to ``True``, and if the XYZ file contains the dimensions of the simulation cell,
                                  and if all atomic coordinates are either in the range :math:`[0,1]` or the range :math:`[-0.5,+0.5]`, the file reader
                                  will convert the reduced coordinates to Cartesian coordinates.
-  :type sort_particles: bool
+  :type rescale_reduced_coords: bool
   :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline.
                          Sorting is based on the values of the ``Particle Identifier`` property loaded from the xyz file, if any.
   :type sort_particles: bool

@@ -15,7 +15,7 @@ to a :file:`.ovito` *state file* using :menuselection:`File --> Save Session Sta
 
 This allows you to:
 
-  - Preserve your visualization setup for future use or sharing it with others.
+  - Preserve your visualization setup for future use or for sharing with others.
   - Resume your work at a later time without losing your progress.
   - Create a template to apply the same data analysis pipeline and camera setup to multiple simulations.
 

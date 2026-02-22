@@ -38,7 +38,7 @@ Apply window function to non-periodic directions
 
 Direct summation
   If enabled, the real-space correlation plot will show the result of a direct calculation of the correlation function,
-  obtaining by summing over neighbors. This short-ranged part of the correlation function is displayed as a red line.
+  obtained by summing over neighbors. This short-ranged part of the correlation function is displayed as a red line.
 
 Neighbor cutoff radius
   This property determines the cutoff of the direct calculation of the real-space correlation function.

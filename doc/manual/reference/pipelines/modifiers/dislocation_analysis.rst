@@ -72,7 +72,7 @@ Input crystal type
   added for a particular crystal type.
 
 Low c/a ratio
-  This option enable special treatment of hexagonal close-packed (HCP) structures with a low c/a ratio,
+  This option enables special treatment of hexagonal close-packed (HCP) structures with a low c/a ratio,
   e.g., tungsten carbide. In such crystals, the common neighbor analysis (CNA) method fails to identify the correct structure type,
   so the DXA needs to stretch the crystal lattice in the c-direction to compensate for the low c/a ratio.
   Enabling this option should increase the recognition rate of HCP atoms in such structures
@@ -437,13 +437,13 @@ PBC_FLAGS
   Periodic boundary condition flags for the three spatial directions.
 
 CLUSTERS
-  The number of crystallite clusters the atomistic solid was divided into by the DXA. What follows is the list of of crystallite clusters.
+  The number of crystallite clusters the atomistic solid was divided into by the DXA. What follows is the list of crystallite clusters.
 
   CLUSTER
     The unique ID of the crystallite atom cluster.
 
   CLUSTER_STRUCTURE
-    The lattice structure type of the crystallite. This is a reference to one of the structures type IDs defined under the ``STRUCTURE_TYPES`` section.
+    The lattice structure type of the crystallite. This is a reference to one of the structure type IDs defined under the ``STRUCTURE_TYPES`` section.
 
   CLUSTER_ORIENTATION
     A 3x3 transformation matrix that defines the orientation of the crystallite in the simulation coordinate system.
@@ -472,7 +472,7 @@ DISLOCATIONS
   5. The list of vertex coordinates. For closed loops, the first and the last vertex coincide. If the line crosses a periodic boundary of the simulation cell, vertex coordinates are unwrapped
 
 DISLOCATION_JUNCTIONS
-  Defines the connectivity between dislocation lines (i.e. dislocation junctions or nodes). This sections contains two
+  Defines the connectivity between dislocation lines (i.e. dislocation junctions or nodes). This section contains two
   text lines per dislocation defined in the ``DISLOCATIONS`` section. Each of the two lines
   contains two numbers. The first line defines what the *end* point (i.e. last vertex) of the dislocation is connected to,
   the second line specifies the connectivity of the *starting* point (i.e. first vertex) of the dislocation.

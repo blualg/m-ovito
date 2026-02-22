@@ -24,7 +24,7 @@ the same principles apply to other kinds of data elements in OVITO.
 What is a particle property?
 ----------------------------
 
-Technically, every OVITO particle property is presented by a uniform array of numeric values, storing one value per particle.
+Technically, every OVITO particle property is represented by a uniform array of numeric values, storing one value per particle.
 OVITO provides various tools for you to manipulate these property values and thereby change visual and non-visual aspects of the particles.
 
 Each property has a unique name, for example, ``Position`` or ``Potential Energy``.
@@ -33,9 +33,9 @@ you are free to define additional properties with user-defined names and import 
 
 At least the ``Position`` particle property is always present, because particles cannot exist without spatial coordinates.
 Other properties such as ``Color``, ``Radius``, or ``Selection`` are optional; they may or may not be present.
-You can load property values from the simulation files, you you can add new properties within the program using various tools.
+You can load property values from the simulation files, you can add new properties within the program using various tools.
 The mentioned standard properties :ref:`affect how OVITO renders the particles <usage.particle_properties.special>`.
-By manipulating the values to these properties, you can control the visual appearance of the particles.
+By manipulating the values of these properties, you can control the visual appearance of the particles.
 
 Property values can have different data types (floating-point or integer) and dimensionalities (e.g., scalar, vector, tensor).
 The ``Position`` property, for instance, is a vectorial property with three components per particle, referred to as
@@ -61,7 +61,7 @@ can store an arbitrary number of extra data columns. These auxiliary attributes 
 
 To find out which properties are currently associated with the particles, you can open OVITO's :ref:`Data inspector <data_inspector>` panel,
 which is depicted in the screenshot on the right. Alternatively, you can simply point the mouse cursor at a particle in the viewports
-see all of its property values in the status bar.
+to see all of its property values in the status bar.
 
 Assigning property values
 -------------------------
@@ -83,5 +83,5 @@ It computes the number of neighbors of each particle within a given cutoff range
 property named ``Coordination``. Subsequently, you can use the values of this property, e.g., select particles having a
 certain maximum coordination or color all particles based on their coordination number (see :ref:`particles.modifiers.color_coding` modifier).
 
-Of course, it is also possible to export the computed per-particle  values to an output file. OVITO supports a variety of output formats for that (see
+Of course, it is also possible to export the computed per-particle values to an output file. OVITO supports a variety of output formats for that (see
 :ref:`usage.export`). For instance, the *XYZ* format is a simple tabular file format supporting an arbitrary set of output columns.

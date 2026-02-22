@@ -21,7 +21,7 @@ do not collide with any of the existing IDs in the current dataset.
 .. note::
 
   The simulation cell loaded from the secondary input file is ignored. The modifier does not replace or extend the
-  exiting simulation box of the primary dataset. If needed, you can use e.g. the :ref:`particles.modifiers.affine_transformation` modifier to expand the
+  existing simulation box of the primary dataset. If needed, you can use e.g. the :ref:`particles.modifiers.affine_transformation` modifier to expand the
   simulation cell and accommodate all particles of the combined system.
 
 .. seealso::

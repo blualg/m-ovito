@@ -8,7 +8,7 @@ Elastic strain calculation
   :align: right
 
 This modifier computes the atomic-level elastic strain and deformation gradient tensors in crystalline systems.
-It can be used to analyze elastic distortions in a crystal lattice. Furthermore, it allows to determine the local
+It can be used to analyze elastic distortions in a crystal lattice. Furthermore, it allows you to determine the local
 crystal orientation in polycrystalline systems.
 
 .. figure:: /images/modifiers/elastic_strain_example.png

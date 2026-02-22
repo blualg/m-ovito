@@ -8,7 +8,7 @@ Viewport settings
   :align: right
 
 This page of the :ref:`application settings dialog <application_settings>`
-contains options related to the interactive viewports of the OVITO.
+contains options related to the interactive viewports of OVITO.
 
 Camera
 """"""

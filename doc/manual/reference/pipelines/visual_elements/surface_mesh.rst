@@ -16,12 +16,12 @@ or other modifiers in OVITO.
   :width: 30%
   :align: right
 
-:ref:`Surfaces meshes <scene_objects.surface_mesh>` are typically closed, two-dimensional manifolds embedded in a simulation cell.
+:ref:`Surface meshes <scene_objects.surface_mesh>` are typically closed, two-dimensional manifolds embedded in a simulation cell.
 If periodic boundary conditions are employed, the surface mesh itself can be periodic. For visualization purposes, such a periodic mesh is
 first converted to a non-periodic representation by truncating it at the simulation cell boundaries. OVITO has an option to render so called
 :guilabel:`Cap polygons` to fill the holes that would otherwise appear at the simulation cell boundaries where the surface is clipped.
 
-Coloring mapping mode
+Color mapping mode
 """""""""""""""""""""
 
 Unless the surface already has explicit color information associated with it, you have the choice between
@@ -52,7 +52,7 @@ Highlight edges
 
 Cap polygons
   This option enables the display of caps where the surface manifold intersects with the simulation cell's boundaries.
-  It is only available for :ref:`surfaces meshes <scene_objects.surface_mesh>` that are closed, i.e., which
+  It is only available for :ref:`surface meshes <scene_objects.surface_mesh>` that are closed, i.e., which
   represent a two-dimensional manifold that divides space into "interior" and "exterior" regions.
 
 .. seealso::

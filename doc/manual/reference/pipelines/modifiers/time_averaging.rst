@@ -40,10 +40,10 @@ Simulation cell
 Note that the modifier has to step through all frames of the simulation trajectory to compute the time average of the
 selected quantity. This can be a lengthy process depending on the extent of the trajectory and the dataset size. However, the averaging will happen
 in the background, and you can continue working with the program while the modifier is performing the calculation.
-Once the averaging calculation is completed, you can press the button :guilabel:`Show in data inspector` button
+Once the averaging calculation is completed, you can press the :guilabel:`Show in data inspector` button
 to reveal the computed average quantity in the :ref:`data inspector <data_inspector>` of OVITO.
 
-The averaged values are output as a new quantities by default, with the suffix "Average" appended, to keep the
+The averaged values are output as new quantities by default, with the suffix "Average" appended, to keep the
 original and averaged values separate. You can change that by selecting the option :guilabel:`Replace original values`,
 which lets the modifier overwrite the current time-dependent values with the static averaged values.
 

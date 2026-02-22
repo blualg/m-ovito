@@ -61,7 +61,7 @@ Implementation details
 The modifier implements the following simple `ambient occlusion <http://en.wikipedia.org/wiki/Ambient_occlusion>`__ algorithm to
 determine an illumination factor for each particle, which is used to modulate the particle color. The illumination of a sky sphere
 enclosing the input structure is approximated by a large number of parallel light sources directed
-at the structure. The amount of light received by a particle from one such light surface is determined
+at the structure. The amount of light received by a particle from one such light source is determined
 by rendering a projected image of the structure from the point of view of the light source to an offscreen frame buffer.
 All particles appearing in that image, which are not occluded by other particles, receive an amount of light
 that is proportional to their exposed area (i.e. the number of pixels they cover in the image). Finally, the

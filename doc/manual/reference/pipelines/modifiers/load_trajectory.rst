@@ -41,7 +41,7 @@ animation frames found in the trajectory file.
 Particle ordering
 """""""""""""""""
 
-The modifier needs to assign the coordinates read from in the trajectory file to the corresponding particles from
+The modifier needs to assign the coordinates read from the trajectory file to the corresponding particles from
 the topology dataset. In order to do this mapping correctly, the modifier uses the unique identifiers of particles (``Particle Identifier`` property)
 if available. Otherwise, the modifier simply assumes that the storage order of particles in the topology and in the trajectory
 file is the same.
@@ -72,7 +72,7 @@ from a reactive MD simulation:
 
   Make sure that you dump the atomic trajectories and the bonds information at the exact same MD timesteps when running an MD simulation.
   OVITO does *not* use LAMMPS timesteps as a common time basis. It simply assumes that the atomic trajectory file and the bond topology file
-  both contain snapshots taken at exact same times, and each *Load Trajectory* modifier maps them sequentially to the program's animation timeline
+  both contain snapshots taken at the exact same times, and each *Load Trajectory* modifier maps them sequentially to the program's animation timeline
   without checking the consistency of the timestep information.
 
 LAMMPS is able to output the changing bond topology in regular time intervals and also additional per-bond quantities such

@@ -37,7 +37,7 @@ OVITO can export data in the following file formats:
     -
 
   * - POSCAR
-    - File format used by the *ab initio* simulation package `VASP <https://www.vasp.at/">`__.
+    - File format used by the *ab initio* simulation package `VASP <https://www.vasp.at/>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
@@ -90,7 +90,7 @@ OVITO can export data in the following file formats:
     -
 
   * - ASE trajectory |ovito-pro|
-    - `Simulation trajectory files reaf by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
+    - `Simulation trajectory files read by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.output.ase_trajectory>`
 

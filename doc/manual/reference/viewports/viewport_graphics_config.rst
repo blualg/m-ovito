@@ -11,7 +11,7 @@ Viewport graphics configuration
 
 .. rubric:: How to open the configuration dialog:
 
-Select the :menuselection:`Configure Graphics..` command from the :ref:`viewport context menu <usage.viewports.menu>`.
+Select the :menuselection:`Configure Graphics...` command from the :ref:`viewport context menu <usage.viewports.menu>`.
 
 .. image:: /images/graphics_config_dialog/viewport_menu_graphics_config.*
   :width: 25%

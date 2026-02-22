@@ -38,7 +38,7 @@ Transferring templates to a different computer
 
 Note that OVITO stores the definition of all modifier templates in the application's settings file in a proprietary format.
 If needed, they can be exported to a special modifier template file (:file:`*.ovmod`) to transfer them to another computer.
-On the target computer, your can import them into another OVITO installation.
+On the target computer, you can import them into another OVITO installation.
 
 .. seealso::
 

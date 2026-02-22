@@ -21,7 +21,7 @@ Please cite this paper when you use this structure identification algorithm in y
 The Chill+ algorithm classifies particles based on their local environment. Solid water phases usually have 4-coordinated water molecules,
 so considering two neighboring water molecules (O–O distance less than 3.5 Å), we may define a cluster of 8 molecules by these two molecules
 and their neighbors. If one looks at these molecules along the axis of the bond between them, they can be characterized by whether all
-the six particles spreading out from this bond are visible (staggered bond), or whether the neighbors of the closest molecule blocks
+the six particles spreading out from this bond are visible (staggered bond), or whether the neighbors of the closest molecule block
 the view of the neighbors of the farthest molecule (eclipsed bond). It does so by taking the correlation of the local ten-Wolde
 bond order parameter :math:`q_{3m}` between the pair of atoms. Precisely, the structure is determined by whether the
 correlation is between 0.25 and -0.35 (eclipsed) or less than -0.8 (staggered). An atom in bulk has four bonds that are either
@@ -47,7 +47,7 @@ The modifier sets the ``Structure Type`` property for each particle, which is en
 .. note::
 
   The modifier requires just the oxygen atoms as input or molecule beads from coarse-grained water simulations, not the hydrogen atoms.
-  This can be done by either deleting all hydrogen atoms first or selecting the oxygen atoms and activating the option :guilabel:`Use only selected particles` option of the Chill+ modifier.
+  This can be done by either deleting all hydrogen atoms first or selecting the oxygen atoms and activating the :guilabel:`Use only selected particles` option of the Chill+ modifier.
 
 Furthermore, hexagonal ice structures can also be identified in OVITO using the :ref:`particles.modifiers.identify_diamond_structure`
 and :ref:`particles.modifiers.polyhedral_template_matching` modifiers.

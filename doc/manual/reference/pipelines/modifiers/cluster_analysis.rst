@@ -133,7 +133,7 @@ Total number of clusters
   use OVITO's standard :ref:`file export function <usage.export>`. Select the output format **Table of Global Attributes**
   and make sure that the ``ClusterAnalysis.cluster_count`` global attribute is selected for export.
 
-Size of the largest clusters
+Size of the largest cluster
   The modifier also outputs the global attribute ``ClusterAnalysis.largest_size`` to report
   the number of particles in the largest cluster (only if the sort-by-size option is used). This information can be
   exported from OVITO in the same way as explained above.

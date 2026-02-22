@@ -7,7 +7,7 @@ Manual selection
   :width: 30%
   :align: right
 
-This modifier lets the you manually select individual particles or bonds in the viewports using the mouse.
+This modifier lets you manually select individual particles or bonds in the viewports using the mouse.
 You can use it to restrict the action of subsequent modifiers in the pipeline to a selected
 subset of elements.
 

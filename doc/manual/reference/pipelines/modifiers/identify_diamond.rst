@@ -79,7 +79,7 @@ These problems are solved as follows: First, the nearest neighbors of an atom ar
 This yields the list of second nearest neighbors of the central atom.
 Finally, the CNA fingerprint is computed for these 12 second nearest neighbors and the central atom.
 If they are arranged on a FCC lattice, then the central atom is classified as
-cubic diamond. If they form a HCP structure, then the central atom is marked as an hexagonal diamond atom.
+cubic diamond. If they form a HCP structure, then the central atom is marked as a hexagonal diamond atom.
 
 Further details can be found in the `publication <http://arxiv.org/abs/1601.06597>`__.
 

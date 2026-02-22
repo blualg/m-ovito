@@ -7,7 +7,7 @@ Adjust view dialog
   :width: 50%
   :align: right
 
-This dialog box lets you to enter the position and orientation of a viewport's camera numerically.
+This dialog box lets you enter the position and orientation of a viewport's camera numerically.
 It can be opened from the :ref:`viewport menu <usage.viewports.menu>`.
 
 Settings

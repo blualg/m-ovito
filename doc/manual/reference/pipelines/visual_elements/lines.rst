@@ -12,7 +12,7 @@ Lines
    :align: right
 
 This :ref:`visual element <visual_elements>` renders continuous lines. The visual element is automatically attached to :ref:`line objects <scene_objects.lines>`
-created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`DataCollection.DataCollection.lines.create() <ovito.data.DataCollection.lines>`
+created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`DataCollection.lines.create() <ovito.data.DataCollection.lines>`
 Python method.
 
 The option :guilabel:`Rounded line ends` provides hemispherical caps at the ends of lines. Without this option, lines end with a flat face.

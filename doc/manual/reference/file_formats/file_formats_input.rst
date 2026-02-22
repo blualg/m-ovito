@@ -41,7 +41,7 @@ OVITO can read the following file formats:
 
   * - LAMMPS dump atom |br|
       LAMMPS dump custom
-    - File format used by the `LAMMPS <https://www.lammps.org/>`__  molecular dynamics code. OVITO supports both text-based and binary dump files.
+    - File format used by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code. OVITO supports both text-based and binary dump files.
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.lammps_dump>`
 

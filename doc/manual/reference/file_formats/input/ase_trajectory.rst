@@ -14,7 +14,7 @@ ASE trajectory reader |ovito-pro|
   by OVITO Pro or the :py:func:`~ovito.io.import_file` function. Thus, first make sure that ASE is installed in your Python interpreter or in the embedded interpreter
   of OVITO Pro. See :ref:`ovitos_install_modules`.
 
-Loads particles coordinates from `trajectory files of the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__.
+Loads particle coordinates from `trajectory files of the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__.
 
 Internally, the file reader is based on the :py:func:`ovito.io.ase.ase_to_ovito` function, which converts ASE atoms objects
 to OVITO's :ref:`particle <scene_objects.particles>` datasets.

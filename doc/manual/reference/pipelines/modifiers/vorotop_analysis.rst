@@ -3,7 +3,7 @@
 VoroTop analysis
 """"""""""""""""
 
-.. image:: /images/modifiers/vorotop_analyis_panel.png
+.. image:: /images/modifiers/vorotop_analysis_panel.png
   :width: 35%
   :align: right
 

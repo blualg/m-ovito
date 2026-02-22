@@ -91,7 +91,7 @@ Subsequently, the structure factor can be obtained from the scattering function:
 
 The :math:`^*` denotes the complex conjugate and :math:`\Re` is the real part of the complex number.
 
-This method can be be extended to the calculation of the *partial* structure factors of two particle types :math:`\alpha` and :math:`\beta` by
+This method can be extended to the calculation of the *partial* structure factors of two particle types :math:`\alpha` and :math:`\beta` by
 calculating :math:`S(k)` for this subset of particles only.
 
 .. _particles.modifiers.structure_factor.debye_method:

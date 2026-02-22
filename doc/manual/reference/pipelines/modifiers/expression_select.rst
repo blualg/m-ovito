@@ -220,7 +220,7 @@ Additional selection tools in OVITO
 `Match Molecule <https://github.com/ovito-org/MatchMolecule>`__ modifier:
   Available as an extension for OVITO Pro, it allows you to create
   selections in bonded (molecular) systems using query expressions. These selection expressions are based on a simplified version of the SMILES language
-  and let you to select atoms, bonds, or sections of a molecule based on their chemical environment.
+  and let you select atoms, bonds, or sections of a molecule based on their chemical environment.
 
 :ref:`particles.modifiers.python_script` modifier:
   Use custom Python functions in OVITO Pro to implement complex selection logic. The Python interface provides

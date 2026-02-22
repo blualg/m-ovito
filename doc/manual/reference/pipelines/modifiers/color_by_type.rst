@@ -38,7 +38,7 @@ Parameters
 """"""""""
 
 Operate on
-  Selects the type of data elements (particles, bonds, voxel, etc.) the modifier should operate on.
+  Selects the type of data elements (particles, bonds, voxels, etc.) the modifier should operate on.
 
 Property
   The typed property that serves as input for the modifier and which the assigned colors should be based on. 
@@ -51,7 +51,7 @@ Color only selected elements
   particles or bonds. Use the :ref:`particles.modifiers.select_particle_type` modifier, for example,
   to first create a selection and define the subset of data elements that are going to be colored by type.
 
-  The option :guilabel:`Clear selection` option tells the modifier to reset the element selection after 
+  The :guilabel:`Clear selection` option tells the modifier to reset the element selection after 
   it has assigned the colors. This is useful in order to see the assigned colors in the interactive viewports of
   OVITO, which may otherwise be masked by the red highlighting color used for rendering selected elements.
 

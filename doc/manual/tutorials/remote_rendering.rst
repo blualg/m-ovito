@@ -51,7 +51,7 @@ compute cluster, you should store the sample file in some directory on that clus
 Next, we set up the visualization scene to be rendered on the local computer. Begin by
 opening the local file ``RDX.reax.dump`` and translate it by -30 angstroms in
 the x-direction using the :ref:`particles.modifiers.affine_transformation` modifier -- to prevent it from overlapping with
-the second dataset, which were are going to import next.
+the second dataset, which we are going to import next.
 
 .. image:: ../images/tutorials/remote_render/sample_setup.png
    :width: 80%

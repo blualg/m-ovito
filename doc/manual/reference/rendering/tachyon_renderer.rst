@@ -28,8 +28,8 @@ Direct light
   Enables the parallel light source, which is directed from an angle behind the camera.
 
 Shadows
-  Enables cast shadows for the directional light. Not that, with the current Tachyon version, you cannot turn off
-  shadows when ambient occlusion shading is enabled. In this case, you can only completely turn off the directional light source..
+  Enables cast shadows for the directional light. Note that, with the current Tachyon version, you cannot turn off
+  shadows when ambient occlusion shading is enabled. In this case, you can only completely turn off the directional light source.
 
 Ambient occlusion
   Enabling this lighting technique mimics some of the effects that occur under conditions of omnidirectional diffuse illumination,

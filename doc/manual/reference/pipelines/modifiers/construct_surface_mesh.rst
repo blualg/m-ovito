@@ -217,7 +217,7 @@ How the Gaussian density method works
   :width: 35%
   :align: right
 
-This approach generate an isosurface of a volumetric density field computed from the superposition of 3d Gaussian functions placed
+This approach generates an isosurface of a volumetric density field computed from the superposition of 3d Gaussian functions placed
 at each particle site [`Krone et al., 2012 <https://dx.doi.org/10.2312/PE/EuroVisShort/EuroVisShort2012/067-071>`__].
 The density map generation algorithm accumulates Gaussian densities on a uniformly-spaced 3d lattice within a
 bounding box large enough to contain all particles; sufficient padding at the edges of the volume ensures that the extracted surface does not get clipped off.
@@ -295,13 +295,13 @@ mapping option of the :ref:`visual_elements.surface_mesh` visual element to rend
 surface parts belonging to different spatial regions with different colors as in the example image above.
 Note, that initially each surface mesh region will have the color corresponding to the region on its inside assigned to it.
 For example, if region ID 1 has the color red, the outside of the surface mesh enclosing region 1 will be rendered in red. Meanwhile,
-the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the :guilabel:`Flip surface orientation` setting of the
+the inside of this mesh will have the color of the surrounding region, e.g., blue. Toggling the :guilabel:`Flip surface orientation` setting of the
 surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the inside, while the outside of the mesh will get a blue color.
 
 .. attention::
 
   For simulation cells with one or more non-periodic boundaries, the volume of exterior regions is not
-  well defined. Therefore, OVITO will report the volumes of theses regions as infinity (*inf*). Global attributes
+  well defined. Therefore, OVITO will report the volumes of these regions as infinity (*inf*). Global attributes
   derived from these volumes will also be reported as either infinity or not a number (*nan*).
 
 The modifier outputs the following :ref:`global attributes <usage.global_attributes>`:
@@ -399,7 +399,7 @@ or the iso-value parameter, respectively.
 
 For non-dense systems, like the floating molecules shown above, the two methods can lead to substantially different results.
 In this example, the alpha-shape method yields surfaces that are strictly inside the convex hull of each molecule, which is formed by the atomic centers.
-The Gaussian density method, on the other hand, constructs surfaces meshes that extend beyond the atomic centers, because it explicitly takes into account
+The Gaussian density method, on the other hand, constructs surface meshes that extend beyond the atomic centers, because it explicitly takes into account
 the finite size of atoms. Decreasing the iso-value increases the volume taken up by each atom, i.e., it leads to an expansion of the surface.
 
 .. seealso::

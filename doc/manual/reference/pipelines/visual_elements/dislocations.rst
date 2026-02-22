@@ -14,8 +14,7 @@ the graphical representation of the dislocation lines stored in a :ref:`dislocat
 
 The parameters of the visualization element provide control over the appearance of the dislocation lines.
 OVITO provides options to indicate the line sense and Burgers vector of each dislocation line segment.
-Different coloring schemes allow to visualize other local properties of the dislocation defects such as
-as the Burgers vector family or the screw/edge character (i.e. the angle between local line tangent and Burgers vector).
+Different coloring schemes allow to visualize other local properties of the dislocation defects such as the Burgers vector family or the screw/edge character (i.e. the angle between local line tangent and Burgers vector).
 
 .. seealso::
   
