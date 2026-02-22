@@ -53,6 +53,12 @@ public Q_SLOTS:
     /// Restores the built-in default particle colors and sizes.
     void restoreBuiltinParticlePresets();
 
+    /// Exports the current particle type defaults to a JSON theme file.
+    void exportTheme();
+
+    /// Imports particle type defaults from a JSON theme file.
+    void importTheme();
+
 private:
 
     QTreeWidget* _predefTypesTable;

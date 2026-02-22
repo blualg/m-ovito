@@ -1,0 +1,870 @@
+{
+    "format": "OvitoParticleTheme",
+    "version": 1,
+    "particle_types": [
+        {
+            "name": "H",
+            "color": [
+                1.0,
+                0.8,
+                0.8
+            ],
+            "display_radius": 0.46
+        },
+        {
+            "name": "D",
+            "color": [
+                0.8,
+                0.8,
+                1.0
+            ],
+            "display_radius": 0.46
+        },
+        {
+            "name": "He",
+            "color": [
+                0.98907,
+                0.91312,
+                0.81091
+            ],
+            "display_radius": 1.22
+        },
+        {
+            "name": "Li",
+            "color": [
+                0.52731,
+                0.87953,
+                0.4567
+            ],
+            "display_radius": 1.57
+        },
+        {
+            "name": "Be",
+            "color": [
+                0.37147,
+                0.8459,
+                0.48292
+            ],
+            "display_radius": 1.12
+        },
+        {
+            "name": "B",
+            "color": [
+                0.1249,
+                0.63612,
+                0.05948
+            ],
+            "display_radius": 0.81
+        },
+        {
+            "name": "C",
+            "color": [
+                0.5043,
+                0.28659,
+                0.16236
+            ],
+            "display_radius": 0.77
+        },
+        {
+            "name": "N",
+            "color": [
+                0.69139,
+                0.72934,
+                0.9028
+            ],
+            "display_radius": 0.74
+        },
+        {
+            "name": "O",
+            "color": [
+                0.99997,
+                0.01328,
+                0.0
+            ],
+            "display_radius": 0.74
+        },
+        {
+            "name": "F",
+            "color": [
+                0.69139,
+                0.72934,
+                0.9028
+            ],
+            "display_radius": 0.72
+        },
+        {
+            "name": "Ne",
+            "color": [
+                0.99954,
+                0.21788,
+                0.71035
+            ],
+            "display_radius": 1.6
+        },
+        {
+            "name": "Na",
+            "color": [
+                0.97955,
+                0.86618,
+                0.23787
+            ],
+            "display_radius": 1.91
+        },
+        {
+            "name": "Mg",
+            "color": [
+                0.98773,
+                0.48452,
+                0.0847
+            ],
+            "display_radius": 1.6
+        },
+        {
+            "name": "Al",
+            "color": [
+                0.50718,
+                0.70056,
+                0.84062
+            ],
+            "display_radius": 1.43
+        },
+        {
+            "name": "Si",
+            "color": [
+                0.10596,
+                0.23226,
+                0.98096
+            ],
+            "display_radius": 1.18
+        },
+        {
+            "name": "P",
+            "color": [
+                0.75557,
+                0.61256,
+                0.76425
+            ],
+            "display_radius": 1.1
+        },
+        {
+            "name": "S",
+            "color": [
+                1.0,
+                0.98071,
+                0.0
+            ],
+            "display_radius": 1.04
+        },
+        {
+            "name": "Cl",
+            "color": [
+                0.19583,
+                0.98828,
+                0.01167
+            ],
+            "display_radius": 0.99
+        },
+        {
+            "name": "Ar",
+            "color": [
+                0.81349,
+                0.99731,
+                0.77075
+            ],
+            "display_radius": 1.92
+        },
+        {
+            "name": "K",
+            "color": [
+                0.63255,
+                0.13281,
+                0.96858
+            ],
+            "display_radius": 2.35
+        },
+        {
+            "name": "Ca",
+            "color": [
+                0.35642,
+                0.58863,
+                0.74498
+            ],
+            "display_radius": 1.97
+        },
+        {
+            "name": "Sc",
+            "color": [
+                0.71209,
+                0.3893,
+                0.67279
+            ],
+            "display_radius": 1.64
+        },
+        {
+            "name": "Ti",
+            "color": [
+                0.47237,
+                0.79393,
+                1.0
+            ],
+            "display_radius": 1.47
+        },
+        {
+            "name": "V",
+            "color": [
+                0.9,
+                0.1,
+                0.0
+            ],
+            "display_radius": 1.35
+        },
+        {
+            "name": "Cr",
+            "color": [
+                0.0,
+                0.0,
+                0.62
+            ],
+            "display_radius": 1.29
+        },
+        {
+            "name": "Mn",
+            "color": [
+                0.66148,
+                0.03412,
+                0.62036
+            ],
+            "display_radius": 1.37
+        },
+        {
+            "name": "Fe",
+            "color": [
+                0.71051,
+                0.44662,
+                0.00136
+            ],
+            "display_radius": 1.26
+        },
+        {
+            "name": "Co",
+            "color": [
+                0.0,
+                0.0,
+                0.68666
+            ],
+            "display_radius": 1.25
+        },
+        {
+            "name": "Ni",
+            "color": [
+                0.72032,
+                0.73631,
+                0.74339
+            ],
+            "display_radius": 1.25
+        },
+        {
+            "name": "Cu",
+            "color": [
+                0.1339,
+                0.28022,
+                0.86606
+            ],
+            "display_radius": 1.28
+        },
+        {
+            "name": "Zn",
+            "color": [
+                0.56123,
+                0.56445,
+                0.50799
+            ],
+            "display_radius": 1.37
+        },
+        {
+            "name": "Ga",
+            "color": [
+                0.62292,
+                0.89293,
+                0.45486
+            ],
+            "display_radius": 1.53
+        },
+        {
+            "name": "Ge",
+            "color": [
+                0.49557,
+                0.43499,
+                0.65193
+            ],
+            "display_radius": 1.22
+        },
+        {
+            "name": "As",
+            "color": [
+                0.45814,
+                0.81694,
+                0.34249
+            ],
+            "display_radius": 1.21
+        },
+        {
+            "name": "Se",
+            "color": [
+                0.6042,
+                0.93874,
+                0.06122
+            ],
+            "display_radius": 1.04
+        },
+        {
+            "name": "Br",
+            "color": [
+                0.49645,
+                0.19333,
+                0.01076
+            ],
+            "display_radius": 1.14
+        },
+        {
+            "name": "Kr",
+            "color": [
+                0.98102,
+                0.75805,
+                0.95413
+            ],
+            "display_radius": 1.98
+        },
+        {
+            "name": "Rb",
+            "color": [
+                1.0,
+                0.0,
+                0.6
+            ],
+            "display_radius": 2.5
+        },
+        {
+            "name": "Sr",
+            "color": [
+                0.0,
+                1.0,
+                0.15259
+            ],
+            "display_radius": 2.15
+        },
+        {
+            "name": "Y",
+            "color": [
+                0.40259,
+                0.59739,
+                0.55813
+            ],
+            "display_radius": 1.82
+        },
+        {
+            "name": "Zr",
+            "color": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "display_radius": 1.6
+        },
+        {
+            "name": "Nb",
+            "color": [
+                0.29992,
+                0.70007,
+                0.46459
+            ],
+            "display_radius": 1.47
+        },
+        {
+            "name": "Mo",
+            "color": [
+                0.70584,
+                0.52602,
+                0.68925
+            ],
+            "display_radius": 1.4
+        },
+        {
+            "name": "Tc",
+            "color": [
+                0.80574,
+                0.68699,
+                0.79478
+            ],
+            "display_radius": 1.35
+        },
+        {
+            "name": "Ru",
+            "color": [
+                0.81184,
+                0.72113,
+                0.68089
+            ],
+            "display_radius": 1.34
+        },
+        {
+            "name": "Rh",
+            "color": [
+                0.80748,
+                0.82205,
+                0.67068
+            ],
+            "display_radius": 1.34
+        },
+        {
+            "name": "Pd",
+            "color": [
+                0.75978,
+                0.76818,
+                0.72454
+            ],
+            "display_radius": 1.37
+        },
+        {
+            "name": "Ag",
+            "color": [
+                0.72032,
+                0.73631,
+                0.74339
+            ],
+            "display_radius": 1.44
+        },
+        {
+            "name": "Cd",
+            "color": [
+                0.95145,
+                0.12102,
+                0.86354
+            ],
+            "display_radius": 1.52
+        },
+        {
+            "name": "In",
+            "color": [
+                0.84378,
+                0.50401,
+                0.73483
+            ],
+            "display_radius": 1.67
+        },
+        {
+            "name": "Sn",
+            "color": [
+                0.60764,
+                0.56052,
+                0.72926
+            ],
+            "display_radius": 1.58
+        },
+        {
+            "name": "Sb",
+            "color": [
+                0.84627,
+                0.51498,
+                0.31315
+            ],
+            "display_radius": 1.41
+        },
+        {
+            "name": "Te",
+            "color": [
+                0.67958,
+                0.63586,
+                0.32038
+            ],
+            "display_radius": 1.37
+        },
+        {
+            "name": "I",
+            "color": [
+                0.55914,
+                0.122,
+                0.54453
+            ],
+            "display_radius": 1.33
+        },
+        {
+            "name": "Xe",
+            "color": [
+                0.60662,
+                0.63218,
+                0.97305
+            ],
+            "display_radius": 2.18
+        },
+        {
+            "name": "Cs",
+            "color": [
+                0.05872,
+                0.99922,
+                0.72578
+            ],
+            "display_radius": 2.72
+        },
+        {
+            "name": "Ba",
+            "color": [
+                0.11835,
+                0.93959,
+                0.17565
+            ],
+            "display_radius": 2.24
+        },
+        {
+            "name": "La",
+            "color": [
+                0.3534,
+                0.77057,
+                0.28737
+            ],
+            "display_radius": 1.88
+        },
+        {
+            "name": "Ce",
+            "color": [
+                0.82055,
+                0.99071,
+                0.02374
+            ],
+            "display_radius": 1.82
+        },
+        {
+            "name": "Pr",
+            "color": [
+                0.9913,
+                0.88559,
+                0.02315
+            ],
+            "display_radius": 1.82
+        },
+        {
+            "name": "Nd",
+            "color": [
+                0.98701,
+                0.5556,
+                0.02744
+            ],
+            "display_radius": 1.82
+        },
+        {
+            "name": "Pm",
+            "color": [
+                0.0,
+                0.0,
+                0.96
+            ],
+            "display_radius": 1.81
+        },
+        {
+            "name": "Sm",
+            "color": [
+                0.99042,
+                0.02403,
+                0.49195
+            ],
+            "display_radius": 1.81
+        },
+        {
+            "name": "Eu",
+            "color": [
+                0.98367,
+                0.03078,
+                0.83615
+            ],
+            "display_radius": 2.06
+        },
+        {
+            "name": "Gd",
+            "color": [
+                0.75325,
+                0.01445,
+                1.0
+            ],
+            "display_radius": 1.79
+        },
+        {
+            "name": "Tb",
+            "color": [
+                0.44315,
+                0.01663,
+                0.99782
+            ],
+            "display_radius": 1.77
+        },
+        {
+            "name": "Dy",
+            "color": [
+                0.1939,
+                0.02374,
+                0.99071
+            ],
+            "display_radius": 1.77
+        },
+        {
+            "name": "Ho",
+            "color": [
+                0.02837,
+                0.25876,
+                0.98608
+            ],
+            "display_radius": 1.76
+        },
+        {
+            "name": "Er",
+            "color": [
+                0.28688,
+                0.45071,
+                0.23043
+            ],
+            "display_radius": 1.75
+        },
+        {
+            "name": "Tm",
+            "color": [
+                0.0,
+                0.0,
+                0.88
+            ],
+            "display_radius": 1.0
+        },
+        {
+            "name": "Yb",
+            "color": [
+                0.15323,
+                0.99165,
+                0.95836
+            ],
+            "display_radius": 1.94
+        },
+        {
+            "name": "Lu",
+            "color": [
+                0.15097,
+                0.99391,
+                0.71032
+            ],
+            "display_radius": 1.72
+        },
+        {
+            "name": "Hf",
+            "color": [
+                0.70704,
+                0.70552,
+                0.3509
+            ],
+            "display_radius": 1.59
+        },
+        {
+            "name": "Ta",
+            "color": [
+                0.71952,
+                0.60694,
+                0.33841
+            ],
+            "display_radius": 1.47
+        },
+        {
+            "name": "W",
+            "color": [
+                0.55616,
+                0.54257,
+                0.50178
+            ],
+            "display_radius": 1.41
+        },
+        {
+            "name": "Re",
+            "color": [
+                0.70294,
+                0.69401,
+                0.55789
+            ],
+            "display_radius": 1.37
+        },
+        {
+            "name": "Os",
+            "color": [
+                0.78703,
+                0.69512,
+                0.47379
+            ],
+            "display_radius": 1.35
+        },
+        {
+            "name": "Ir",
+            "color": [
+                0.78975,
+                0.81033,
+                0.45049
+            ],
+            "display_radius": 1.36
+        },
+        {
+            "name": "Pt",
+            "color": [
+                0.79997,
+                0.77511,
+                0.75068
+            ],
+            "display_radius": 1.39
+        },
+        {
+            "name": "Au",
+            "color": [
+                0.99628,
+                0.70149,
+                0.22106
+            ],
+            "display_radius": 1.44
+        },
+        {
+            "name": "Hg",
+            "color": [
+                0.8294,
+                0.72125,
+                0.79823
+            ],
+            "display_radius": 1.55
+        },
+        {
+            "name": "Tl",
+            "color": [
+                0.58798,
+                0.53854,
+                0.42649
+            ],
+            "display_radius": 1.71
+        },
+        {
+            "name": "Pb",
+            "color": [
+                0.32386,
+                0.32592,
+                0.35729
+            ],
+            "display_radius": 1.75
+        },
+        {
+            "name": "Bi",
+            "color": [
+                0.82428,
+                0.18732,
+                0.97211
+            ],
+            "display_radius": 1.82
+        },
+        {
+            "name": "Po",
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "display_radius": 1.77
+        },
+        {
+            "name": "At",
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "display_radius": 0.62
+        },
+        {
+            "name": "Rn",
+            "color": [
+                1.0,
+                1.0,
+                0.0
+            ],
+            "display_radius": 0.8
+        },
+        {
+            "name": "Fr",
+            "color": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "display_radius": 1.0
+        },
+        {
+            "name": "Ra",
+            "color": [
+                0.42959,
+                0.66659,
+                0.34786
+            ],
+            "display_radius": 2.35
+        },
+        {
+            "name": "Ac",
+            "color": [
+                0.39344,
+                0.62101,
+                0.45034
+            ],
+            "display_radius": 2.03
+        },
+        {
+            "name": "Th",
+            "color": [
+                0.14893,
+                0.99596,
+                0.47106
+            ],
+            "display_radius": 1.8
+        },
+        {
+            "name": "Pa",
+            "color": [
+                0.16101,
+                0.98387,
+                0.20855
+            ],
+            "display_radius": 1.63
+        },
+        {
+            "name": "U",
+            "color": [
+                0.47774,
+                0.63362,
+                0.66714
+            ],
+            "display_radius": 1.56
+        },
+        {
+            "name": "Np",
+            "color": [
+                0.3,
+                0.3,
+                0.3
+            ],
+            "display_radius": 1.56
+        },
+        {
+            "name": "Pu",
+            "color": [
+                0.3,
+                0.3,
+                0.3
+            ],
+            "display_radius": 1.64
+        },
+        {
+            "name": "Am",
+            "color": [
+                0.3,
+                0.3,
+                0.3
+            ],
+            "display_radius": 1.73
+        }
+    ]
+}

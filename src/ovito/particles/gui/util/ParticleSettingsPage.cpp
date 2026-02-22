@@ -22,6 +22,10 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QFileDialog>
 #include "ParticleSettingsPage.h"
 
 namespace Ovito {
@@ -96,6 +100,22 @@ public:
     }
 };
 
+/// Checks if two floating-point values differ by more than a small tolerance.
+static bool significantlyDifferent(double a, double b)
+{
+    return std::abs(a - b) > 1e-9;
+}
+
+/// Finds a child tree widget item by name (column 0 text). Returns nullptr if not found.
+static QTreeWidgetItem* findChildByName(QTreeWidgetItem* parent, const QString& name)
+{
+    for(int i = 0; i < parent->childCount(); i++) {
+        if(parent->child(i)->text(0) == name)
+            return parent->child(i);
+    }
+    return nullptr;
+}
+
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
 ******************************************************************************/
@@ -169,11 +189,11 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         _structureTypesItem->addChild(childItem);
     }
 
-    layout1->addWidget(new QLabel(tr("Default particle colors and sizes:")));
+    layout1->addWidget(new QLabel(tr("Default colors and radii:")));
     _predefTypesTable = new QTreeWidget();
     layout1->addWidget(_predefTypesTable, 1);
     _predefTypesTable->setColumnCount(4);
-    _predefTypesTable->setHeaderLabels(QStringList() << tr("Type") << tr("Color") << tr("Display radius") << tr("Van der Waals radius"));
+    _predefTypesTable->setHeaderLabels(QStringList() << tr("Type name") << tr("Color") << tr("Display radius") << tr("Van der Waals radius"));
     _predefTypesTable->setRootIsDecorated(true);
     _predefTypesTable->setAllColumnsShowFocus(true);
     _predefTypesTable->addTopLevelItem(_particleTypesItem);
@@ -193,9 +213,15 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setContentsMargins(0,0,0,0);
+    QPushButton* exportThemeButton = new QPushButton(tr("Export theme..."));
+    QPushButton* importThemeButton = new QPushButton(tr("Import theme..."));
     QPushButton* restoreBuiltinDefaultsButton = new QPushButton(tr("Restore built-in defaults"));
+    buttonLayout->addWidget(exportThemeButton);
+    buttonLayout->addWidget(importThemeButton);
     buttonLayout->addStretch(1);
     buttonLayout->addWidget(restoreBuiltinDefaultsButton);
+    connect(exportThemeButton, &QPushButton::clicked, this, &ParticleSettingsPage::exportTheme);
+    connect(importThemeButton, &QPushButton::clicked, this, &ParticleSettingsPage::importTheme);
     connect(restoreBuiltinDefaultsButton, &QPushButton::clicked, this, &ParticleSettingsPage::restoreBuiltinParticlePresets);
     layout1->addLayout(buttonLayout);
 }
@@ -282,6 +308,149 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), item->text(0), 0, false);
         item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
     }
+}
+
+/******************************************************************************
+* Exports the current particle type defaults to a JSON theme file.
+******************************************************************************/
+void ParticleSettingsPage::exportTheme()
+{
+    handleExceptions([&] {
+        TaskManager::setNativeDialogActive(true);
+        QString filename = QFileDialog::getSaveFileName(settingsDialog(),
+            tr("Export Particle Theme"), QString(),
+            tr("OVITO Particle Theme (*.ovito-theme);;JSON files (*.json)"));
+        TaskManager::setNativeDialogActive(false);
+        if(filename.isEmpty())
+            return;
+
+        QJsonArray particleTypesArray;
+        for(int i = 0; i < _particleTypesItem->childCount(); i++) {
+            QTreeWidgetItem* item = _particleTypesItem->child(i);
+            QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
+            double displayRadius = item->data(2, Qt::DisplayRole).toDouble();
+            double vdwRadius = item->data(3, Qt::DisplayRole).toDouble();
+            QJsonObject typeObj;
+            typeObj[QStringLiteral("name")] = item->text(0);
+            typeObj[QStringLiteral("color")] = QJsonArray{color.redF(), color.greenF(), color.blueF()};
+            typeObj[QStringLiteral("display_radius")] = displayRadius;
+            typeObj[QStringLiteral("vdw_radius")] = vdwRadius;
+            particleTypesArray.append(typeObj);
+        }
+
+        QJsonArray structureTypesArray;
+        for(int i = 0; i < _structureTypesItem->childCount(); i++) {
+            QTreeWidgetItem* item = _structureTypesItem->child(i);
+            QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
+            QJsonObject typeObj;
+            typeObj[QStringLiteral("name")] = item->text(0);
+            typeObj[QStringLiteral("color")] = QJsonArray{color.redF(), color.greenF(), color.blueF()};
+            structureTypesArray.append(typeObj);
+        }
+
+        QJsonObject root;
+        root[QStringLiteral("format")] = QStringLiteral("OvitoParticleTheme");
+        root[QStringLiteral("version")] = 1;
+        root[QStringLiteral("particle_types")] = particleTypesArray;
+        root[QStringLiteral("structure_types")] = structureTypesArray;
+
+        QFile file(filename);
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+            throw Exception(tr("Failed to open file '%1' for writing: %2").arg(filename).arg(file.errorString()));
+        if(file.write(QJsonDocument(root).toJson(QJsonDocument::Indented)) == -1)
+            throw Exception(tr("Failed to write to file '%1': %2").arg(filename).arg(file.errorString()));
+    });
+}
+
+/******************************************************************************
+* Imports particle type defaults from a JSON theme file.
+******************************************************************************/
+void ParticleSettingsPage::importTheme()
+{
+    handleExceptions([&] {
+        TaskManager::setNativeDialogActive(true);
+        QString filename = QFileDialog::getOpenFileName(settingsDialog(),
+            tr("Import Particle Theme"), QString(),
+            tr("OVITO Particle Theme (*.ovito-theme);;JSON files (*.json);;All files (*)"));
+        TaskManager::setNativeDialogActive(false);
+        if(filename.isEmpty())
+            return;
+
+        QFile file(filename);
+        if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            throw Exception(tr("Failed to open file '%1' for reading: %2").arg(filename).arg(file.errorString()));
+
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+        if(doc.isNull())
+            throw Exception(tr("Failed to parse JSON file '%1': %2").arg(filename).arg(parseError.errorString()));
+
+        QJsonObject root = doc.object();
+        if(root[QStringLiteral("format")].toString() != QStringLiteral("OvitoParticleTheme"))
+            throw Exception(tr("The selected file is not a valid OVITO particle theme file."));
+        if(root[QStringLiteral("version")].toInt() > 1)
+            throw Exception(tr("The theme file version is not supported by this version of OVITO. Please update OVITO to import this file."));
+
+        // Apply imported particle types (merge mode: only update types present in the file).
+        QJsonArray particleTypes = root[QStringLiteral("particle_types")].toArray();
+        for(const QJsonValue& val : particleTypes) {
+            QJsonObject typeObj = val.toObject();
+            QString name = typeObj[QStringLiteral("name")].toString();
+            if(name.isEmpty())
+                continue;
+
+            QTreeWidgetItem* item = findChildByName(_particleTypesItem, name);
+            if(!item) {
+                item = new QTreeWidgetItem();
+                item->setText(0, name);
+                item->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
+                _particleTypesItem->addChild(item);
+            }
+
+            QJsonArray colorArr = typeObj[QStringLiteral("color")].toArray();
+            if(colorArr.size() == 3) {
+                QColor newColor = QColor::fromRgbF(colorArr[0].toDouble(), colorArr[1].toDouble(), colorArr[2].toDouble());
+                QColor oldColor = item->data(1, Qt::DisplayRole).value<QColor>();
+                if(significantlyDifferent(newColor.redF(), oldColor.redF()) || significantlyDifferent(newColor.greenF(), oldColor.greenF()) || significantlyDifferent(newColor.blueF(), oldColor.blueF()))
+                    item->setData(1, Qt::DisplayRole, QVariant::fromValue(newColor));
+            }
+            if(typeObj.contains(QStringLiteral("display_radius"))) {
+                double newRadius = typeObj[QStringLiteral("display_radius")].toDouble();
+                if(significantlyDifferent(newRadius, item->data(2, Qt::DisplayRole).toDouble()))
+                    item->setData(2, Qt::DisplayRole, QVariant::fromValue(newRadius));
+            }
+            if(typeObj.contains(QStringLiteral("vdw_radius"))) {
+                double newRadius = typeObj[QStringLiteral("vdw_radius")].toDouble();
+                if(significantlyDifferent(newRadius, item->data(3, Qt::DisplayRole).toDouble()))
+                    item->setData(3, Qt::DisplayRole, QVariant::fromValue(newRadius));
+            }
+        }
+
+        // Apply imported structure types.
+        QJsonArray structureTypes = root[QStringLiteral("structure_types")].toArray();
+        for(const QJsonValue& val : structureTypes) {
+            QJsonObject typeObj = val.toObject();
+            QString name = typeObj[QStringLiteral("name")].toString();
+            if(name.isEmpty())
+                continue;
+
+            QTreeWidgetItem* item = findChildByName(_structureTypesItem, name);
+            if(!item) {
+                item = new QTreeWidgetItem();
+                item->setText(0, name);
+                item->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
+                _structureTypesItem->addChild(item);
+            }
+
+            QJsonArray colorArr = typeObj[QStringLiteral("color")].toArray();
+            if(colorArr.size() == 3) {
+                QColor newColor = QColor::fromRgbF(colorArr[0].toDouble(), colorArr[1].toDouble(), colorArr[2].toDouble());
+                QColor oldColor = item->data(1, Qt::DisplayRole).value<QColor>();
+                if(significantlyDifferent(newColor.redF(), oldColor.redF()) || significantlyDifferent(newColor.greenF(), oldColor.greenF()) || significantlyDifferent(newColor.blueF(), oldColor.blueF()))
+                    item->setData(1, Qt::DisplayRole, QVariant::fromValue(newColor));
+            }
+        }
+    });
 }
 
 }	// End of namespace
