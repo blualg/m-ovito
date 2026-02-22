@@ -152,7 +152,7 @@ public:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// Indicates whether the interactive viewports should be updated after a parameter of the modifier has
     /// been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 

@@ -61,7 +61,7 @@ private:
     /// Tessellates one cube.
     void processCube(int i, int j, int k);
 
-    // Processes a single case from teh marching cubes table
+    // Processes a single case from the marching cubes table
     void processCase(int i, int j, int k, const signed char* triangles, const signed char* triangleRegions,
                      const signed char* vertexRegions, const signed char** volumeRegionsTriangulation, int numTriangles,
                      int numVolumeRegions, SurfaceMesh::vertex_index v12 = SurfaceMesh::InvalidIndex);

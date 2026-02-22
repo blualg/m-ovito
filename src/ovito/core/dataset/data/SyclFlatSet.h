@@ -83,7 +83,7 @@ public:
 public:
 
     /**
-     * An accessor to the SyclFlatSet container that that allows to perform look-ups inside SYCL kernels.
+     * An accessor to the SyclFlatSet container that allows performing look-ups inside SYCL kernels.
     */
     class Accessor
     {

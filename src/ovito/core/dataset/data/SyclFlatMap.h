@@ -84,7 +84,7 @@ public:
 public:
 
     /**
-     * An accessor to the SyclFlatMap container that that allows to perform map look-ups inside SYCL kernels.
+     * An accessor to the SyclFlatMap container that allows performing map look-ups inside SYCL kernels.
     */
     class Accessor
     {

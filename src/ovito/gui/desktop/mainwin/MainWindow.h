@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief The main window of the application.
  *
- * Note that is is possible to open multiple main windows per
+ * Note that it is possible to open multiple main windows per
  * application instance to edit multiple datasets simultaneously.
  */
 class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterfaceComponent<MainWindowUI>

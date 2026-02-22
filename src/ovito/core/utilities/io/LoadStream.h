@@ -36,7 +36,7 @@ namespace Ovito {
  * \brief An input stream that reads binary data from a file in a platform-independent way.
  *
  * The LoadStream class is wrapper for a Qt \c QDataStream.
- * That that this class can only be used to deserialize data that was written by a SaveStream.
+ * Note that this class can only be used to deserialize data that was written by a SaveStream.
  *
  * \sa SaveStream
  */

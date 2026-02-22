@@ -118,7 +118,7 @@ QString ElementType::getElementSettingsKey(const OwnerPropertyRef& property, con
 }
 
 /******************************************************************************
-* Returns the default color for a element type name.
+* Returns the default color for an element type name.
 ******************************************************************************/
 Color ElementType::getDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults)
 {

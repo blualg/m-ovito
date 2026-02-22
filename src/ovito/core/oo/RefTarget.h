@@ -223,7 +223,7 @@ protected:
     ///       In particular the developer cannot assume that all other objects stored in the data stream and
     ///       referenced by this object have already been restored at the time loadFromStream() is invoked.
     ///       The loadFromStreamComplete() method will be called after all objects stored in a file have been completely
-    ///       loaded and and their data has been restored. If you have to perform some post-deserialization
+    ///       loaded and their data has been restored. If you have to perform some post-deserialization
     ///       tasks that require other referenced objects to be in place and fully loaded, then this should
     ///       be done by overriding loadFromStreamComplete().
     ///

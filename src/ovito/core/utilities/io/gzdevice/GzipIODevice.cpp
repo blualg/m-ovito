@@ -234,7 +234,7 @@ void GzipIODevice::flushZlib(int flushMode)
 
         ZlibSize outputSize = _bufferSize - _zlibStream.avail_out;
 
-        // Try to write data from the buffer to to the underlying device, return on failure.
+        // Try to write data from the buffer to the underlying device, return on failure.
         if(!writeBytes(outputSize))
             return;
 
@@ -513,7 +513,7 @@ qint64 GzipIODevice::writeData(const char* data, qint64 maxSize)
 
         ZlibSize outputSize = _bufferSize - _zlibStream.avail_out;
 
-        // Try to write data from the buffer to to the underlying device, return -1 on failure.
+        // Try to write data from the buffer to the underlying device, return -1 on failure.
         if(!writeBytes(outputSize))
             return -1;
     }

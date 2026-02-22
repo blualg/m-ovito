@@ -516,7 +516,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     std::vector<ColorG> colors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
                     OVITO_ASSERT(colors.size() == 2 * bonds->elementCount());
 
-                    // Bonds enumerator used to determine the the normal vector to align double / triple bonds.
+                    // Bonds enumerator used to determine the normal vector to align double / triple bonds.
                     std::optional<ParticleBondMap> bondsMap;
                     if(useBondOrder) {
                         bondsMap.emplace(bondTopologyProperty, bondPeriodicImageProperty);
@@ -619,7 +619,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                     // Dashed bond
                                     OVITO_ASSERT(dashedCylinderCount > 0);
                                     std::optional<Vector3> bondVecNorm = bondVec.safelyNormalized<true>();
-                                    // Bond has no lenght
+                                    // Bond has no length
                                     if(!bondVecNorm) {
                                         // Bonds of length 0 are skipped
                                         for(size_t cylinderIdx = 0; cylinderIdx < dashedCylinderCount; cylinderIdx++) {

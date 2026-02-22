@@ -140,7 +140,7 @@ inline SaveStream& operator<<(SaveStream& stream, const Ray_3<T>& r) {
     return stream << r.base << r.dir;
 }
 
-/// \brief Reads a a from a binary input stream.
+/// \brief Reads a ray from a binary input stream.
 /// \param stream The input stream.
 /// \param p Reference to a ray variable where the parsed data will be stored.
 /// \return The input stream \a stream.

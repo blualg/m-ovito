@@ -71,7 +71,7 @@ protected:
     }
 
     /// When the user is creating a new template, this method populates the list of available objects,
-    /// which the the user can select to be included in the template.
+    /// which the user can select to be included in the template.
     virtual QVector<QTreeWidgetItem*> populateAvailableObjectsList(QTreeWidget* objectListWidget, QComboBox* nameBox) override;
 
 public:
