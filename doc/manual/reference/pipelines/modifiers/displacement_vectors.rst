@@ -56,7 +56,7 @@ and the current configuration. If the particles have a property named ``Particle
 then OVITO will use these identifiers to generate the one-to-one mapping. In other words, if the particles possess unique identifier, then 
 OVITO is able to handle changes in the storage order of particles. However, if particles do not possess unique identifiers, then the modifier requires that
 the reference configuration contains exactly the same number of particles as the current configuration
-and it assumes that the storage order is the same in both configuration. This assumption is not always correct as some simulation
+and it assumes that the storage order is the same in both configurations. This assumption is not always correct as some simulation
 codes reorder particles during a simulation run for performance reasons. 
 
 .. caution::
@@ -105,7 +105,7 @@ OVITO assumes that particle trajectories are all continuous. On the other hand, 
 *wrapped* particle coordinates, this option should be turned on. The minimum image convention
 ensures that displacements are calculated correctly even when particles cross a periodic boundary of the cell
 and were mapped back into the cell by the simulation code. On the other hand, if you intend to calculate displacements vectors
-that span more than half of the simulation box size, then the minimum imagine convention cannot be used. You *must*
+that span more than half of the simulation box size, then the minimum image convention cannot be used. You *must*
 use unwrapped coordinates in this case, because large displacements would otherwise be folded back into the periodic cell thanks to
 the minimum image convention.
 

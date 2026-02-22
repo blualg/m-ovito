@@ -22,7 +22,7 @@ Atomic Volume
   The volume of the Voronoi cell of the particle (in cubic simulation units of length).
 
 Coordination
-  The number of faces of the Voronoi cell. Since there is one Voronoi face per nearest neighbors of a particle,
+  The number of faces of the Voronoi cell. Since there is one Voronoi face per nearest neighbor of a particle,
   this quantity is typically called the *coordination number*.
 
 Cavity Radius

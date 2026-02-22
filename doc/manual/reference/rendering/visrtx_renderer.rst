@@ -18,7 +18,7 @@ because this environment lacks the NVIDIA OptiX™ driver components required by
 .. caution::
 
   VisRTX is still under active development by the *HPC Visualization Developer Technology* team at NVIDIA
-  in close corporation with the OVITO developers, who integrate the technology.
+  in close cooperation with the OVITO developers, who integrate the technology.
   For more information, visit https://github.com/NVIDIA/VisRTX. Please report any issues you encounter
   to the `OVITO developers <https://gitlab.com/stuko/ovito/-/issues>`__. Missing features and capabilities:
 

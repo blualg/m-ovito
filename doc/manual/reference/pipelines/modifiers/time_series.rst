@@ -21,7 +21,7 @@ time instead of the default animation timestep.
 
 Note that the modifier steps through all frames of the simulation trajectory to compute the input attribute's current value at each frame. 
 This can be a lengthy process depending on the extent of the trajectory and the dataset size. However, the sampling will happen 
-in the background, and you can continue working with the program while the modifiers is performing the computation.
+in the background, and you can continue working with the program while the modifier is performing the computation.
 Once the time series is complete, you can press the button :guilabel:`Show in data inspector` 
 to reveal the generated function plot in the :ref:`data inspector <data_inspector>` of OVITO.
 

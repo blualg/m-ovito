@@ -94,7 +94,7 @@ Unwrapping of particle coordinates
 """"""""""""""""""""""""""""""""""
 
 The modifier includes an option to "unwrap" the coordinates of particles within the same cluster.
-This operation may maps particles outside the primary image of the periodic simulation cell to ensure
+This operation may map particles outside the primary image of the periodic simulation cell to ensure
 that each cluster appears as a contiguous object.
 
 Important: Unwrapping is meaningful only for *finite* clusters. For *infinite* clusters —those that reconnect to themselves through periodic cell boundaries— the results
@@ -145,7 +145,7 @@ Particle assignment to clusters
   This will yield a text file containing each particle's cluster ID.
 
 Cluster size list and centers of mass
-  The modifiers outputs the list of identified clusters as a :ref:`data table <scene_objects.data_table>`,
+  The modifier outputs the list of identified clusters as a :ref:`data table <scene_objects.data_table>`,
   which consists of one row per cluster and columns for the cluster size (number of particles), center of mass and radius of gyration (if their calculation is enabled).
   You can open this table in the :ref:`data inspector panel <data_inspector.data_tables>` of OVITO by pressing the button :guilabel:`Show list of clusters`.
   The data inspector panel provides a function for exporting the table data to a text file.

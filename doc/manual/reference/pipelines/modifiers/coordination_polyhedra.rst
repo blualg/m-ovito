@@ -22,14 +22,14 @@ The modifier takes into account the :ref:`bonds <scene_objects.bonds>` a selecte
 its coordination polyhedron. Thus, in case your system doesn't contain bonds yet, it is necessary to have OVITO generate 
 the bonds first by inserting the :ref:`particles.modifiers.create_bonds` modifier.
 
-The coordination polyhedra created by the modifier form a :ref:`surface meshes <scene_objects.surface_mesh>` and
+The coordination polyhedra created by the modifier form a :ref:`surface mesh <scene_objects.surface_mesh>` and
 their visual appearance, for example the surface transparency, can be configured through the associated 
 :ref:`visual element <visual_elements.surface_mesh>` named :guilabel:`Polyhedra`, which appears in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` 
 after the modifier has created the coordination polyhedra.
 
 Properties of the input particles become available as local properties of the generated polyhedral mesh. 
 Each polyhedron forms a separate *region* of the mesh and is associated with the properties of the central particle. 
-Furthermore, each vertex of the polyhedral mesh is associated with the properties of the neighbor particle is was created from.
+Furthermore, each vertex of the polyhedral mesh is associated with the properties of the neighbor particle it was created from.
 This gives you the possibility to visualize these particle properties on the polyhedra surfaces by making use of the color mapping function 
 of the :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
 

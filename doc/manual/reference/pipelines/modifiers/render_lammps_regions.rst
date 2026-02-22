@@ -76,7 +76,7 @@ even if the :ref:`input box uses periodic boundary conditions <scene_objects.sim
 Parts of the surface mesh that are outside the box boundaries may be hidden by checking the :guilabel:`Clip at cell boundaries` option
 of the :ref:`visual_elements.surface_mesh` visual element (center).
 
-Futhermore, the :guilabel:`Cap polygons` option activates the display of caps where the mesh was clipped at the box boundaries (right).
+Furthermore, the :guilabel:`Cap polygons` option activates the display of caps where the mesh was clipped at the box boundaries (right).
 
 .. image:: /images/modifiers/render_lammps_regions_clip_and_cap_a.*
   :width: 20%

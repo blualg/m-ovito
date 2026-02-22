@@ -7,7 +7,7 @@ Bond angle distribution |ovito-pro|
   :width: 35%
   :align: right
 
-This modifier computes thedistribution of the **bond angles** formed by pairs of :ref:`bonds <scene_objects.bonds>`
+This modifier computes the distribution of the **bond angles** formed by pairs of :ref:`bonds <scene_objects.bonds>`
 meeting at the same particle.
 
 The modifier only includes :ref:`bonded <scene_objects.bonds>` particles in the distribution,

@@ -39,7 +39,7 @@ Simulation cell
 
 Note that the modifier has to step through all frames of the simulation trajectory to compute the time average of the
 selected quantity. This can be a lengthy process depending on the extent of the trajectory and the dataset size. However, the averaging will happen
-in the background, and you can continue working with the program while the modifiers is performing the calculation.
+in the background, and you can continue working with the program while the modifier is performing the calculation.
 Once the averaging calculation is completed, you can press the button :guilabel:`Show in data inspector` button
 to reveal the computed average quantity in the :ref:`data inspector <data_inspector>` of OVITO.
 

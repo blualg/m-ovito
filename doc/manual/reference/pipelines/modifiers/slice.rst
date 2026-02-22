@@ -92,7 +92,7 @@ Operate on
     =================== ============================================================================================================
     Particles           Slices :ref:`particles <scene_objects.particles>` and deletes dangling :ref:`bonds <scene_objects.bonds>`
     Voxel grids         Slices :ref:`voxel grids <scene_objects.voxel_grid>`
-    Surfaces            Slices :ref:`surface meshs <scene_objects.surface_mesh>`
+    Surfaces            Slices :ref:`surface meshes <scene_objects.surface_mesh>`
     Dislocation lines   Slices :ref:`dislocation lines <scene_objects.dislocations>`
     Lines               Slices :ref:`lines <scene_objects.lines>`
     =================== ============================================================================================================

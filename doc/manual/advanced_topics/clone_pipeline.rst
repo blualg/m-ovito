@@ -67,9 +67,9 @@ options along the x, y, or z-axis to prevent overlap of the original pipeline's 
 Pipelines can be repositioned anytime using the :guilabel:`Move` and :guilabel:`Rotate` tools in the main toolbar of OVITO
 (see :ref:`usage.import.positioning_objects` for details).
 
-By default, OVITO names each pipeline after its input file. The `Clone Pipeline` dialog allows to assign custom names
+By default, OVITO names each pipeline after its input file. The `Clone Pipeline` dialog allows you to assign custom names
 for better differentiation between original and cloned pipelines. Scene pipelines are listed in the :ref:`pipeline selector <usage.import.multiple_datasets>`,
-which also allows to rename pipelines later on.
+which also allows you to rename pipelines later on.
 
 After cloning a pipeline
 """"""""""""""""""""""""

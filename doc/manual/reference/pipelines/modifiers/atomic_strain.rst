@@ -25,7 +25,7 @@ Conceptually, the calculation of various micromechanical quantities happens in s
   3. Based on :math:`\mathbf{F}`, the atomic `Green-Lagrangian strain tensor <https://en.wikipedia.org/wiki/Finite_strain_theory#Finite_strain_tensors>`__ :math:`\mathbf{E} = 1/2 (\mathbf{F}^{\mathrm{T}} \mathbf{F} - \mathbf{I})` is derived for each particle.
   4. Based on :math:`\mathbf{E}`, the *von Mises* local shear invariant and the hydrostatic strain measure are calculated.
   5. Additionally, a `polar decomposition <https://en.wikipedia.org/wiki/Finite_strain_theory#Polar_decomposition_of_the_deformation_gradient_tensor>`__ of the atomic deformation gradient :math:`\mathbf{F}` yields a local rotation tensor :math:`\mathbf{R}` and a stretch tensor :math:`\mathbf{U}`.
-  6. Furthermore, a quantity knows as :math:`D_{\mathrm{min}}^2` may be calculated from the particle displacements and the deformation gradient :math:`\mathbf{F}`, which is a measure for the non-affine part of the local deformation.
+  6. Furthermore, a quantity known as :math:`D_{\mathrm{min}}^2` may be calculated from the particle displacements and the deformation gradient :math:`\mathbf{F}`, which is a measure for the non-affine part of the local deformation.
 
 The modifier outputs these micromechanical quantities as new particle properties. You can use the :ref:`particles.modifiers.color_coding` modifier, for example,
 to visualize the values of these properties in OVITO or look at specific particles using the :ref:`Data Inspector <data_inspector>`.

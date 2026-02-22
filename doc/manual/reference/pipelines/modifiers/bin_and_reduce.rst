@@ -66,7 +66,7 @@ Operate on
 
 Input property (only for :ref:`particles <scene_objects.particles>`)
   The particle property to apply the reduction operation to.
-  Select *<None>* use a uniform value of 1 for all particles, which enables counting particles (*sum*) or
+  Select *<None>* to use a uniform value of 1 for all particles, which enables counting particles (*sum*) or
   computing the number density (*sum divided by bin volume*) in each grid cell.
 
 Use only selected elements (only for :ref:`particles <scene_objects.particles>`)

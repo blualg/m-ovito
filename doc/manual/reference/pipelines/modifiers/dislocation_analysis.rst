@@ -92,7 +92,7 @@ Trial circuit length
 
 Circuit stretchability
   Once the DXA has discovered a dislocation line and constructed a Burgers circuit around its dislocation core, the algorithm
-  advances the circuit along the dislocation to generate a line presentation of the dislocation.
+  advances the circuit along the dislocation to generate a line representation of the dislocation.
   The thickness of the core may vary along the dislocation (e.g. it becomes wider close to a dislocation junction).
   This is why the circuit has a certain amount of elasticity, which is set by the stretchability parameter.
   A value of 9 (the default), for example, allows the circuit to expand to a length that is
@@ -246,7 +246,7 @@ Cluster graph
   in terms of a graph with three nodes (the three atomic clusters) and two edges connecting both grains with the grain boundary cluster.
   Each cluster establishes a local lattice coordinate system, and the true Burgers vector computed by the DXA for a dislocation
   embedded in a crystal cluster is expressed in this coordinate frame.
-  A graph edge connecting two adjacent cluster carries information about their crystallographic orientation relationship.
+  A graph edge connecting two adjacent clusters carries information about their crystallographic orientation relationship.
   This orientation relationship, which is described in terms of a transformation matrix, can be used to rotate
   vectors from the lattice coordinate frame of one grain to other grain. Ultimately, this abstract description of a polycrystalline
   microstructure enables the identification of dislocations (which can involve Burgers circuits that cross grain boundaries and stacking faults).
@@ -297,7 +297,7 @@ Notably, the resulting vector :math:`\mathbf{b}` stays the same if we change the
 encloses the same dislocation. On the other hand, if :math:`\mathbf{b} = \mathbf{0}`, we know that the Burgers circuit
 did not enclose any defect with dislocation character (deliberately ignoring the possibility that the circuit encloses multiple dislocations whose Burgers vectors cancel).
 
-Typically the Burger circuit construction is performed by hand to analyze two-dimensional crystal images obtained from
+Typically the Burgers circuit construction is performed by hand to analyze two-dimensional crystal images obtained from
 high-resolution microscopy or atomistic computer simulations. Human intuition and cognitive capabilities are required
 to spot irregularities in the crystal lattice which are potential dislocation defects and to map path steps in elastically
 distorted crystal regions to the ideal lattice. Automating these tasks poses a particular challenge when developing a
@@ -469,7 +469,7 @@ DISLOCATIONS
   2. The Burgers vector of the dislocation in the local Cartesian lattice coordinate system of the crystallite cluster.
   3. The ID of the crystallite cluster the dislocation is embedded in. This defines how the local Burgers vector is transformed to the global simulation coordinate system.
   4. The number of vertices along the line.
-  5. The list of vertex coordinates. For closes loops, the first and the lattice vertex coincide. If the line crosses a periodic boundary of the simulation cell, vertex coordinates are unwrapped
+  5. The list of vertex coordinates. For closed loops, the first and the last vertex coincide. If the line crosses a periodic boundary of the simulation cell, vertex coordinates are unwrapped
 
 DISLOCATION_JUNCTIONS
   Defines the connectivity between dislocation lines (i.e. dislocation junctions or nodes). This sections contains two

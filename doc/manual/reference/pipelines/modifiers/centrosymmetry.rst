@@ -60,7 +60,7 @@ of the centrosymmetry values of selected particles (as if they did not exist), a
 centrosymmetry values will be set to zero. 
 This option is useful if you want to analyze a sub-lattice made only of atoms of a certain type.
 
-.. note:
+.. note::
   
   The modifier needs to see the complete set of particles to perform the computation. It should therefore be placed at the
   beginning of the data pipeline, preceding any modifiers that delete particles.

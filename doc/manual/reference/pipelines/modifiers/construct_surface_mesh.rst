@@ -73,7 +73,7 @@ The total surface area of the constructed manifold is displayed by the modifier 
 is output as a :ref:`global attribute <usage.global_attributes>` named ``ConstructSurfaceMesh.surface_area``.
 Note that the surface area is always given in units of squared length of the simulation model.
 
-OVITO provides the capability to locally associate quantities with the surface mesh and adopted them from nearby particles during the surface construction process.
+OVITO provides the capability to locally associate quantities with the surface mesh and adopt them from nearby particles during the surface construction process.
 If the option :guilabel:`Transfer particle properties to surface` is turned on, existing attributes of the input particles located at the surface,
 for example their ``Color`` property, will be copied over to the vertices of the constructed
 :ref:`surface mesh <scene_objects.surface_mesh>`. That means the input particle attributes will be available as
@@ -82,7 +82,7 @@ visualize the variation of some quantity of interest across the surface.
 
 .. note::
 
-  When using the the :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
+  When using the :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
   only continuous particle properties of data type ``Float`` will get transferred
   over to the surface. Discrete integer properties will not because the algorithm has to blend the property values from several particles
   to compute the resulting field value at each mesh vertex. In case of the alpha-shape method, there exists a one-to-one mapping
@@ -296,13 +296,13 @@ surface parts belonging to different spatial regions with different colors as in
 Note, that initially each surface mesh region will have the color corresponding to the region on its inside assigned to it.
 For example, if region ID 1 has the color red, the outside of the surface mesh enclosing region 1 will be rendered in red. Meanwhile,
 the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the :guilabel:`Flip surface orientation` setting of the
-surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the side, while the outside of the mesh will get a blue color.
+surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the inside, while the outside of the mesh will get a blue color.
 
 .. attention::
 
   For simulation cells with one or more non-periodic boundaries, the volume of exterior regions is not
   well defined. Therefore, OVITO will report the volumes of theses regions as infinity (*inf*). Global attributes
-  derived from these volumes will also be reported as either infinty or not a number (*nan*).
+  derived from these volumes will also be reported as either infinity or not a number (*nan*).
 
 The modifier outputs the following :ref:`global attributes <usage.global_attributes>`:
 

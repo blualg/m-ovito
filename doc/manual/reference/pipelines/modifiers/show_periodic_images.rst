@@ -35,7 +35,7 @@ Assign unique IDs
 .. versionadded:: 3.10.1
 
   If the ``Periodic Image`` particle property is present and :guilabel:`Adjust simulation box size` is not turned off, the modifier will implicitly
-  un-wrap the particles coordinate before replicating the system and then re-wrap the
+  un-wrap the particle coordinates before replicating the system and then re-wrap the
   coordinates of the particles again. This ensures that molecule identifiers assigned to
   particles remain correct if the molecules wrap around at periodic cell boundaries.
   For further information, see also the notes on *image flags* in the `docs of the LAMMPS replicate command <https://docs.lammps.org/replicate.html>`__.

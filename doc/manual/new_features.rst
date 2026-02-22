@@ -128,7 +128,7 @@ Version 3.14.0 (21-Sep-2025)
 
 - :ref:`particles.modifiers.radial_distribution_function` modifier:
 
-  The modifier can now count the number of neighbors of different types separately, which is useful for analyzing the chemical composition of the local neighborhood. Furthermore, it allows to select other type classifications for the calculation of partial RDFs.
+  The modifier can now count the number of neighbors of different types separately, which is useful for analyzing the chemical composition of the local neighborhood. Furthermore, it allows selecting other type classifications for the calculation of partial RDFs.
 
 - OVITO's timeline can now display timesteps of the MD simulation instead of animation frame numbers:
 
@@ -1730,7 +1730,7 @@ Version 3.0.0 (30-May-2020)
 * Improvements to the Adjust View dialog, which now allows interacting with the viewports while being open.
 * Bug fix: Installing a third-party extension module in ovitos fails on macOS due to security restrictions (issue #191).
 * Bug fix: Checkbox “File contains multiple timesteps” in GUI does not reflect correct state of file reader.
-* Integrated PM Larsen`s scheme of calculating the centrosymmetry parameter using minimum-weight matching.
+* Integrated PM Larsen's scheme of calculating the centrosymmetry parameter using minimum-weight matching.
 * New crop option in Viewport.render_image() Python function.
 * Windows installer is now digitally signed to be compatible with Microsoft Authenticode.
 * The embedded Python interpreter ovitos now ignores PYTHONPATH environment variable and user package directories (issue #189).
@@ -1769,7 +1769,7 @@ Version 3.0.0 (30-May-2020)
 * Workaround for video encoding issue resulting in invalid MP4/MOV files for frame rates 2/4/8/16 fps.
 * Updated Qt libraries to version 5.12.6.
 * The Color Coding and the Assign Color modifier can now operate on surface meshes.
-* Bug fix: Segfault in Combine Datasets modifier second first dataset contains bonds but first doesn`t (issue #173).
+* Bug fix: Segfault in Combine Datasets modifier second first dataset contains bonds but first doesn't (issue #173).
 * Bug fix: Segfault when accessing a mutable sub-object field (e.g. ``Particles.bonds_``) whose value is None (issue #172).
 * Construct Surface Mesh modifier: New option to transfer particle properties to generated surface mesh.
 * Replaced video encoding component Libav with FFmpeg, bringing high-quality animated GIF rendering.
@@ -1826,8 +1826,8 @@ Version 3.0.0 (30-May-2020)
 * Extended the Construct Surface Mesh modifier to identify disconnected regions of the filled volume.
 * Added the Viewport.camera_up parameter, which gives control over the orientation of the vertical axis in rendered images.
 * New implementation of the surface mesh data structure, now supporting assignment of arbitrary properties to the vertices, faces and spatial regions enclosed by surface mesh.
-* OSPRay renderering engine is now available in Windows builds of Ovito.
-* Added the ``DataCollection.apply()`` Python method, which allows to directly apply a built-in modifier to a dataset.
+* OSPRay rendering engine is now available in Windows builds of Ovito.
+* Added the ``DataCollection.apply()`` Python method, which allows directly applying a built-in modifier to a dataset.
 * Updated the Gaussian Cube file reader to auto-detect Bohr/Angstrom units and support files containing multiple field values.
 * Extended PDB file reader to support multi-frame trajectory files.
 * Added option to POSCAR file writer for outputting atomic positions and velocities in reduced cell coordinates.
@@ -1886,7 +1886,7 @@ Version 3.0.0 (30-May-2020)
 * Replaced the ``Viewport.render()`` Python method with the new ``Viewport.render_image()`` and ``Viewport.render_anim()`` methods. The ``RenderSettings`` and the ``AnimationSettings`` classes have been removed from the Python interface.
 * The Combine Particle Sets modifier has become smarter: Particle types from the two input datasets are now merged and type IDs are automatically remapped.
 * The LAMMPS dump and XYZ file exporters now provide control over the output precision for floating-point numbers.
-* Added a new option to the Wigner-Seitz defect analysis modifier, which allows to retain the current atomic configuration instead of the reference configuration.
+* Added a new option to the Wigner-Seitz defect analysis modifier, which allows retaining the current atomic configuration instead of the reference configuration.
 * Implemented automatic detection of multi-timestep files (for LAMMPS dump and XYZ formats).
 * Added Python bindings for the CorrelationFunctionModifier.
 * Added a file reader for the XSF data format of XCrySDen (atomic structures as well as 3d voxel fields are supported by OVITO).
@@ -1898,8 +1898,8 @@ Version 3.0.0 (30-May-2020)
 * Bug fix: Made calls to the FFTW3 library from the Correlation Function modifier thread-safe
 * Reimplemented the displacement vector calculation in the Atomic Strain modifier to fix an error that occurred when the cutoff radius was larger than half the simulation cell size.
 * Added a file writer that can export dislocation lines to the VTK file format used by ParaView.
-* Extended the dislocation inspection utility to display a dislocation`s start and end vertex position.
-* Added support for 64-bit integer particle properties and large datasets with 2+ billion particles (only usable from analysis scripts, rendering won`t work for more than 2 billion particles).
+* Extended the dislocation inspection utility to display a dislocation's start and end vertex position.
+* Added support for 64-bit integer particle properties and large datasets with 2+ billion particles (only usable from analysis scripts, rendering won't work for more than 2 billion particles).
 * Changed internal floating-point type from float to double, i.e., all calculations will now be performed with double precision. Memory footprint of the program increases because of this.
 * Performance improvement: The Wigner-Seitz defect analysis now makes use of all processor cores (issue #50).
 * Bug fix: Progress bar is now updated during file export.
@@ -1935,7 +1935,7 @@ Version 2.9.0 (27-Jul-2020)
 * New modifier: The Voronoi Topology Analysis modifier can classify the Voronoi polyhedra of particles, e.g. to perform structural filtering.
 * New modifier: The Correlation Function modifier has been contributed by Lars Pastewka. It allows computing the spatial correlation between two particle properties.
 * Bug fix: LAMMPS data file parser ignored Bonds section at end of file when number of bonds is zero
-* New modifier: The Create Isosurface modifier allows to visualize field quantities like the electron density that are defined on a structured data grid. So far, only the POSCAR file parser has been extended to read charge density data from CHGCAR files, which can serve as input for the isosurface modifier.
+* New modifier: The Create Isosurface modifier allows visualizing field quantities like the electron density that are defined on a structured data grid. So far, only the POSCAR file parser has been extended to read charge density data from CHGCAR files, which can serve as input for the isosurface modifier.
 * New modifier: The Coordination Polyhedra modifier constructs convex hulls from the bonded neighbours of atoms.
 * Bug fix: Unexpected error message during file export when the old mapping for the output file columns has become invalid.
 * Added the `Adjust range (all frames)` function to the Color Coding modifier, which takes into account all frames of the animation sequence when determining the min/max values of the input property.
@@ -2164,7 +2164,7 @@ Version 2.5.0 (25-Jul-2015)
 * Colors and radii used for particle types (as well as structure types) can now be predefined by the user.
 * Migrated to version 5.4 of the Qt library. This may affect OpenGL rendering and the viewport display. Please report any issues that you experience.
 * Bin & Reduce modifier now takes into account the simulation box origin, uses double precision numbers to perform calculations, and 1D-plot now spans the entire interval.
-* Bug fix: NetCDF file importer doesn`t close file handle, leading to error after loading several thousand frames.
+* Bug fix: NetCDF file importer doesn't close file handle, leading to error after loading several thousand frames.
 * Bug fix: LAMMPS data file parser stumbles over `AngleTorsion Coeffs` file section.
 * Visualization of particle trajectory lines.
 * Frequently used modifiers or combinations of modifiers can be saved (including modifier settings) for quick access.
@@ -2198,9 +2198,9 @@ Version 2.4.3 (02-Mar-2015)
 * The Freeze Property modifier now works when particles are lost during the simulation.
 * Similarly, the Atomic Strain analysis can now deal with simulations where the number of particles is not constant.
 * The Wrap at Periodic Boundaries modifier now wraps bonds crossing a periodic boundary.
-* Added a scriptable viewport overlay, which allows to paint custom text and graphics over the rendered image. See how you can use it to add a scale bar to a viewport.
+* Added a scriptable viewport overlay, which allows painting custom text and graphics over the rendered image. See how you can use it to add a scale bar to a viewport.
 * The Show Periodic Images modifier now replicates bonds too.
-* The XYZ file import now displays the file`s comment line in the status field.
+* The XYZ file import now displays the file's comment line in the status field.
 * Switched from MinGW to Visual C++ 2013 compiler to build Windows version. Python scripting is now supported by the 64-bit program version for Windows too.
 * Removed old Javascript plugin.
 * Bug fix: ``--version`` command line option causes program to crash.
@@ -2224,13 +2224,13 @@ Version 2.4.1 (01-Nov-2014)
 
 * New integrated Python engine, which provides a powerful scripting interface (see scripting documentation). This is going to replace the Javascript engine, which has been deprecated and will be removed in a future program version. Command line options to run old scripts have been renamed to –jsscript and –jsexec.
 * New Voronoi analysis modifier, which can compute atomic volumes, coordination numbers and Voronoi indices.
-* It`s now possible to include the coordinate system tripod and a color legend in the rendered image.
+* It's now possible to include the coordinate system tripod and a color legend in the rendered image.
 * Particle properties are displayed in the status bar when hovering over particles in the viewports.
 * Periodic boundary conditions can be overridden by the user without the changes being lost when a new simulation frame is loaded.
 * Added import/export support for extended XYZ format (see http://jrkermode.co.uk/quippy/io.html#extendedxyz), which includes metadata describing the data columns and the simulation cell.
 * Improved input and output performance for text-based file formats.
 * The OpenGL renderer can now display semi-transparent particles and surfaces.
-* Added calculation of non-affine displacements to Atomic strain modifier. (This is Falk & Langer`s D2min measure, see the 1998 PRB.)
+* Added calculation of non-affine displacements to Atomic strain modifier. (This is Falk & Langer's D2min measure, see the 1998 PRB.)
 * New Bin and reduce analysis modifier.
 * The Create bonds modifier can now handle particles that are located outside a (periodic) simulation box.
 * The Color coding modifier can display a color legend in the rendered image.
@@ -2242,7 +2242,7 @@ Version 2.4.1 (01-Nov-2014)
 * Bug fix: Export of compressed LAMMPS data files could result in truncated files.
 * Bug fix: Solid volume computed by `Construct surface mesh` modifier could be inaccurate due to low numerical precision
 * Bug fix: `Construct surface mesh` modifier crashed with certain input data.
-* Bug fix: VTK mesh file parser couldn`t handle multiple points per line (as written by ParaView).
+* Bug fix: VTK mesh file parser couldn't handle multiple points per line (as written by ParaView).
 * Bug fix: LAMMPS data file parser did not parse atom IDs.
 * Bug fix: Particle inspection utility did not recalculate displayed distances and angles upon simulation frame change.
 * Bug fix: StrainTensor.XZ and StrainTensor.YZ components output by Atomic Strain modifier were swapped.
@@ -2271,15 +2271,15 @@ Version 2.3.1 (01-Apr-2014)
 ---------------------------
 
 * Added saving and loading of presets for file-column-to-property mappings.
-* Added the ``--exec`` command line option, which allows to directly execute a script command or to pass parameters to a script file.
-* When opening an XYZ file, the column mapping dialog now displays an excerpt from the file`s header to help the user figure out the mapping.
+* Added the ``--exec`` command line option, which allows directly executing a script command or to pass parameters to a script file.
+* When opening an XYZ file, the column mapping dialog now displays an excerpt from the file's header to help the user figure out the mapping.
 * The Construct Surface Modifier no longer creates cap polygons if the periodic simulation cell contains no particles.
 
 ---------------------------
 Version 2.3.0 (29-Mar-2014)
 ---------------------------
 
-* Added the new scripting interface, which allows to automate tasks.
+* Added the new scripting interface, which allows automating tasks.
 * Added the `Freeze property` modifier, which can prevent a particle property from changing over time.
 * Added the `Scatter plot` modifier, which plots one particle property against another. This modifier has been contributed by Lars Pastewka.
 * Added the `Wigner-Seitz analysis` modifier, which can identify vacancies and interstitials in a lattice.
@@ -2351,7 +2351,7 @@ Version 2.1.0 (15-Nov-2013)
 * Camera objects can be created through the viewport context menu. A viewport can be linked to a camera object to show the corresponding view.
 * The OpenGL rendering code has been updated to better support older graphics cards and to improve compatibility with more graphics drivers.
 * The Tachyon renderer now supports semi-transparent particles. The transparency is controlled through the “Transparency” particle property. Use, for instance, the Computer Property modifier to set this property for certain particles. Transparency values can range from 0 (=fully opaque) to 1 (=not visible). Note that the interactive OpenGL renderer does not support transparency yet. Thus, all particles will still appear fully opaque here.
-* When importing a sequence of simulation snapshots, one can now configure the mapping of input frames to OVITO's internal animation frames. This allows to generate output movies with fewer (or more) frames than the imported snapshot sequence. This feature is in preparation for a future camera animation system.
+* When importing a sequence of simulation snapshots, one can now configure the mapping of input frames to OVITO's internal animation frames. This allows generating output movies with fewer (or more) frames than the imported snapshot sequence. This feature is in preparation for a future camera animation system.
 * The Mac OS version is now built against version 5.2 (beta) of the Qt library. This should fix a nasty UI bug on this platform (due to the old version of that library), which made text fields lose input focus.
 * Fixed saving/loading of the gradient type selected in the Color Coding modifier.
 * Fixed a program deadlock when dragging the time slider with the mouse after loading a file sequence from a remote location.
@@ -2360,7 +2360,7 @@ Version 2.1.0 (15-Nov-2013)
 Version 2.0.3 (22-Oct-2013)
 ---------------------------
 
-* Ported Tachyon raytracing renderer from old OVITO 1.1.0 release. This software-based rendering engine allows to produce images with high-quality shading and ambient occlusion lighting.
+* Ported Tachyon raytracing renderer from old OVITO 1.1.0 release. This software-based rendering engine allows producing images with high-quality shading and ambient occlusion lighting.
 * The Create Bonds modifier will automatically turn off the display of bonds when (accidentally?) creating a large number of bonds (1+ million), which would make the program freeze for at least several seconds.
 * The Displacement Vectors modifier now supports relative reference frames, i.e., displacements can be calculated from two snapshots separated by a fixed time interval. Before this addition, the modifier could only compute displacements with respect to a fixed reference simulation snapshot.
 * The Inspect Particle applet now lets one select multiple particles and can report distances and angles between particles.

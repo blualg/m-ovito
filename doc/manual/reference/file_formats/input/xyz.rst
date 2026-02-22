@@ -121,7 +121,7 @@ The periodic boundary conditions in each cell direction may be specified as trip
   pbc="T T F"
 
 If the ``pbc`` keyword is not present, OVITO assumes the simulation cell to be periodic in all three directions
-(only if it's an *extended* XYZ files including the ``Lattice`` keyword!).
+(only if it's an *extended* XYZ file including the ``Lattice`` keyword!).
 
 The list of data columns in the file is described by the ``Properties`` parameter, which should take the form of a series of
 colon-separated triplets giving the name, format (``S`` for string, ``R`` for real, ``I`` for integer) and number of columns of each property.

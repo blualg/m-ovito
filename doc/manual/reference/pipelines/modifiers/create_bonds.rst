@@ -93,7 +93,7 @@ Technical notes
 
 To correctly deal with periodic simulations, OVITO maintains a triplet of integer numbers with every bond, which is stored in the ``Periodic Image`` bond property array.
 Each bond's triplet specifies whether that bond crosses the periodic boundaries of the simulation cell (and in which direction).
-For example, a bond crossing the periodic cell boundary in the positive X direction is indicates by the triplet (1,0,0) and
+For example, a bond crossing the periodic cell boundary in the positive X direction is indicated by the triplet (1,0,0) and
 will be visualized as two separate half bonds, one on either side of the simulation cell. Bonds in the interior of the simulation box, which do not cross a
 periodic boundary, have a ``Periodic Image`` value of (0,0,0).
 

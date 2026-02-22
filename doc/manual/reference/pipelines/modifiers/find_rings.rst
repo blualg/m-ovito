@@ -11,7 +11,7 @@ Find rings |ovito-pro|
 
 This modifier identifies and visualizes ring structures formed by :ref:`bonds <scene_objects.bonds>` between particles.
 
-You can load the bonds needed by this modifier either from a file or generate it within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
+You can load the bonds needed by this modifier either from a file or generate them within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
 
 .. _particles.modifiers.find_rings.definition:
 

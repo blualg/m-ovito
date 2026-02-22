@@ -25,7 +25,7 @@ the rendering of the trajectories to those sections already swept by the particl
 Thus, the lines appear to be traced by the moving particles.
 
 You can choose between generating the trajectory lines either for all particles in the system or just a subset of the particles.
-For the latter, you first have to use insert a modifier to define a particle selection. The trajectory lines will
+For the latter, you first have to insert a modifier to define a particle selection. The trajectory lines will
 then be generated just for the selected particles.
 
 .. note::
