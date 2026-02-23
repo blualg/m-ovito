@@ -66,13 +66,13 @@ UpdateDialog::UpdateDialog(int major, int minor, int patch, int dontRemind, QWid
     setIcon(QMessageBox::Information);
     setDefaultButton(QMessageBox::Ok);
     setWindowTitle(UpdateNotificationService::tr("New version available"));
-    setText(UpdateNotificationService::tr("%1 %2.%3.%4 is available for download")
+    setText(UpdateNotificationService::tr("%1 %2.%3.%4 is available for download.")
                 .arg(Application::applicationName()).arg(_major).arg(_minor).arg(_patch));
     setInformativeText(
         UpdateNotificationService::tr("<p><a href=\"https://docs.ovito.org/new_features.html\">New features and changes</a></p>"
                     "<p>Click 'Download' to open the download page in your browser, "
                     "'OK' to dismiss this message for now, "
-                    "or 'Skip this version' to not be reminded again until the next major program update.</p>"));
+                    "or 'Skip this version' not to be reminded again until the next major program update.</p>"));
     // Configure the buttons
     setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
     button(QMessageBox::Cancel)->setText(UpdateNotificationService::tr("Skip this version"));

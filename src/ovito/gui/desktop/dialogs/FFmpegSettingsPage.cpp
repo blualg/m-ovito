@@ -57,7 +57,7 @@ void FFmpegSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
         auto* infoLabel =
             new QLabel(tr("Please provide the path to the FFmpeg executable on your computer or leave it empty to use the "
-                          "integrated encoder of OVITO, which does not support all high-quality codecs. You can obtain FFmpeg from <a "
+                          "built-in encoder of OVITO, which does not support all high-quality codecs. You can obtain FFmpeg from <a "
                           "href=\"https://ffmpeg.org/download.html\">ffmpeg.org/download</a>."));
         infoLabel->setWordWrap(true);
         infoLabel->setOpenExternalLinks(true);
@@ -169,7 +169,7 @@ void FFmpegSettingsPage::refreshCodecCombobox()
     const QList<const VideoEncoder::CandidateCodec*>& codecs = VideoEncoder::supportedCodecs(backend, path);
     if(codecs.empty()) {
         _statusLabel->setStatus(PipelineStatus(
-            PipelineStatus::Error, tr("External FFmpeg does not support required codecs, the built-in FFmpeg library will be used.")));
+            PipelineStatus::Error, tr("External FFmpeg does not support the required codecs; the built-in encoder will be used.")));
         _externalFFmpeg = false;
     }
 
@@ -205,7 +205,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Check path is empty
     if(userInput.isEmpty()) {
-        _statusLabel->setStatus(PipelineStatus(tr("No FFmpeg executable specified, the built-in video encoder of OVITO will be used.")));
+        _statusLabel->setStatus(PipelineStatus(tr("No FFmpeg executable specified; the built-in video encoder of OVITO will be used.")));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -215,7 +215,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
 
     // Check path is empty
     if(path.isEmpty()) {
-        _statusLabel->setStatus(PipelineStatus(tr("%1 not found, the built-in video encoder of OVITO will be used.").arg(userInput)));
+        _statusLabel->setStatus(PipelineStatus(tr("%1 not found; the built-in video encoder of OVITO will be used.").arg(userInput)));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -224,7 +224,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     QFileInfo fileInfo(path);
     if(!fileInfo.exists()) {
         _statusLabel->setStatus(
-            PipelineStatus(PipelineStatus::Error, tr("%1 does not exist. The internal video encoder will be used.").arg(path)));
+            PipelineStatus(PipelineStatus::Error, tr("%1 does not exist. The built-in video encoder will be used.").arg(path)));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -232,7 +232,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     // Check if file is executable.
     if(!fileInfo.isExecutable()) {
         _statusLabel->setStatus(
-            PipelineStatus(PipelineStatus::Error, tr("%1 is not executable. The internal video encoder will be used.").arg(path)));
+            PipelineStatus(PipelineStatus::Error, tr("%1 is not executable. The built-in video encoder will be used.").arg(path)));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -241,7 +241,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
     if(!(path.endsWith("ffmpeg", Qt::CaseInsensitive) || path.endsWith("ffmpeg.exe", Qt::CaseInsensitive))) {
         _statusLabel->setStatus(
             PipelineStatus(PipelineStatus::Error,
-                           tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid. The internal video encoder will be used.")));
+                           tr("Path needs to end with 'ffmpeg' or 'ffmpeg.exe' to be valid. The built-in video encoder will be used.")));
         Q_EMIT ffmpegPathValidated(false);
         return;
     }
@@ -260,7 +260,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
         process, &QProcess::finished, this, [process, userInput, path, this](int exitCode, QProcess::ExitStatus exitStatus) {
             if(exitStatus != QProcess::NormalExit) {
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error, tr("%1 did not exit normally. The integrated video encoder will be used.").arg(path)));
+                    PipelineStatus::Error, tr("%1 did not exit normally. The built-in video encoder will be used.").arg(path)));
                 Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;
@@ -279,7 +279,7 @@ void FFmpegSettingsPage::validateFfmpegPath()
             }
             else {
                 _statusLabel->setStatus(PipelineStatus(
-                    PipelineStatus::Error, tr("%1 is not a valid FFmpeg executable. The integrated video encoder will be used.").arg(path)));
+                    PipelineStatus::Error, tr("%1 is not a valid FFmpeg executable. The built-in video encoder will be used.").arg(path)));
                 Q_EMIT ffmpegPathValidated(false);
                 process->deleteLater();
                 return;

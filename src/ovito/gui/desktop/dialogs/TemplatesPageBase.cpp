@@ -125,7 +125,7 @@ void TemplatesPageBase::onCreateTemplate()
                 return;
             }
             if(templateManager()->templateList().contains(name)) {
-                if(MessageDialog::question(&dlg, tr("Create %1 template").arg(objectTypeNameLC()), tr("A %1 template with the same name '%2' already exists. Do you want to replace it?").arg(objectTypeNameLC()).arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
+                if(MessageDialog::question(&dlg, tr("Create %1 template").arg(objectTypeNameLC()), tr("A %1 template named '%2' already exists. Do you want to replace it?").arg(objectTypeNameLC()).arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
                     return;
             }
             if(!std::ranges::any_of(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; })) {
@@ -193,7 +193,7 @@ void TemplatesPageBase::onRenameTemplate()
                     break;
                 }
                 else {
-                    MessageDialog::critical(settingsDialog(), tr("Rename %1 template").arg(objectTypeNameLC()), tr("A %1 template with the name '%2' already exists. Please choose a different name.").arg(objectTypeNameLC()).arg(newTemplateName));
+                    MessageDialog::critical(settingsDialog(), tr("Rename %1 template").arg(objectTypeNameLC()), tr("A %1 template named '%2' already exists. Please choose a different name.").arg(objectTypeNameLC()).arg(newTemplateName));
                 }
             }
         }

@@ -80,7 +80,7 @@ QVector<QTreeWidgetItem*> ModifierTemplatesPage::populateAvailableObjectsList(QT
     }
     if(itemList.empty())
         throw Exception(tr("A modifier template must always be created on the basis of existing modifiers, but the current data pipeline does not contain any modifiers. "
-                            "Please close this dialog, insert some modifier into the pipeline first, configure its settings and then come back here to create a template from it."));
+                            "Please close this dialog, insert a modifier into the pipeline, configure its settings, and then return here to create a template from it."));
     objectListWidget->setMaximumHeight(objectListWidget->sizeHintForRow(0) * qBound(3, rowCount, 10) + 2 * objectListWidget->frameWidth());
 
     ModificationNode* selectedModNode = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModificationNode>(selectedPipelineObjects.front()) : nullptr;

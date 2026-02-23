@@ -814,7 +814,7 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.setText(tr("%1 needs macOS accessibility access").arg(Application::applicationName()));
         msgBox.setInformativeText(
-            tr("MacOS accessibility permission is required for %1 to enable infinite scrolling while dragging the spinner widget. "
+            tr("macOS accessibility permission is required for %1 to enable infinite scrolling while dragging the spinner widget. "
                "The permission is needed by the application to reposition the mouse cursor when it leaves the screen.\n\n"
                "Click 'Help' for more information. Click 'Next' to proceed to the macOS permission dialog.").arg(Application::applicationName()));
         msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel | QMessageBox::Ignore);

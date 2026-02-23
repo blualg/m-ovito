@@ -49,7 +49,7 @@ protected:
     virtual QString settingsPageDescription() override {
         return tr(
             "Modifier templates you define here will appear in the drop-down list of available modifiers, from where you can quickly insert them into a data pipeline. "
-            "Templates may consist of several modifiers, making your life easier if you repeatedly need to use the same modifier sequence.");
+            "Templates may consist of several modifiers, allowing you to quickly reuse the same modifier sequence.");
     }
 
     /// Help topic to open when the user presses the help button.

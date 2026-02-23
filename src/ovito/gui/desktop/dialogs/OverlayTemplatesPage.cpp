@@ -57,7 +57,7 @@ QVector<QTreeWidgetItem*> OverlayTemplatesPage::populateAvailableObjectsList(QTr
     }
     if(itemList.empty())
         throw Exception(tr("A viewport layer template must always be created on the basis of an existing layer, but the selected viewport does not have any layers attached. "
-                            "Please close this dialog, add some layer to the viewport first, configure its settings and then come back here to create a template from it."));
+                            "Please close this dialog, add a layer to the viewport, configure its settings, and then return here to create a template from it."));
     objectListWidget->setMaximumHeight(objectListWidget->sizeHintForRow(0) * qBound(3, itemList.size(), 10) + 2 * objectListWidget->frameWidth());
 
     if(selectedOverlay) {

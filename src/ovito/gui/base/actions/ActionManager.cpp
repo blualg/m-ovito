@@ -101,7 +101,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& ui) : QAbstractList
     createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), "edit_rename_pipeline", tr("Assign a new name to the selected pipeline."));
     createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), "edit_delete_pipeline", tr("Delete the selected object from the scene."));
 
-    createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), "application_preferences", tr("Open the application settings dialog"), QKeySequence::Preferences);
+    createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), "application_preferences", tr("Open the application settings dialog."), QKeySequence::Preferences);
 
     createCommandAction(ACTION_RENDER_ACTIVE_VIEWPORT, tr("Render"), "render_active_viewport", tr("Render an image or animation of the current viewport."));
 
@@ -126,7 +126,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& ui) : QAbstractList
         createViewportModeAction(ACTION_SELECTION_MODE, vpInputManager->selectionMode(), tr("Select"), "edit_mode_select", tr("Select objects in the viewports."));
     }
 
-    createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), "animation_goto_start", tr("Jump to first frame of the animation."), Qt::Key_Home);
+    createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), "animation_goto_start", tr("Jump to the first frame of the animation."), Qt::Key_Home);
     createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), "animation_goto_end", tr("Jump to the last frame of the animation."), Qt::Key_End);
     createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), "animation_goto_previous_frame", tr("Move time slider one animation frame backward."), QKeyCombination(Qt::ALT, Qt::Key_Left));
     createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), "animation_goto_next_frame", tr("Move time slider one animation frame forward."), QKeyCombination(Qt::ALT, Qt::Key_Right));

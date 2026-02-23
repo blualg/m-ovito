@@ -87,14 +87,14 @@ void SurfaceMesh::verifyMeshIntegrity() const
         throw Exception(tr("Invalid data structure. Surface mesh is missing the position vertex property."));
     OVITO_ASSERT(topology()->vertexCount() == vertices()->elementCount());
     if(topology()->vertexCount() != vertices()->elementCount())
-        throw Exception(tr("Length of vertex property arrays of surface mesh do not match number of vertices in the mesh topology."));
+        throw Exception(tr("Length of vertex property arrays of surface mesh does not match number of vertices in the mesh topology."));
 
     OVITO_CHECK_OBJECT_POINTER(faces());
     if(!faces())
         throw Exception(tr("Surface mesh has no face properties container attached."));
     OVITO_ASSERT(faces()->properties().empty() || topology()->faceCount() == faces()->elementCount());
     if(!faces()->properties().empty() && topology()->faceCount() != faces()->elementCount())
-        throw Exception(tr("Length of face property arrays of surface mesh do not match number of faces in the mesh topology."));
+        throw Exception(tr("Length of face property arrays of surface mesh does not match number of faces in the mesh topology."));
 
     OVITO_CHECK_OBJECT_POINTER(regions());
     if(!regions())

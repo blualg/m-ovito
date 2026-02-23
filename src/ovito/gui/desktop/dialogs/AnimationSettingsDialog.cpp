@@ -95,7 +95,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindowUI& ui, QWidget* pare
     playbackSpeedBox->addItem(tr("x 1/10"), -10);
     playbackSpeedBox->addItem(tr("x 1/5"), -5);
     playbackSpeedBox->addItem(tr("x 1/2"), -2);
-    playbackSpeedBox->addItem(tr("x 1 (realtime)"), 1);
+    playbackSpeedBox->addItem(tr("x 1 (real-time)"), 1);
     playbackSpeedBox->addItem(tr("x 2"), 2);
     playbackSpeedBox->addItem(tr("x 5"), 5);
     playbackSpeedBox->addItem(tr("x 10"), 10);

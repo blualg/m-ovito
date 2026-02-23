@@ -46,7 +46,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindowUI& ui) : Ac
 {
     createViewportModeAction(ACTION_XFORM_MOVE_MODE, OORef<MoveMode>::create(), tr("Move"), "edit_mode_move", tr("Move objects."));
     createViewportModeAction(ACTION_XFORM_ROTATE_MODE, OORef<RotateMode>::create(), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
-    createCommandAction(ACTION_MODIFIER_EXPORT_SNIPPET, tr("Export as Snippet..."), "export_as_text_snippet", tr("Export the selected modifier(s) as a sharable text snippet."));
+    createCommandAction(ACTION_MODIFIER_EXPORT_SNIPPET, tr("Export as Snippet..."), "export_as_text_snippet", tr("Export the selected modifier(s) as a shareable text snippet."));
     createCommandAction(ACTION_MODIFIER_IMPORT_SNIPPET, tr("Import from Snippet..."), "import_from_text_snippet", tr("Create modifiers from a text snippet and insert them into the pipeline."));
 
     connect(getAction(ACTION_QUIT), &QAction::triggered, this, &WidgetActionManager::on_Quit_triggered);

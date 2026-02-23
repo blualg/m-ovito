@@ -95,7 +95,7 @@ bool UserInterface::shutdown()
         return true;
     }
     catch(OperationCanceled) {
-        qWarning() << "Warning: Shutdown cancelled unexpectedly";
+        qWarning() << "Warning: Shutdown canceled unexpectedly";
     }
     catch(const Exception& ex) {
         qWarning() << "Warning: Exception caught during shutdown";

@@ -544,7 +544,7 @@ bool GuiApplication::askUserForPassword(const QString& hostname, const QString& 
 {
     bool ok;
     password = QInputDialog::getText(nullptr, tr("SSH Password Authentication"),
-        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter the password for user <b>%2</b>:</p>").arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped()),
+        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p><p>Please enter the password for user <b>%2</b>:</p>").arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped()),
         QLineEdit::Password, password, &ok);
     return ok;
 }
@@ -568,7 +568,7 @@ bool GuiApplication::askUserForKbiResponse(const QString& hostname, const QStrin
 {
     bool ok;
     answer = QInputDialog::getText(nullptr, tr("SSH Keyboard-Interactive Authentication"),
-        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
+        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p><p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
         showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
     return ok;
 }

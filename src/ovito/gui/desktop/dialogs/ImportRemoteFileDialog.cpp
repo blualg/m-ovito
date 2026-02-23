@@ -68,7 +68,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindowUI& ui, const std::vect
     clearURLHistoryButton->setToolTip(tr("Clear history"));
     connect(clearURLHistoryButton, &QToolButton::clicked, [this]() {
         if(MessageDialog::question(this, tr("Clear history"),
-                                       tr("Do you really want to delete the history of recently used remote URLs? This operation cannot be undone."),
+                                       tr("Are you sure you want to delete the history of recently used remote URLs? This operation cannot be undone."),
                                        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes) == QMessageBox::Yes) {
             QString text = _urlEdit->currentText();
             _urlEdit->clear();

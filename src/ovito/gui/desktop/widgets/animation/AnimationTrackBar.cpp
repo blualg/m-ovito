@@ -476,7 +476,7 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
 
     // Action: Delete selected keys
     contextMenu.addSeparator();
-    contextMenu.addAction(tr("Deleted selected keys"), this, SLOT(onDeleteSelectedKeys()))->setEnabled(_selectedKeys.targets().empty() == false);
+    contextMenu.addAction(tr("Delete selected keys"), this, SLOT(onDeleteSelectedKeys()))->setEnabled(_selectedKeys.targets().empty() == false);
 
     // Action: Jump to key
     contextMenu.addSeparator();
