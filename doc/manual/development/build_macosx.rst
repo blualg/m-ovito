@@ -21,7 +21,7 @@ Next, download the source code and build the shared version of the `ffmpeg <http
 
   curl -O https://ffmpeg.org/releases/ffmpeg-4.2.8.tar.gz
   tar xzfv ffmpeg-4.2.8.tar.gz
-  cd ffmpeg-4.2.1
+  cd ffmpeg-4.2.8
   ./configure \
     --disable-network \
     --disable-programs \
@@ -61,4 +61,4 @@ Once you are done, build OVITO by running ::
 
   cmake --build . --parallel
 
-If this step succeeds, you can run :command:`cmake install .` to generate an app bundle in the :file:`ovito/install/` directory.
+If this step succeeds, you can run :command:`cmake --install .` to generate an app bundle in the :file:`ovito/install/` directory.

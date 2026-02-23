@@ -41,7 +41,7 @@ Download a binary program package for *OVITO Basic* or *OVITO Pro* from `www.ovi
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the license terms, and drag the :program:`Ovito` bundle into your :file:`Applications` folder.
     You can then launch OVITO by double-clicking the application bundle.
 
-**Anaconda installation:** You can install the software also via the Anaconda package manager from
+**Anaconda installation:** You can also install the software via the Anaconda package manager from
 the `conda-forge channel <https://anaconda.org/conda-forge/ovito>`__ (*OVITO Basic*) or from :ref:`our own conda channel <pydoc:installation.anaconda>` (*OVITO Pro*).
 
 **Unattended installation:** The Windows installers support `unattended installation via command-line parameters <https://nsis.sourceforge.io/Docs/Chapter3.html#installerusage>`__
@@ -128,7 +128,7 @@ Missing XCB system libraries
       Reinstalling the application may fix this problem.
       Available platform plugins are: minimal, offscreen, vnc, xcb.
 
-    In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be
+    In this case, OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be
     preinstalled on new Linux systems.
 
   .. admonition:: Solution
@@ -178,7 +178,7 @@ Missing OpenGL system libraries
       export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/x86_64-conda-linux-gnu/sysroot/usr/lib
 
     This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
-    will still not work, however, because your system is lacking true OpenGL graphics support.
+    will still not work, however, because your system lacks true OpenGL graphics support.
 
 OpenGL initialization fails
   .. error::

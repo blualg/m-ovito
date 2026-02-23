@@ -94,7 +94,7 @@ Next, enter your OVITO **account name**, i.e., your registered email address.
 .. tip::
 
   Team members using a group license should enter
-  their *personal* OVITO account, not the license owner's account if possible. This will allow each team member
+  their *personal* OVITO account, not the license owner's account, if possible. This will allow each team member
   to manage their own installation(s) and automatically grant them access to the OVITO Pro support forum.
   If you don't have an account yet, you can create one at https://www.ovito.org/register/.
 
@@ -127,7 +127,7 @@ until an existing installation is deactivated.
 
 To install OVITO Pro on a different computer (e.g., after hardware replacement, employee turnover, or OS reinstallation),
 you must first deactivate an existing installation that is no longer needed. Unlike the activation process, this is
-done online on the ovito.org website:
+done on the ovito.org website:
 
 1. Visit https://www.ovito.org/account/myinstallations/ and log in with the OVITO user account that was used for activation.
 2. View the list of active installations currently associated with your account.

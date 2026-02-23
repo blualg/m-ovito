@@ -5,7 +5,7 @@ Developer instructions
 ======================
 
 The source code of :program:`OVITO` is available at https://gitlab.com/stuko/ovito/.
-It serves as basis of the *OVITO Basic* program package distributed by OVITO GmbH, which
+It serves as the basis for the *OVITO Basic* program package distributed by OVITO GmbH, which
 is made available under the GPLv3 and MIT open source licenses.
 
 .. toctree::

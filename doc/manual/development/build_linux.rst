@@ -71,7 +71,7 @@ Create a build directory and let `CMake <https://www.cmake.org/>`_ generate a Ma
   cd ovito
   cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-If this step fails, rerun CMake using the :command:`--fresh` flag 
+If this step fails, rerun CMake using the :command:`--fresh` flag
 to initiate a clean configuration and adjust the build options as necessary.
 
 To build OVITO run::
