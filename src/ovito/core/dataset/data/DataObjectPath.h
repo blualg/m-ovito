@@ -62,6 +62,10 @@ public:
     DataObjectPathTemplate& operator=(DataObjectPathTemplate&& other) = default;
     DataObjectPathTemplate& operator=(const DataObjectPathTemplate& other) = default;
 
+    // Equality
+    bool operator==(const DataObjectPathTemplate& other) const { return _array == other._array; }
+    bool operator!=(const DataObjectPathTemplate& other) const { return _array != other._array; }
+
     // Element access:
     DataObjectPtr& back() noexcept { return _array.back(); }
     const DataObjectPtr& back() const noexcept { return _array.back(); }

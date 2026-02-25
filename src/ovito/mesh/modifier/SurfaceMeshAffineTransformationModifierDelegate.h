@@ -25,7 +25,6 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
 namespace Ovito {
@@ -44,14 +43,10 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
         using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
 
         /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
-            QVector<DataObjectReference> result;
-            if(input.containsObject<SurfaceMesh>())
-                result.push_back(DataObjectReference(&SurfaceMesh::OOClass()));
-            if(input.containsObject<TriangleMesh>())
-                result.push_back(DataObjectReference(&TriangleMesh::OOClass()));
-            return result;
-        }
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return SurfaceMesh::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }

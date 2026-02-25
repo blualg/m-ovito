@@ -172,13 +172,23 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     // Create the rollout contents.
     QVBoxLayout* topLayout = new QVBoxLayout(rollout);
     topLayout->setContentsMargins(4,4,4,4);
-    topLayout->setSpacing(12);
+    //topLayout->setSpacing(12);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
-    topLayout->addWidget(delegatesPUI->listWidget(141));
+    QGroupBox* selectionGroupBox = new QGroupBox(tr("Restrict to"), rollout);
+    QVBoxLayout* selectionGroupBoxLayout = new QVBoxLayout(selectionGroupBox);
+    selectionGroupBoxLayout->setContentsMargins(4,4,4,4);
+    topLayout->addWidget(selectionGroupBox);
 
     BooleanParameterUI* selectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::selectionOnly));
-    topLayout->addWidget(selectionUI->checkBox());
+    selectionGroupBoxLayout->addWidget(selectionUI->checkBox());
+
+    QGroupBox* objectTypesGroupBox = new QGroupBox(tr("Affected object types"), rollout);
+    QVBoxLayout* objectTypesGroupBoxLayout = new QVBoxLayout(objectTypesGroupBox);
+    objectTypesGroupBoxLayout->setContentsMargins(4,4,4,4);
+    topLayout->addWidget(objectTypesGroupBox);
+
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>();
+    objectTypesGroupBoxLayout->addWidget(delegatesPUI->containerWidget());
 
     // Whenever the pipeline input of the modifier changes, update the increment step sizes of the cell parameters.
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &AffineTransformationModifierEditor::updateParameterUnitScales);

@@ -64,8 +64,17 @@ void AffineTransformationModifier::initializeObject(ObjectInitializationFlags fl
     MultiDelegatingModifier::initializeObject(flags);
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        // Generate the list of delegate objects.
-        createModifierDelegates(AffineTransformationModifierDelegate::OOClass());
+        // Generate the list of delegate objects - with the particles delegate being the first one in the list.
+        createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), {
+            QStringLiteral("SimulationCellAffineTransformationModifierDelegate"),
+            QStringLiteral("ParticlesAffineTransformationModifierDelegate"),
+            QStringLiteral("VectorParticlePropertiesAffineTransformationModifierDelegate"),
+            QStringLiteral("VoxelGridAffineTransformationModifierDelegate"),
+            QStringLiteral("SurfaceMeshAffineTransformationModifierDelegate"),
+            QStringLiteral("TriangleMeshAffineTransformationModifierDelegate"),
+            QStringLiteral("LinesAffineTransformationModifierDelegate"),
+            QStringLiteral("VectorsAffineTransformationModifierDelegate")
+        });
     }
 }
 
@@ -339,6 +348,14 @@ QVector<DataObjectReference> SimulationCellAffineTransformationModifierDelegate:
 }
 
 /******************************************************************************
+* Indicates which class of data objects the modifier delegate is able to operate on.
+******************************************************************************/
+const DataObject::OOMetaClass& SimulationCellAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjectClass() const
+{
+    return SimulationCell::OOClass();
+}
+
+/******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
 Future<PipelineFlowState> SimulationCellAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -379,6 +396,14 @@ QVector<DataObjectReference> LinesAffineTransformationModifierDelegate::OOMetaCl
 }
 
 /******************************************************************************
+* Indicates which class of data objects the modifier delegate is able to operate on.
+******************************************************************************/
+const DataObject::OOMetaClass& LinesAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjectClass() const
+{
+    return Lines::OOClass();
+}
+
+/******************************************************************************
  * Applies the modifier operation to the data in a pipeline flow state.
  ******************************************************************************/
 Future<PipelineFlowState> LinesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -389,10 +414,11 @@ Future<PipelineFlowState> LinesAffineTransformationModifierDelegate::apply(const
     return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
-            selectionOnly = modifier->selectionOnly()]() mutable {
+            selectionOnly = modifier->selectionOnly(), createdByNode = request.modificationNodeWeak(),
+            inputObjectRef = inputDataObject()]() mutable {
 
         // Process all lines objects in the data collection.
-        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+        visitObjectsToBeProcessed<Lines>(state, inputObjectRef, createdByNode, [&](const Lines* inputLines) {
             // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
             ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
 
@@ -424,8 +450,15 @@ QVector<DataObjectReference> VectorsAffineTransformationModifierDelegate::OOMeta
     for(const ConstDataObjectPath& path : input.getObjectsRecursive(Vectors::OOClass())) {
         objects.push_back(path);
     }
-
     return objects;
+}
+
+/******************************************************************************
+* Indicates which class of data objects the modifier delegate is able to operate on.
+******************************************************************************/
+const DataObject::OOMetaClass& VectorsAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjectClass() const
+{
+    return Vectors::OOClass();
 }
 
 /******************************************************************************
@@ -439,9 +472,11 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
 
     // The actual work can be performed in a separate thread.
     return asyncLaunch([state = std::move(state), tm = modifier->effectiveAffineTransformation(originalState),
-                        selectionOnly = modifier->selectionOnly()]() mutable {
+                        selectionOnly = modifier->selectionOnly(), createdByNode = request.modificationNodeWeak(),
+                        inputObjectRef = inputDataObject()]() mutable {
+
         // Process all vectors objects in the data collection
-        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+        visitObjectsToBeProcessed<Vectors>(state, inputObjectRef, createdByNode, [&](const Vectors* inputVectors) {
             // Make sure we can safely modify the vectors object.
             Vectors* outputVectors = state.makeMutable(inputVectors);
 

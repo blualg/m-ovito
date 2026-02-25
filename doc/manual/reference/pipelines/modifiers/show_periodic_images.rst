@@ -9,7 +9,7 @@ Replicate
 
 This modifier copies all particles, bonds and other data elements multiple times to visualize periodic images of a system.
 
-The :guilabel:`Operate on` list in the lower panel lets you select the types of data elements that
+The :guilabel:`Operate on` list in the lower panel lets you select the kinds of objects that
 should be replicated by the modifier. By default, the modifier extends the :ref:`simulation cell <scene_objects.simulation_cell>` appropriately to
 encompass all generated images of the system. If not desired, you can turn off the option :guilabel:`Adjust simulation box size`
 to keep the original simulation cell geometry. You should be aware, however, that this produces an inconsistent state, where the

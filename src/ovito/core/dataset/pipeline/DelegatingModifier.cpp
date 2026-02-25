@@ -28,13 +28,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegate);
-OVITO_CLASSINFO(ModifierDelegate, "ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
-DEFINE_PROPERTY_FIELD(ModifierDelegate, isEnabled);
-DEFINE_PROPERTY_FIELD(ModifierDelegate, inputDataObject);
-SET_PROPERTY_FIELD_LABEL(ModifierDelegate, isEnabled, "Enabled");
-SET_PROPERTY_FIELD_LABEL(ModifierDelegate, inputDataObject, "Data object");
-
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DelegatingModifier);
 OVITO_CLASSINFO(DelegatingModifier, "ClassNameAlias", "AsynchronousDelegatingModifier");  // For backward compatibility with OVITO 3.10.2
 DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
@@ -42,23 +35,6 @@ DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MultiDelegatingModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 SET_PROPERTY_FIELD_CHANGE_EVENT(MultiDelegatingModifier, delegates, ReferenceEvent::ObjectStatusChanged);
-
-/******************************************************************************
-* Returns the modifier to which this delegate belongs.
-******************************************************************************/
-Modifier* ModifierDelegate::modifier() const
-{
-    Modifier* result = nullptr;
-    visitDependents([&](RefMaker* dependent) {
-        if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
-            if(modifier->delegate() == this) result = modifier;
-        }
-        else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
-            if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
-        }
-    });
-    return result;
-}
 
 /******************************************************************************
 * Creates a default delegate for this modifier.
@@ -148,14 +124,23 @@ void MultiDelegatingModifier::preevaluateModifier(const ModifierEvaluationReques
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
 ******************************************************************************/
-void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType)
+void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, std::initializer_list<QString> defaultDelegateTypeNames)
 {
     OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
-    // Generate the list of delegate objects.
     if(delegates().empty()) {
+        // Instantiate the delegate objects of the given type.
+        // Start by adding those delegate types specified by the caller.
+        for(const QString& delegateClassName : defaultDelegateTypeNames) {
+            if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, delegateClassName)) {
+                _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance()));
+            }
+        }
+        // Now add all delegates that have not been added yet but are available in the system.
         for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-            _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance()));
+            // Only add a delegate of this type if none of the existing delegates is of the same type.
+            if(std::ranges::find_if(delegates(), [clazz](const auto& delegate) { return &delegate->getOOMetaClass() == clazz; }) == delegates().end())
+                _delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance()));
         }
     }
 }

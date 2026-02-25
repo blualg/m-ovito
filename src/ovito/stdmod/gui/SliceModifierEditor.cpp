@@ -156,8 +156,8 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
-    layout->addWidget(delegatesPUI->listWidget());
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>();
+    layout->addWidget(delegatesPUI->containerWidget());
 
     // Override automatic step size for the distance and slice width parameters.
     _distanceUnit.emplace(unitsManager().getUnit(_distancePUI->parameterUnitType()));

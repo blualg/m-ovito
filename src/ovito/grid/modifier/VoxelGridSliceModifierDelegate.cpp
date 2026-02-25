@@ -60,6 +60,20 @@ void VoxelGridSliceModifierDelegate::initializeObject(ObjectInitializationFlags 
 }
 
 /******************************************************************************
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
+QVector<DataObjectReference> VoxelGridSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all voxel grids in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(VoxelGrid::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
 Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -76,9 +90,10 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
             state = std::move(state),
             plane,
             createdByNode = request.modificationNodeWeak(),
+            inputObjectRef = inputDataObject(),
             surfaceMeshVis = OORef<SurfaceMeshVis>(surfaceMeshVis())]() mutable {
 
-        state.data()->visitObjectsOfType<VoxelGrid>([&](const VoxelGrid* voxelGrid) {
+        visitObjectsToBeProcessed<VoxelGrid>(state, inputObjectRef, createdByNode, [&](const VoxelGrid* voxelGrid) {
             // Verify consistency of input property container.
             voxelGrid->verifyIntegrity();
 

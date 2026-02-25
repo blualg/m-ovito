@@ -33,6 +33,23 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
 OVITO_CLASSINFO(SurfaceMeshReplicateModifierDelegate, "DisplayName", "Surfaces");
 
 /******************************************************************************
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
+QVector<DataObjectReference> SurfaceMeshReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all surface meshes in the input data collection that have a domain.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMesh::OOClass())) {
+        if(const SurfaceMesh* surface = static_object_cast<SurfaceMesh>(path.back())) {
+            if(surface->domain())
+                objects.push_back(path);
+        }
+    }
+    return objects;
+}
+
+/******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
 Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -40,12 +57,12 @@ Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const Modi
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([state = std::move(state), newImages = modifier->replicaRange()]() mutable {
+    return asyncLaunch([state = std::move(state), newImages = modifier->replicaRange(), inputObjectRef = inputDataObject(), createdByNode = request.modificationNodeWeak()]() mutable {
 
         int nPBC[3] = { newImages.sizeX() + 1, newImages.sizeY() + 1, newImages.sizeZ() + 1};
         size_t numCopies = (size_t)nPBC[0] * (size_t)nPBC[1] * (size_t)nPBC[2];
 
-        state.data()->visitObjectsOfType<SurfaceMesh>([&](const SurfaceMesh* existingSurface) {
+        visitObjectsToBeProcessed<SurfaceMesh>(state, inputObjectRef, createdByNode, [&](const SurfaceMesh* existingSurface) {
             // For replication, a domain is always required.
             if(!existingSurface->domain())
                 return;

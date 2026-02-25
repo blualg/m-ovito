@@ -37,9 +37,12 @@ OVITO_CLASSINFO(VoxelGridReplicateModifierDelegate, "DisplayName", "Voxel grids"
 ******************************************************************************/
 QVector<DataObjectReference> VoxelGridReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<VoxelGrid>())
-        return { DataObjectReference(&VoxelGrid::OOClass()) };
-    return {};
+    // Gather list of all voxel grids in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(VoxelGrid::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -53,9 +56,9 @@ Future<PipelineFlowState> VoxelGridReplicateModifierDelegate::apply(const Modifi
     const Box3I& newImagesIn = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([state = std::move(state), newImagesIn]() mutable {
+    return asyncLaunch([state = std::move(state), createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject(), newImagesIn]() mutable {
 
-        state.data()->visitObjectsOfType<VoxelGrid>([&](const VoxelGrid* existingVoxelGrid) {
+        visitObjectsToBeProcessed<VoxelGrid>(state, inputObjectRef, createdByNode, [&](const VoxelGrid* existingVoxelGrid) {
             if(!existingVoxelGrid->domain())
                 return;
             existingVoxelGrid->verifyIntegrity();

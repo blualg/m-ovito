@@ -43,9 +43,15 @@ void ParaViewVTMImporterEditor::createUI(const RolloutInsertionParameters& rollo
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
+    // Create group box.
+    QGroupBox* groupBox = new QGroupBox(tr("Import options"));
+    layout->addWidget(groupBox);
+    QVBoxLayout* sublayout = new QVBoxLayout(groupBox);
+    sublayout->setSpacing(4);
+
     // Unite meshes.
     BooleanParameterUI* uniteMeshesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParaViewVTMImporter::uniteMeshes));
-    layout->addWidget(uniteMeshesUI->checkBox());
+    sublayout->addWidget(uniteMeshesUI->checkBox());
 }
 
 }   // End of namespace

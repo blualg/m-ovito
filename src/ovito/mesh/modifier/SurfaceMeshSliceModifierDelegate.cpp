@@ -33,6 +33,20 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
 OVITO_CLASSINFO(SurfaceMeshSliceModifierDelegate, "DisplayName", "Surfaces");
 
 /******************************************************************************
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
+QVector<DataObjectReference> SurfaceMeshSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all surface meshes in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMesh::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
 Future<PipelineFlowState> SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -51,81 +65,82 @@ Future<PipelineFlowState> SurfaceMeshSliceModifierDelegate::apply(const Modifier
             plane, sliceWidth,
             invert = modifier->inverse(),
             createSelection = modifier->createSelection(),
-            sliceModifierNode = request.modificationNodeWeak()]() mutable {
+            inputObjectRef = inputDataObject(),
+            createdByNode = request.modificationNodeWeak()]() mutable {
 
-        QString statusMessage;
+        qlonglong numSelectedVertices = 0;
+        qlonglong numSelectedFaces = 0;
+        qlonglong numTotalVertices = 0;
+        qlonglong numTotalFaces = 0;
+        int numMeshes = 0;
 
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            const DataObject* object = state.data()->objects()[i];
-            if(object->createdByNode() == sliceModifierNode)
-                continue; // Leave meshes alone that were created by the slice modifier, e.g. from the VoxelGridSliceModifierDelegate.
-            if(const SurfaceMesh* inputMesh = dynamic_object_cast<SurfaceMesh>(object)) {
-                inputMesh->verifyMeshIntegrity();
-                SurfaceMesh* outputMesh = state.makeMutable(inputMesh);
-                if(!createSelection) {
-                    QVector<Plane3> planes = outputMesh->cuttingPlanes();
-                    if(sliceWidth <= 0) {
-                        planes.push_back(plane);
-                    }
-                    else {
-                        planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth));
-                        planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
-                    }
-                    outputMesh->setCuttingPlanes(std::move(planes));
+        visitObjectsToBeProcessed<SurfaceMesh>(state, inputObjectRef, createdByNode, [&](const SurfaceMesh* inputMesh) {
+            inputMesh->verifyMeshIntegrity();
+            numMeshes++;
+            SurfaceMesh* outputMesh = state.makeMutable(inputMesh);
+            if(!createSelection) {
+                QVector<Plane3> planes = outputMesh->cuttingPlanes();
+                if(sliceWidth <= 0) {
+                    planes.push_back(plane);
                 }
                 else {
-                    // Create a mesh vertex selection.
-                    if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
-                        BufferReadAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-                        BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
-                        size_t numSelectedVertices = 0;
-                        std::ranges::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
-                            bool selectionState =
-                                (sliceWidth <= 0) ?
-                                    (plane.pointDistance(pos) > 0) :
-                                    (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
-                            if(selectionState)
-                                numSelectedVertices++;
-                            return selectionState ? 1 : 0;
-                        });
-                        if(!statusMessage.isEmpty())
-                            statusMessage += QChar('\n');
-                        statusMessage += tr("%1 of %2 mesh vertices selected").arg(numSelectedVertices).arg(outputVertices->elementCount());
+                    planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth));
+                    planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
+                }
+                outputMesh->setCuttingPlanes(std::move(planes));
+            }
+            else {
+                // Create a mesh vertex selection.
+                if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
+                    BufferReadAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
+                    BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
+                    numTotalVertices += outputVertices->elementCount();
+                    std::ranges::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+                        bool selectionState =
+                            (sliceWidth <= 0) ?
+                                (plane.pointDistance(pos) > 0) :
+                                (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
+                        if(selectionState)
+                            numSelectedVertices++;
+                        return selectionState ? 1 : 0;
+                    });
 
-                        // Create a mesh face selection.
-                        if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-                            BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
-                            size_t numSelectedFaces = 0;
-                            const SurfaceMeshTopology* topology = outputMesh->topology();
-                            auto firstFaceEdge = topology->firstFaceEdges().cbegin();
-                            OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
-                            for(auto& selected : faceSelectionProperty) {
-                                SurfaceMesh::edge_index ffe = *firstFaceEdge++;
-                                SurfaceMesh::edge_index e = ffe;
-                                selected = 1;
-                                do {
-                                    SurfaceMesh::vertex_index ev = topology->vertex2(e);
-                                    if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
-                                        selected = 0;
-                                        break;
-                                    }
-                                    e = topology->nextFaceEdge(e);
+                    // Create a mesh face selection.
+                    if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
+                        BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
+                        numTotalFaces += outputFaces->elementCount();
+                        const SurfaceMeshTopology* topology = outputMesh->topology();
+                        auto firstFaceEdge = topology->firstFaceEdges().cbegin();
+                        OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
+                        for(auto& selected : faceSelectionProperty) {
+                            SurfaceMesh::edge_index ffe = *firstFaceEdge++;
+                            SurfaceMesh::edge_index e = ffe;
+                            selected = 1;
+                            do {
+                                SurfaceMesh::vertex_index ev = topology->vertex2(e);
+                                if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
+                                    selected = 0;
+                                    break;
                                 }
-                                while(e != ffe);
-                                if(selected)
-                                    numSelectedFaces++;
+                                e = topology->nextFaceEdge(e);
                             }
-                            if(!statusMessage.isEmpty())
-                                statusMessage += QChar('\n');
-                            statusMessage += tr("%1 of %2 mesh faces selected").arg(numSelectedFaces).arg(outputFaces->elementCount());
+                            while(e != ffe);
+                            if(selected)
+                                numSelectedFaces++;
                         }
                     }
                 }
-                this_task::throwIfCanceled();
             }
-        }
+            this_task::throwIfCanceled();
+        });
 
-        state.setStatus(statusMessage);
+        if(numMeshes != 0 && createSelection) {
+            state.combineStatus(tr(
+                    "%1 of %2 mesh vertices selected\n"
+                    "%3 of %4 mesh faces selected")
+                .arg(numSelectedVertices).arg(numTotalVertices)
+                .arg(numSelectedFaces).arg(numTotalFaces));
+        }
 
         return std::move(state);
     });

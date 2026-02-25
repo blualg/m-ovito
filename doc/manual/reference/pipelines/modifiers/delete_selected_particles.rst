@@ -7,11 +7,12 @@ Delete selected
   :width: 35%
   :align: right
 
-This modifier deletes all currently selected data elements (i.e. particles, bonds).
+This modifier deletes all currently selected data elements (particles, bonds), i.e., those
+data elements whose ``Selection`` property is non-zero.
 
-The checkbox list in the modifier's parameter panel lets you control which classes of data elements (particles, bonds, etc.) the modifier
-should act on. Element classes that are not present in the modifier's pipeline input, are grayed out.
-The modifier will delete those data elements from the selected classes whose ``Selection`` property is non-zero.
+The modifier displays a list of object classes it can operate on. Classes currently not present in the modifier's input are grayed out.
+If there are multiple objects of a class present in the modifier's input, you can optionally restrict the modifier to a particular one of them.
+Otherwise, the modifier will process all objects of the selected class and delete their currently selected data elements.
 
 .. seealso::
 

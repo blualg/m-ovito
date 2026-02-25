@@ -61,6 +61,7 @@ Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const M
         size_t numDeletedImpropers = 0;
 
         // Get the particle selection.
+        QString statusMessage;
         if(const Particles* inputParticles = state.getObject<Particles>()) {
             inputParticles->verifyIntegrity();
             numParticles += inputParticles->elementCount();
@@ -86,10 +87,13 @@ Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const M
                 numDeletedDihedrals += oldDihedralCount - (outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0);
                 numDeletedImpropers += oldImproperCount - (outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0);
             }
+            else {
+                statusMessage = tr("No selection - ");
+            }
         }
 
         // Report some statistics:
-        QString statusMessage = tr("%1 of %2 particles deleted (%3%)")
+        statusMessage += tr("%1 of %2 particles deleted (%3%)")
             .arg(numSelected)
             .arg(numParticles)
             .arg((FloatType)numSelected * 100 / std::max(numParticles, (size_t)1), 0, 'f', 1);
@@ -129,11 +133,13 @@ Future<PipelineFlowState> BondsDeleteSelectedModifierDelegate::apply(const Modif
     // The actual computation can be performed in a separate worker thread.
     return asyncLaunch([state = std::move(state)]() mutable {
 
-        size_t numBonds = 0;
-        size_t numSelected = 0;
-
-        // Get the bond selection.
         if(const Particles* inputParticles = state.getObject<Particles>()) {
+
+            size_t numBonds = 0;
+            size_t numSelected = 0;
+
+            // Get the bond selection.
+            QString statusMessage;
             if(const Bonds* inputBonds = inputParticles->bonds()) {
                 inputBonds->verifyIntegrity();
                 numBonds += inputBonds->elementCount();
@@ -148,16 +154,22 @@ Future<PipelineFlowState> BondsDeleteSelectedModifierDelegate::apply(const Modif
                     // Delete the selected bonds.
                     numSelected += outputBonds->deleteElements(std::move(selProperty));
                 }
+                else {
+                    statusMessage = tr("No selection - ");
+                }
             }
+            else {
+                statusMessage = tr("No bonds - ");
+            }
+
+            // Report some statistics:
+            statusMessage += tr("%1 of %2 bonds deleted (%3%)")
+                .arg(numSelected)
+                .arg(numBonds)
+                .arg((FloatType)numSelected * 100 / std::max(numBonds, (size_t)1), 0, 'f', 1);
+
+            state.combineStatus(std::move(statusMessage));
         }
-
-        // Report some statistics:
-        QString statusMessage = tr("%1 of %2 bonds deleted (%3%)")
-            .arg(numSelected)
-            .arg(numBonds)
-            .arg((FloatType)numSelected * 100 / std::max(numBonds, (size_t)1), 0, 'f', 1);
-
-        state.combineStatus(std::move(statusMessage));
 
         return std::move(state);
     });

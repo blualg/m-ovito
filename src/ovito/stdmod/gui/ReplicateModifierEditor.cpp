@@ -78,8 +78,8 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
     topLayout->setContentsMargins(4,4,4,4);
     topLayout->setSpacing(12);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
-    topLayout->addWidget(delegatesPUI->listWidget(103));
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>();
+    topLayout->addWidget(delegatesPUI->containerWidget());
 
     // Enable Z axis only if the simulation cell is 3D.
     connect(this, &PropertiesEditor::pipelineInputChanged, this, [this, numImagesXPUI, numImagesYPUI, numImagesZPUI]() {

@@ -100,6 +100,9 @@ class LinesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
         /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
         [[nodiscard]] virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        [[nodiscard]] virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Lines::OOClass(); }
+
         /// The name by which Python scripts can refer to this modifier delegate.
         [[nodiscard]] virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
     };

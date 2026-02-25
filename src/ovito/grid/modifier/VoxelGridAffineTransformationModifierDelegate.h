@@ -44,6 +44,9 @@ class VoxelGridAffineTransformationModifierDelegate : public AffineTransformatio
         /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return VoxelGrid::OOClass(); }
+
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
     };

@@ -52,6 +52,9 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
         /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override;
+
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("cell"); }
     };
@@ -79,6 +82,9 @@ class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public Aff
         /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override;
+
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
     };
@@ -105,6 +111,9 @@ class OVITO_STDMOD_EXPORT VectorsAffineTransformationModifierDelegate : public A
 
         /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override;
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }

@@ -30,6 +30,7 @@ OVITO_STANDARD_PLUGIN(MeshMod
         SurfaceMeshAssignColorModifierDelegate.cpp
         SurfaceMeshDeleteSelectedModifierDelegate.cpp
         SurfaceMeshExpressionSelectionModifierDelegate.cpp
+        TriangleMeshAffineTransformationModifierDelegate.cpp
     PLUGIN_DEPENDENCIES Mesh StdMod
 )
 

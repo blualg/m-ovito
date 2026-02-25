@@ -98,6 +98,7 @@ SET(SourceFiles
     dataset/pipeline/PipelineNode.cpp
     dataset/pipeline/PipelineStatus.cpp
     dataset/pipeline/Modifier.cpp
+    dataset/pipeline/ModifierDelegate.cpp
     dataset/pipeline/ModificationNode.cpp
     dataset/pipeline/ModifierGroup.cpp
     dataset/pipeline/StaticSource.cpp

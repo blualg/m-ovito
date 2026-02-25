@@ -24,7 +24,8 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include "RefTargetListParameterUI.h"
+#include <ovito/gui/desktop/widgets/general/StableComboBox.h>
+#include "ParameterUI.h"
 
 namespace Ovito {
 
@@ -32,7 +33,7 @@ namespace Ovito {
 * A list view that shows the fixed set of delegates of a MultiDelegatingModifier,
 * which can each be enabled or disabled by the user.
 ******************************************************************************/
-class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public RefTargetListParameterUI
+class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public ParameterUI
 {
     OVITO_CLASS(ModifierDelegateFixedListParameterUI)
     Q_OBJECT
@@ -40,36 +41,63 @@ class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public RefTargetLi
 public:
 
     /// Constructor.
-    void initializeObject(PropertiesEditor* parentEditor, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
+    void initializeObject(PropertiesEditor* parentEditor);
 
-    /// This method is called when a new editable object has been activated.
-    virtual void resetUI() override {
-        RefTargetListParameterUI::resetUI();
-        // Clear initial selection by default.
-        listWidget()->selectionModel()->clear();
-    }
+    /// Destructor.
+    ~ModifierDelegateFixedListParameterUI();
+
+    /// This returns the container widget managed by this class.
+    QWidget* containerWidget() const { return _containerWidget; }
+
+    /// This method is called when a new editable object has been assigned to the properties owner this
+    /// parameter UI belongs to. The parameter UI should react to this change appropriately and
+    /// show the properties value for the new edit object in the UI.
+    virtual void resetUI() override;
+
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
+
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
 
 protected:
 
-    /// Returns a data item from the list data model.
-    virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// Returns the model/view item flags for the given entry.
-    virtual Qt::ItemFlags getItemFlags(RefTarget* target, const QModelIndex& index) override;
+    /// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
+    virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
 
-    /// Sets the role data for the item at index to value.
-    virtual bool setItemData(RefTarget* target, const QModelIndex& index, const QVariant& value, int role) override;
+    /// Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
+    virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
-    /// Returns the number of columns for the table view.
-    virtual int tableColumnCount() override { return 1; }
+    /// Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-    /// Returns the header data under the given role for the given RefTarget.
-    virtual QVariant getHorizontalHeaderData(int index, int role) override {
-        if(role == Qt::DisplayRole) {
-            return QVariant::fromValue(tr("Data type"));
-        }
-        return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
-    }
+private Q_SLOTS:
+
+    /// Is called when the user toggles the enabled state of a delegate.
+    void onDelegateToggled(bool checked);
+
+    /// Is called when the user selects a different data object for a delegate.
+    void onDataObjectSelected(int index);
+
+private:
+
+    /// Fills the combo box with the list of data objects the given delegate can handle.
+    bool populateObjectList(ModifierDelegate* delegate, StableComboBox* comboBox, const DataObjectReference& selectedDataObject, const std::vector<PipelineFlowState>& pipelineInputs);
+
+    /// The container widget managed by this parameter UI.
+    QPointer<QWidget> _containerWidget;
+
+    /// The QCheckBox widgets that allow to enable/disable each delegate.
+    QVector<QCheckBox*> _delegateCheckBoxes;
+
+    /// The QComboBox widgets that allow to select the target object for each delegate.
+    QVector<StableComboBox*> _delegateObjectLists;
+
+    /// The current list of delegates.
+    DECLARE_VECTOR_REFERENCE_FIELD(OORef<ModifierDelegate>, delegates);
 };
 
 }   // End of namespace

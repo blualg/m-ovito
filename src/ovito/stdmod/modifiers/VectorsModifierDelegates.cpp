@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
+#include <ovito/core/dataset/pipeline/ModifierEvaluationRequest.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "VectorsModifierDelegates.h"
 
 namespace Ovito {
@@ -52,9 +54,12 @@ OVITO_CLASSINFO(VectorsDeleteSelectedModifierDelegate, "DisplayName", "Vectors")
  ******************************************************************************/
 QVector<DataObjectReference> VectorsDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<Vectors>())
-        return { DataObjectReference(&Vectors::OOClass()) };
-    return {};
+    // Gather list of all vector objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Vectors::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -65,12 +70,12 @@ Future<PipelineFlowState> VectorsDeleteSelectedModifierDelegate::apply(
     const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
-    return asyncLaunch([state = std::move(state)]() mutable {
+    return asyncLaunch([state = std::move(state), createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject()]() mutable {
         size_t numVectors = 0;
         size_t numSelected = 0;
 
         // Process all Vectors objects in the data collection.
-        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+        visitObjectsToBeProcessed<Vectors>(state, inputObjectRef, createdByNode, [&](const Vectors* inputVectors) {
             inputVectors->verifyIntegrity();
             numVectors += inputVectors->elementCount();
 

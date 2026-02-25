@@ -82,7 +82,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
     const Box3I& newImages = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([state = std::move(state), newImages]() mutable {
+    return asyncLaunch([state = std::move(state), createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject(), newImages]() mutable {
 
         size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
 
@@ -91,7 +91,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
         const AffineTransformation& cellMatrix = cell->matrix();
 
         // Process all lines objects in the data collection.
-        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+        visitObjectsToBeProcessed<Lines>(state, inputObjectRef, createdByNode, [&](const Lines* inputLines) {
             // Skip if there's nothing to do
             if(numCopies <= 1 || inputLines->elementCount() == 0)
                 return;
@@ -173,7 +173,7 @@ Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
     const Box3I& newImages = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([state = std::move(state), newImages]() mutable {
+    return asyncLaunch([state = std::move(state), createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject(), newImages]() mutable {
         size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
 
         // Get the simulation cell
@@ -181,7 +181,7 @@ Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
         const AffineTransformation& cellMatrix = cell->matrix();
 
         // Process all vectors objects in the data collection
-        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+        visitObjectsToBeProcessed<Vectors>(state, inputObjectRef, createdByNode, [&](const Vectors* inputVectors) {
             // Skip if there's nothing to do
             if(numCopies <= 1 || inputVectors->elementCount() == 0)
                 return;
@@ -233,8 +233,15 @@ void ReplicateModifier::initializeObject(ObjectInitializationFlags flags)
     MultiDelegatingModifier::initializeObject(flags);
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        // Generate the list of delegate objects.
-        createModifierDelegates(ReplicateModifierDelegate::OOClass());
+        // Generate the list of delegate objects - with the particles delegate being the first one in the list.
+        createModifierDelegates(ReplicateModifierDelegate::OOClass(), {
+            QStringLiteral("ParticlesReplicateModifierDelegate"),
+            QStringLiteral("SurfaceMeshReplicateModifierDelegate"),
+            QStringLiteral("VoxelGridReplicateModifierDelegate"),
+            QStringLiteral("LinesReplicateModifierDelegate"),
+            QStringLiteral("VectorsReplicateModifierDelegate"),
+            QStringLiteral("DislocationReplicateModifierDelegate")
+        });
     }
 }
 

@@ -25,77 +25,9 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
+#include "ModifierDelegate.h"
 
 namespace Ovito {
-
-/**
- * \brief Base class for modifier delegates used by the DelegatingModifier and MultiDelegatingModifier classes.
- */
-class OVITO_CORE_EXPORT ModifierDelegate : public RefTarget
-{
-public:
-
-    /// Give modifier delegates their own metaclass.
-    class OVITO_CORE_EXPORT ModifierDelegateClass : public RefTarget::OOMetaClass
-    {
-    public:
-
-        /// Inherit constructor from base class.
-        using RefTarget::OOMetaClass::OOMetaClass;
-
-        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
-        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const {
-            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjects()",
-                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjects() method.").arg(name())));
-            return {};
-        }
-
-        /// Asks the metaclass which data objects in the given input pipeline state the modifier delegate can operate on.
-        QVector<DataObjectReference> getApplicableObjects(const PipelineFlowState& input) const {
-            if(!input) return {};
-            return getApplicableObjects(*input.data());
-        }
-
-        /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const {
-            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::getApplicableObjectClass()",
-                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the getApplicableObjectClass() method.").arg(name())));
-            return DataObject::OOClass();
-        }
-
-        /// \brief The name by which Python scripts can refer to this modifier delegate.
-        virtual QString pythonDataName() const {
-            OVITO_ASSERT_MSG(false, "ModifierDelegate::OOMetaClass::pythonDataName()",
-                qPrintable(QStringLiteral("Metaclass of modifier delegate class %1 does not override the pythonDataName() method.").arg(name())));
-            return {};
-        }
-    };
-
-    OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
-
-public:
-
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
-
-    /// Applies this modifier delegate to the data.
-    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) = 0;
-
-    /// Returns the modifier owning this delegate.
-    Modifier* modifier() const;
-
-    /// Returns a short string to be displayed next to the modifier in the pipeline editor GUI.
-    /// Strings from multiple delegates will be concatenated into a single, comma-separated string.
-    virtual QString getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { return inputDataObject().dataTitleOrPath(); }
-
-private:
-
-    /// Indicates whether this delegate is active or not.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
-
-    /// Optionally specifies a particular input data object this delegate should operate on.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, inputDataObject, setInputDataObject);
-};
 
 /**
  * \brief Base class for modifiers that delegate work to a ModifierDelegate object.
@@ -204,7 +136,7 @@ protected:
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Creates the list of delegate objects for this modifier.
-    void createModifierDelegates(const OvitoClass& delegateType);
+    void createModifierDelegates(const OvitoClass& delegateType, std::initializer_list<QString> defaultDelegateTypeNames = {});
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
     [[nodiscard]] Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});

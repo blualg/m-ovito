@@ -30,7 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationSliceModifierDelegate);
-OVITO_CLASSINFO(DislocationSliceModifierDelegate, "DisplayName", "Dislocation lines");
+OVITO_CLASSINFO(DislocationSliceModifierDelegate, "DisplayName", "Dislocations");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -58,7 +58,7 @@ Future<PipelineFlowState> DislocationSliceModifierDelegate::apply(const Modifier
     FloatType sliceWidth;
     std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
-    state.data()->visitObjectsOfType<DislocationNetwork>([&](const DislocationNetwork* inputDislocations) {
+    visitObjectsToBeProcessed<DislocationNetwork>(state, inputDataObject(), request.modificationNodeWeak(), [&](const DislocationNetwork* inputDislocations) {
         QVector<Plane3> planes = inputDislocations->cuttingPlanes();
         if(sliceWidth <= 0) {
             planes.push_back(plane);

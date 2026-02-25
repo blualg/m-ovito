@@ -37,9 +37,12 @@ OVITO_CLASSINFO(VoxelGridAffineTransformationModifierDelegate, "DisplayName", "V
 ******************************************************************************/
 QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<VoxelGrid>())
-        return { DataObjectReference(&VoxelGrid::OOClass()) };
-    return {};
+    // Gather list of all voxel grids in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(VoxelGrid::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -50,7 +53,7 @@ Future<PipelineFlowState> VoxelGridAffineTransformationModifierDelegate::apply(c
     AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
     // Transform the spatial domains of all VoxelGrid objects.
-    state.data()->visitObjectsOfType<VoxelGrid>([&](const VoxelGrid* existingObject) {
+    visitObjectsToBeProcessed<VoxelGrid>(state, inputDataObject(), request.modificationNodeWeak(), [&](const VoxelGrid* existingObject) {
         if(existingObject->domain()) {
 
             // Determine transformation matrix.

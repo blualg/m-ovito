@@ -50,6 +50,9 @@ void ModifierDelegateVariableListParameterUI::initializeObject(PropertiesEditor*
     QAction* addDelegateAction = toolbar->addAction(QIcon::fromTheme("animation_add_key"), tr("Add entry"));
     connect(addDelegateAction, &QAction::triggered, this, &ModifierDelegateVariableListParameterUI::onAddDelegate);
     layout->addWidget(toolbar, 0, Qt::AlignRight | Qt::AlignTop);
+
+    // Update UI components when the pipeline input to the modifier changes.
+    connect(editor(), &PropertiesEditor::pipelineInputChanged, this, &ParameterUI::updateUI);
 }
 
 /******************************************************************************
@@ -125,10 +128,6 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
             if(refevent.field() == PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
                 _delegates.set(this, PROPERTY_FIELD(delegates), refevent.index(), static_object_cast<ModifierDelegate>(refevent.newTarget()));
             }
-        }
-        else if(event.type() == ReferenceEvent::PipelineInputChanged) {
-            // The modifier's input from the pipeline has changed -> update list of available delegates.
-            updateUI();
         }
     }
     return ParameterUI::referenceEvent(source, event);

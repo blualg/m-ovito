@@ -20,35 +20,34 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
-#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
-#include "DeleteSelectedModifierEditor.h"
+#include <ovito/core/Core.h>
+#include "ModifierDelegate.h"
+#include "DelegatingModifier.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(DeleteSelectedModifierEditor);
-SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegate);
+OVITO_CLASSINFO(ModifierDelegate, "ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
+DEFINE_PROPERTY_FIELD(ModifierDelegate, isEnabled);
+DEFINE_PROPERTY_FIELD(ModifierDelegate, inputDataObject);
+SET_PROPERTY_FIELD_LABEL(ModifierDelegate, isEnabled, "Enabled");
+SET_PROPERTY_FIELD_LABEL(ModifierDelegate, inputDataObject, "Data object");
 
 /******************************************************************************
-* Sets up the UI widgets of the editor.
+* Returns the modifier to which this delegate belongs.
 ******************************************************************************/
-void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+Modifier* ModifierDelegate::modifier() const
 {
-    // Create a rollout.
-    QWidget* rollout = createRollout(tr("Delete selected"), rolloutParams, "manual:particles.modifiers.delete_selected_particles");
-
-    // Create the rollout contents.
-    QVBoxLayout* layout = new QVBoxLayout(rollout);
-    layout->setContentsMargins(4,4,4,4);
-    layout->setSpacing(8);
-
-    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>();
-    layout->addWidget(delegatesPUI->containerWidget());
-
-    // Status label.
-    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
+    Modifier* result = nullptr;
+    visitDependents([&](RefMaker* dependent) {
+        if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
+            if(modifier->delegate() == this) result = modifier;
+        }
+        else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
+            if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
+        }
+    });
+    return result;
 }
 
 }   // End of namespace

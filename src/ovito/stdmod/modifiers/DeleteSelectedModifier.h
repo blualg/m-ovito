@@ -62,8 +62,14 @@ public:
         MultiDelegatingModifier::initializeObject(flags);
 
         if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-            // Generate the list of delegate objects.
-            createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());
+            // Generate the list of delegate objects - with the particles delegate being the first one in the list.
+            createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), {
+                QStringLiteral("ParticlesDeleteSelectedModifierDelegate"),
+                QStringLiteral("BondsDeleteSelectedModifierDelegate"),
+                QStringLiteral("LinesDeleteSelectedModifierDelegate"),
+                QStringLiteral("VectorsDeleteSelectedModifierDelegate"),
+                QStringLiteral("SurfaceMeshRegionsDeleteSelectedModifierDelegate")
+            });
         }
     }
 

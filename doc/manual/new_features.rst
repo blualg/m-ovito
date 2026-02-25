@@ -47,6 +47,7 @@ Version 3.15.0 (dd-mm-2026)
 - Added support for :ref:`Linux aarch64 platform <installation.requirements>` (ARM64 architecture)
 - Add support for :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving access to modern codecs
 - Add support for :ref:`particle color and radius themes <application_settings.particles.themes>` that can be shared with other users or imported/exported between machines
+- The following modifiers can now be restricted to operate only on one particular mesh, voxel grid or other data object: :ref:`particles.modifiers.affine_transformation`, :ref:`particles.modifiers.delete_selected_particles`, :ref:`particles.modifiers.slice`, :ref:`particles.modifiers.slice`
 
 .. sidebar::
 

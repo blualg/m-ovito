@@ -103,12 +103,13 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
     sliceWidth /= 2;
 
     return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
+                        createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject(),
                         createSelection = modifier->createSelection()]() mutable {
 
         QString statusMessage;
 
         // Loop over all lines objects in data collection
-        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+        visitObjectsToBeProcessed<Lines>(state, inputObjectRef, createdByNode, [&](const Lines* inputLines) {
             // Make sure we can safely modify the lines object.
             Lines* outputLines = state.makeMutable(inputLines);
 
@@ -143,7 +144,7 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
             }
         });
 
-        state.setStatus(statusMessage);
+        state.combineStatus(statusMessage);
         return std::move(state);
     });
 }
@@ -180,9 +181,11 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
     sliceWidth /= 2;
 
     return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
+                        createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject(),
                         createSelection = modifier->createSelection(), applyToSelection]() mutable {
+
         // Process all vectors objects in the data collection
-        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+        visitObjectsToBeProcessed<Vectors>(state, inputObjectRef, createdByNode, [&](const Vectors* inputVectors) {
             inputVectors->verifyIntegrity();
 
             // Create mask array to be computed.
@@ -345,8 +348,15 @@ void SliceModifier::initializeObject(ObjectInitializationFlags flags)
         if(normalController())
             normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
-        // Generate the list of delegate objects.
-        createModifierDelegates(SliceModifierDelegate::OOClass());
+        // Generate the list of delegate objects - with the particles delegate being the first one in the list.
+        createModifierDelegates(SliceModifierDelegate::OOClass(), {
+            QStringLiteral("ParticlesSliceModifierDelegate"),
+            QStringLiteral("SurfaceMeshSliceModifierDelegate"),
+            QStringLiteral("VoxelGridSliceModifierDelegate"),
+            QStringLiteral("DislocationSliceModifierDelegate"),
+            QStringLiteral("LinesSliceModifierDelegate"),
+            QStringLiteral("VectorsSliceModifierDelegate")
+        });
 
         // Create the vis element for the plane.
         setPlaneVis(OORef<TriangleMeshVis>::create(flags));

@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
+#include <ovito/core/dataset/pipeline/ModifierEvaluationRequest.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "LinesModifierDelegates.h"
 
 namespace Ovito {
@@ -68,9 +70,12 @@ OVITO_CLASSINFO(LinesDeleteSelectedModifierDelegate, "DisplayName", "Lines");
 ******************************************************************************/
 QVector<DataObjectReference> LinesDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<Lines>())
-        return { DataObjectReference(&Lines::OOClass()) };
-    return {};
+    // Gather list of all Lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 /******************************************************************************
@@ -81,12 +86,12 @@ Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
     const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
-    return asyncLaunch([state = std::move(state)]() mutable {
+    return asyncLaunch([state = std::move(state), createdByNode = request.modificationNodeWeak(), inputObjectRef = inputDataObject()]() mutable {
         size_t numLines = 0;
         size_t numSelected = 0;
 
         // Process each line object in the data collection.
-        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+        visitObjectsToBeProcessed<Lines>(state, inputObjectRef, createdByNode, [&](const Lines* inputLines) {
             inputLines->verifyIntegrity();
             numLines += inputLines->elementCount();
             // Get the lines (vertex) selection.

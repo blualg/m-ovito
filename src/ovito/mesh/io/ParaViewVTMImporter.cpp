@@ -38,7 +38,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ParaViewVTMFileFilter);
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTMImporter);
 OVITO_CLASSINFO(ParaViewVTMImporter, "DisplayName", "VTM");
 DEFINE_PROPERTY_FIELD(ParaViewVTMImporter, uniteMeshes);
-SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes");
+SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes into single object");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

@@ -149,37 +149,58 @@ Future<PipelineFlowState> VectorParticlePropertiesAffineTransformationModifierDe
     return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
+            createdByNode = request.modificationNodeWeak(),
+            inputObjectRef = inputDataObject(),
             selectionOnly = modifier->selectionOnly()]() mutable {
 
         CloneHelper cloneHelper;
+
+        // Has the modifier been restricted to a particular property? If yes, look it up in the data collection.
+        ConstDataObjectPath selectedPropertyPath;
+        if(inputObjectRef) {
+            selectedPropertyPath = state.expectObject(inputObjectRef);
+        }
+
+        // Visit all properties of all PropertyContainers in the data collection.
         for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(Property::OOClass())) {
+
+            // Has the modifier been restricted to a particular property? If yes, skip all other properties.
+            if(!selectedPropertyPath.empty() && objectPath != selectedPropertyPath)
+                continue;
+
+            // Process only "transformable" vector properties.
             const Property* inputProperty = objectPath.lastAs<Property>();
-            if(inputProperty && isTransformableProperty(inputProperty)) {
-                // Get the parent property container.
-                const PropertyContainer* container = objectPath.nextToLastAs<PropertyContainer>();
-                if(!container)
-                    throw Exception(tr("Cannot transform vector property '%1' because it is not part of a property container.").arg(inputProperty->name()));
-                container->verifyIntegrity();
-
-                // Check if there is a selection property present.
-                const Property* selProperty = nullptr;
-                if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
-                    selProperty = container->getProperty(Property::GenericSelectionProperty);
-                }
-
-                // Strong reference to the input vectors to force creation of a mutable clone below.
-                ConstPropertyPtr inputPropertyRef = inputProperty;
-
-                // Make the property container mutable.
-                DataObjectPath mutableContainerPath = state.makeMutable(objectPath.parentPath(), cloneHelper);
-                PropertyContainer* mutableContainer = static_object_cast<PropertyContainer>(mutableContainerPath.last());
-
-                // Create an uninitialized copy of the vector property.
-                Property* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
-
-                // Let the modifier class do the actual vector transformation work.
-                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputPropertyRef, outputProperty, selProperty);
+            if(!inputProperty || !isTransformableProperty(inputProperty)) {
+                if(selectedPropertyPath.empty())
+                    continue;
+                else
+                    throw Exception(tr("Property '%1' is not a transformable vector property.").arg(inputObjectRef.dataTitleOrPath()));
             }
+
+            // Get the parent property container.
+            const PropertyContainer* container = objectPath.nextToLastAs<PropertyContainer>();
+            if(!container)
+                throw Exception(tr("Cannot transform vector property '%1' because it is not part of a property container.").arg(inputProperty->name()));
+            container->verifyIntegrity();
+
+            // Check if there is a selection property present.
+            const Property* selProperty = nullptr;
+            if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+                selProperty = container->getProperty(Property::GenericSelectionProperty);
+            }
+
+            // Strong reference to the input property to force the creation of a mutable copy of the property below.
+            ConstPropertyPtr inputPropertyRef = inputProperty;
+
+            // Make the property container mutable.
+            DataObjectPath mutableContainerPath = state.makeMutable(objectPath.parentPath(), cloneHelper);
+            PropertyContainer* mutableContainer = static_object_cast<PropertyContainer>(mutableContainerPath.last());
+
+            // Create an uninitialized copy of the vector property.
+            Property* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
+
+            // Let the modifier class do the actual vector transformation work.
+            AffineTransformationModifier::transformVectors(tm, selectionOnly, inputPropertyRef, outputProperty, selProperty);
         }
 
         return std::move(state);

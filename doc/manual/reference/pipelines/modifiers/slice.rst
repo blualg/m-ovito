@@ -82,7 +82,7 @@ Visualize plane
   Otherwise the plane is only indicated in the interactive viewports of OVITO.
 
 Operate on
-  The field :guilabel:`Operate on` selects the type of data elements that will be sliced by the modifier:
+  Specifies the data object classes to be processed by the modifier:
 
   .. table::
     :widths: auto
@@ -91,11 +91,15 @@ Operate on
     Operate on          Description
     =================== ============================================================================================================
     Particles           Slices :ref:`particles <scene_objects.particles>` and deletes dangling :ref:`bonds <scene_objects.bonds>`
-    Voxel grids         Slices :ref:`voxel grids <scene_objects.voxel_grid>`
     Surfaces            Slices :ref:`surface meshes <scene_objects.surface_mesh>`
-    Dislocation lines   Slices :ref:`dislocation lines <scene_objects.dislocations>`
+    Voxel grids         Slices :ref:`voxel grids <scene_objects.voxel_grid>`
+    Dislocations        Slices :ref:`dislocation lines <scene_objects.dislocations>`
     Lines               Slices :ref:`lines <scene_objects.lines>`
+    Vectors             Slices :ref:`vectors <scene_objects.vectors>`
     =================== ============================================================================================================
+
+  If there are multiple objects of a class present in the modifier's input, you can optionally restrict the modifier to a particular one of them.
+  Otherwise, the modifier will process all objects of the selected class.
 
 Alignment functions
 """""""""""""""""""

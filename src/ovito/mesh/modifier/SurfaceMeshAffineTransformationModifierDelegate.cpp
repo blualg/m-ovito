@@ -32,6 +32,20 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate)
 OVITO_CLASSINFO(SurfaceMeshAffineTransformationModifierDelegate, "DisplayName", "Surfaces");
 
 /******************************************************************************
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
+QVector<DataObjectReference> SurfaceMeshAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all surface meshes in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(SurfaceMesh::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
 Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -42,10 +56,12 @@ Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply
     return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
-            selectionOnly = modifier->selectionOnly()]() mutable {
+            selectionOnly = modifier->selectionOnly(),
+            createdByNode = request.modificationNodeWeak(),
+            inputObjectRef = inputDataObject()]() mutable {
 
         // Process SurfaceMesh objects.
-        state.data()->visitObjectsOfType<SurfaceMesh>([&](const SurfaceMesh* existingSurface) {
+        visitObjectsToBeProcessed<SurfaceMesh>(state, inputObjectRef, createdByNode, [&](const SurfaceMesh* existingSurface) {
             // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
 
@@ -69,26 +85,6 @@ Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply
                 for(Plane3& plane : cuttingPlanes)
                     plane = tm * plane;
                 newSurface->setCuttingPlanes(std::move(cuttingPlanes));
-            }
-
-            this_task::throwIfCanceled();
-        });
-
-        // Process TriangleMesh objects.
-        state.data()->visitObjectsOfType<TriangleMesh>([&](const TriangleMesh* existingMeshObj) {
-            // Create a copy of the TriangleMesh.
-            TriangleMesh* newMeshObj = state.makeMutable(existingMeshObj);
-
-            // Apply transformation to the vertices coordinates.
-            for(Point3& p : newMeshObj->vertices())
-                p = tm * p;
-            newMeshObj->invalidateVertices();
-
-            // Apply transformation to the normal vectors.
-            if(newMeshObj->hasNormals()) {
-                const auto& tm_g = tm.toDataType<GraphicsFloatType>();
-                for(auto& n : newMeshObj->normals())
-                    n = tm_g * n;
             }
 
             this_task::throwIfCanceled();

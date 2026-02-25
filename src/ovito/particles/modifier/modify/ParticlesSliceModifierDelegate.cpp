@@ -91,7 +91,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
         }
         outputParticles->verifyIntegrity();
 
-        state.setStatus(std::move(statusMessage));
+        state.combineStatus(std::move(statusMessage));
 
         return std::move(state);
     });

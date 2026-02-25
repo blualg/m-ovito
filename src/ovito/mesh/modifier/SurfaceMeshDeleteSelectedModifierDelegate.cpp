@@ -23,12 +23,14 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
+#include <ovito/core/dataset/pipeline/ModifierEvaluationRequest.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
-OVITO_CLASSINFO(SurfaceMeshRegionsDeleteSelectedModifierDelegate, "DisplayName", "Mesh Regions");
+OVITO_CLASSINFO(SurfaceMeshRegionsDeleteSelectedModifierDelegate, "DisplayName", "Mesh regions");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -50,12 +52,17 @@ QVector<DataObjectReference> SurfaceMeshRegionsDeleteSelectedModifierDelegate::O
 Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([state = std::move(state)]() mutable {
+    return asyncLaunch([
+            state = std::move(state),
+            createdByNode = request.modificationNodeWeak(),
+            inputObjectRef = inputDataObject()]() mutable
+        {
 
         size_t numRegions = 0;
         size_t numDeleted = 0;
+        bool hasSelection = false;
 
-        state.data()->visitObjectsOfType<SurfaceMesh>([&](const SurfaceMesh* existingSurface) {
+        visitObjectsToBeProcessed<SurfaceMesh>(state, inputObjectRef, createdByNode, [&](const SurfaceMesh* existingSurface) {
             // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
 
@@ -66,6 +73,7 @@ Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::appl
             BufferReadAccessAndRef<SelectionIntType> regionMask = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
             if(!regionMask)
                 return; // Nothing to do if there is no selection.
+            hasSelection = true;
 
             // Mesh faces must have the "Region" property.
             if(!existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty))
@@ -109,12 +117,16 @@ Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::appl
         });
 
         // Report some statistics:
-        QString statusMessage = tr("%1 of %2 regions deleted (%3%)")
+        QString statusMessage;
+        if(!hasSelection) {
+            statusMessage = tr("No selection - ");
+        }
+        statusMessage += tr("%1 of %2 mesh regions deleted (%3%)")
             .arg(numDeleted)
             .arg(numRegions)
             .arg((FloatType)numDeleted * 100 / std::max(numRegions, (size_t)1), 0, 'f', 1);
 
-        state.setStatus(std::move(statusMessage));
+        state.combineStatus(std::move(statusMessage));
 
         return std::move(state);
     });
