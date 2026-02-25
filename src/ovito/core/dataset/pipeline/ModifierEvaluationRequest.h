@@ -47,7 +47,7 @@ public:
     ModificationNode* modificationNode() const { return _modificationNode; }
 
     /// Returns a weak reference to the modification node being evaluated.
-    OOWeakRef<const PipelineNode> modificationNodeWeak() const { return _modificationNode; }
+    OOWeakRef<const PipelineNode> modificationNodeWeak() const;
 
     /// Returns the modifier being evaluated.
     Modifier* modifier() const;
@@ -66,6 +66,11 @@ using ModifierInitializationRequest = ModifierEvaluationRequest;
 #include "ModificationNode.h"
 
 namespace Ovito {
+
+/// Returns a weak reference to the modification node being evaluated.
+inline OOWeakRef<const PipelineNode> ModifierEvaluationRequest::modificationNodeWeak() const {
+    return _modificationNode;
+}
 
 /// Returns the modifier being evaluated.
 inline Modifier* ModifierEvaluationRequest::modifier() const {

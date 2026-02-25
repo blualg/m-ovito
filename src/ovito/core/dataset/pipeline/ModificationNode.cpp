@@ -124,6 +124,9 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
             // This is necessary, because we don't receive an InteractiveStateAvailable signal in this case.
             if(modifier())
                 modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            // Propagate enabled/disabled notification events from upstream to the downstream pipeline if this modifier is disabled.
+            if(!modifierAndGroupEnabled())
+                return true;
         }
     }
     else if(event.type() == ReferenceEvent::TitleChanged && source == modifier()) {
@@ -183,9 +186,11 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
     }
     else if(event.type() == ReferenceEvent::PipelineCacheUpdated && source == input()) {
-        // Inform modifier that the cached input state has been updated.
-        // This is mainly needed to update PropertiesEditor widgets that depend on the input state.
+        // Inform downstream modification node that the cached input state has been updated.
         notifyDependents(ReferenceEvent::PipelineInputChanged);
+        // If this modifier is currently disabled, propagate the signal to the next downstream node.
+        if(!modifierAndGroupEnabled())
+            return true;
     }
     return PipelineNode::referenceEvent(source, event);
 }
