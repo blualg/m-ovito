@@ -54,7 +54,7 @@ Grid lines
   Activates the display of wireframe lines along voxel cell edges.
 
 Interpolation
-  Smoothly interpolate between the colors of adjacent cells.
+  Smoothly interpolates between the colors of adjacent cells.
 
 Transparency
   The degree of semi-transparency of the boundary surface.

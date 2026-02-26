@@ -22,7 +22,7 @@ Configuring the axes
 The viewport layer can render up to four different axes with configurable
 text labels, colors, and spatial directions. By default, the three major Cartesian directions are shown.
 
-You can include :ref:`HTML markup elements <viewport_layers.text_label.text_formatting>` in the axes labels to format
+You can include :ref:`HTML markup elements <viewport_layers.text_label.text_formatting>` in the axis labels to format
 the text, e.g., to produce special notations such as superscripts, subscripts, or overlines.
 
 .. seealso::

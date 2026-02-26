@@ -18,7 +18,7 @@ or other modifiers in OVITO.
 
 :ref:`Surface meshes <scene_objects.surface_mesh>` are typically closed, two-dimensional manifolds embedded in a simulation cell.
 If periodic boundary conditions are employed, the surface mesh itself can be periodic. For visualization purposes, such a periodic mesh is
-first converted to a non-periodic representation by truncating it at the simulation cell boundaries. OVITO has an option to render so called
+first converted to a non-periodic representation by truncating it at the simulation cell boundaries. OVITO has an option to render so-called
 :guilabel:`Cap polygons` to fill the holes that would otherwise appear at the simulation cell boundaries where the surface is clipped.
 
 Color mapping mode

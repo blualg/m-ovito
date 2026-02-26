@@ -18,7 +18,7 @@ or numeric results in rendered images or movies.
 HTML text formatting
 """"""""""""""""""""
 
-You can include HTML markup elements and Cascading Style Sheet (CSS) attributes in the text to format individual words or characters.
+You can include HTML markup elements and Cascading Style Sheet (CSS) properties in the text to format individual words or characters.
 OVITO supports a subset of the HTML standard, which is `documented here <https://doc.qt.io/qt-6/richtext-html-subset.html>`__.
 The following table gives a few examples of HTML markup elements and the rendered output they produce:
 
@@ -70,14 +70,14 @@ format, units, or normalization for using them directly in a text label. For ins
 the ``CommonNeighborAnalysis.counts.BCC`` attribute calculated by the
 :ref:`Common neighbor analysis <particles.modifiers.common_neighbor_analysis>` modifier
 counts the total number of bcc atoms in the system. But what if you would rather
-like to print the *fraction* of bcc atoms, not the absolute count?
+print the *fraction* of bcc atoms, not the absolute count?
 In such situations, some kind of conversion and/or transformation of the attribute's value is required,
 and you will have to define a new attribute that derives its value from the original attribute.
 
 .. highlight:: python
 
 This can be accomplished by inserting a :ref:`Python script <particles.modifiers.python_script>` modifier
-into the data pipeline. This modifier executes a simple, user-defined Python function that computes the value of our
+into the data pipeline. This modifier executes a simple, user-defined Python function that computes the value of the
 new attribute based on the existing attribute(s)::
 
   def modify(frame, data):

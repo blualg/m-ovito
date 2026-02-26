@@ -35,9 +35,9 @@ OVITO activates the render preview mode automatically for the active viewport wh
 Layer type                                                       Description
 ================================================================ ==================================
 :ref:`Color legend <viewport_layers.color_legend>`               Shows a color map for a :ref:`particles.modifiers.color_coding` modifier or a :ref:`typed property <scene_objects.particle_types>`.
-:ref:`Coordinate tripod <viewport_layers.coordinate_tripod>`     Renders an axes tripod to indicate the view orientation
-:ref:`Python script <viewport_layers.python_script>` |ovito-pro| Write your own overlay type in Python and draw arbitrary graphics and data plots on top of the 3d view
-:ref:`Text label <viewport_layers.text_label>`                   Renders some text, which may be used to display dynamically computed quantities
+:ref:`Coordinate tripod <viewport_layers.coordinate_tripod>`     Renders an axes tripod to indicate the view orientation.
+:ref:`Python script <viewport_layers.python_script>` |ovito-pro| Write your own overlay type in Python and draw arbitrary graphics and data plots on top of the 3D view.
+:ref:`Text label <viewport_layers.text_label>`                   Renders some text, which may be used to display dynamically computed quantities.
 ================================================================ ==================================
 
 .. image:: /images/viewport_layers/viewport_layer_data_plot.*
@@ -53,7 +53,7 @@ for instance:
 
    * https://github.com/ovito-org/DataTablePlotOverlay
 
-     Adds a data plot to a viewport on top of the rendered image. This extension allows to
+     Adds a data plot to a viewport on top of the rendered image. This extension allows you to
      incorporate dynamically computed information in a simulation video, for example.
 
    * https://github.com/ovito-org/DistancesAndAnglesOverlay

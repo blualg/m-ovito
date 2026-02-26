@@ -8,7 +8,7 @@ Visual elements
   :align: right
 
 OVITO distinguishes between the underlying data and the visual representations produced from that data.
-One typical example for this separation between :ref:`data objects <scene_objects>`
+One typical example of this separation between :ref:`data objects <scene_objects>`
 and their visual representation is the ``Position`` particle
 property, which holds the XYZ coordinates of a set of point-like particles. To visualize this data, OVITO automatically creates
 a :ref:`Particles <visual_elements.particles>` *visual element*, which is responsible for rendering a
@@ -21,7 +21,7 @@ It becomes possible to visualize the same data in several different ways (multip
 :ref:`visualize multiple datasets side by side <clone_pipeline>` (one visual element rendering several data objects in the same way).
 
 Visual elements are usually created automatically by OVITO's :ref:`data pipeline system <usage.modification_pipeline>`
-alongside with the imported or computed data. They all appear under the :guilabel:`Visual elements` section of
+alongside the imported or computed data. They all appear under the :guilabel:`Visual elements` section of
 the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` shown in the screenshot.
 You can disable individual visual elements using the check boxes next to them in the pipeline editor.
 This will turn off the visualization of the corresponding data in the interactive viewports and in rendered images.

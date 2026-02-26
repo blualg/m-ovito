@@ -12,9 +12,9 @@ which have been extracted by the :ref:`particles.modifiers.dislocation_analysis`
 or loaded from a discrete dislocation dynamics simulation file. The visual element is responsible for
 the graphical representation of the dislocation lines stored in a :ref:`dislocations data object <scene_objects.dislocations>`.
 
-The parameters of the visualization element provide control over the appearance of the dislocation lines.
+The parameters of the visual element provide control over the appearance of the dislocation lines.
 OVITO provides options to indicate the line sense and Burgers vector of each dislocation line segment.
-Different coloring schemes allow to visualize other local properties of the dislocation defects such as the Burgers vector family or the screw/edge character (i.e. the angle between local line tangent and Burgers vector).
+Different coloring schemes allow you to visualize other local properties of the dislocation defects such as the Burgers vector family or the screw/edge character (i.e. the angle between local line tangent and Burgers vector).
 
 .. seealso::
   

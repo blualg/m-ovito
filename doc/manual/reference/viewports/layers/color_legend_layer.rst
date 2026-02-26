@@ -32,7 +32,7 @@ Typed properties
 
   .. note::
 
-    Note that the color legend layer itself is not responsible for coloring the particles or bonds.
+    The color legend layer itself is not responsible for coloring the particles or bonds.
     It may be necessary to insert a :ref:`Color by type <particles.modifiers.color_by_type>` modifier
     into the pipeline to actually give particles and bonds their corresponding colors.
 

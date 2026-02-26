@@ -8,7 +8,7 @@ Python script viewport layer |ovito-pro|
   :align: right
 
 This type of :ref:`viewport layer <viewport_layers>` lets you write your own Python script function to paint arbitrary
-text or graphics on top of 3d visualizations rendered by OVITO. This makes it possible to enrich figures or movies with
+text or graphics on top of 3D visualizations rendered by OVITO. This makes it possible to enrich figures or movies with
 additional information, e.g., scale bars, data plots, or diagrams.
 
 .. image:: /images/viewport_layers/python_script_overlay_code_editor.*

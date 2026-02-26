@@ -53,7 +53,7 @@ you can fully control the visualization on a per-particle basis.
   ================================== ======================= ==============================================================================
   Particle property                  Data type               Description
   ================================== ======================= ==============================================================================
-  ``Color``                          Real (R,G,B)            Display color of individual particles. Red, green and blue components must be in the range [0,1].
+  ``Color``                          Real (R,G,B)            Display color of individual particles. Red, green, and blue components must be in the range [0,1].
   ``Radius``                         Real                    Display size on a per-particle basis.
   ``Transparency``                   Real                    Transparency of individual particles. Must be in the range [0,1].
   ``Aspherical Shape``               Real (X,Y,Z)            Dimensions of particles with a non-spherical shape. The exact interpretation depends on the :ref:`particle shape <howto.aspherical_particles>`.
@@ -76,7 +76,7 @@ These settings apply globally to all particles in the system:
 Radius scaling
   This global scaling factor (percentage) is applied to all particle radii at rendering time.
   It is applied in addition to any other factors controlling the size of particles (per-type radius, per-particle radius, default radius).
-  By setting it to a value below 100%, you can generate a balls-and-sticks visualization of molecular systems,
+  By setting it to a value below 100%, you can generate a ball-and-stick visualization of molecular systems,
   with reduced atomic spheres connected by cylindrical bonds.
 
 Rendering quality
@@ -92,11 +92,11 @@ Rendering quality
     * High quality is always used for final output images regardless of particle count
 
   Low
-    Particles are rendered as texture-mapped imposters facing the viewer. Particles do not have depth in this mode,
+    Particles are rendered as texture-mapped impostors facing the viewer. Particles do not have depth in this mode,
     and intersections between overlapping particles may not be displayed correctly. This mode offers the best performance.
 
   Medium
-    Particles are rendered as texture-mapped imposters facing the viewer. An OpenGL fragment shader computes
+    Particles are rendered as texture-mapped impostors facing the viewer. An OpenGL fragment shader computes
     depth information for each pixel to produce reasonable sphere-sphere intersections for overlapping particles.
 
   High
@@ -106,7 +106,7 @@ Rendering quality
 Default particle shape
 ''''''''''''''''''''''
 
-These settings provide default values for particles that don't have shape or size specified via per-type settings or per-particle properties:
+These settings provide default values for particles that do not have shape or size specified via per-type settings or per-particle properties:
 
 Style
   Selects the default display shape for particles. The shape can be overridden on a per-type basis
@@ -138,7 +138,7 @@ Style
   Cylinder
     Particles are rendered as :ref:`cylinders <howto.aspherical_particles.cylinders>` aligned along the Z-axis by default.
 
-    * The ``Aspherical Shape`` property is required: Its X-component controls the cylinder radius, its
+    * The ``Aspherical Shape`` property is required: its X-component controls the cylinder radius, its
       Z-component controls the cylinder length.
     * The ``Orientation`` property rotates the cylinder from its default Z-axis alignment.
 
