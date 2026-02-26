@@ -7,7 +7,7 @@ Bond length distribution |ovito-pro|
   :width: 35%
   :align: right
 
-This modifier computes the distribution of the **bond lengths**, i.e. the histogram of distances between pairs of
+This modifier computes the distribution of the **bond lengths**, i.e., the histogram of distances between pairs of
 particles connected by :ref:`bonds <scene_objects.bonds>`.
 
 The modifier only includes :ref:`bonded <scene_objects.bonds>` particles in the distribution,

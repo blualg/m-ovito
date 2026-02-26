@@ -48,7 +48,7 @@ computed by comparing the current atomic positions to this virtual reference str
 
 OVITO computes the tensor :math:`\mathbf{F}^e` locally at each atom in the system
 by taking into account the positions of atoms in the local neighborhood. How many neighbors are taken into account depends on the
-selected crystal type. For close-packed structures (FCC, HCP) only the 12 nearest neighbors of a central atom are used to
+selected crystal type. For close-packed structures (FCC, HCP), only the 12 nearest neighbors of a central atom are used to
 compute the elastic deformation gradient tensor at that central atom. For other crystal structures, neighbors up to the
 second neighbor shell are taken into account. Note that :math:`\mathbf{F}^e` is computed
 in a least-squares sense, because the elastic deformation in the local neighborhood of an atom may in general be
@@ -74,9 +74,9 @@ in these defects and outputs the elastic component. More information on this top
   | `On the elastic-plastic decomposition of crystal deformation at the atomic scale  <http://dx.doi.org/10.1088/0965-0393/20/3/035012>`__
   | `Modelling Simul. Mater. Sci. Eng. 20, 035012 (2012) <http://dx.doi.org/10.1088/0965-0393/20/3/035012>`__
 
-Attention must be paid to the symmetries of the crystal structure. For example, in crystals with cubic symmetry there are
+Attention must be paid to the symmetries of the crystal structure. For example, in crystals with cubic symmetry, there are
 48 equivalent lattice orientations, which will lead to different values of the elastic deformation gradient tensor.
-Given this fundamental ambiguity, which arises from the crystal symmetry, the algorithm will arbitrarily choose one orientation at random for each
+Given this fundamental ambiguity, which arises from the crystal symmetry, the algorithm will choose one orientation at random for each
 crystallite (i.e. grain) in the system. In particular, there is no guarantee that the same orientation
 will be picked when performing the analysis on different simulation timesteps.
 
@@ -100,7 +100,7 @@ Strain tensor in lattice frame
     :math:`\mathbf{E} = 1/2 ((\mathbf{F}^e)^{\mathrm{T}} \mathbf{F}^e - \mathbf{I})`.
 
   This symmetric strain tensor describes the elastic deformation in the local lattice coordinate frame.
-  For example, in a cubic crystal the component :math:`\mathbf{E}_\mathrm{xx}`
+  For example, in a cubic crystal, the component :math:`\mathbf{E}_\mathrm{xx}`
   describes the axial strain along the [100] lattice direction of the crystal. However, it is not clear
   what the local [100] direction is, because in cubic crystals the [100], [010], and [001] lattice directions are
   interchangeable. This strain tensor is therefore affected by the symmetry ambiguity problem described

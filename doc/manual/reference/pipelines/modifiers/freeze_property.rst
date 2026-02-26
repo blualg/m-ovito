@@ -69,7 +69,7 @@ To maintain the coloring created in frame 0, apply the *Freeze Property* modifie
 Computing property variations
 =============================
 
-This modifier is also useful for analyzing changes of a particle property with respect to its initial value.
+This modifier is also useful for analyzing changes in a particle property with respect to its initial value.
 
 Suppose the simulation code has computed a local particle property named ``Potential Energy`` that varies at each frame, and
 you want to monitor how each particle's potential energy changes over time by taking the difference

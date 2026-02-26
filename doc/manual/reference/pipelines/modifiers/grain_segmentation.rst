@@ -102,8 +102,8 @@ Adopt orphan atoms
   This includes atoms that are part of grain boundaries. This option lets the modifier assign these orphan atoms to the nearest grain.
 
 Handle coherent interfaces/stacking faults
-  This option lets the algorithm merge atoms having hexagonal crystal structures (e.g. HCP) with atoms having cubic
-  structures (e.g. FCC) at stacking faults or other types of coherent crystal interfaces.
+  This option lets the algorithm merge atoms having hexagonal crystal structures (e.g., HCP) with atoms having cubic
+  structures (e.g., FCC) at stacking faults or other types of coherent crystal interfaces.
   Thus, stacking faults will become part of the surrounding grain if this option is enabled.
   Furthermore, atoms belonging to the cores of coherent twin boundaries will be attributed to one of the two adjacent grains.
 

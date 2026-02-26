@@ -31,7 +31,7 @@ then be generated just for the selected particles.
 .. note::
 
   The particle selection is taken from the initial frame of the trajectory range, not the current frame.
-  In other words, the trajectory lines are always generated for a fixed set of particles - even if the selection
+  In other words, the trajectory lines are always generated for a fixed set of particles --- even if the selection
   changes dynamically in each frame. If you want to show the trajectory lines of different particles in different
   frames, you have to first generate lines for *all* particles and then dynamically filter (delete) individual lines again.
 
@@ -59,8 +59,8 @@ Periodic boundary conditions
 
 Molecular dynamics codes that implement periodic boundary conditions (PBC) typically fold particles back into the box
 when they cross a periodic boundary of the simulation box. Thus, the time-dependent particle coordinates represent
-discontinuous trajectory paths. The option :guilabel:`Unwrap trajectories` of the modifier allows to
-reconstruct continuous trajectory lines from these "wrapped" (i.e. discontinuous) particle coordinates.
+discontinuous trajectory paths. The option :guilabel:`Unwrap trajectories` of the modifier allows you to
+reconstruct continuous trajectory lines from these "wrapped" (i.e., discontinuous) particle coordinates.
 
 When :guilabel:`Unwrap trajectories` is active, the modifier uses the `minimum image convention <https://en.wikipedia.org/wiki/Periodic_boundary_conditions#Practical_implementation:_continuity_and_the_minimum_image_convention>`__ to detect crossings of periodic box boundaries
 and "unwraps" the trajectory lines to make them continuous. The option is active by default, but you can turn it off in case

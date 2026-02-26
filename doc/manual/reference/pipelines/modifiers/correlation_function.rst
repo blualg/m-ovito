@@ -8,7 +8,7 @@ Spatial correlation function
   :align: right
 
 This modifier calculates the spatial correlation function between two particle properties,
-:math:`C(r) = \langle P_1(0) P_2(r) \rangle` where :math:`P_1` and :math:`P_2` are the two properties.
+:math:`C(r) = \langle P_1(0) P_2(r) \rangle`, where :math:`P_1` and :math:`P_2` are the two properties.
 
 OVITO uses a fast Fourier transform (FFT) to compute the convolution. It then computes a radial average in reciprocal
 and real space. This gives the correlation function up to half of the cell size. The modifier can additionally compute

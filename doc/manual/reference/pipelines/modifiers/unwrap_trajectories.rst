@@ -4,7 +4,7 @@ Unwrap trajectories
 -------------------
 
 This modifier "unwraps" particle coordinates to make the particle trajectories continuous. It reverses the effect of
-periodic boundary conditions, i.e. the folding of particle positions back into the primary simulation cell, which is typically
+periodic boundary conditions, i.e., the folding of particle positions back into the primary simulation cell, which is typically
 performed by molecular dynamics codes or OVITO's :ref:`particles.modifiers.wrap_at_periodic_boundaries` modifier.
 
 .. figure:: /images/modifiers/unwrap_trajectories_example_before.svg
@@ -27,7 +27,7 @@ write this information to their output trajectory file, and OVITO will make use 
 If the ``Periodic Image`` particle property is not present, the modifier automatically uses a heuristic to
 unwrap the particle trajectories. It steps through all simulation frames to detect jumps (discontinuities) in the input trajectories.
 Such jumps usually occur with every transition of a particle from one periodic cell image to another.
-After the modifier has scanned the input trajectories and recorded all particle jumps, it subsequently modifies the coordinates of particles which have crossed a periodic boundary to "unfold" their
+After the modifier has scanned the input trajectories and recorded all particle jumps, it subsequently modifies the coordinates of particles that have crossed a periodic boundary to "unfold" their
 trajectories.
 
 The modifier uses the `minimum image principle <https://en.wikipedia.org/wiki/Periodic_boundary_conditions#Practical_implementation:_continuity_and_the_minimum_image_convention>`__
@@ -35,7 +35,7 @@ to detect the transition of a particle through a periodic cell boundary from one
 
 Note that the unwrapping of trajectories is only performed along those cell directions for which periodic
 boundary conditions (PBC) are enabled. The PBC flags are read from the
-input simulation file if available, or can manually be set in the :ref:`Simulation cell <scene_objects.simulation_cell>` panel.
+input simulation file if available, or can be manually set in the :ref:`Simulation cell <scene_objects.simulation_cell>` panel.
 
 .. seealso::
 

@@ -60,16 +60,16 @@ Furthermore, you can specify the object classes the modifier should touch:
   :ref:`Simulation cell <scene_objects.simulation_cell>`          Applies the transformation to the origin of the :ref:`simulation cell <scene_objects.simulation_cell>` and the linear part to the three cell vectors.
   :ref:`Particles <scene_objects.particles>`                      Applies the transformation to the coordinates of particles (``Position`` property) and their orientations if present (``Orientation`` property).
   :ref:`Vector properties <usage.particle_properties>`            Applies the linear part :math:`\mathbf{M}` of the affine transformation to vectorial properties, e.g. the particle properties ``Velocity``, ``Force`` and ``Displacement``. Vectorial properties are those which have a :ref:`visual_elements.vectors` visual element attached and which consist of three floating-point components.
-  :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the transformation to the domain shape of a :ref:`voxel grid <scene_objects.voxel_grid>`.
+  :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the transformation to the domain shape of :ref:`voxel grids <scene_objects.voxel_grid>`.
   :ref:`Surfaces <scene_objects.surface_mesh>`                    Applies the transformation to the vertices of :ref:`surface meshes <scene_objects.surface_mesh>`.
   :ref:`Triangle meshes <scene_objects.triangle_mesh>`            Applies the transformation to the vertices of :ref:`triangle meshes <scene_objects.triangle_mesh>`.
-  :ref:`Lines <scene_objects.lines>`                              Applies the transformation to all :ref:`lines <scene_objects.lines>`.
-  :ref:`Vectors <scene_objects.vectors>`                          Applies the transformation to all :ref:`vector objects <scene_objects.vectors>`.
+  :ref:`Lines <scene_objects.lines>`                              Applies the transformation to the vertices of :ref:`line objects <scene_objects.lines>`.
+  :ref:`Vectors <scene_objects.vectors>`                          Applies the transformation to the positions and directions of :ref:`vector objects <scene_objects.vectors>`.
   :ref:`Dislocations <scene_objects.dislocations>`                Applies the transformation to :ref:`dislocation lines <scene_objects.dislocations>` and their Burgers vectors.
   =============================================================== =================================================================================
 
 If there are multiple objects of a class present in the modifier's input, you can optionally restrict the modifier to a particular one of them.
-Otherwise, the modifier will process all objects of the selected class.
+Otherwise, the modifier will process all objects of the enabled classes.
 
 .. seealso::
 

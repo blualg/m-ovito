@@ -13,13 +13,13 @@ The :ref:`particles.modifiers.load_trajectory` modifier may be used several time
 load different types of time-varying data from separate files and merge them all into a single dataset (e.g. atomic
 trajectories + reactive bond topologies + angular interactions).
 
-Some molecular dynamics codes work with separate topology and trajectory files. The topology file typically serves as starting point
+Some molecular dynamics codes work with separate topology and trajectory files. The topology file typically serves as a starting point
 of the MD simulation and contains the initial atomic positions and the definitions of static structures like the atom types, bonds, etc.,
 which do not change throughout the simulation. The trajectories of the particles computed by the MD code are then written
 to an output file, which stores just the time-dependent coordinates and sometimes other varying information such as the atomic energies.
 
 LAMMPS is a simulation code that employs this topology-trajectory file philosophy. LAMMPS uses the *data* file format
-for input files, which define the atom types and bonds in the simulation, whereas the *dump* file format serves as output format
+for input files, which define the atom types and bonds in the simulation, whereas the *dump* file format serves as the output format
 storing the computed atom trajectories and other time-varying information.
 
 .. image:: /images/modifiers/load_trajectory_pipeline.png
@@ -35,7 +35,7 @@ looks very similar and manages the initial topology file.
 
 After loading the trajectory file in the *Load trajectory* panel, the modifier will subsequently replace the initial particle positions
 with the time-dependent positions read from the trajectory file. The same is done for the simulation cell geometry as well as any
-other auxiliary particle properties found in the trajectory file. Furthermore, you see the timeline of OVITO now display the
+other auxiliary particle properties found in the trajectory file. Furthermore, the OVITO timeline will now display the
 animation frames found in the trajectory file.
 
 Particle ordering
@@ -57,7 +57,7 @@ or `newly form <https://docs.lammps.org/fix_bond_react.html>`__.
 The changing bond connectivity in such simulations can be dumped to an output file using the `dump local <https://docs.lammps.org/dump.html>`__
 command of LAMMPS in combination with the `compute property/local <https://docs.lammps.org/compute_property_local.html>`__ command,
 see the example below. In simulations using the ReaxFF potential, the `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command
-may be used to write the bonds list (including bond orders) to a text-based output file in regular time intervals.
+may be used to write the bonds list (including bond orders) to a text-based output file at regular time intervals.
 
 OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reaxff/bonds` files and merge it with the molecular dataset.
 The loaded bonds list will replace any static connectivity that may have already been present in the initial LAMMPS data file. Typically, you will use two instances of the
@@ -75,7 +75,7 @@ from a reactive MD simulation:
   both contain snapshots taken at the exact same times, and each *Load Trajectory* modifier maps them sequentially to the program's animation timeline
   without checking the consistency of the timestep information.
 
-LAMMPS is able to output the changing bond topology in regular time intervals and also additional per-bond quantities such
+LAMMPS is able to output the changing bond topology at regular time intervals and also additional per-bond quantities such
 as the bond lengths, bond forces or bond energies. Consider, for example, the following LAMMPS commands, which dump
 the current bonds list to an output file in regular timestep intervals::
 
@@ -93,7 +93,7 @@ The ``dump local`` command generates a file named :file:`bonds.dump` with six da
 
 When importing the file into OVITO using the *Load trajectory* modifier, you need to map these data columns
 to the correct :ref:`bond properties <scene_objects.bonds>` so that the program can interpret the values
-in the LAMMPS dump file correctly. The following table shows how that mapping should look like:
+in the LAMMPS dump file correctly. The following table shows what that mapping should look like:
 
 .. table::
   :widths: auto
@@ -125,7 +125,7 @@ The number of records in the dump local file must exactly match the number of ex
 
 Files written by the `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command
 have a different, fully specified format. OVITO can automatically map the information from such ReaxFF files to the right
-bond and particle properties, see :ref:`file_formats.input.reaxff` documentation.
+bond and particle properties, see the :ref:`file_formats.input.reaxff` documentation.
 
 .. seealso::
 

@@ -17,7 +17,7 @@ combine several modifiers to accomplish more complex tasks.
   Analysis
   ================================================================= ==========================================================
   :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
-  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assign bond order to existing bonds.
+  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assigns bond order values to existing bonds.
   :ref:`particles.modifiers.bond_angle_distribution` |ovito-pro|    Computes bond angle distributions.
   :ref:`particles.modifiers.bond_length_distribution` |ovito-pro|   Computes bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
@@ -35,7 +35,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.correlation_function`                   Calculates the spatial cross-correlation function between two particle properties.
   :ref:`particles.modifiers.structure_factor` |ovito-pro|           Calculates the structure factor :math:`S(k)` for a system of particles.
   :ref:`particles.modifiers.time_averaging` |ovito-pro|             Computes the average of some time-dependent input quantity over the entire trajectory.
-  :ref:`particles.modifiers.time_series` |ovito-pro|                Plots the value of a global attribute as function of simulation time.
+  :ref:`particles.modifiers.time_series` |ovito-pro|                Plots the value of a global attribute as a function of simulation time.
   :ref:`particles.modifiers.voronoi_analysis`                       Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
   :ref:`particles.modifiers.wigner_seitz_analysis`                  Identifies point defects (vacancies and interstitials) in a crystal lattice.
   ================================================================= ==========================================================
@@ -66,7 +66,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.combine_particle_sets`           Merges the particles and bonds from two separate input files into one dataset.
   :ref:`particles.modifiers.compute_property`                Assigns property values to particles or bonds according to a user-defined formula.
   :ref:`particles.modifiers.delete_selected_particles`       Removes the selected elements from the visualization.
-  :ref:`particles.modifiers.edit_simulation_cell`            Set boundary conditions or change the cell geometry.
+  :ref:`particles.modifiers.edit_simulation_cell`            Sets boundary conditions or changes the cell geometry.
   :ref:`particles.modifiers.edit_types`                      Lets you edit the types associated with a typed property, e.g. particle types.
   :ref:`particles.modifiers.freeze_property`                 Freezes the values of a dynamic particle property at a given animation time to make them available at other times.
   :ref:`particles.modifiers.load_trajectory`                 Loads time-dependent atomic positions from a separate trajectory file.
@@ -109,7 +109,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.common_neighbor_analysis`        Performs the common neighbor analysis (CNA) to determine local crystal structures.
   :ref:`particles.modifiers.identify_diamond_structure`      Identifies atoms that are arranged in a cubic or hexagonal diamond lattice.
   :ref:`particles.modifiers.polyhedral_template_matching`    Identifies common crystal structures using the PTM method and computes local crystal orientations.
-  :ref:`particles.modifiers.vorotop_analysis`                Identifies local structure of particles using the topology of their Voronoi polyhedra.
+  :ref:`particles.modifiers.vorotop_analysis`                Identifies the local structure of particles using the topology of their Voronoi polyhedra.
   ========================================================== ==========================================================
 
 .. table::
@@ -136,8 +136,8 @@ combine several modifiers to accomplish more complex tasks.
   Python-based modifiers
   =====================================================================================================================
   :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles.
-  :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discerns between stacking fault and twin boundary crystal defects.
-  :ref:`modifiers.render_lammps_regions` |ovito-pro|         Visualize LAMMPS regions as surface meshes.
+  :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Distinguishes between stacking fault and twin boundary crystal defects.
+  :ref:`modifiers.render_lammps_regions` |ovito-pro|         Visualizes LAMMPS regions as surface meshes.
   :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles.
   ========================================================== ==========================================================
 

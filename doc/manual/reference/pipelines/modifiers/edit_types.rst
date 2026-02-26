@@ -45,7 +45,7 @@ Add new type...
   lets you confirm or change it. A new type entry is appended to the list and can be edited like any other type.
 
 Type editor
-  When a specific type is selected in the table the lower part of the
+  When a specific type is selected in the table, the lower part of the
   panel shows editable fields for that type, typically including:
 
   * Name: A textual label for the type (can be empty, in which case only the numeric ID of the type is used).
@@ -64,7 +64,7 @@ Behavior and workflows
 Edit workflow
   Insert the *Edit Types* modifier to override or refine the attributes of types
   defined in the upstream data. This is useful when you want to change display
-  colors, radii or names without altering the original simulation file.
+  colors, radii, or names without altering the original simulation file.
 
 Adding new types
   Use the "Add new type..." button to create a new type entry. The editor will
@@ -73,7 +73,7 @@ Adding new types
   newly defined type to selected particles.
 
 Deleting types
-  Removing a type definition from the type list changes how downstream visualization and
+  Removing a type definition from the type list changes how downstream visualizations and
   modifiers interpret the numeric type values stored with elements. For example,
   particles that still carry the deleted numeric ID will no longer display the
   deleted type's visualization attributes. Thus, you typically want to also

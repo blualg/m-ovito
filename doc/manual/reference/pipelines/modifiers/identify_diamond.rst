@@ -30,7 +30,7 @@ The results are stored in the ``Structure Type`` particle property, with the typ
                                               Its four neighbors are positioned on lattice sites, but at least one of its second nearest neighbors is not.
   3          Cubic diamond (2nd neighbor)     Atom being a second nearest neighbor of an atom that was classified as *cubic diamond*. 
                                               The atom itself is positioned on a lattice site, but at least one of its neighbors is missing or is not positioned on a lattice site.
-  4          Hexagonal diamond                Atom having all of its first and second nearest neighbors positioned on hexagonal diamond lattice sites
+  4          Hexagonal diamond                Atom having all of its first and second nearest neighbors positioned on hexagonal diamond lattice sites.
   5          Hexagonal diamond (1st neighbor) Atom being a first neighbor of an atom that was classified as *hexagonal diamond*. 
                                               Its four neighbors are positioned on lattice sites, but at least one of its second nearest neighbors is not.
   6          Hexagonal diamond (2nd neighbor) Atom being a second nearest neighbor of an atom that was classified as *hexagonal diamond*. 
@@ -78,7 +78,7 @@ and the second and third nearest neighbor shells are not well separated.
 These problems are solved as follows: First, the nearest neighbors of an atom are identified. Then, for each of these four neighbors, their respective nearest neighbors are identified.
 This yields the list of second nearest neighbors of the central atom.
 Finally, the CNA fingerprint is computed for these 12 second nearest neighbors and the central atom.
-If they are arranged on a FCC lattice, then the central atom is classified as
+If they are arranged on an FCC lattice, then the central atom is classified as
 cubic diamond. If they form a HCP structure, then the central atom is marked as a hexagonal diamond atom.
 
 Further details can be found in the `publication <http://arxiv.org/abs/1601.06597>`__.

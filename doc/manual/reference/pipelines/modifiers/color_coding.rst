@@ -28,7 +28,7 @@ The field :guilabel:`Operate on` selects the type of data elements the modifier 
   Lines            Colors :ref:`Lines <scene_objects.lines>` created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or added using the :py:attr:`DataCollection.lines.create() <ovito.data.DataCollection.lines>` method.
   ================ =================================================================================
 
-The color getting assigned to an element (e.g. a particle) is determined by the modifier as follows:
+The color assigned to an element (e.g., a particle) is determined by the modifier as follows:
 First, the value of the selected input property of the element is linearly mapped (and clamped) to the unit interval [0,1] according to the
 parameters :guilabel:`Start value` and :guilabel:`End value` of the modifier. The normalized value is then mapped to an RGB color based on the selected color gradient.
 
@@ -82,7 +82,7 @@ Start & end value
   These parameters specify the source range of input property values getting mapped to the normalized [0,1] interval of the color map.
 
 Automatic range
-  With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
+  With this option turned on, the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
 
 Symmetric range
   When this option is enabled, the modifier automatically adjusts the value range to be symmetric around zero.

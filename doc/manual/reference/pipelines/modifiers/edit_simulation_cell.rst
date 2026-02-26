@@ -25,7 +25,7 @@ That means only downstream modifiers and visualizations will see the modified si
 
 .. tip::
 
-    You can always inspect the final simulation cell state, i.e. the state at the end of the data pipeline, on the :ref:`Simulation Cell <data_inspector.simulation_cell>` page of the data inspector.
+    You can always inspect the final simulation cell state, i.e., the state at the end of the data pipeline, on the :ref:`Simulation Cell <data_inspector.simulation_cell>` page of the data inspector.
     From there, you can also use the **Edit in pipeline...** button to conveniently insert an *Edit Simulation Cell* modifier into the current pipeline.
 
 Modifier settings

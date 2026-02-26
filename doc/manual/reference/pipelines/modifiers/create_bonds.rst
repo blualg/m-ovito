@@ -51,13 +51,13 @@ Covalent radii
 
 Van der Waals radii
   A bond is created between two atoms if their separation is less than 60% of the sum of their van der Waals radii. This criterion has been
-  adopted from the popular visualization software :program:`VMD`. The Van der Waals radii of all particle types of the system are displayed in the table. OVITO initializes these
-  values during file import based on the chemical element symbols found in the input file. If needed, you can override the standard Van der Waals radius of each atom type
+  adopted from the popular visualization software :program:`VMD`. The van der Waals radii of all particle types of the system are displayed in the table. OVITO initializes these
+  values during file import based on the chemical element symbols found in the input file. If needed, you can override the standard van der Waals radius of each atom type
   using the :ref:`particles.modifiers.edit_types` modifier or, permanently, in the :ref:`application settings <application_settings.particles>`.
-  Bonds are only created between pairs of particles which both have a positive Van der Waals radius.
+  Bonds are only created between pairs of particles which both have a positive van der Waals radius.
 
   Furthermore, the option :guilabel:`Don't generate H-H bonds` is turned on by default, which means the modifier will not generate any bonds connecting
-  two hydrogen atoms, i.e., which both have a particle type named "H" - even if they fulfill the distance-based criterion.
+  two hydrogen atoms, i.e., atoms that both have a particle type named "H" - even if they fulfill the distance-based criterion.
 
 Pair-wise cutoffs
   This mode gives you full control over the bond distance cutoff for each pair-wise combination of particle types.
@@ -66,7 +66,7 @@ Pair-wise cutoffs
   Note that this mode is only available if particle types have been defined for the system, i.e., the particle property ``Particle Type`` exists.
 
 The option :guilabel:`Suppress inter-molecular bonds` restricts generation of bonds to particles that
-are part of the same molecule, i.e. which have matching values of the ``Molecule Identifier`` property.
+are part of the same molecule, i.e., which have matching values of the ``Molecule Identifier`` property.
 If the ``Molecule Identifier`` particle property is not defined for the system, this option has no effect.
 
 The modifier lets you specify an optional :guilabel:`Lower cutoff` value. It effectively restricts the generation of bonds
@@ -85,7 +85,7 @@ you can adjust the visual representation of individual bonds.
 .. attention::
 
   In case the modifier generated more than 2,000,000 bonds, it will show a warning message and automatically turn off the display
-  of the bonds as a precaution, because rendering too many bonds in the interactive viewports of OVITO on a slow machine could take exceedingly long and freeze
+  of the bonds as a precaution, because rendering too many bonds in the interactive viewports of OVITO on a slow machine could take an exceedingly long time and freeze
   the entire program. If desired, you can manually show the bonds again by re-enabling the :ref:`bonds visual element <visual_elements.bonds>` in the pipeline editor.
 
 Technical notes
@@ -94,7 +94,7 @@ Technical notes
 To correctly deal with periodic simulations, OVITO maintains a triplet of integer numbers with every bond, which is stored in the ``Periodic Image`` bond property array.
 Each bond's triplet specifies whether that bond crosses the periodic boundaries of the simulation cell (and in which direction).
 For example, a bond crossing the periodic cell boundary in the positive X direction is indicated by the triplet (1,0,0) and
-will be visualized as two separate half bonds, one on either side of the simulation cell. Bonds in the interior of the simulation box, which do not cross a
+will be visualized as two separate half-bonds, one on either side of the simulation cell. Bonds in the interior of the simulation cell, which do not cross a
 periodic boundary, have a ``Periodic Image`` value of (0,0,0).
 
 .. seealso::

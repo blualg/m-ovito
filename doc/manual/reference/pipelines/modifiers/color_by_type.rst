@@ -43,7 +43,7 @@ Operate on
 Property
   The typed property that serves as input for the modifier and which the assigned colors should be based on. 
   The drop-down list shows only properties with discrete values for which at least one element type has been defined, 
-  e.g. a particle type.
+  e.g., a particle type.
 
 Color only selected elements
   This option lets the modifier assign new colors only to the currently selected data elements. 

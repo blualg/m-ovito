@@ -10,7 +10,7 @@ Render LAMMPS regions |ovito-pro|
   :align: right
 
 This :ref:`Python-based modifier function <particles.modifiers.python_script>` lets you visualize
-spatial regions with different 3d geometries as defined by the `region <https://docs.lammps.org/region.html>`__ command
+spatial regions with different 3D geometries as defined by the `region <https://docs.lammps.org/region.html>`__ command
 of the `LAMMPS <https://docs.lammps.org/>`__ simulation code.
 The modifier generates explicit mesh-based representations of the parametric regions,
 e.g. cylinders, spheres, cones, planes, and blocks.

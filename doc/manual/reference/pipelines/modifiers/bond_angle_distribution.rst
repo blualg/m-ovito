@@ -20,7 +20,7 @@ input simulation file or it needs to be generated within OVITO using the :ref:`p
 Bond angle distribution
 """""""""""""""""""""""
 
-The computed histogram counts in equisized bins the angles formed by pairs of bonds meeting at the same particle.
+The computed histogram counts, in equisized bins, the angles formed by pairs of bonds meeting at the same particle.
 Bond angles :math:`\theta` may range from 0 to 180 degrees. The modifier option :guilabel:`Use cosines of angles` switches the
 x-axis of the histogram to the range [-1, +1], now computing the distribution of :math:`\cos{\theta}` values in the system.
 
@@ -45,7 +45,7 @@ Bond selection
 Particle type
   Computes separate bond angle histograms for each combination of three particle types.
   If the number of particle types in the system is :math:`N`,
-  then the bond angle distribution, involving triplets of particles (with the central particle discriminable),
+  then the bond angle distribution, involving triplets of particles (with the central particle distinguishable),
   will be partitioned into :math:`N^2 (N+1)/2` partial bond angle distributions.
 
 Particle selection

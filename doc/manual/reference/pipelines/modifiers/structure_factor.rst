@@ -37,7 +37,7 @@ The following figure shows a comparison between the two supported calculation me
   :align: center
 
 The following figure shows total :math:`S(k)` and partial :math:`S_{\alpha\beta}(k)` structure factors calculated using this OVITO function (direct method),
-the `freud  <https://freud.readthedocs.io/en/latest/>`__ Python package (direct method), and an implementation from :ref:`[LE2024] <particles.modifiers.structure_factor.references>` (Debye method).
+the `freud <https://freud.readthedocs.io/en/latest/>`__ Python package (direct method), and an implementation from :ref:`[LE2024] <particles.modifiers.structure_factor.references>` (Debye method).
 The analyzed input structure was taken from the same paper:
 
 .. image:: /images/modifiers/structure_factor_method-comparison.png
@@ -81,7 +81,7 @@ Direct method
 
 Computationally, the structure factor :math:`S(k)` is calculated from the scattering function :math:`F(k)`, defined as
 
-  :math:`{\displaystyle F(k) = \frac{1}{\sqrt{N}} \sum_{i=0}^{N} \exp \left( j \vec{k} \vec{r}_i \right)}`,
+  :math:`{\displaystyle F(k) = \frac{1}{\sqrt{N}} \sum_{i=0}^{N} \exp \left( j \vec{k} \cdot \vec{r}_i \right)}`,
 
 where :math:`N` is the number of particles, :math:`\vec{r}` is the particle position, and :math:`j` is the imaginary unit.
 
@@ -101,7 +101,7 @@ Debye method
 
 The Debye method uses
 
-  :math:`{\displaystyle S(k) = \frac{4 \pi \rho}{k} \int_0^{L/2} r \sin(kr) g(r) w(r) }`,
+  :math:`{\displaystyle S(k) = \frac{4 \pi \rho}{k} \int_0^{L/2} r \sin(kr) g(r) w(r) \, dr }`,
 
 where
 
@@ -149,7 +149,7 @@ The atomic form factors for each species are calculated following
 
 with parameters taken from the `atomic form factors table from TU Graz <https://lampz.tugraz.at/~hadley/ss1/crystaldiffraction/atomicformfactors/formfactors.php>`__.
 
-These Faber-Ziman structure factors :math:`A^\mathrm{X}_{\alpha\beta}(k)` can subsequently be converted into partial structure factor :math:`S^\mathrm{X}_{\alpha\beta}(k)` using
+These Faber-Ziman structure factors :math:`A^\mathrm{X}_{\alpha\beta}(k)` can subsequently be converted into partial structure factors :math:`S^\mathrm{X}_{\alpha\beta}(k)` using
 the equation outlined above. Lastly, these partial structure factors can be combined to obtain the total structure factor :math:`S^\mathrm{X}`.
 
 .. _particles.modifiers.structure_factor.references:
@@ -157,7 +157,7 @@ the equation outlined above. Lastly, these partial structure factors can be comb
 References and further reading
 """"""""""""""""""""""""""""""
 
-Documentation links to the ``freud`` Python package, which also implements both calculation methods:
+Links to the documentation of the ``freud`` Python package, which also implements both calculation methods:
 
 - https://freud.readthedocs.io/en/latest/modules/diffraction.html#freud.diffraction.StaticStructureFactorDirect
 

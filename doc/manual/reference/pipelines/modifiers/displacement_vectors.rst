@@ -51,7 +51,7 @@ pick the file containing the initial particle positions.
 Particle identities
 """""""""""""""""""
 
-In order to calculate displacement vectors OVITO needs to establish a one-to-one mapping between the particles in the reference
+In order to calculate displacement vectors, OVITO needs to establish a one-to-one mapping between the particles in the reference
 and the current configuration. If the particles have a property named ``Particle Identifier``,
 then OVITO will use these identifiers to generate the one-to-one mapping. In other words, if the particles possess unique identifiers, then 
 OVITO is able to handle changes in the storage order of particles. However, if particles do not possess unique identifiers, then the modifier requires that
@@ -87,7 +87,7 @@ to the particle displacements that stem from the macroscopic deformation of the 
 displacements of the particles.
 
 The option :guilabel:`To current` performs the opposite: It transforms the particles of the reference configuration to the current
-configuration first before calculating the displacements. It does that by applying the affine transformation that is given by the
+configuration before calculating the displacements. It does that by applying the affine transformation that is given by the
 simulation cell shape change.
 
 The following table visualizes the effect of the three mapping options on the resulting displacement vector of an exemplary particle.  
@@ -106,7 +106,7 @@ OVITO assumes that particle trajectories are all continuous. On the other hand, 
 ensures that displacements are calculated correctly even when particles cross a periodic boundary of the cell
 and were mapped back into the cell by the simulation code. On the other hand, if you intend to calculate displacement vectors
 that span more than half of the simulation box size, then the minimum image convention cannot be used. You *must*
-use unwrapped coordinates in this case, because large displacements would otherwise be folded back into the periodic cell thanks to
+use unwrapped coordinates in this case, because large displacements would otherwise be folded back into the periodic cell due to
 the minimum image convention.
 
 The following figure shows the effect of the option:

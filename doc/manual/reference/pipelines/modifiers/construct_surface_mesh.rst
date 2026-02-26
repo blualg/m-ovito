@@ -54,7 +54,7 @@ determines which particles are located exactly on the boundary, making it a well
 
 The :ref:`second method <particles.modifiers.construct_surface_mesh.gaussian_density_method>` is based on a smeared-out representation of the finite-sized
 particle spheres in terms of *overlapping Gaussian distribution functions* centered at each particle. The resulting density field,
-which is computed on a discrete grid, has local maximums at each particle site and decays to zero away from the particles.
+which is computed on a discrete grid, has local maxima at each particle site and decays to zero away from the particles.
 The constructed surface boundary represents an isosurface of the Gaussian density field, with the iso-level chosen such that the
 resulting surface roughly matches the finite diameters of the original particle spheres. This approach thus provides the advantage
 of accounting for the finite extent of the atomic spheres, which can be important in case of small molecules
@@ -116,7 +116,7 @@ The simulation box here constitutes a periodic domain where the surface manifold
 at the box boundaries and even reconnect to itself to form an infinite manifold.
 Furthermore, there are two particular situations where the surface will turn out degenerate (i.e. a mesh with no faces): (i) A
 simulation box containing no particles or without particles forming any solid region, and (ii) a periodic simulation box densely and completely filled with particles.
-In case (i) there will be single space-filling empty region and in case (ii) a single space-filling solid region.
+In case (i) there will be a single space-filling empty region and in case (ii) a single space-filling solid region.
 OVITO differentiates between the two degenerate cases when it comes to visualization of cap polygons.
 
 For visualization a surface cut by a periodic simulation box boundary is wrapped around and reenters on the opposite side of the
@@ -181,7 +181,7 @@ apply a fairing procedure [Taubin, SIGGRAPH 95 Conf. Proc., pp. 351-358, 1995] t
 
 It should be emphasized that the results of the described surface reconstruction method will generally depend on the selected probe
 sphere radius parameter :math:`R_{\alpha}`. A rule of thumb for choosing :math:`R_{\alpha}` is to use the nearest neighbor atom
-separation distance in the material at hand as demonstrated in figure (a) on the right. OVITO allows you determine the first peak of the radial pair distribution
+separation distance in the material at hand as demonstrated in figure (a) on the right. OVITO allows you to determine the first peak of the radial pair distribution
 function :math:`g(r)` with the :ref:`particles.modifiers.radial_distribution_function` modifier if needed.
 Generally, you should report the value of :math:`R_{\alpha}` in your publications when measuring surface area, solid volumes, or porosities.
 
@@ -384,7 +384,7 @@ Comparison of alpha-shape and Gaussian density methods
   :width: 26%
 
 The :ref:`alpha-shape algorithm <particles.modifiers.construct_surface_mesh.alpha_shape_method>` and the :ref:`Gaussian density method <particles.modifiers.construct_surface_mesh.gaussian_density_method>`
-lead to comparable surfaces meshes for dense atomic systems. This can be seen in the images above, where a spherical cavity inside a dense block
+lead to comparable surface meshes for dense atomic systems. This can be seen in the images above, where a spherical cavity inside a dense block
 of atoms was identified using both methods. Both methods create a roughly spherical surface with its radius governed by the probe sphere radius
 or the iso-value parameter, respectively.
 

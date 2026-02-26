@@ -90,7 +90,7 @@ Root-Mean-Square Deviation (RMSD)
 """""""""""""""""""""""""""""""""
 
 For each input particle, the PTM tries to determine a mapping of the local neighborhood to each active candidate structure.
-If such a mapping exists, a RMSD value is calculated, which is a measure of the spatial deviation from the ideal structure template (the quality of the match).
+If such a mapping exists, an RMSD value is calculated, which is a measure of the spatial deviation from the ideal structure template (the quality of the match).
 The structural type with the lowest RMSD value is finally assigned to the particle.
 A histogram of the RMSD values for all structures and all particles is shown in the side panel.
 

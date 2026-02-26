@@ -15,14 +15,14 @@ a time-based averaging of the particle coordinates over several input simulation
 If the particles have :ref:`orientational information <howto.aspherical_particles>` associated with them, then
 the modifier will smooth or interpolate the ``Orientation`` particle property in the same way as the
 particle positions. Furthermore, smoothing will also be applied to any particle property that is scalar and continuous, 
-i.e., which has a single vector component of data type ``float``. 
+i.e., which has a single component of data type ``float``. 
 
 Averaging mode
 """"""""""""""
 
 If the :guilabel:`Smoothing window size` is set to a value larger than 1, then the modifier 
 replaces the particle positions in the current frame with time-averaged coordinates computed over a time interval
-centered around the current frame of the given size, i.e. a sliding window. This mode can be used to reduce fluctuations (e.g. thermal vibrations)
+centered around the current frame of the given size, i.e., a sliding window. This mode can be used to reduce fluctuations (e.g. thermal vibrations)
 in the particle trajectories.
 
 .. image:: /images/modifiers/smooth_trajectory_averaging.svg

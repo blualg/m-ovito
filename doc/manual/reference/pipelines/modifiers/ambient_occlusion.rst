@@ -25,8 +25,8 @@ OVITO uses the graphics card to quickly perform this illumination calculation.
   With AO modulated brightness
 
 Note that the ambient occlusion modifier is only needed if you are using the standard :ref:`OpenGL renderer <rendering.opengl_renderer>`
-or want quick shading of structures displayed in the interactive viewports.
-Other :ref:`rendering backends <usage.rendering>` in OVITO Pro support ambient occlusion shading as direct part
+or if you want quick shading of structures displayed in the interactive viewports.
+Other :ref:`rendering backends <usage.rendering>` in OVITO Pro support ambient occlusion shading as a direct part
 of the image rendering process itself, which typically gives better visual quality than this modifier can produce.
 
 The modifier should always be placed at the very end of a data pipeline to obtain correct lighting results.

@@ -18,7 +18,7 @@ This modifier computes an `isosurface <https://en.wikipedia.org/wiki/Isosurface>
 The resulting isosurface is a :ref:`surface mesh <scene_objects.surface_mesh>` object and
 its visual appearance is controlled by the accompanying :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
 
-You can change the iso-level value by clicking into the histogram plot, which shows the distribution of field values.
+You can change the iso-level value by clicking on the histogram plot, which shows the distribution of field values.
 To create multiple isosurfaces at different iso-levels, you can insert several instances of the modifier into the pipeline.
 
 Voxel grids can be imported into OVITO from several :ref:`input file formats <file_formats.input>`.

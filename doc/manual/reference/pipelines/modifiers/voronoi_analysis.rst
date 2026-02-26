@@ -16,7 +16,7 @@ Voronoi analysis
   :align: right
 
 This analysis modifier calculates the 3D Voronoi tessellation of the simulation box, taking the particle positions as Voronoi cell centers.
-By default the following output quantities are computed for each input particle:
+By default, the following output quantities are computed for each input particle:
 
 Atomic Volume
   The volume of the Voronoi cell of the particle (in cubic simulation units of length).
@@ -27,11 +27,11 @@ Coordination
 
 Cavity Radius
   The distance from the particle to the farthest vertex of its Voronoi cell.
-  This distance is also the radius of the biggest empty sphere (i.e. containing no other particle) touching the particle.
+  This distance is also the radius of the biggest empty sphere (i.e., containing no other particle) touching the particle.
   It can thus be used to quantify the size of the cavities near the particles, by assuming that particles are points with no size.
-  For this reason the quantity is called *cavity radius*.
+  For this reason, the quantity is called *cavity radius*.
 
-After the modifier has been executed these quantities become available as new particle properties and may be referenced in subsequent
+After the modifier has been executed, these quantities become available as new particle properties and may be referenced in subsequent
 pipeline steps. Use for example the :ref:`particles.modifiers.color_coding` modifier to visualize the values of these particle properties.
 
 .. _particles.modifiers.voronoi_analysis.indices:
@@ -49,7 +49,7 @@ To select all atoms having this kind of icosahedral coordination structure, we c
 
   VoronoiIndex.3==0 && VoronoiIndex.4==0 && VoronoiIndex.5==12 && VoronoiIndex.6==0
 
-Note that we don't need to include the first two indices in the selection expression, since faces with less than three edges
+Note that we don't need to include the first two indices in the selection expression, since faces with fewer than three edges
 do not exist.
 
 How to analyze the computation results
@@ -57,7 +57,7 @@ How to analyze the computation results
 
 If you are interested in the indices computed by the modifier for a particular particle, you can open OVITO's
 :ref:`Data Inspector <data_inspector>` panel. It lists all properties of the particle, including the computed Voronoi indices.
-If you would like to perform a statistical analysis of the Voronoi polyhedra, e.g. to determine the Voronoi index vector that
+If you would like to perform a statistical analysis of the Voronoi polyhedra, e.g., to determine the Voronoi index vector that
 occurs most frequently in your system, then you can use OVITO's Python scripting interface to access the computed per-particle indices.
 You can find an example script in the :ref:`OVITO Python Reference <example_compute_voronoi_indices>`.
 
@@ -94,14 +94,14 @@ Neighbor bonds
 Voronoi polyhedra
   Lets the modifier output a :ref:`surface mesh <scene_objects.surface_mesh>` to visualize the computed Voronoi polyhedra.
   Each Voronoi cell is represented by a spatial region in the mesh and is associated with local properties such as
-  the cell's volume, coordination number, surface area and the unique ID of the input particle located at the center of the cell.
+  the cell's volume, coordination number, surface area, and the unique ID of the input particle located at the center of the cell.
   Use additional modifiers such as :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.delete_selected_particles` to
-  subsequently filter the set of displayed Voronoi cells. For example, to visualize only cells having a certain number of faces
+  subsequently filter the set of displayed Voronoi cells, for example to visualize only cells having a certain number of faces
   or belonging to certain atoms.
 
   Additionally, the modifier outputs each face's area, order, and adjacent cell info as per-face mesh properties,
   which can be used to further analyze the characteristics of individual Voronoi faces in the system. Note that tools such as
-  the :ref:`particles.modifiers.histogram` modifier allow you to subsequently compute global statistics, e.g. the
+  the :ref:`particles.modifiers.histogram` modifier allow you to subsequently compute global statistics, e.g., the
   distribution of Voronoi face areas.
 
 .. _particles.modifiers.voronoi_analysis.thresholds:
@@ -125,7 +125,7 @@ not included in the computed Voronoi index and it is also not counted toward the
 
 The threshold face area can either be specified as an absolute value or relative to the total surface area of the Voronoi polyhedron.
 The purpose of these thresholds is to exclude very small faces/edges, which occur sporadically
-in the presence of perturbations, from the analysis and the counting. Also see `this paper on the topic <http://www.pnas.org/content/112/43/E5769.short>`__.
+in the presence of perturbations, from the analysis and the counting. See also `this paper on the topic <http://www.pnas.org/content/112/43/E5769.short>`__.
 
 Face area threshold parameters
 ==============================
@@ -140,9 +140,9 @@ Relative threshold
   The modifier will ignore any Voronoi cell face whose area is smaller than this
   threshold when computing the coordination number and the Voronoi indices of a particle.
 
-  The relative threshold is specified as a fraction of the total surface area of the Voronoi polyhedron the faces belong to.
+  The relative threshold is specified as a fraction of the total surface area of the Voronoi polyhedron to which the faces belong.
   For example, you can use this threshold to exclude those faces from the analysis with an area less than 1% of the total area of the polyhedron surface,
-  like it was done in `this paper <http://dx.doi.org/10.1038/nature04421>`__.
+  as was done in `this paper <http://dx.doi.org/10.1038/nature04421>`__.
 
   .. caution::
 

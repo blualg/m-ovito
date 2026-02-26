@@ -19,7 +19,7 @@ Parameters
 """"""""""
 
 Cutoff distance
-  A particle will be selected if it is within this spherical distance of an already selected particle.
+  A particle will be selected if it is within this distance of an already selected particle.
 
 N
   The number of nearest neighbors to select around each already selected particle.

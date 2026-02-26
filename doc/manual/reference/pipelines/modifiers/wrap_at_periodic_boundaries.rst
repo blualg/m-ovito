@@ -3,9 +3,8 @@
 Wrap at periodic boundaries
 ---------------------------
 
-This modifier remaps particles that are located outside of the simulation box
-back into the box by "wrapping" their coordinates around at
-the boundaries of the simulation box.
+This modifier maps the positions of all particles to the primary image of the simulation cell.
+In other words, it wraps the particle coordinates at the periodic boundaries of the simulation cell.
 
 .. figure:: /images/modifiers/wrap_at_periodic_boundaries_example_before.*
   :figwidth: 20%
@@ -23,9 +22,12 @@ input simulation file if available and can be manually set in the :ref:`Simulati
 
 .. versionadded:: 3.10.1
 
-  As a side effect of the coordinate wrapping, the ``Periodic Image`` property gets created by the modifier -- or updated if already present.
+  As a side effect of the coordinate wrapping, the ``Periodic Image`` property gets created by the modifier — or updated if already present.
   This particle property stores for each particle which periodic image of the simulation cell it was located in originally.
   This information may be used later on to unwrap the particle coordinates again using the :ref:`particles.modifiers.unwrap_trajectories` modifier.
+
+  If the dataset contains bonds, the modifier also updates the per-bond ``Periodic Image`` property, adjusting the PBC shift vectors
+  of bonds to remain consistent with the wrapped particle positions.
 
 .. seealso::
 

@@ -23,7 +23,7 @@ This modifier can be used to compute a coarse-grained field representation from 
   on a selected particle property, which may be scalar or vector-valued. This process projects particle-based data onto a
   :ref:`structured grid <scene_objects.voxel_grid>`, producing a coarse-grained field representation.
 
-  You can choose between different reduction operations, e.g. sum, average (mean), minimum or maximum, to be applied per grid cell.
+  You can choose between different reduction operations, e.g., sum, average (mean), minimum or maximum, to be applied per grid cell.
 
   .. image:: /images/modifiers/spatial_binning_example_particles.png
     :width: 50%
@@ -53,7 +53,7 @@ Data output options
 
 - For 1D binning, the computed data is accessible via the :ref:`data inspector <data_inspector.data_tables>` and can be exported as a text file.
 
-- For 3D binning, the output is stored as a :ref:`voxel grid <scene_objects.voxel_grid>`, which can be visualized using :ref:`3d volume rendering <visual_elements.voxel_grid>` or
+- For 3D binning, the output is stored as a :ref:`voxel grid <scene_objects.voxel_grid>`, which can be visualized using :ref:`3D volume rendering <visual_elements.voxel_grid>` or
   the :ref:`particles.modifiers.create_isosurface` and :ref:`particles.modifiers.slice` modifiers.
 
 - 2D and 3D grid data can also be exported using OVITO's :ref:`file export <usage.export>` function. Use the `VTK Voxel Grid` :ref:`output format <file_formats.output>`.

@@ -8,7 +8,7 @@ Centrosymmetry parameter
   :align: right
   
 This modifier calculates the *centrosymmetry parameter* (CSP) [`Kelchner, Plimpton, Hamilton, Phys. Rev. B, 58, 11085 (1998) <http://link.aps.org/doi/10.1103/PhysRevB.58.11085>`__] for each particle.
-In solid-state systems the centrosymmetry parameter is a useful measure of the local
+In solid-state systems, the centrosymmetry parameter is a useful measure of the local
 lattice disorder around an atom and can be used to characterize whether the atom is
 part of a perfect lattice, a local defect (e.g. a dislocation or stacking fault), or located at a surface.
 
@@ -23,7 +23,7 @@ is given by
 where :math:`\mathbf{r}_i` and :math:`\mathbf{r}_{i+N/2}` are two neighbor vectors from the central atom to a pair of opposite neighbor atoms.
 For lattice sites in an ideal centrosymmetric crystal, the contributions of all neighbor pairs in this formula will cancel, and
 the resulting CSP value will hence be zero. Atomic sites within a defective crystal region, in contrast, typically have a disturbed, non-centrosymmetric
-neighborhood. In this case the CSP becomes positive. Using an appropriate threshold, to allow for small perturbations due to thermal displacements and elastic strains,
+neighborhood. In this case, the CSP becomes positive. Using an appropriate threshold, to allow for small perturbations due to thermal displacements and elastic strains,
 the CSP can be used as an order parameter to filter out atoms that are part of crystal defects.
 
 The calculated atomic CSP values are stored in the ``Centrosymmetry`` output particle property by the modifier.
@@ -51,7 +51,7 @@ Conventional CSP
 Minimum-weight matching CSP
   The conventional CSP algorithm performs well on highly centrosymmetric structures. In acentrosymmetric structures, however, it often assigns similar CSP values to very different structures, which results
   from the "greedy" selection of neighbor pair weights. The *minimum-weight matching CSP* [`Larsen <https://arxiv.org/abs/2003.08879>`__]
-  ensures that neighbor relationships are reciprocal, which results in a better separation of CSP values between e.g. HCP atoms and surface defect atoms.
+  ensures that neighbor relationships are reciprocal, which results in a better separation of CSP values between e.g., HCP atoms and surface defect atoms.
   This algorithm is more computationally expensive.
 
 The option :guilabel:`Use only selected particles` restricts the analysis to the

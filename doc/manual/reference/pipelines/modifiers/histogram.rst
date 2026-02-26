@@ -7,14 +7,14 @@ Histogram
   :width: 35%
   :align: right
 
-This modifier computes a histogram of the values of a certain property, taken over all particles, bonds or other data elements in the dataset.
+This modifier computes a histogram of the values of a certain property, taken over all particles, bonds, or other data elements in the dataset.
 Furthermore, the modifier lets you select all data elements that fall within a specified value interval.
 
 Parameters
 """"""""""
 
 Operate on
-  Selects the class of data elements the modifier should operate on (e.g. particles, bonds, etc).
+  Selects the class of data elements the modifier should operate on (e.g., particles, bonds, etc.).
   The drop-down list will only let you select classes that are present in the modifier's input data.
 
 Property
@@ -25,7 +25,7 @@ Number of histogram bins
   of the property is divided.
 
 Normalization mode
-  Selects the normalization mode for the histogram. The default is to output **absolute counts**, i.e. the number of elements in each bin.
+  Selects the normalization mode for the histogram. The default is to output **absolute counts**, i.e., the number of elements in each bin.
 
   The second option is to normalize the bin counts to the total number of input elements (**relative frequency**).
   This is useful for comparing histograms with different numbers of input elements.

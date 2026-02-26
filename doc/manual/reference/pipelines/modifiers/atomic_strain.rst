@@ -36,12 +36,12 @@ Role of the cutoff radius
 """""""""""""""""""""""""
 
 The :guilabel:`Cutoff radius` is a parameter of the modifier controlling the range of neighbors taken
-into account when computing the atomic deformation gradient tensor for a particle. In other words this parameter determines
+into account when computing the atomic deformation gradient tensor for a particle. In other words, this parameter determines
 the size of a spherical volume around the particle over which the relative motion of neighboring particles is averaged to obtain
 the continuum deformation measure. As a rule of thumb: Use a smaller cutoff radius parameter to resolve all local details of the deformation field.
 On the other hand, a large cutoff radius will yield slowly varying (smooth) deformation values at the atomic sites.
 
-A typical choice for the cutoff radius parameter is to use the first minimum of the pair distribution function, i.e. placing
+A typical choice for the cutoff radius parameter is to use the first minimum of the pair distribution function, i.e., placing
 the cutoff halfway between the first and the second shell of neighbors in the system at hand. You can calculate the pair distribution
 function for the current system using OVITO's :ref:`particles.modifiers.radial_distribution_function` modifier.
 
@@ -52,7 +52,7 @@ the cutoff range of the central particle in order to calculate a deformation gra
 If the cutoff radius has been chosen too small and there are less than three neighbors within range of the central particle,
 the deformation gradient calculation and all subsequent calculations will fail for the particle. The modifier will notify you about this situation
 in the status field and will, for diagnostic purposes, select all such "undercoordinated" particles for which the calculation failed.
-Depending on the situation, you may react to this kind of condition by bumping up the cutoff radius parameter in order for more neighbors
+Depending on the situation, you may react to this kind of condition by increasing the cutoff radius parameter in order for more neighbors
 to be included in the cutoff sphere.
 
 Two-dimensional systems
@@ -104,7 +104,7 @@ along arbitrary directions.
     - :math:`(E_{\mathrm{xx}} + E_{\mathrm{yy}} + E_{\mathrm{zz}}) / 3`
     - :math:`(E_{\mathrm{xx}} + E_{\mathrm{yy}}) / 2`
 
-The deformation gradient and the strain tensor both can only describe material deformations that are locally affine.
+Both the deformation gradient and the strain tensor can only describe material deformations that are locally affine.
 In fact, the atomic deformation gradient tensor is computed such that it best describes only the affine component of the
 true deformation, which may actually be non-affine within the spherical sampling volumes. Falk & Langer (see reference below) have proposed a measure to
 quantify the deviation of the true deformation from the affine approximation that the atomic deformation
@@ -150,7 +150,7 @@ pick the file containing the undeformed particle positions.
 Particle identities
 """""""""""""""""""
 
-In order to calculate the displacement vectors that enter in the deformation gradient calculation, OVITO needs to build a one-to-one mapping between the particles in the undeformed
+In order to calculate the displacement vectors that enter into the deformation gradient calculation, OVITO needs to build a one-to-one mapping between the particles in the undeformed
 and the deformed configuration. If the particles possess a property named ``Particle Identifier``,
 then OVITO will use this identity information to generate the mapping. In such a case, it is okay if the storage order of particles
 in the input file(s) changes with time. However, if particles do not possess unique identifiers, then the modifier requires that
@@ -196,7 +196,7 @@ OVITO assumes that particle trajectories are all continuous. On the other hand, 
 ensures that displacements are calculated correctly even when particles cross a periodic boundary of the cell
 and were mapped back into the cell by the simulation code. On the other hand, if you intend to analyze a system where particles have moved by
 more than half of the simulation box size, then the minimum image convention cannot be used. You *must*
-use unwrapped coordinates in this case, because large displacements would otherwise be folded back into the periodic cell thanks to
+use unwrapped coordinates in this case, because large displacements would otherwise be folded back into the periodic cell due to
 the minimum image convention.
 
 The following figure shows the effect of the option on the calculated displacement vectors (which in turn affect the other kinematic deformation measures):

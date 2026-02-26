@@ -13,7 +13,7 @@ The modifier outputs the generated time series as a :ref:`data table <scene_obje
 
 The modifier lets you select one or more existing input attributes from the current pipeline output. For each of the selected input attributes,
 a separate time series will be generated to plot its evolution as a function of time. Furthermore, you can select a custom source attribute for the time axis. 
-Its dynamic value will serve as time axis for the plot, for instance if you would like to plot the time series as a function of simulation timestep number or physical simulation
+Its dynamic value will serve as the time axis for the plot, for instance if you would like to plot the time series as a function of simulation timestep number or physical simulation
 time instead of the default animation timestep.
 
 .. image:: /images/modifiers/time_series_example_plot.png

@@ -8,16 +8,16 @@ Ackland-Jones analysis
   :align: right
 
 This modifier implements a method for identifying common crystalline and other structures based on an analysis
-of the distribution of angles formed by the pairs of neighbors of a central atom. The method is known as Ackland-Jones bond-angle method 
+of the distribution of angles formed by the pairs of neighbors of a central atom. The method is known as the Ackland-Jones bond-angle method
 [`Ackland and Jones, Phys. Rev. B 73, 054104 <http://link.aps.org/doi/10.1103/PhysRevB.73.054104>`__]. The algorithm assigns a structural type
 to each particle having a local environment that matches one of the known structures (FCC, BCC, HCP, icosahedral).
 
 .. caution::
 
-  The Ackland-Jones method tends to produce a lot of false positive identifications when being applied to strongly distorted or amorphous structures. 
+  The Ackland-Jones method tends to produce a lot of false positive identifications when applied to strongly distorted or amorphous structures.
   Please consider using one of the more robust and well-defined identification methods available in OVITO instead, e.g. :ref:`particles.modifiers.polyhedral_template_matching`
-  or :ref:`particles.modifiers.common_neighbor_analysis`. The Ackland-Jones modifier has only been implemented in OVITO for the sake of completeness, 
-  not because it is a good structure identification algorithm. 
+  or :ref:`particles.modifiers.common_neighbor_analysis`. The Ackland-Jones modifier has only been implemented in OVITO for the sake of completeness,
+  not because it is a good structure identification algorithm.
 
 Modifier outputs
 """"""""""""""""
@@ -35,7 +35,7 @@ The structural type determined by the algorithm is encoded as an integer value:
 
 In addition, the modifier assigns colors to the particles (by setting the ``Color``
 particle property) to indicate their computed structural type. The color representing each structural type
-can be customized by double-clicking the corresponding entry in the table or, permanently, in the 
+can be customized by double-clicking the corresponding entry in the table or, permanently, in the
 :ref:`application settings dialog <application_settings.particles>`.
 
 Furthermore, the modifier emits global attributes to the data pipeline reporting the total number of particles matching

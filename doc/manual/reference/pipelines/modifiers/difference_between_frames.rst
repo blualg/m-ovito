@@ -9,7 +9,7 @@ Difference between frames |ovito-pro|
 
 .. versionadded:: 3.14.0
 
-This modifier computes numeric differences (deltas) between the current trajectory frame and a reference frame.
+This modifier computes numerical differences (deltas) between the current trajectory frame and a reference frame.
 The reference configuration can be either fixed or relative to the current frame (time offset), enabling sliding-window difference calculations.
 
 The user interface of the modifier lets you select one or more input quantities or objects to process simultaneously.

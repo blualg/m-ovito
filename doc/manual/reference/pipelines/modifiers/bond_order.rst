@@ -18,7 +18,7 @@ The algorithm mostly follows the methodology described in
     | `doi:10.1002/jcc.24309 <https://doi.org/10.1002/jcc.24309>`__
 
 As input, the algorithm requires an existing bond topology.
-For best results, initial bonds should be created using the "Covalent radii" mode of OVITO's :ref:`particles.modifiers.create_bonds` modifier,
+For best results, initial bonds should be created using the :guilabel:`Covalent radii` mode of OVITO's :ref:`particles.modifiers.create_bonds` modifier,
 as both algorithms (bond creation and bond order assignment) are based on the same paper.
 
 .. image:: /images/modifiers/bond_order_example_double_bonds.png
@@ -30,7 +30,7 @@ bonds will be added or removed in the process. OVITO will render bonds with a bo
 
 To find the optimum bond order assignment throughout the molecular structure, different possible configurations are explored
 and scored based on a cost table. This atomic penalty score table is defined in the original publication (Table 1).
-As the global optimization problem is not trivial, the modifier splits larger molecules into smaller fragments or chunks which are subsequently
+As the global optimization problem is not trivial, the modifier splits larger molecules into smaller fragments or chunks that are subsequently
 optimized separately. The maximum fragment size can be set using the :guilabel:`Molecular fragment size limit` parameter. Larger fragment sizes
 lead to improved penalty scores and therefore better results at the cost of increased computation time. This effect can be seen in Figure 3 of the
 paper. The computation always starts at a fragment size limit of 3, which is then incremented until
@@ -53,8 +53,8 @@ Aromatic perception
 """""""""""""""""""
 
 The modifier identifies aromatic 5- and 6-rings. Such rings are referenced against a database of known patterns for
-which the number of electrons contributed into the ring are tabulated. If the total number of electrons in the ring fulfills the Hückel
-rule (:math:`N_{\text{e}^-} = 4n+2`) the ring and its atoms are tagged as aromatic.
+which the number of electrons contributed to the ring is tabulated. If the total number of electrons in the ring fulfills the Hückel
+rule (:math:`N_{\text{e}^-} = 4n+2`), the ring and its atoms are tagged as aromatic.
 
 These patterns are shown in Figure 6 in the paper. We have made two adjustments in OVITO to improve the aromatic perception:
 

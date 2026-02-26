@@ -11,14 +11,14 @@ Find rings |ovito-pro|
 
 This modifier identifies and visualizes ring structures formed by :ref:`bonds <scene_objects.bonds>` between particles.
 
-You can load the bonds needed by this modifier either from a file or generate them within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
+You can either load the bonds needed by this modifier from a file or generate them within OVITO using the :ref:`particles.modifiers.create_bonds` modifier.
 
 .. _particles.modifiers.find_rings.definition:
 
 Definition of a ring
 ====================
 
-A ring is a closed path made of bonds. Rings identified by the algorithm may not contain bridges. This means the shortest path between any two particles within the same ring must be a section of the same ring, i.e., the path cannot be a shortcut. This is shown in the following schematic. The 10-ring is not a valid ring, because a shortcut exists between two of its atoms. Instead, the modifier finds two 6-rings.
+A ring is a closed path made of bonds. Rings identified by the algorithm must not contain bridges. This means the shortest path between any two particles within the same ring must be a section of the same ring, i.e., the path cannot be a shortcut. This is shown in the following schematic. The 10-ring is not a valid ring, because a shortcut exists between two of its atoms. Instead, the modifier finds two 6-rings.
 
 .. image:: /images/modifiers/find_rings_schematic.png
   :width: 60%

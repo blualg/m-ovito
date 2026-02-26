@@ -38,8 +38,8 @@ Adaptive CNA (with variable cutoff)
 
 Interval CNA (with variable cutoff)
   Sometimes an appropriate cutoff cannot be found using either the conventional CNA *or* the adaptive CNA,
-  in particular at elevated temperatures. In this case the *Interval Common Neighbor Analysis* (i-CNA) method [`Larsen <https://arxiv.org/abs/2003.08879>`__]
-  may be used. For each particle it investigates all possible threshold choices. This is slower than the other methods but has a
+  in particular at elevated temperatures. In this case, the *Interval Common Neighbor Analysis* (i-CNA) method [`Larsen <https://arxiv.org/abs/2003.08879>`__]
+  may be used. For each particle, it investigates all possible threshold choices. This is slower than the other methods but has a
   better recognition rate.
 
 Bond-based CNA (without cutoff)

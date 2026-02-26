@@ -109,7 +109,7 @@ and intuitive way to see the results of the clustering algorithm.
 
 To visualize other properties of the clusters, for example their sizes (particle counts), you can use the
 :ref:`particles.modifiers.color_coding` modifier. However, this requires first copying the desired cluster property,
-e.g. ``Cluster Size``, from the table of clusters over to the individual particles. This can be accomplished
+e.g., ``Cluster Size``, from the table of clusters over to the individual particles. This can be accomplished
 using a :ref:`particles.modifiers.python_script` modifier:
 
 .. code-block:: python

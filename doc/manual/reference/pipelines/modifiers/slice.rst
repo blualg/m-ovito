@@ -99,7 +99,7 @@ Operate on
     =================== ============================================================================================================
 
   If there are multiple objects of a class present in the modifier's input, you can optionally restrict the modifier to a particular one of them.
-  Otherwise, the modifier will process all objects of the selected class.
+  Otherwise, the modifier will process all objects of the enabled classes.
 
 Alignment functions
 """""""""""""""""""
@@ -108,9 +108,9 @@ These functions reposition or align the cutting plane:
 
   * :guilabel:`Center in simulation cell` moves the plane to the center of the simulation cell by shifting it parallel to the plane's normal vector.
 
-  * :guilabel:`Align view to plane` rotates the viewport camera to make it look perpendicular onto the cutting plane.
+  * :guilabel:`Align view to plane` rotates the viewport camera to make it look perpendicularly at the cutting plane.
 
-  * :guilabel:`Align plane to view` rotates the plane such that its normal vector becomes parallel with the camera viewing direction of the active viewport.
+  * :guilabel:`Align plane to view` rotates the plane such that its normal vector becomes parallel to the camera viewing direction of the active viewport.
 
   * :guilabel:`Pick three points` lets you pick three spatial points with the mouse in the viewports. The cutting plane will be repositioned such that it goes through all three points.
 

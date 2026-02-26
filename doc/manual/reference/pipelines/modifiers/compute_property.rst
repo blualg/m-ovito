@@ -10,7 +10,7 @@ Compute property
   :width: 30%
   :align: right
 
-The *Compute Property* modifier sets property values of particle, bonds, and other elements according to a user-defined mathematical formula.
+The *Compute Property* modifier sets property values of particles, bonds, and other elements according to a user-defined mathematical formula.
 It can also be used to create new :ref:`user-defined properties <usage.particle_properties>`.
 
 The math expression for computing the value for each element can reference existing per-particle or per-bond data, as well as
@@ -139,7 +139,7 @@ different from the type of the central particle:
   F(i)   := 0
   G(i,j) := (ParticleType != @ParticleType)
 
-Note that the operator ``!=`` evaluates to 1 if the type of particle :math:`j` is not equal to the type of particle :math:`i`; and 0 otherwise.
+Note that the operator ``!=`` evaluates to 1 if the type of particle :math:`j` is not equal to the type of particle :math:`i`, and 0 otherwise.
 
 Computations on bonds
 """""""""""""""""""""
@@ -201,13 +201,13 @@ The expression parser supports the following functions:
     =================== =========================================================================
     Function name       Description
     =================== =========================================================================
-    ``abs(A)``          Absolute value of A. If A is negative, returns -A otherwise returns A.
+    ``abs(A)``          Absolute value of A. If A is negative, returns -A, otherwise returns A.
     ``acos(A)``         Arc-cosine of A. Returns the angle, measured in radians, whose cosine is A.
     ``acosh(A)``        Same as ``acos()`` but for hyperbolic cosine.
     ``asin(A)``         Arc-sine of A. Returns the angle, measured in radians, whose sine is A.
     ``asinh(A)``        Same as ``asin()`` but for hyperbolic sine.
     ``atan(A)``         Arc-tangent of A. Returns the angle, measured in radians, whose tangent is A.
-    ``atan2(Y,X)``      Two argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__.
+    ``atan2(Y,X)``      Two-argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__.
     ``atanh(A)``        Same as ``atan()`` but for hyperbolic tangent.
     ``avg(A,B,...)``    Returns the average of all arguments.
     ``cos(A)``          Cosine of A. Returns the cosine of the angle A, where A is measured in radians.
@@ -223,7 +223,7 @@ The expression parser supports the following functions:
     ``sign(A)``         Returns: 1 if A is positive; -1 if A is negative; 0 if A is zero.
     ``sin(A)``          Sine of A. Returns the sine of the angle A, where A is measured in radians.
     ``sinh(A)``         Same as ``sin()`` but for hyperbolic sine.
-    ``sqrt(A)``         Square root of a value.
+    ``sqrt(A)``         Square root of A.
     ``sum(A,B,...)``    Returns the sum of all parameter values.
     ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians.
     =================== =========================================================================
