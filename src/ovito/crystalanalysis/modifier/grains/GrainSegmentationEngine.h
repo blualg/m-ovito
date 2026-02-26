@@ -105,7 +105,7 @@ public:
         std::vector<HalfEdge> header;
         std::vector<HalfEdge> edge_buffer;
         size_t edge_count;
-        std::unordered_set<size_t> active_nodes;
+        std::set<size_t> active_nodes;
 
         Graph(size_t num_nodes, size_t num_edges) {
             edge_count = 0;
