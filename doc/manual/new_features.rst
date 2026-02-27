@@ -1919,7 +1919,7 @@ Version 3.0.0 (30-May-2020)
 * The Show Periodic Images modifier has been renamed to Replicate modifier. In addition to particles and bonds it now can replicate surfaces, dislocation lines and voxel data grids too (issue #39).
 
 ---------------------------
-Version 2.9.0 (27-Jul-2020)
+Version 2.9.0 (27-Jul-2017)
 ---------------------------
 
 * Added the ``--nthreads`` command line option to ovitos as an alternative to ``-nt`` (issue #35).
