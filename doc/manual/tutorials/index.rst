@@ -10,6 +10,7 @@ Tutorials
 
   marker_particles
   turntable_animation
+  voronoi_cell
   remote_rendering
 
 .. rubric:: :ref:`Visualizing motion with marker particles <tutorials.marker_particles>`
@@ -32,16 +33,19 @@ Learn how to create an animated movie that rotates a simulation snapshot to show
 This tutorial covers OVITO's keyframe-based :ref:`parameter animation system <usage.animation>` and techniques
 for repositioning models in a 3D scene.
 
+.. rubric:: :ref:`Voronoi cell visualization <tutorials.voronoi_cell>`
+
+.. image:: /images/tutorials/voronoi_cell/voronoi_cell_final.png
+   :width: 20%
+   :align: right
+
+Learn how to visualize the Voronoi cell of a single particle in a 3D atomic structure. This tutorial covers the
+:ref:`particles.modifiers.voronoi_analysis` modifier, selection of individual mesh regions, bonds, and particles
+using the :ref:`particles.modifiers.expression_select` modifier, and how to isolate nearest neighbors using the
+:ref:`particles.modifiers.expand_selection` modifier.
+
 .. rubric:: :ref:`Remote rendering tutorial <tutorials.remote_rendering>`
 
 This tutorial guides you through rendering a simulation video on a high-performance computing cluster using the
-:ref:`Render on Remote Computer <usage.remote_rendering>` feature in *OVITO Pro*.
+:ref:`Render on Remote Computer <usage.remote_rendering>` feature of *OVITO Pro*.
 
-.. - Identify local chemical ordering (PTM modifier)
-.. - How to use the DXA modifier to analyze dislocations
-.. - Analyze a bulk metallic glass simulation
-.. - Visualize a LAMMPS simulations with separate topology/trajectory/bond files
-.. - Creating good-looking renderings of a simulation model (OSPRay)
-.. - Visualize particle resident time distribution (spatial binning, time averaging)
-.. - Calculate diffusion constant (Python script)
-.. - Python script modifier: Warren-Cowley-SRO

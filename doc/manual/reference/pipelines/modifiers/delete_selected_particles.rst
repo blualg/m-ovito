@@ -1,4 +1,4 @@
-.. _particles.modifiers.delete_selected_particles:
+.. _particles.modifiers.delete_selected:
 
 Delete selected
 ---------------

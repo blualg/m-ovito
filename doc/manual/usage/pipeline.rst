@@ -92,7 +92,7 @@ in the viewports and rendered images using the checkbox next to each visual elem
 Transient pipeline states and particle selections
 -------------------------------------------------
 
-Some modifiers, such as :ref:`particles.modifiers.delete_selected_particles`, operate only on selected particles or bonds.
+Some modifiers, such as :ref:`particles.modifiers.delete_selected`, operate only on selected particles or bonds.
 Selection state is determined by the ``Selection`` property associated with particles (see :ref:`previous section <usage.particle_properties>`),
 and several modifiers allow you to create a new selection based on different criteria.
 

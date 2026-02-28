@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
 void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("Delete selected"), rolloutParams, "manual:particles.modifiers.delete_selected_particles");
+    QWidget* rollout = createRollout(tr("Delete selected"), rolloutParams, "manual:particles.modifiers.delete_selected");
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);

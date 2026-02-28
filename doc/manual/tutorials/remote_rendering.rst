@@ -1,8 +1,8 @@
 .. _tutorials.remote_rendering:
 .. _howto.remote_rendering:
 
-Remote rendering tutorial
-=========================
+Remote rendering
+================
 
 Introduction
 ------------

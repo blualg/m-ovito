@@ -51,8 +51,8 @@ combine several modifiers to accomplish more complex tasks.
   =====================================================================================================================
   :ref:`particles.modifiers.ambient_occlusion`               Performs an ambient occlusion calculation to shade particles.
   :ref:`particles.modifiers.assign_color`                    Assigns a color to all selected elements.
-  :ref:`particles.modifiers.color_by_type` |ovito-pro|       Colors particles or bonds according to a typed (discrete) property.
-  :ref:`particles.modifiers.color_coding`                    Colors particles or bonds based on the value of a scalar (continuous) property.
+  :ref:`particles.modifiers.color_by_type` |ovito-pro|       Colors particles or bonds according to a :ref:`typed property <scene_objects.particle_types>`.
+  :ref:`particles.modifiers.color_coding`                    Colors particles or bonds based on the value of a property.
   ========================================================== ==========================================================
 
 .. table::
@@ -65,7 +65,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.affine_transformation`           Applies an affine transformation to the system.
   :ref:`particles.modifiers.combine_particle_sets`           Merges the particles and bonds from two separate input files into one dataset.
   :ref:`particles.modifiers.compute_property`                Assigns property values to particles or bonds according to a user-defined formula.
-  :ref:`particles.modifiers.delete_selected_particles`       Removes the selected elements from the visualization.
+  :ref:`particles.modifiers.delete_selected`                 Removes the selected elements from the visualization.
   :ref:`particles.modifiers.edit_simulation_cell`            Sets boundary conditions or changes the cell geometry.
   :ref:`particles.modifiers.edit_types`                      Lets you edit the types associated with a typed property, e.g. particle types.
   :ref:`particles.modifiers.freeze_property`                 Freezes the values of a dynamic particle property at a given animation time to make them available at other times.

@@ -34,7 +34,7 @@ Keep one particle unselected on overlap
   If this option is turned off, all particles in the overlap group will be selected.
   Use this mode when the goal is to identify particles that are close to each other.
 
-To subsequently remove the selected particles from the system, you can apply a :ref:`particles.modifiers.delete_selected_particles` modifier.
+To subsequently remove the selected particles from the system, you can apply a :ref:`particles.modifiers.delete_selected` modifier.
 
 .. seealso::
 

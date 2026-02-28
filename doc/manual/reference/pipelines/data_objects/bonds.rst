@@ -44,7 +44,7 @@ between nearest-neighbor particles. Bonds and their properties can also be manip
 - :ref:`particles.modifiers.compute_property` -- Compute and assign new bond properties.
 - :ref:`particles.modifiers.expression_select` -- Select bonds based on property values or bond length.
 - :ref:`particles.modifiers.assign_color` -- Assign a new color to selected bonds.
-- :ref:`particles.modifiers.delete_selected_particles` -- Remove selected bonds.
+- :ref:`particles.modifiers.delete_selected` -- Remove selected bonds.
 - :ref:`particles.modifiers.expand_selection` -- Find particles that are connected to already selected particles.
 
 .. _usage.bond_properties.special:

@@ -95,7 +95,7 @@ Voronoi polyhedra
   Lets the modifier output a :ref:`surface mesh <scene_objects.surface_mesh>` to visualize the computed Voronoi polyhedra.
   Each Voronoi cell is represented by a spatial region in the mesh and is associated with local properties such as
   the cell's volume, coordination number, surface area, and the unique ID of the input particle located at the center of the cell.
-  Use additional modifiers such as :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.delete_selected_particles` to
+  Use additional modifiers such as :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.delete_selected` to
   subsequently filter the set of displayed Voronoi cells, for example to visualize only cells having a certain number of faces
   or belonging to certain atoms.
 

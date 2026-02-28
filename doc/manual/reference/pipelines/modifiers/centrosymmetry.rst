@@ -6,7 +6,7 @@ Centrosymmetry parameter
 .. image:: /images/modifiers/centrosymmetry_panel.*
   :width: 30%
   :align: right
-  
+
 This modifier calculates the *centrosymmetry parameter* (CSP) [`Kelchner, Plimpton, Hamilton, Phys. Rev. B, 58, 11085 (1998) <http://link.aps.org/doi/10.1103/PhysRevB.58.11085>`__] for each particle.
 In solid-state systems, the centrosymmetry parameter is a useful measure of the local
 lattice disorder around an atom and can be used to characterize whether the atom is
@@ -31,7 +31,7 @@ A histogram of the CSP values of the entire particle system is displayed in the 
 
 You can use the :ref:`particles.modifiers.color_coding` modifier to color atoms based on their CSP value
 or use the :ref:`particles.modifiers.expression_select` modifier to select atoms having a CSP value below some threshold.
-These undisturbed atoms can then be hidden to reveal crystal defect atoms by using the :ref:`particles.modifiers.delete_selected_particles` modifier.
+These undisturbed atoms can then be hidden to reveal crystal defect atoms by using the :ref:`particles.modifiers.delete_selected` modifier.
 
 Number of neighbors
 """""""""""""""""""
@@ -57,11 +57,11 @@ Minimum-weight matching CSP
 The option :guilabel:`Use only selected particles` restricts the analysis to the
 subset of currently selected particles only. Unselected particles will be ignored in the computation
 of the centrosymmetry values of selected particles (as if they did not exist), and their own
-centrosymmetry values will be set to zero. 
+centrosymmetry values will be set to zero.
 This option is useful if you want to analyze a sub-lattice made only of atoms of a certain type.
 
 .. note::
-  
+
   The modifier needs to see the complete set of particles to perform the computation. It should therefore be placed at the
   beginning of the data pipeline, preceding any modifiers that delete particles.
 

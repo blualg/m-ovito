@@ -47,7 +47,7 @@ Version 3.15.0 (dd-mm-2026)
 - Added support for :ref:`Linux aarch64 platform <installation.requirements>` (ARM64 architecture)
 - Add support for :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving access to modern codecs
 - Add support for :ref:`particle color and radius themes <application_settings.particles.themes>` that can be shared with other users or imported/exported between machines
-- The following modifiers can now be restricted to operate only on one particular mesh, voxel grid or other data object: :ref:`particles.modifiers.affine_transformation`, :ref:`particles.modifiers.delete_selected_particles`, :ref:`particles.modifiers.slice`, :ref:`particles.modifiers.slice`
+- The following modifiers can now be restricted to operate only on one particular mesh, voxel grid or other data object: :ref:`particles.modifiers.affine_transformation`, :ref:`particles.modifiers.delete_selected`, :ref:`particles.modifiers.slice`, :ref:`particles.modifiers.slice`
 
 .. sidebar::
 
@@ -77,6 +77,7 @@ Version 3.14.1 (16-Oct-2025)
 - |ovito-python| Accessing the attribute :py:attr:`PythonModifier.delegate <ovito.modifiers.PythonModifier.delegate>` now auto-compiles the script code
   provided in :py:attr:`!PythonModifier.script` and instantiate the custom :py:class:`~ovito.pipeline.ModifierInterface` class if necessary,
   e.g. after loading a pipeline from a .ovito state file.
+- New tutorial: :ref:`tutorials.voronoi_cell`
 
 .. sidebar::
 
@@ -263,7 +264,7 @@ Version 3.13.0 (03-Jul-2025)
 
 - Aspherix file reader: Added support for data arrays with vector component names
 - Quantum Espresso file reader: Support more flexible file syntax (see `forum discussion <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
-- Fix: :ref:`particles.modifiers.delete_selected_particles` modifier not working for multiple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in the data collection.
+- Fix: :ref:`particles.modifiers.delete_selected` modifier not working for multiple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in the data collection.
 - :ref:`Global attribute <usage.global_attributes>` identifiers starting with a ``.`` are now hidden in the :ref:`data inspector panel <data_inspector.attributes>`.
 - |ovito-pro| Fix bug with the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` in the Python code generator
 - |ovito-pro| Cleanup redundant code output for visual elements in the Python code generator
