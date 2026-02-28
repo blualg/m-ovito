@@ -421,7 +421,7 @@ void ExternalVideoEncoderBackend::closeFile()
 
         // Run palette generation
         args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pix_fmt")
-             << QStringLiteral("rgba") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+             << QStringLiteral("bgra") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
              << QStringLiteral("-vf") << QStringLiteral("palettegen=stats_mode=full") << QStringLiteral("-y") << paletteFile.fileName();
 
@@ -448,7 +448,7 @@ void ExternalVideoEncoderBackend::closeFile()
 
         // Render the gif
         args << QStringLiteral("-hide_banner") << QStringLiteral("-f") << QStringLiteral("rawvideo") << QStringLiteral("-pix_fmt")
-             << QStringLiteral("rgba") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
+             << QStringLiteral("bgra") << QStringLiteral("-video_size") << QStringLiteral("%1x%2").arg(_width).arg(_height)
              << QStringLiteral("-framerate") << QString::number(_framesPerSecond) << QStringLiteral("-i") << QStringLiteral("-")
              << QStringLiteral("-i") << paletteFile.fileName() << QStringLiteral("-lavfi")
              << QStringLiteral("paletteuse=dither=floyd_steinberg") << QStringLiteral("-y") << _outFilename;
