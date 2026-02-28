@@ -7,11 +7,11 @@ Video encoding
   :width: 45%
   :align: right
 
-On this tab of the :ref:`application settings dialog <application_settings>`, you can configure an external FFmpeg executable used for video encoding.
-This is optional — OVITO comes packaged with an integrated FFmpeg video encoding engine that will be used for video encoding if no external FFmpeg executable is configured.
+On this tab of the :ref:`application settings dialog <application_settings>` you can configure an external FFmpeg executable used for video encoding.
+This is optional — OVITO comes packaged with an integrated FFmpeg-based video encoding engine that will automatically be used for video encoding if no external FFmpeg executable is configured.
 
 However, the integrated encoder of OVITO cannot produce videos using the high-quality `H.264` and `H.265` codecs due to licensing and patent restrictions.
-By specifying an external FFmpeg executable you can let OVITO produce video files using these newer video encoding codecs, leading to smaller
+By specifying an external FFmpeg executable you can let OVITO produce video files using these better video encoding codecs, leading to smaller
 file sizes and improved quality.
 
 The FFmpeg software can be downloaded from the official website at `https://ffmpeg.org/download.html <https://ffmpeg.org/download.html>`__.

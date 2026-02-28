@@ -9,66 +9,146 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.15.0>`__
 
 ----------------------------
-Version 3.15.0 (dd-mm-2026)
+Version 3.15.0 (02-Mar-2026)
 ----------------------------
 
-Important workflow changes:
-- The simulation cell and the particle types can no longer be edited directly - use the new :ref:`particles.modifiers.edit_simulation_cell` and :ref:`particles.modifiers.edit_types` modifiers instead
-- New data inspector tab for :ref:`type lists <data_inspector.types>`
-- New modifier selector widget with improved usability and UI design
+OVITO 3.15 is a major release that brings powerful new modifiers for molecular modeling, a streamlined workflow for sharing and organizing modifiers, and broad improvements to file I/O, video rendering, and platform support.
 
-Easily share modifiers as text snippets:
-- :ref:`Import/export modifiers as text snippets <modifier_snippets>` via context menu in the pipeline editor
+Improved support for molecular structures
+"""""""""""""""""""""""""""""""""""""""""
 
-Newle added modifiers:
-- :ref:`particles.modifiers.edit_types`
-- :ref:`particles.modifiers.edit_simulation_cell`
-- :ref:`particles.modifiers.bond_order` |ovito-pro|
-- :ref:`particles.modifiers.select_overlapping_particles`
+- The :ref:`particles.modifiers.create_bonds` modifier gained a new :guilabel:`Covalent Radius` mode, which uses tabulated covalent radii to automatically determine bond cutoffs for each pair of chemical elements.
 
-New tutorial:
-- :ref:`tutorials.voronoi_cell`
+- New modifier: :ref:`particles.modifiers.bond_order` |ovito-pro| -- Automatically assigns bond orders (single, double, triple, aromatic) to molecular structures, enabling the visualization of double and triple bonds and the identification of functional groups.
+  The :ref:`visual_elements.bonds` visual element gained the ability to render different bond orders with distinct visual styles:
 
-Modifier improvements:
-- Add new :guilabel:`Molecule` mode to :ref:`particles.modifiers.expand_selection` modifier, which expands the selection to all particles that belong to the same molecule(s) as already selected particles.
-- Rename *Coordination analysis* modifier to :ref:`particles.modifiers.radial_distribution_function` modifier
-- |ovito-pro| Split *Bond analysis* functionality into :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifers.
-  The old modifier will remain available for backwards compatibility.
-- New mode "Covalent Radius" for :ref:`particles.modifiers.create_bonds` modifer
-- The following modifiers can now be restricted to operate only on one particular mesh, voxel grid, or other data object: :ref:`particles.modifiers.affine_transformation`, :ref:`particles.modifiers.delete_selected`, :ref:`particles.modifiers.slice`, :ref:`particles.modifiers.slice`
-- Implement :ref:`particles.modifiers.assign_color` modifier support for :ref:`scene_objects.lines` objects
-- Memorize :ref:`particles <visual_elements.particles>` radius scaling factor across program sessions
+  .. image:: /images/modifiers/bond_order_example_double_bonds.png
+    :width: 28%
 
-File I/O improvements:
-- Add file importer for `MOL/SDF files <https://discover.3ds.com/sites/default/files/2020-08/biovia_ctfileformats_2020.pdf>`__, which are commonly used for storing molecular structures in chemistry and drug discovery applications
-- CIF file importer: Create multi-element particle types for sites with partial occupancy at identical positions
-- mmCIF file importer: read sequence IDs as particle property "Sequence"
-- Extend :ref:`PDB file reader <file_formats.input.pdb>` to read atom serial numbers as particle identifiers and ``CONECT`` records as bonds
-- Fix: :ref:`PDB file reader's <file_formats.input.pdb>` :guilabel:`Generate bounding box` option not working
-- MercuryDPM file reader: Support reading particle orientations stored as Euler angles and convert them to quaternions
-- Aspherix file reader: Always create "Particle type" property even if type information is missing in the file to allow users to assign a custom particle shape in the visualization
-- Update gemmi library to 0.7.3, which is used for PDB/CIF/mmCIF file import
-- Reduce the size of :ref:`OVITO session state files <usage.saving_loading_scene>` for long trajectories
+  .. image:: /images/modifiers/bond_order_functional_groups.png
+    :width: 28%
 
-Video rendering and color theme improvements:
-- Add support for :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving access to modern high-quality codecs such as *H.264* and *H.265*
-- Display video duration estimate in :ref:`render settings panel <core.render_settings>`
-- Add support for :ref:`particle color and radius themes <application_settings.particles.themes>`, which can be shared with other users or imported/exported between machines
+  |br|
 
-Platform support:
-- Support :ref:`Linux aarch64 platform <installation.requirements>` (ARM64 architecture)
-- Include a :ref:`Software Bill of Materials (SBOM) <sbom>` in OVITO installers to document third-party software components used
+Modifier additions and changes
+""""""""""""""""""""""""""""""
 
-Interactive viewports:
-- |ovito-pro| VisRTX renderer: Implemented progressive refinement rendering in interactive viewports to improve responsiveness
-- Indicate rendering issues in the interactive viewports (e.g. exceeding the maximum number of particles supported by OpenGL) as an error icon in the viewport windows
+- New modifier: :ref:`particles.modifiers.select_overlapping_particles` -- Detects and selects particles that overlap in space. Useful for cleaning up imported datasets or verifying simulation configurations.
+- The former *Bond analysis* modifier has been split into two focused modifiers, :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution`, for clearer functionality.
+- The former *Coordination analysis* modifier has been renamed to :ref:`particles.modifiers.radial_distribution_function` to better reflect its primary purpose.
+- The :ref:`particles.modifiers.expand_selection` modifier now offers a :guilabel:`Molecule` mode, which expands the current selection to include all particles belonging to the same molecule(s) -- ideal for selecting entire molecules in complex systems.
+- Several modifiers now support processing only one particular object instead of the entire class of objects (e.g. surface meshes): :ref:`particles.modifiers.affine_transformation`, :ref:`particles.modifiers.delete_selected`, :ref:`particles.modifiers.show_periodic_images`, and :ref:`particles.modifiers.slice`.
+- The :ref:`particles.modifiers.assign_color` modifier now supports operating on :ref:`scene_objects.lines` objects.
+- The value of the :ref:`particle radius scaling factor <visual_elements.particles>` is now remembered across program sessions.
 
-Bug fixes:
-- |ovito-pro| Fix bug where the :ref:`particles.modifiers.find_rings` modifier would not find rings of size equal to max ring size
-- |ovito-pro| Fix bug where the :ref:`particles.modifiers.find_rings` modifier would report evenly sized rings in both directions
-- |ovito-pro| Fixed broken "partition by bond/particle selection" modes in *Bond analysis* modifier (now replaced by the new :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifiers)
-- |ovito-pro| VisRTX renderer: fixed visual artifacts at semi-transparent object edges when compositing on a light background
-- |ovito-python|  Warn if user accidentally tries to export an empty scene to a :ref:`glTF file <file_formats.output.gltf>` via :py:func:`~ovito.io.export_file`
+Modifier snippets
+"""""""""""""""""
+
+.. image:: /images/usage/pipeline/export_modifiers_as_snippet_menu.png
+   :width: 25%
+   :align: right
+
+You can now :ref:`export and import modifiers as text snippets <modifier_snippets>` via the context menu in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
+This makes it easy to save your modifier sequences for later reuse, share them with colleagues, or transfer them between machines -- all through a simple copy-and-paste of a text string.
+
+.. image:: /images/new_features/export_modifier_snippet_dialog.png
+   :width: 65%
+
+New workflow for editing particle types and the simulation cell
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. image:: /images/new_features/removed_simcell_particletypes.jpg
+   :width: 30%
+   :align: right
+
+- OVITO 3.15 removes the possibility to directly edit particle types and the simulation cell.
+  The corresponding entries in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` have been removed, because they bypassed the :ref:`data pipeline system <usage.modification_pipeline>`
+  leading to unexpected behavior and confusion. Instead, two new modifiers will take over this job in the future, ensuring a clear, reproducible workflow.
+
+- New modifier: :ref:`particles.modifiers.edit_simulation_cell` -- Provides a dedicated, undo-able way to modify the simulation cell geometry and boundary conditions within the data pipeline.
+  The new modifier also provides a more focused alternative to the :ref:`particles.modifiers.affine_transformation` modifier, which was previously often used for cell modifications.
+
+.. image:: /images/new_features/edit_types_modifier.jpg
+   :width: 30%
+   :align: right
+
+- New modifier: :ref:`particles.modifiers.edit_types` -- Lets you rename, recolor, and reshape particle, bond, or molecule types as a pipeline step, keeping type modifications visible and reproducible.
+  For the first time, this modifier also provides a way to add and remove types, e.g., to introduce a new particle species in the dataset.
+
+- The new :ref:`Types <data_inspector.types>` tab in the data inspector gives you a clear overview of all particle types, bond types, and other type classifications in your dataset:
+
+  .. image:: /images/data_inspector/types_page.jpg
+    :width: 66%
+
+Redesigned modifier selector
+""""""""""""""""""""""""""""
+
+- The modifier selector widget has been redesigned with improved usability and a structured layout, making it easier to find and add modifiers to your pipeline:
+
+  .. image:: /images/new_features/new_modifier_picker.jpg
+    :width: 65%
+
+.. image:: /images/tutorials/voronoi_cell/voronoi_cell_final.png
+   :width: 22%
+   :align: right
+
+New tutorial
+""""""""""""
+
+- :ref:`tutorials.voronoi_cell` -- A step-by-step guide to visualizing Voronoi cells and exploring the local atomic neighborhood using OVITO
+
+Video rendering
+"""""""""""""""
+
+- OVITO now supports :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving you access to modern high-quality codecs such as *H.264* and *H.265* for smaller file sizes and better video quality:
+
+  .. image:: /images/app_settings/video_encoder_settings.png
+    :width: 55%
+
+- The :ref:`render settings panel <core.render_settings>` now displays a video duration estimate before rendering.
+
+Chemical element themes
+"""""""""""""""""""""""
+
+- Customizable :ref:`particle color and radius themes <application_settings.particles.themes>` let you define your preferred visual defaults for chemical elements. Themes can now be exported and imported as JSON files, making it easy to share consistent visualization styles.
+  We provide a theme for download that matches the color style of the `VESTA <https://jp-minerals.org/vesta/>`__ atomistic visualization software.
+
+  .. image:: /images/app_settings/particle_settings.png
+    :width: 55%
+
+File I/O improvements
+"""""""""""""""""""""
+
+- Added a file reader for `MOL/SDF files <https://discover.3ds.com/sites/default/files/2020-08/biovia_ctfileformats_2020.pdf>`__, commonly used for storing molecular structures in chemistry and drug discovery applications.
+- CIF file reader: Automatic creation of multi-element particle types for **sites with partial occupancy** at identical positions.
+- mmCIF file reader: Sequence IDs are now read as the particle property ``Sequence``.
+- The :ref:`PDB file reader <file_formats.input.pdb>` now reads atom serial numbers as particle identifiers and ``CONECT`` records as bonds.
+- MercuryDPM file reader: Support for reading particle orientations stored as Euler angles, which get automatically converted to quaternions.
+- Aspherix file reader: Always create the ``Particle type`` property even if type information is missing in the file, allowing users to still assign custom particle shapes.
+- Updated the *gemmi* library to version 0.7.3 for improved PDB/CIF/mmCIF file import.
+- Reduced the typical size of :ref:`OVITO session state files <usage.saving_loading_scene>` for long trajectories.
+
+Platform support
+""""""""""""""""
+
+- OVITO now runs natively on :ref:`Linux aarch64 <installation.requirements>` (ARM64 architecture).
+- OVITO installers now include a :ref:`Software Bill of Materials (SBOM) <sbom>` documenting all third-party software components.
+
+Interactive viewports
+"""""""""""""""""""""
+
+- |ovito-pro| The :ref:`VisRTX renderer <rendering.visrtx_renderer>` now uses progressive refinement rendering in interactive viewports, delivering a more responsive experience when working with complex scenes.
+- Rendering issues in interactive viewports (e.g. exceeding the maximum number of particles supported by OpenGL) are now clearly indicated by an error icon.
+
+Bug fixes
+"""""""""
+
+- |ovito-pro| Fixed the :ref:`particles.modifiers.find_rings` modifier not finding rings of size equal to the configured maximum ring size.
+- |ovito-pro| Fixed the :ref:`particles.modifiers.find_rings` modifier reporting evenly sized rings in both directions.
+- |ovito-pro| Fixed broken "partition by bond/particle selection" modes in the former *Bond analysis* modifier (now replaced by the new :ref:`particles.modifiers.bond_angle_distribution` and :ref:`particles.modifiers.bond_length_distribution` modifiers).
+- |ovito-pro| VisRTX renderer: Fixed visual artifacts at semi-transparent object edges when compositing on light backgrounds.
+- |ovito-python| A warning is now issued when attempting to export an empty scene to a :ref:`glTF file <file_formats.output.gltf>` via :py:func:`~ovito.io.export_file`.
+- Fixed the :ref:`PDB file reader's <file_formats.input.pdb>` :guilabel:`Generate bounding box` option not working.
 
 .. sidebar::
 
