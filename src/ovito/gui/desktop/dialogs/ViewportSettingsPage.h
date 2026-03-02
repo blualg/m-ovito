@@ -48,6 +48,11 @@ public:
     /// Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const override { return 10; }
 
+    /// \brief Help topic to open when the user presses the help button.
+    virtual QString helpTopicId() const override {
+        return QStringLiteral("manual:application_settings.viewports");
+    }
+
 private Q_SLOTS:
 
     /// Shows a sub-dialog that allows the user to configure the graphics system used by the viewport.

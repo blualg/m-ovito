@@ -48,6 +48,11 @@ public:
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const override { return 20; }
 
+    /// \brief Help topic to open when the user presses the help button.
+    virtual QString helpTopicId() const override {
+        return QStringLiteral("manual:application_settings.video_encoding");
+    }
+
 Q_SIGNALS:
     /// Emitted when the path to the ffmpeg executable has been validated.
     void ffmpegPathValidated(bool isValid);

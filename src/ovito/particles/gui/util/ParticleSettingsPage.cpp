@@ -26,6 +26,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFileDialog>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include "ParticleSettingsPage.h"
 
 namespace Ovito {
@@ -392,6 +393,7 @@ void ParticleSettingsPage::importTheme()
             throw Exception(tr("The theme file version is not supported by this version of OVITO. Please update OVITO to import this file."));
 
         // Apply imported particle types (merge mode: only update types present in the file).
+        int importedParticleTypeCount = 0;
         QJsonArray particleTypes = root[QStringLiteral("particle_types")].toArray();
         for(const QJsonValue& val : particleTypes) {
             QJsonObject typeObj = val.toObject();
@@ -424,9 +426,11 @@ void ParticleSettingsPage::importTheme()
                 if(significantlyDifferent(newRadius, item->data(3, Qt::DisplayRole).toDouble()))
                     item->setData(3, Qt::DisplayRole, QVariant::fromValue(newRadius));
             }
+            importedParticleTypeCount++;
         }
 
         // Apply imported structure types.
+        int importedStructureTypeCount = 0;
         QJsonArray structureTypes = root[QStringLiteral("structure_types")].toArray();
         for(const QJsonValue& val : structureTypes) {
             QJsonObject typeObj = val.toObject();
@@ -449,7 +453,13 @@ void ParticleSettingsPage::importTheme()
                 if(significantlyDifferent(newColor.redF(), oldColor.redF()) || significantlyDifferent(newColor.greenF(), oldColor.greenF()) || significantlyDifferent(newColor.blueF(), oldColor.blueF()))
                     item->setData(1, Qt::DisplayRole, QVariant::fromValue(newColor));
             }
+            importedStructureTypeCount++;
         }
+
+        int totalCount = importedParticleTypeCount + importedStructureTypeCount;
+        MessageDialog(QMessageBox::Information, tr("Theme Imported"),
+            tr("Successfully imported settings for %n type(s).", nullptr, totalCount),
+            QMessageBox::Ok, settingsDialog()).exec();
     });
 }
 

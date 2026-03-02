@@ -45,9 +45,6 @@ protected:
     // Informational text shown on the page.
     virtual QString settingsPageDescription() = 0;
 
-    /// Help topic to open when the user presses the help button.
-    virtual QString helpTopicId() = 0;
-
     /// The kind of objects for which templates are managed on this page.
     virtual QString objectTypeName() = 0;
 

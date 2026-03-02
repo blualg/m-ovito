@@ -154,6 +154,7 @@ Bug fixes
 - |ovito-pro| VisRTX renderer: Fixed visual artifacts at semi-transparent object edges when compositing on light backgrounds.
 - |ovito-python| A warning is now issued when attempting to export an empty scene to a :ref:`glTF file <file_formats.output.gltf>` via :py:func:`~ovito.io.export_file`.
 - Fixed the :ref:`PDB file reader's <file_formats.input.pdb>` :guilabel:`Generate bounding box` option not working.
+- Fixed detection of desktop dark color theme on Linux due to missing DBus module in Qt framework.
 
 .. sidebar::
 

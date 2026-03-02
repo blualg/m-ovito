@@ -51,7 +51,7 @@ protected:
     }
 
     /// Help topic to open when the user presses the help button.
-    virtual QString helpTopicId() override {
+    virtual QString helpTopicId() const override {
         return QStringLiteral("manual:viewport_layer_templates");
     }
 

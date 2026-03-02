@@ -48,6 +48,11 @@ public:
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const override { return 50; }
 
+    /// \brief Help topic to open when the user presses the help button.
+    virtual QString helpTopicId() const override {
+        return QStringLiteral("manual:application_settings.particles");
+    }
+
 public Q_SLOTS:
 
     /// Restores the built-in default particle colors and sizes.

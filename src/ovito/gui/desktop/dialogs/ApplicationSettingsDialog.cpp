@@ -135,6 +135,17 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
+    ApplicationSettingsDialogPage* currentPage = nullptr;
+    if(_tabWidget->currentIndex() >= 0 && _tabWidget->currentIndex() < _pages.size())
+        currentPage = _pages[_tabWidget->currentIndex()].get();
+    if(currentPage) {
+        QString helpTopicId = currentPage->helpTopicId();
+        if(!helpTopicId.isEmpty()) {
+            actionManager()->openHelpTopic(helpTopicId);
+            return;
+        }
+    }
+
     actionManager()->openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 

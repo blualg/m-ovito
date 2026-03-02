@@ -62,6 +62,11 @@ public:
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const { return 1000; }
 
+    /// Returns the help topic ID for this settings page.
+    /// An empty string means that no help topic is available for this page.
+    /// Then, the main help topic of the application settings dialog is opened instead.
+    virtual QString helpTopicId() const { return {}; }
+
     /// Returns the parent dialog hosting this settings page.
     ApplicationSettingsDialog* settingsDialog() const { OVITO_ASSERT(_settingsDialog); return _settingsDialog; }
 
