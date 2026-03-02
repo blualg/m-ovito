@@ -112,6 +112,13 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
         QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif
 
+        // Force OpenGL-based compositing for all top-level widget windows.
+        // This ensures that QOpenGLWidget instances added to the window hierarchy at any time
+        // can obtain the right type of backing store, even if they are added after the window is shown.
+        // On Windows, this prevents a brief dissappearance of the main window at application startup.
+        qputenv("QT_WIDGETS_RHI", "1");
+        qputenv("QT_WIDGETS_RHI_BACKEND", "opengl");
+
 #if defined(Q_OS_WIN) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
         // Use Fusion UI style on Windows to enable dark mode support (can be changed by the user in the application settings).
         // If dark mode is not enabled in the application settings (default), use the classic Windows Vista UI style.
