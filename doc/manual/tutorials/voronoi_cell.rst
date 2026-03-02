@@ -26,7 +26,7 @@ Step 1: Load simulation file
    :align: right
 
 Start by downloading the simulation file
-`amorphous.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/blob/master/tutorial/amorphous.dump>`__
+`amorphous.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/tutorial/amorphous.dump?inline=false>`__
 to your computer. This file contains an amorphous atomic structure. Use the :menuselection:`File --> Load File` function
 to open the file :file:`amorphous.dump` in OVITO.
 

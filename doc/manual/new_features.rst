@@ -9,7 +9,7 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.15.0>`__
 
 ----------------------------
-Version 3.15.0 (02-Mar-2026)
+Version 3.15.0 (03-Mar-2026)
 ----------------------------
 
 OVITO 3.15 is a major release that brings powerful new modifiers for molecular modeling, a streamlined workflow for sharing and organizing modifiers, and broad improvements to file I/O, video rendering, and platform support.
@@ -80,6 +80,8 @@ New workflow for editing particle types and the simulation cell
   .. image:: /images/data_inspector/types_page.jpg
     :width: 66%
 
+  Click the pencil button, which appears when you hover over a type entry, to open the :ref:`particles.modifiers.edit_types` modifier with the corresponding type pre-selected for editing.
+
 Redesigned modifier selector
 """"""""""""""""""""""""""""
 
@@ -100,18 +102,21 @@ New tutorial
 Video rendering
 """""""""""""""
 
-- OVITO now supports :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving you access to modern high-quality codecs such as *H.264* and *H.265* for smaller file sizes and better video quality:
+- OVITO now supports :ref:`external FFmpeg video encoding <application_settings.video_encoding>`, giving you access to modern high-compression codecs such as *H.264* and *H.265* for smaller file sizes and better video quality:
 
   .. image:: /images/app_settings/video_encoder_settings.png
     :width: 55%
 
-- The :ref:`render settings panel <core.render_settings>` now displays a video duration estimate before rendering.
+- The :ref:`render settings panel <core.render_settings>` now displays a video duration estimate before rendering, which takes into account the number of trajectory frames and the configured playback frame rate:
+
+  .. image:: /images/new_features/3-15-0_video_length_label.jpg
+    :width: 30%
 
 Chemical element themes
 """""""""""""""""""""""
 
 - Customizable :ref:`particle color and radius themes <application_settings.particles.themes>` let you define your preferred visual defaults for chemical elements. Themes can now be exported and imported as JSON files, making it easy to share consistent visualization styles.
-  We provide a theme for download that matches the color style of the `VESTA <https://jp-minerals.org/vesta/>`__ atomistic visualization software.
+  We provide a theme for download that matches the color style of the VESTA atomistic visualization software.
 
   .. image:: /images/app_settings/particle_settings.png
     :width: 55%
