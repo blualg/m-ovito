@@ -135,6 +135,11 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
         if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
             qputenv("QT_QPA_PLATFORM", "xcb");
 
+        // Use xdg-desktop-portal platform theme for proper dark mode detection
+        // when the desktop-specific theme plugins (e.g. "gnome", "gtk3") are not available.
+        if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME"))
+            qputenv("QT_QPA_PLATFORMTHEME", "xdgdesktopportal");
+
         // Always enforce Fusion UI style on Linux.
         qunsetenv("QT_STYLE_OVERRIDE");
         QApplication::setStyle("Fusion");
