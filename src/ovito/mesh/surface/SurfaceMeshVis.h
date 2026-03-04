@@ -218,6 +218,19 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, highlightEdges, setHighlightEdges);
     DECLARE_SHADOW_PROPERTY_FIELD(highlightEdges);
 
+    /// Controls the color of the wireframe edges if the highlightEdges option is enabled.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.1f, 0.1f, 0.1f}), wireframeColor, setWireframeColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(wireframeColor);
+
+    /// Controls the line width (in device-independent pixels) of the wireframe edges if the highlightEdges option is enabled.
+    /// The default value 0.0 means that the line width is automatically chosen by the rendering system.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, wireframeWidth, setWireframeWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_SHADOW_PROPERTY_FIELD(wireframeWidth);
+
+    /// When true, the wireframe lines are rendered fully opaque instead of adopting the surface transparency.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, wireframeFullyOpaque, setWireframeFullyOpaque);
+    DECLARE_SHADOW_PROPERTY_FIELD(wireframeFullyOpaque);
+
     /// Controls the transparency of the surface mesh.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, surfaceTransparencyController, setSurfaceTransparencyController);
 

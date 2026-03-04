@@ -81,6 +81,18 @@ public:
     /// Sets whether mesh edges are rendered as wireframe.
     void setEmphasizeEdges(bool emphasizeEdges) { _emphasizeEdges = emphasizeEdges; }
 
+    /// Returns the color used for rendering the wireframe edges.
+    const ColorA& wireframeColor() const { return _wireframeColor; }
+
+    /// Sets the color used for rendering the wireframe edges.
+    void setWireframeColor(const ColorA& color) { _wireframeColor = color; }
+
+    /// Returns the line width (in device-independent pixel units) used for rendering the wireframe edges.
+    FloatType wireframeWidth() const { return _wireframeWidth; }
+
+    /// Sets the line width (in device-independent pixel units) used for rendering the wireframe edges.
+    void setWireframeWidth(FloatType width) { _wireframeWidth = width; }
+
     /// Indicates whether the mesh is fully opaque (no semi-transparent colors).
     bool isFullyOpaque() const;
 
@@ -198,14 +210,21 @@ private:
     /// The mapping from pseudo-color values at the mesh vertices to RGB colors.
     PseudoColorMapping _pseudoColorMapping;
 
-    /// Controls the rendering of edge wireframe.
+    /// Controls the rendering of wireframe lines along mesh edges.
     bool _emphasizeEdges = false;
 
+    /// The color used for rendering the wireframe edges (including alpha).
+    ColorA _wireframeColor{0.1, 0.1, 0.1, 1.0};
+
+    /// The line width (in device-independent pixel units) used for rendering the wireframe edges.
+    /// The default value 0.0 means that the line width is automatically chosen by the rendering system.
+    FloatType _wireframeWidth = 0;
+
     /// The list of transformation matrices when rendering multiple instances of the mesh.
-    ConstDataBufferPtr _perInstanceTMs; // Array of AffineTransformation
+    ConstDataBufferPtr _perInstanceTMs; // Array of AffineTransformation or AffineTransformationG
 
     /// The list of colors when rendering multiple instances of the mesh.
-    ConstDataBufferPtr _perInstanceColors; // Array of ColorA
+    ConstDataBufferPtr _perInstanceColors; // Array of ColorA or ColorAG
 
     /// The color used for rendering all selected faces.
     Color _faceSelectionColor{1,0,0};

@@ -65,6 +65,16 @@ private:
     /// Controls whether the polygonal edges of the mesh should be highlighted.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, highlightEdges, setHighlightEdges);
 
+    /// Controls the color of the wireframe edges if the highlightEdges option is enabled.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.1f, 0.1f, 0.1f}), wireframeColor, setWireframeColor, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the line width (in device-independent pixels) of the wireframe edges if the highlightEdges option is enabled.
+    /// The default value 0.0 means that the line width is automatically chosen by the rendering system.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, wireframeWidth, setWireframeWidth, PROPERTY_FIELD_MEMORIZE);
+
+    /// When true, the wireframe lines are rendered fully opaque instead of adopting the surface transparency.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, wireframeFullyOpaque, setWireframeFullyOpaque);
+
     /// Controls whether triangles facing away from the viewer are not rendered.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, backfaceCulling, setBackfaceCulling);
 };

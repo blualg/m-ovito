@@ -36,11 +36,18 @@ OVITO_CLASSINFO(TriangleMeshVis, "ClassNameAlias", "TriMeshVis");  // For backwa
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, color);
 DEFINE_REFERENCE_FIELD(TriangleMeshVis, transparencyController);
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, highlightEdges);
+DEFINE_PROPERTY_FIELD(TriangleMeshVis, wireframeColor);
+DEFINE_PROPERTY_FIELD(TriangleMeshVis, wireframeWidth);
+DEFINE_PROPERTY_FIELD(TriangleMeshVis, wireframeFullyOpaque);
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, backfaceCulling);
 SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, color, "Display color");
 SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, highlightEdges, "Highlight edges");
+SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, wireframeColor, "Line color");
+SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, wireframeWidth, "Line width (px)");
+SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, wireframeFullyOpaque, "Always fully opaque");
 SET_PROPERTY_FIELD_LABEL(TriangleMeshVis, backfaceCulling, "Back-face culling");
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriangleMeshVis, wireframeWidth, FloatParameterUnit, 0.0, 8.0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriangleMeshVis, transparencyController, PercentParameterUnit, 0, 1);
 
 /******************************************************************************
@@ -82,6 +89,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> TriangleMeshVis::render(con
     auto primitive = std::make_unique<MeshPrimitive>();
     primitive->setEmphasizeEdges(highlightEdges());
     primitive->setUniformColor(ColorA(color(), FloatType(1) - transp));
+    primitive->setWireframeColor(ColorA(wireframeColor(), wireframeFullyOpaque() ? 1 : (1 - transp)));
+    primitive->setWireframeWidth(wireframeWidth() * frameGraph.devicePixelRatio());
     primitive->setMesh(path.lastAs<TriangleMesh>());
     primitive->setCullFaces(backfaceCulling());
 

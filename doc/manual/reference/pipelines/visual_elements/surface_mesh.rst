@@ -3,7 +3,7 @@
 Surface mesh
 ------------
 
-.. image:: /images/visual_elements/surface_mesh_panel.jpg
+.. image:: /images/visual_elements/surface_mesh_panel.png
   :width: 30%
   :align: right
 
@@ -47,8 +47,19 @@ Clip at cell boundaries
   Note that this option does *not* apply to :ref:`simulation cells <scene_objects.simulation_cell>` with periodic boundary conditions.
   Along periodic directions, the surface mesh always gets wrapped back into the cell during rendering.
 
-Highlight edges
-  Activates the rendering of wireframe lines along the edges of the mesh facets.
+Highlight mesh edges
+  Activates the rendering of wireframe lines along the visible edges of the mesh facets.
+
+  Line width (px)
+    The width of the wireframe lines in device-independent pixels. The default value (zero) lets the rendering
+    system choose the line width automatically.
+
+  Line color
+    The color used for rendering the wireframe lines.
+
+  Always fully opaque
+    When enabled, the wireframe lines are always rendered fully opaque, regardless of the surface transparency setting.
+    When disabled, the wireframe lines adopt the same transparency as the surface.
 
 Cap polygons
   This option enables the display of caps where the surface manifold intersects with the simulation cell's boundaries.

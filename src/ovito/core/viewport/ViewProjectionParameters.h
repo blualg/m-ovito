@@ -131,7 +131,7 @@ struct ViewProjectionParameters
             return 1.0 / (p1 - p2).length() / (FloatType)windowSize.height();
         }
         else {
-            return fieldOfView / (FloatType)windowSize.height();
+            return 2 * fieldOfView / (FloatType)windowSize.height();
         }
     }
 };

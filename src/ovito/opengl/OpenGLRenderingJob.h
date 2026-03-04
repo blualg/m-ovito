@@ -199,7 +199,7 @@ protected:
     void renderMeshImplementation(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders just the edges of a triangle mesh as a wireframe model.
-    void renderMeshWireframeImplementation(const MeshPrimitive& primitive, bool renderAsTriangles);
+    void renderMeshWireframeImplementation(const MeshPrimitive& primitive, bool forceRenderAsTriangles);
 
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);

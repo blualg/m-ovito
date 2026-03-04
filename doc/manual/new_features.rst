@@ -4,6 +4,13 @@
 Changelog
 =========
 
+----------------------------
+Version 3.15.1 (xx-xxx-2026)
+----------------------------
+
+- The :ref:`visual_elements.surface_mesh` and :ref:`visual_elements.triangle_mesh` visual elements gained new options to control the width and color of wireframe lines
+  rendered along mesh edges when the :guilabel:`Highlight mesh edges` option is enabled.
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.15.0>`__

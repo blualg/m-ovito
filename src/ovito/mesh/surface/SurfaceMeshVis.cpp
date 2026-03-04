@@ -46,6 +46,9 @@ DEFINE_PROPERTY_FIELD(SurfaceMeshVis, showCap);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, wireframeColor);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, wireframeWidth);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, wireframeFullyOpaque);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceIsClosed);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, colorMappingMode);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, clipAtDomainBoundaries);
@@ -58,6 +61,9 @@ DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, showCap);
 DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
 DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
 DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, wireframeColor);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, wireframeWidth);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, wireframeFullyOpaque);
 DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, clipAtDomainBoundaries);
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColor, "Surface color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capColor, "Cap color");
@@ -66,11 +72,15 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, smoothShading, "Smooth shading");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceTransparencyController, "Surface transparency");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capTransparencyController, "Cap transparency");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, reverseOrientation, "Flip surface orientation");
-SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, highlightEdges, "Highlight edges");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, highlightEdges, "Highlight mesh edges");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, wireframeColor, "Line color");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, wireframeWidth, "Line width (px)");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, wireframeFullyOpaque, "Always fully opaque");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceIsClosed, "Closed surface");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColorMapping, "Color mapping");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, colorMappingMode, "Color mapping mode");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, clipAtDomainBoundaries, "Clip at cell boundaries");
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, wireframeWidth, FloatParameterUnit, 0.0, 8.0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, surfaceTransparencyController, PercentParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, capTransparencyController, PercentParameterUnit, 0, 1);
 
@@ -205,7 +215,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
         using PrimitiveCacheKey = RendererResourceKey<struct PrimitiveCache,
             std::shared_ptr<const RenderableSurfaceMesh>, // Renderable mesh
             ColorA,                     // Surface color
-            bool                        // Edge highlighting
+            bool,                       // Edge highlighting
+            Color,                      // Wireframe edge color
+            FloatType,                  // Wireframe edge width
+            bool                        // Wireframe opacity override
         >;
 
         // Lookup the rendering primitives in the vis cache.
@@ -213,7 +226,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
             PrimitiveCacheKey{
                 renderableMesh,
                 color_surface,
-                highlightEdges()
+                highlightEdges(),
+                wireframeColor(),
+                wireframeWidth() * frameGraph->devicePixelRatio(),
+                wireframeFullyOpaque()
             },
             [&](MeshPrimitive& surfacePrimitive, OORef<ObjectPickInfo>& pickInfo) {
                 auto materialColors = renderableMesh->materialColors();
@@ -223,6 +239,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
                 surfacePrimitive.setMaterialColors(std::move(materialColors));
                 surfacePrimitive.setUniformColor(color_surface);
                 surfacePrimitive.setEmphasizeEdges(highlightEdges());
+                surfacePrimitive.setWireframeColor(ColorA(wireframeColor(), wireframeFullyOpaque() ? 1.0 : surface_alpha));
+                surfacePrimitive.setWireframeWidth(wireframeWidth() * frameGraph->devicePixelRatio());
                 surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
                 surfacePrimitive.setMesh(renderableMesh->surface());
 

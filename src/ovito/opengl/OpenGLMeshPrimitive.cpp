@@ -393,9 +393,13 @@ ConstDataBufferPtr OpenGLRenderingJob::generateMeshWireframeLines(const MeshPrim
 /******************************************************************************
 * Renders just the edges of a triangle mesh as a wireframe model.
 ******************************************************************************/
-void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& primitive, bool renderAsTriangles)
+void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& primitive, bool forceRenderAsTriangles)
 {
     OVITO_ASSERT(!isPickingPass());
+
+    // When the requested line width is not exactly 1 px, use the triangle-based line rendering method because
+    // standard OpenGL GL_LINES ignores widths.
+    const bool renderAsTriangles = forceRenderAsTriangles || (primitive.wireframeWidth() != FloatType(0));
 
     OpenGLShaderHelper shader(this);
     if(!renderAsTriangles) {
@@ -411,13 +415,11 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
             shader.load("mesh_wireframe_tri_instanced", "mesh/mesh_wireframe_tri_instanced.vert", "mesh/mesh_wireframe_tri_instanced.frag");
     }
 
-    bool useBlending = (primitive.uniformColor().a() < 1.0) && !orderIndependentTransparency();
-    if(useBlending)
+    if(primitive.wireframeColor().a() < 1.0 && !orderIndependentTransparency())
         shader.enableBlending();
 
-    // Pass uniform line color to fragment shader as a uniform value.
-    ColorA wireframeColor(0.1, 0.1, 0.1, primitive.uniformColor().a());
-    shader.setUniformValue("color", wireframeColor);
+    // Pass wireframe color and alpha to the fragment shader.
+    shader.setUniformValue("color", primitive.wireframeColor());
 
     // Get the wireframe lines geometry data.
     ConstDataBufferPtr wireframeLinesBuffer = generateMeshWireframeLines(primitive);
@@ -426,7 +428,6 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
     // When rendering the lines as pairs of triangles, we need to replicate the line data 6 times,
     // because each line segments is rendered using 6 triangle vertices.
     if(renderAsTriangles) {
-        int orgCount = wireframeLinesBuffer->size();
         wireframeLinesBuffer = currentResourceFrame().lookup<ConstDataBufferPtr>(
             RendererResourceKey<struct WireframeTriangleDataCache, ConstDataBufferPtr>{ wireframeLinesBuffer },
             [&](ConstDataBufferPtr& replicatedBuffer) {
@@ -439,15 +440,17 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
                         *pout++ = pin[1];
                     }
                 }
+                OVITO_ASSERT(pout == replicatedAccess.end());
                 replicatedBuffer = replicatedAccess.take();
             });
     }
 
     // Configure shader.
-    shader.setVerticesPerInstance(wireframeLinesBuffer->size());
+    shader.setVerticesPerInstance(renderAsTriangles ? (wireframeLinesBuffer->size() / 2) : wireframeLinesBuffer->size());
     shader.setInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
     if(shader.verticesPerInstance() > std::numeric_limits<int32_t>::max() / shader.instanceCount() / wireframeLinesBuffer->stride()) {
         qWarning() << "WARNING: OpenGL renderer - Wireframe mesh consists of too many lines, exceeding device limits (verts per instance:" << shader.verticesPerInstance() << ", instance count:" << shader.instanceCount() << ", stride:" << wireframeLinesBuffer->stride() << ").";
+        _renderBuffer->reportIssue(tr("Rendering skipped: Wireframe mesh consists of too many lines, exceeding OpenGL device limits."));
         return;
     }
 
@@ -459,8 +462,8 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
     else {
         shader.bindBuffer(buffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point3F), 0, OpenGLShaderHelper::PerVertex);
         shader.bindBuffer(buffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point3F), sizeof(Point3F), OpenGLShaderHelper::PerVertex);
-        // Compute line width in viewport space.
-        constexpr float lineWidth = 1.0f;
+        // Compute line width in viewport space from the user-configurable pixel width.
+        float lineWidth = static_cast<float>(primitive.wireframeWidth());
         shader.setUniformValue("line_thickness", lineWidth / framebufferSize().height());
     }
 
@@ -475,10 +478,7 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
     }
 
     // Draw lines.
-    if(!renderAsTriangles)
-        shader.draw(GL_LINES);
-    else
-        shader.draw(GL_TRIANGLES);
+    shader.draw(renderAsTriangles ? GL_TRIANGLES : GL_LINES);
 }
 
 }   // End of namespace

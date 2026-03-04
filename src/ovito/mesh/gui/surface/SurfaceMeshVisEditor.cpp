@@ -50,6 +50,7 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
+    // Color mapping group box
     QGroupBox* coloringGroupBox = new QGroupBox(tr("Color mapping mode"));
     QGridLayout* sublayout = new QGridLayout(coloringGroupBox);
     sublayout->setContentsMargins(4,4,4,4);
@@ -91,9 +92,28 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     _clipAtDomainBoundariesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::clipAtDomainBoundaries));
     sublayout->addWidget(_clipAtDomainBoundariesUI->checkBox(), 2, 0, 1, 2);
 
-    BooleanParameterUI* highlightEdgesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
-    sublayout->addWidget(highlightEdgesUI->checkBox(), 3, 0, 1, 2);
+    // Highlight edges group box
+    BooleanGroupBoxParameterUI* highlightEdgesUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
+    sublayout = new QGridLayout(highlightEdgesUI->childContainer());
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    layout->addWidget(highlightEdgesUI->groupBox());
 
+    FloatParameterUI* wireframeWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::wireframeWidth));
+    wireframeWidthUI->spinner()->setStandardValue(0.0);
+    wireframeWidthUI->textBox()->setPlaceholderText(tr("‹default›"));
+    sublayout->addWidget(wireframeWidthUI->label(), 0, 0);
+    sublayout->addLayout(wireframeWidthUI->createFieldLayout(), 0, 1);
+
+    ColorParameterUI* wireframeColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::wireframeColor));
+    sublayout->addWidget(wireframeColorUI->label(), 1, 0);
+    sublayout->addWidget(wireframeColorUI->colorPicker(), 1, 1);
+
+    BooleanParameterUI* wireframeFullyOpaqueUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::wireframeFullyOpaque));
+    sublayout->addWidget(wireframeFullyOpaqueUI->checkBox(), 2, 1);
+
+    // Show cap polygons group box (only for closed meshes)
     _capGroupUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::showCap));
     _capGroupUI->groupBox()->setTitle(tr("Cap polygons"));
     sublayout = new QGridLayout(_capGroupUI->childContainer());
