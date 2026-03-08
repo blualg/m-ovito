@@ -153,7 +153,7 @@ public:
     }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
-    ConstDataObjectPath getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
+    ConstDataObjectPath getObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const;
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     ConstDataObjectPath getObject(const DataObjectReference& dataRef) const {
@@ -163,7 +163,7 @@ public:
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
-    ConstDataObjectPath getObject(const QString& pathString) const { return getObject(DataObjectClass::OOClass(), pathString); }
+    ConstDataObjectPath getObject(const QStringView pathString) const { return getObject(DataObjectClass::OOClass(), pathString); }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
@@ -174,7 +174,7 @@ public:
     }
 
     /// Throws an exception if the input does not contain any a data object of the given type and under the given hierarchy path.
-    ConstDataObjectPath expectObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
+    ConstDataObjectPath expectObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const;
 
     /// Throws an exception if the input does not contain any a data object of the given type and under the given hierarchy path.
     ConstDataObjectPath expectObject(const DataObjectReference& dataRef) const {
@@ -184,7 +184,7 @@ public:
 
     /// Throws an exception if the input does not contain any a data object of the given type and under the given hierarchy path.
     template<class DataObjectClass>
-    ConstDataObjectPath expectObject(const QString& pathString) const { return expectObject(DataObjectClass::OOClass(), pathString); }
+    ConstDataObjectPath expectObject(const QStringView pathString) const { return expectObject(DataObjectClass::OOClass(), pathString); }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
@@ -195,7 +195,7 @@ public:
     }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
-    const DataObject* getLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
+    const DataObject* getLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const;
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     const DataObject* getLeafObject(const DataObjectReference& dataRef) const {
@@ -212,7 +212,7 @@ public:
     }
 
     /// Throws an exception if the input does not contain a data object of the given type.
-    const DataObject* expectLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
+    const DataObject* expectLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const;
 
     /// Throws an exception if the input does not contain a data object of the given type.
     const DataObject* expectLeafObject(const DataObjectReference& dataRef) const {
@@ -229,17 +229,17 @@ public:
     }
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this collection.
-    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* dataSource, const QString& identifier) const;
+    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* dataSource, const QStringView identifier) const;
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this collection.
     template<class DataObjectClass>
-    const DataObjectClass* getObjectBy(const PipelineNode* dataSource, const QString& identifier) const {
+    const DataObjectClass* getObjectBy(const PipelineNode* dataSource, const QStringView identifier) const {
         return static_object_cast<DataObjectClass>(getObjectBy(DataObjectClass::OOClass(), dataSource, identifier));
     }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
-    DataObjectPath getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
+    DataObjectPath getMutableObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString);
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
@@ -258,7 +258,7 @@ public:
     }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
-    DataObject* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
+    DataObject* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString);
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     DataObject* getMutableLeafObject(const DataObjectReference& dataRef) {
@@ -268,7 +268,7 @@ public:
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
-    DataObjectClass* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
+    DataObjectClass* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) {
         OVITO_ASSERT(objectClass.isDerivedFrom(DataObjectClass::OOClass()));
         return static_object_cast<DataObjectClass>(getMutableLeafObject(objectClass, pathString));
     }
@@ -281,7 +281,7 @@ public:
     }
 
     /// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
-    DataObjectPath expectMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
+    DataObjectPath expectMutableObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString);
 
     /// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
     DataObjectPath expectMutableObject(const DataObjectReference& dataRef) {
@@ -290,7 +290,7 @@ public:
     }
 
     /// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
-    DataObject* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
+    DataObject* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString);
 
     /// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
     DataObject* expectMutableLeafObject(const DataObjectReference& dataRef) {
@@ -300,7 +300,7 @@ public:
 
     /// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
     template<class DataObjectClass>
-    DataObjectClass* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
+    DataObjectClass* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) {
         OVITO_ASSERT(objectClass.isDerivedFrom(DataObjectClass::OOClass()));
         return static_object_cast<DataObjectClass>(expectMutableLeafObject(objectClass, pathString));
     }
@@ -349,7 +349,7 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object, and
     /// finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObject(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
+    DataObjectType* createObject(const QStringView baseName, OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
         DataObjectType* obj = createObject<DataObjectType, Args...>(std::move(createdByNode), std::forward<Args>(args)...);
         OVITO_ASSERT(!baseName.isEmpty());
         obj->setIdentifier(generateUniqueIdentifier<DataObjectType>(baseName));
@@ -360,7 +360,7 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object and visual element, and
     /// finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObjectWithVis(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, DataVis* visElement, Args&&... args) {
+    DataObjectType* createObjectWithVis(const QStringView baseName, OOWeakRef<const PipelineNode> createdByNode, DataVis* visElement, Args&&... args) {
         DataObjectType* obj = createObject<DataObjectType>(baseName, std::move(createdByNode), ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
@@ -397,17 +397,17 @@ public:
 
     /// Looks up the value for the given global attribute.
     /// Returns a given default value if the attribute is not defined in this pipeline state.
-    QVariant getAttributeValue(const QString& attrName, const QVariant& defaultValue = QVariant()) const;
+    QVariant getAttributeValue(const QStringView attrName, const QVariant& defaultValue = QVariant()) const;
 
     /// Looks up the value for the global attribute with the given base name and creator.
     /// Returns a given default value if the attribute is not defined in this pipeline state.
-    QVariant getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const;
+    QVariant getAttributeValue(const PipelineNode* createdByNode, const QStringView attrBaseName, const QVariant& defaultValue = QVariant()) const;
 
     /// Inserts a new global attribute into the pipeline state.
-    AttributeDataObject* addAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
+    AttributeDataObject* addAttribute(const QStringView key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
 
     /// Inserts a new global attribute into the pipeline state overwriting any existing attribute with the same name.
-    AttributeDataObject* setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
+    AttributeDataObject* setAttribute(const QStringView key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
 
     /// Copies all global attribute created by the given pipeline node over to this data collection.
     void adoptAttributesFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode);
@@ -415,13 +415,13 @@ public:
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data
     /// collection.
-    QString generateUniqueIdentifier(const QString& baseName, const OvitoClass& dataObjectClass) const;
+    QString generateUniqueIdentifier(const QStringView baseName, const OvitoClass& dataObjectClass) const;
 
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data
     /// collection.
     template<class DataObjectClass>
-    QString generateUniqueIdentifier(const QString& baseName) const {
+    QString generateUniqueIdentifier(const QStringView baseName) const {
         return generateUniqueIdentifier(baseName, DataObjectClass::OOClass());
     }
 
@@ -434,10 +434,10 @@ private:
     static void getObjectsRecursiveImpl(ConstDataObjectPath& path, const DataObject::OOMetaClass& objectClass, std::vector<ConstDataObjectPath>& results);
 
     /// Implementation detail of getObject().
-    static bool getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, ConstDataObjectPath& path);
+    static bool getObjectImpl(const DataObject::OOMetaClass& objectClass, const QStringView pathString, ConstDataObjectPath& path);
 
     /// Implementation detail of getLeafObject().
-    static const DataObject* getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent);
+    static const DataObject* getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, const QStringView pathString, const DataObject* parent);
 
 private:
 

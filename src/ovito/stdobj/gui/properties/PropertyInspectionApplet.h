@@ -62,7 +62,7 @@ public:
     const PropertyContainer* selectedContainerObject() const { return static_object_cast<PropertyContainer>(selectedDataObject()); }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint) override;
 
     /// Returns the UI display name of the elements contained in the selected property container, e.g. "particles" or "bonds".
     virtual QString elementDescriptionName() const { return selectedContainerObject()->getOOMetaClass().elementDescriptionName(); }

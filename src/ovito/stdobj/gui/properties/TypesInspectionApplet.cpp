@@ -218,18 +218,6 @@ void TypesInspectionApplet::onEditType(const QModelIndex& index)
 }
 
 /******************************************************************************
-* Selects a specific data object in this applet.
-******************************************************************************/
-bool TypesInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
-{
-    // Check the property list in case the requested data object is a Property.
-    if(DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint))
-        return true;
-
-    return false;
-}
-
-/******************************************************************************
 * Replaces the contents of this data model.
 ******************************************************************************/
 void TypesInspectionApplet::TypeTableModel::setContents(const PropertyContainer* container, const Property* property)

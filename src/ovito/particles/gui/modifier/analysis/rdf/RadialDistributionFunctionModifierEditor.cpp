@@ -116,7 +116,7 @@ void RadialDistributionFunctionModifierEditor::plotRDF()
     handleExceptions([&]() {
         // Look up the data table in the modifier's pipeline output.
         DataOORef<const DataTable> table =
-            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), RadialDistributionFunctionModifier::OOMetaClass::tableName);
+            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), RadialDistributionFunctionModifier::TableIdentifier);
 
         // Determine X plotting range.
         if(table) {

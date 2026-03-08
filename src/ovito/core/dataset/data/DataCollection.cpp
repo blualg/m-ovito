@@ -129,7 +129,7 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
 * Throws an exception if the input does not contain any a data object of the
 * given type and under the given hierarchy path.
 ******************************************************************************/
-const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
+const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const
 {
     const DataObject* obj = getLeafObject(objectClass, pathString);
     if(!obj) {
@@ -137,13 +137,13 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else
-                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
         else {
             if(pathString.isEmpty())
                 throw Exception(tr("No '%1' object in data collection.").arg(objectClass.displayName()));
             else
-                throw Exception(tr("No '%1' object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("No '%1' object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
     }
     return obj;
@@ -209,7 +209,7 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, Clon
 * Finds an object of the given type and with the given identifier in the list
 * of data objects stored in this collection.
 ******************************************************************************/
-const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QString& identifier) const
+const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QStringView identifier) const
 {
     if(!createdByNode)
         return nullptr;
@@ -258,7 +258,7 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
 /******************************************************************************
 * Finds an object of the given type and under the hierarchy path in this collection.
 ******************************************************************************/
-ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
+ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const
 {
     ConstDataObjectPath result;
     if(!pathString.isEmpty()) {
@@ -283,7 +283,7 @@ ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& obj
 * Throws an exception if the input does not contain any a data object of the
 * given type and under the given hierarchy path.
 ******************************************************************************/
-ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
+ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const
 {
     ConstDataObjectPath path = getObject(objectClass, pathString);
     if(path.empty()) {
@@ -291,13 +291,13 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else
-                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
         else {
             if(pathString.isEmpty())
                 throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
             else
-                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
     }
     return path;
@@ -307,7 +307,7 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 * Throws an exception if the input does not contain any a data object of the
 * given type and under the given hierarchy path.
 ******************************************************************************/
-DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
+DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString)
 {
     DataObjectPath path = getMutableObject(objectClass, pathString);
     if(path.empty()) {
@@ -315,13 +315,13 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else
-                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("The dataset does not contain an object named '%2' of type '%1'.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
         else {
             if(pathString.isEmpty())
                 throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
             else
-                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString.toString()));
         }
     }
     return path;
@@ -331,7 +331,7 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 * Throws an exception if the input does not contain any a data object of the
 * given type and under the given hierarchy path.
 ******************************************************************************/
-DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
+DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString)
 {
     DataObjectPath path = expectMutableObject(objectClass, pathString);
     OVITO_ASSERT(!path.empty());
@@ -385,7 +385,7 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 /******************************************************************************
 * Finds an object of the given type and under the hierarchy path in this collection.
 ******************************************************************************/
-const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
+const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString) const
 {
     if(!pathString.isEmpty()) {
         for(const DataObject* obj : objects()) {
@@ -407,7 +407,7 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 /******************************************************************************
 * Implementation detail of getLeafObject().
 ******************************************************************************/
-const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent)
+const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, const QStringView pathString, const DataObject* parent)
 {
     if(pathString.isEmpty()) {
         if(objectClass.isMember(parent)) return parent;
@@ -443,7 +443,7 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 * Duplicates it, and all its parent objects, if needed so that it can be safely
 * modified without unwanted side effects.
 ******************************************************************************/
-DataObjectPath DataCollection::getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
+DataObjectPath DataCollection::getMutableObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString)
 {
     // First, determine the full path to the object we are searching for.
     const ConstDataObjectPath path = getObject(objectClass, pathString);
@@ -465,7 +465,7 @@ DataObjectPath DataCollection::getMutableObject(const DataObject::OOMetaClass& o
 * Duplicates it, and all its parent objects, if needed so that it can be safely
 * modified without unwanted side effects.
 ******************************************************************************/
-DataObject* DataCollection::getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString)
+DataObject* DataCollection::getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QStringView pathString)
 {
     DataObjectPath path = getMutableObject(objectClass, pathString);
     return path.empty() ? nullptr : path.back();
@@ -500,7 +500,7 @@ QVariantMap DataCollection::buildAttributesMap() const
 * Looks up the value for the given global attribute.
 * Returns a given default value if the attribute is not defined in this pipeline state.
 ******************************************************************************/
-QVariant DataCollection::getAttributeValue(const QString& attrName, const QVariant& defaultValue) const
+QVariant DataCollection::getAttributeValue(const QStringView attrName, const QVariant& defaultValue) const
 {
     for(const DataObject* obj : objects()) {
         if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
@@ -515,7 +515,7 @@ QVariant DataCollection::getAttributeValue(const QString& attrName, const QVaria
 * Looks up the value for the global attribute with the given base name and creator.
 * Returns a given default value if the attribute is not defined in this pipeline state.
 ******************************************************************************/
-QVariant DataCollection::getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue) const
+QVariant DataCollection::getAttributeValue(const PipelineNode* createdByNode, const QStringView attrBaseName, const QVariant& defaultValue) const
 {
     if(const AttributeDataObject* attribute = getObjectBy<AttributeDataObject>(createdByNode, attrBaseName))
         return attribute->value();
@@ -526,7 +526,7 @@ QVariant DataCollection::getAttributeValue(const PipelineNode* createdByNode, co
 /******************************************************************************
 * Inserts a new global attribute into the pipeline state.
 ******************************************************************************/
-AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
+AttributeDataObject* DataCollection::addAttribute(const QStringView key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
 {
     return createObject<AttributeDataObject>(key, std::move(createdByNode), std::move(value));
 }
@@ -535,7 +535,7 @@ AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant v
 * Inserts a new global attribute into the pipeline state overwriting any
 * existing attribute with the same name.
 ******************************************************************************/
-AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
+AttributeDataObject* DataCollection::setAttribute(const QStringView key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
 {
     for(const DataObject* obj : objects()) {
         if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
@@ -570,33 +570,34 @@ void DataCollection::adoptAttributesFrom(const DataCollection& other, const OOWe
 * identifiers of any existing data object of the given type in the same data
 * collection.
 ******************************************************************************/
-QString DataCollection::generateUniqueIdentifier(const QString& baseName, const OvitoClass& dataObjectClass) const
+QString DataCollection::generateUniqueIdentifier(const QStringView baseName, const OvitoClass& dataObjectClass) const
 {
-    // This helper function checks if the given id is already used by another data object of the
-    // given type in the this data collection.
-    auto doesExist = [this,&dataObjectClass](const QString& id) {
-        for(const DataObject* obj : objects()) {
-            if(dataObjectClass.isMember(obj)) {
-                if(obj->identifier() == id)
-                    return true;
-            }
+    // Scan all existing data objects of the given type once and determine the highest
+    // numeric suffix used with the given base name. This avoids quadratic runtime when
+    // many identifiers already exist.
+    bool baseNameUsed = false;
+    int maxSuffix = 1;
+    for(const DataObject* obj : objects()) {
+        if(!dataObjectClass.isMember(obj))
+            continue;
+        const QString& id = obj->identifier();
+        if(id == baseName) {
+            baseNameUsed = true;
         }
-        return false;
-    };
+        else if(id.startsWith(baseName) && id.size() > baseName.size() && id[baseName.size()] == QChar('.')) {
+            bool ok;
+            const int suffix = QStringView{id}.mid(baseName.size() + 1).toInt(&ok);
+            if(ok && suffix > maxSuffix)
+                maxSuffix = suffix;
+        }
+    }
 
-    if(!doesExist(baseName)) {
-        return baseName;
+    if(!baseNameUsed) {
+        return baseName.toString();
     }
     else {
-        // Append consecutive indices to the base ID name.
-        for(int i = 2; ; i++) {
-            QString uniqueId = baseName + QChar('.') + QString::number(i);
-            if(!doesExist(uniqueId)) {
-                return uniqueId;
-            }
-        }
+        return baseName + QChar('.') + QString::number(maxSuffix + 1);
     }
-    OVITO_ASSERT(false);
 }
 
 /******************************************************************************

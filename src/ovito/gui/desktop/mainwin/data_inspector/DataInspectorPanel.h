@@ -46,7 +46,7 @@ public:
     DataInspectorPanel(MainWindowUI& ui);
 
     /// Selects a specific data object in the data inspector.
-    bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
+    bool selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint);
 
     /// Selects a specific tab page in the data inspector.
     bool selectTabPage(const OvitoClass& appletClass);

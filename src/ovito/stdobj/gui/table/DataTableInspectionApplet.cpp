@@ -168,7 +168,7 @@ void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* data
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataTableInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataTableInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     // Let the base class switch to the right data table object.
     bool result = PropertyInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);

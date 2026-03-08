@@ -112,7 +112,7 @@ Future<PipelineFlowState> RadialDistributionFunctionModifier::evaluateModifier(c
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
                 if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(
-                       request.modificationNode(), RadialDistributionFunctionModifier::OOMetaClass::tableName)) {
+                       request.modificationNode(), RadialDistributionFunctionModifier::TableIdentifier)) {
                     state.addObject(cachedTable);
                 }
                 if(const Property* cachedCoordination = cachedParticles->getProperty(Particles::CoordinationProperty)) {
@@ -481,7 +481,7 @@ Future<PipelineFlowState> RadialDistributionFunctionModifier::evaluateModifier(c
         }
 
         // Output RDF histogram(s).
-        DataTable* table = state.createObject<DataTable>(RadialDistributionFunctionModifier::OOMetaClass::tableName,
+        DataTable* table = state.createObject<DataTable>(RadialDistributionFunctionModifier::TableIdentifier,
                                                          createdByNode,
                                                          DataTable::Line,
                                                          tr("Radial distribution function"),

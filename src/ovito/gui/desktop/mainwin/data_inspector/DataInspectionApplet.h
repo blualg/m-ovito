@@ -64,7 +64,7 @@ public:
     virtual void deactivate() {}
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint);
 
     /// Returns the help topic ID for the documentation page of this applet.
     /// An empty string means that no help page is available for this applet.

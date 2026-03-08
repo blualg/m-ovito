@@ -43,14 +43,15 @@ class OVITO_PARTICLES_EXPORT RadialDistributionFunctionModifier : public Modifie
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         [[nodiscard]] virtual bool isApplicableTo(const DataCollection& input) const override;
-
-        /// Name of the output table
-        constexpr static const char* tableName = "coordination-rdf";
     };
 
     OVITO_CLASS_META(RadialDistributionFunctionModifier, RadialDistributionFunctionModifierClass)
 
 public:
+
+    /// Identifier of the table produced by the modifier.
+    static constexpr QStringView TableIdentifier = u"coordination-rdf";
+
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 

@@ -381,7 +381,7 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 /******************************************************************************
 * Selects a specific data object in the data inspector.
 ******************************************************************************/
-bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
         if(_appletsToTabs[appletIndex] == -1)

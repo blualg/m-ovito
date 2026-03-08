@@ -92,7 +92,7 @@ void GlobalAttributesInspectionApplet::updateDisplay()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool GlobalAttributesInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool GlobalAttributesInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
         const auto& attr = _tableModel->attributes()[i];

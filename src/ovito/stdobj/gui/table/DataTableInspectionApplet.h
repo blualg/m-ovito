@@ -52,7 +52,7 @@ public:
     DataTablePlotWidget* plotWidget() const { return _plotWidget; }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint) override;
 
     /// Determines whether the given property represents a color.
     virtual bool isColorProperty(const Property* property) const override {

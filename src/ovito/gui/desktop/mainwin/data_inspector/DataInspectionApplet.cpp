@@ -258,7 +258,7 @@ void DataInspectionApplet::configureDataObjectListItem(QListWidgetItem* item, co
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     if(!_objectSelectionWidget)
         return false;

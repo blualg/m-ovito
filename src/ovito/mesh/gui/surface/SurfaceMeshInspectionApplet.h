@@ -137,7 +137,7 @@ public:
     virtual QWidget* createWidget() override;
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint) override;
 
 private Q_SLOTS:
 

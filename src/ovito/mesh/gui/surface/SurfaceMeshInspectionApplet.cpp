@@ -144,7 +144,7 @@ void SurfaceMeshInspectionApplet::onCurrentDataObjectChanged()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool SurfaceMeshInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool SurfaceMeshInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     // Let the base class switch to the right data object.
     bool result = DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);

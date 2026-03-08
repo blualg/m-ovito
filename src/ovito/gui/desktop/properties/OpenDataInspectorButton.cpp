@@ -31,15 +31,15 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint, const QVariant& modeHint)
-    : QPushButton(buttonTitle), _editor(editor), _objectNameHint(objectNameHint), _modeHint(modeHint)
+OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QStringView objectIdentifierHint, const QVariant& modeHint)
+    : QPushButton(buttonTitle), _editor(editor), _objectIdentifierHint(objectIdentifierHint.toString()), _modeHint(modeHint)
 {
     connect(this, &QPushButton::clicked, [this]() {
         if(!this->editor()->modificationNode() || !this->editor()->modificationNode()->modifier() || !this->editor()->modificationNode()->modifier()->isEnabled()) {
             QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }
-        else if(!this->editor()->ui().mainWindow()->openDataInspector(this->editor()->modificationNode(), _objectNameHint, _modeHint)) {
+        else if(!this->editor()->ui().mainWindow()->openDataInspector(this->editor()->modificationNode(), _objectIdentifierHint, _modeHint)) {
             QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }

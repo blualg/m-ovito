@@ -173,7 +173,7 @@ void PropertyInspectionApplet::updateCountDisplay()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
     // Check the property container list in case the requested data object is a PropertyContainer.
     if(DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint))
