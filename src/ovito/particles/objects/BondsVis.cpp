@@ -121,10 +121,20 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time,
 namespace {
 
 /******************************************************************************
+ * Clamps the OVITO bond order to the range [0, 3] as only up to 3 bonds will be
+ * displayed at a time.
+ ******************************************************************************/
+inline GraphicsFloatType clampBondOrder(GraphicsFloatType bondOrder)
+{
+    return std::clamp(bondOrder, (GraphicsFloatType)0, (GraphicsFloatType)3);
+}
+
+/******************************************************************************
  * Check whether the bond order is a fractional or integer
  ******************************************************************************/
 inline bool isFractionalBond(GraphicsFloatType bondOrder)
 {
+    bondOrder = clampBondOrder(bondOrder);
     return std::abs(std::round(bondOrder) - bondOrder) > Ovito::epsilon_v<GraphicsFloatType>;
 }
 
@@ -320,8 +330,9 @@ inline size_t filledSegmentsToCylinderCount(const int filledSegments, const Grap
  * based on the number of filled segments.
  * Used to preallocated all the output arrays.
  ******************************************************************************/
-inline size_t bondOrderToCylinderCount(const GraphicsFloatType bondOrder, const size_t cylindersPerFilledSegment)
+inline size_t bondOrderToCylinderCount(GraphicsFloatType bondOrder, const size_t cylindersPerFilledSegment)
 {
+    bondOrder = clampBondOrder(bondOrder);
     GraphicsFloatType intPart;
     const GraphicsFloatType remainder = std::modf(bondOrder, &intPart);
     size_t count = 2 * (size_t)std::clamp(intPart, (GraphicsFloatType)0, (GraphicsFloatType)3);
@@ -531,10 +542,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
                         // How many bonds do we need to draw for this bond
                         // based on its order?
-                        const size_t bondRepCount =
-                            useBondOrder
-                                ? (size_t)std::clamp(std::ceil(bondInputOrders[bondIndex]), (GraphicsFloatType)0, (GraphicsFloatType)3)
-                                : 1;
+                        const size_t bondRepCount = useBondOrder ? (size_t)clampBondOrder(std::ceil(bondInputOrders[bondIndex])) : 1;
                         // Skip bonds with zero / negative order- safe
                         // because these are not included in the cylinder
                         // count
