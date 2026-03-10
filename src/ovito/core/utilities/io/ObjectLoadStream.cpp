@@ -444,8 +444,8 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
     OVITO_ASSERT(_currentObjectRecord->object == object);
     OVITO_ASSERT(!object->isUndoRecording());
 
-#if 0
-    qDebug() << "Loading object" << object << "with reuseExistingSubobjects=" << _currentObjectRecord->reuseExistingSubobjects;
+#if 1
+    qInfo() << "Loading object" << object << "with reuseExistingSubobjects=" << _currentObjectRecord->reuseExistingSubobjects;
 #endif
 
     // Helper function that deserializes the value of a single reference or property field.
@@ -469,8 +469,8 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                         throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
                             .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name()).arg(fieldRecord.targetClass->name()).arg(target->getOOClass().name()));
                     }
-#if 0
-                    qDebug() << "  Reference field" << fieldRecord.identifier << " contains" << target;
+#if 1
+                    qInfo() << "  Reference field" << fieldRecord.identifier << "contains" << target;
 #endif
                     field->_singleReferenceWriteFuncRef(object, field, std::move(target));
                 }
@@ -489,8 +489,8 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                                 throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
                                     .arg(QString::fromUtf8(fieldRecord.identifier)).arg(fieldRecord.definingClass->name(), fieldRecord.targetClass->name(), target->getOOClass().name()));
                             }
-#if 0
-                            qDebug() << "  Vector reference field" << fieldRecord.identifier << " contains" << target;
+#if 1
+                            qInfo() << "  Vector reference field" << fieldRecord.identifier << "contains" << target;
 #endif
                             if(oldCount > i) {
                                 // Reuse existing entry in the vector if possible.
@@ -511,8 +511,8 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
                 }
             }
             else {
-#if 0
-                qDebug() << "  Reference field" << fieldRecord.identifier << " no longer exists.";
+#if 1
+                qInfo() << "  Reference field" << fieldRecord.identifier << "no longer exists.";
 #endif
                 // The serialized reference field no longer exists in the current program version.
                 // Don't deserialize dead object(s).
@@ -578,8 +578,8 @@ void ObjectLoadStream::deserializeParameterFieldValues(RefTarget* object)
         }
     }
 
-#if 0
-    qDebug() << "Done loading automatic fields of " << object;
+#if 1
+    qInfo() << "Done loading automatic fields of" << object;
 #endif
 }
 

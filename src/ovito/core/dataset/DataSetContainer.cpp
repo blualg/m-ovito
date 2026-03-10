@@ -112,6 +112,7 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
         if(event.type() == ReferenceEvent::ReferenceChanged) {
             const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
             if(refEvent.field() == PROPERTY_FIELD(Viewport::scene)) {
+                qInfo() << "--- Active viewport's scene changed:" << refEvent.oldTarget() << "->" << refEvent.newTarget();
                 _activeScene.set(this, PROPERTY_FIELD(activeScene), activeViewport()->scene());
             }
         }
@@ -175,9 +176,11 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
     }
     else if(field == PROPERTY_FIELD(activeViewport)) {
         Q_EMIT activeViewportChanged(activeViewport());
+        qInfo() << "--- Active viewport changed:" << oldTarget << "->" << newTarget;
         _activeScene.set(this, PROPERTY_FIELD(activeScene), activeViewport() ? activeViewport()->scene() : nullptr);
     }
     else if(field == PROPERTY_FIELD(activeScene)) {
+        qInfo() << "--- Active scene changed:" << oldTarget << "->" << newTarget;
         if(_animationPlayback) {
             _animationPlayback->stopAnimationPlayback();
             _animationPlayback->setScene(activeScene());
@@ -187,8 +190,11 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
         _activeAnimationSettings.set(this, PROPERTY_FIELD(activeAnimationSettings), activeScene() ? activeScene()->animationSettings() : nullptr);
         _activeSelectionSet.set(this, PROPERTY_FIELD(activeSelectionSet), activeScene() ? activeScene()->selection() : nullptr);
         Q_EMIT sceneReplaced(activeScene());
+        // Emit a second selection signal after the scene has been replaced.
+        Q_EMIT selectionChangeComplete(activeSelectionSet());
     }
     else if(field == PROPERTY_FIELD(activeSelectionSet)) {
+        qInfo() << "--- Active selection set changed:" << oldTarget << "->" << newTarget;
         Q_EMIT selectionSetReplaced(activeSelectionSet());
         Q_EMIT selectionChanged(activeSelectionSet());
         Q_EMIT selectionChangeComplete(activeSelectionSet());

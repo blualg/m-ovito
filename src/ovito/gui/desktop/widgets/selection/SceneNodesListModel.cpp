@@ -209,12 +209,14 @@ Qt::ItemFlags SceneNodesListModel::flags(const QModelIndex& index) const
 ******************************************************************************/
 void SceneNodesListModel::onSceneReplaced(Scene* newScene)
 {
+    qInfo() << "---- SceneNodesListModel::onSceneReplaced ----" << newScene;
     beginResetModel();
     _deferredUpdateList.clear();
     _nodeListener.clear();
     _sceneListener.setTarget(newScene);
     if(newScene) {
         newScene->visitChildren([&](SceneNode* node) {
+            qInfo() << "---- SceneNodesListModel::onSceneReplaced ---- Adding node:" << node;
             _nodeListener.push_back(node);
         });
     }
@@ -226,6 +228,7 @@ void SceneNodesListModel::onSceneReplaced(Scene* newScene)
 ******************************************************************************/
 void SceneNodesListModel::onSceneSelectionChanged(SelectionSet* selection)
 {
+    qInfo() << "---- SceneNodesListModel::onSceneSelectionChanged ----" << selection << "-- sel empty?" << (selection ? selection->nodes().empty() : true) << "--- No. of scene nodes:" << sceneNodes().size();
     if(!selection || selection->nodes().empty()) {
         Q_EMIT selectionChangeRequested(1);
     }
