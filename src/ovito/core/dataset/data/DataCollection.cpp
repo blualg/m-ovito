@@ -218,7 +218,8 @@ const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& obj
     // an enumeration index that was appended by generateUniqueIdentifier().
     for(const DataObject* obj : objects()) {
         if(objectClass.isMember(obj) && obj->createdByNode().lock().get() == createdByNode) {
-            if(obj->identifier() == identifier || (!identifier.isEmpty() && obj->identifier().startsWith(identifier + QChar('.'))))
+            const QString& objId = obj->identifier();
+            if(objId == identifier || (!identifier.isEmpty() && objId.startsWith(identifier) && objId.size() > identifier.size() && objId[identifier.size()] == QChar('.')))
                 return obj;
         }
     }
@@ -596,7 +597,7 @@ QString DataCollection::generateUniqueIdentifier(const QStringView baseName, con
         return baseName.toString();
     }
     else {
-        return baseName + QChar('.') + QString::number(maxSuffix + 1);
+        return QStringLiteral("%1.%2").arg(baseName).arg(maxSuffix + 1);
     }
 }
 
