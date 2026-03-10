@@ -110,7 +110,7 @@ protected:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode{ParticleBasedColoring}, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
 
     /// Number of filled segments for dashed bonds rendering
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{5}, filledSegments, setFilledSegments, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{4}, filledSegments, setFilledSegments, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 
     /// Number of filled segments for dashed bonds rendering
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.5},

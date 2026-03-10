@@ -25,6 +25,7 @@ Bond width
   Controls the uniform display diameter of bond cylinders (default: 0.4 simulation length units).
   This value is used for all bonds unless overridden by the per-bond ``Width`` property.
   The width is specified in simulation units of length.
+  For bonds with a ``Bond Order`` greater than 1, the individual cylinders are automatically rendered slightly thinner to avoid excessive visual overlap.
 
 Flat shading
   When enabled, bonds are rendered with flat shading to create the look of thick lines connecting particles.
@@ -55,18 +56,26 @@ All these options are disabled when the ``Color`` per-bond property is defined, 
    or :ref:`particles.modifiers.color_coding` modifiers to set the ``Color`` bond property.
    Once this property exists, it takes precedence over all coloring mode options.
 
-Fractional Bonds
+Fractional bonds
 ''''''''''''''''
 
-Fractional bonds (i.e., non-integer ``Bond Order`` property values) are visualized as dashed cylinders instead of solid ones.
-Note that only the fractional part of the bond order is rendered as dashes. For example, a bond order of 1.5 is rendered
-as one solid bond and one dashed bond.
+.. figure:: /images/modifiers/bond_order_example_fractional_bonds.png
+  :figwidth: 30%
+  :align: right
+
+  Aromatic ring found by the :ref:`particles.modifiers.bond_order` modifier
+
+:ref:`Fractional bonds <particles.modifiers.bond_order.fractional>`, i.e., bonds having a non-integer ``Bond Order`` property, are visualized as dashed cylinders.
+The integer part of the bond order (0, 1, 2, or 3; capped at 3) determines the number of solid cylinders rendered side by side.
+A non-zero fractional part adds one dashed cylinder. For example, a bond order of 1.5 is rendered as one solid and one dashed cylinder.
 
 Number of filled segments
-  Controls the number of filled segments (dash lines) making up each fractional bond.
+  The number of dashes per fractional bond cylinder. For a value of *n*, the dashed pattern consists of *n* dashes
+  separated by *n+1* gaps, starting and ending with a gap. Higher values produce a finer dash pattern (default: 4).
 
 Filled segment fraction
-  Controls the length of each filled segment, where a greater value results in longer dash lines.
+  The fraction of the bond length covered by dashes. The remaining fraction is distributed among the gaps.
+  A value of 0 makes dashes invisible; a value of 1 produces a fully solid appearance (default: 0.5).
 
 Additional bond properties
 ''''''''''''''''''''''''''
@@ -79,12 +88,11 @@ The visualization is also affected by certain properties of the bonds themselves
   ================================== ======================= ==============================================================================
   Bond property                      Data type               Description
   ================================== ======================= ==============================================================================
+  ``Bond Order``                     Real                    Controls the visual representation of a bond. Integer values (1, 2, 3) produce solid cylinders, while non-integer values additionally create dashed cylinders.
   ``Color``                          Real (R,G,B)            Explicit RGB color for individual bonds. Red, green, and blue components must be in the range [0,1].
-  ``Width``                          Real                    Controls the display diameter of individual bonds.
-  ``Transparency``                   Real                    Controls the transparency of individual bonds. Must be in the range [0,1].
   ``Selection``                      Integer                 Marks currently selected bonds (1 = selected, 0 = unselected). Selected bonds are highlighted in red (only in interactive viewports but not in rendered images).
-  ``Bond Order``                     Real                    Controls the number of cylinders used to render a bond. Bond orders in the range (1,3] are
-                                                             displayed as multiple cylinders next to each other. Bond orders greater than 3 are rendered as a single cylinder.
+  ``Transparency``                   Real                    Controls the transparency of individual bonds. Must be in the range [0,1].
+  ``Width``                          Real                    Controls the display diameter of individual bonds.
   ================================== ======================= ==============================================================================
 
 To see the list of bond properties present in your dataset, open the :ref:`data inspector panel <data_inspector.bonds>`.

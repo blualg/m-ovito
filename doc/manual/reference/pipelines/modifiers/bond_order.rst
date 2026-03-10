@@ -82,6 +82,8 @@ Numeric ID    Functional group
 4             Nitro
 ============= =========================================================
 
+.. _particles.modifiers.bond_order.fractional:
+
 Fractional bond orders
 """"""""""""""""""""""
 
