@@ -269,7 +269,8 @@ bool DataInspectionApplet::selectDataObject(const PipelineNode* createdByNode, c
         const ConstDataObjectPath& objectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
         if(!objectPath.empty()) {
             if(objectPath.back()->createdByNode().lock().get() == createdByNode) {
-                if(objectIdentifierHint.isEmpty() || objectPath.back()->identifier() == objectIdentifierHint || objectPath.back()->identifier().startsWith(objectIdentifierHint + QChar('.'))) {
+                const QString& identifier = objectPath.back()->identifier();
+                if(objectIdentifierHint.isEmpty() || identifier == objectIdentifierHint || (identifier.startsWith(objectIdentifierHint) && identifier.size() > objectIdentifierHint.size() && identifier[objectIdentifierHint.size()] == QChar('.'))) {
                     _objectSelectionWidget->setCurrentRow(i);
                     return true;
                 }
