@@ -69,6 +69,51 @@ public:
     /// Data type used to store the number of cells of the voxel grid in each dimension.
     using GridDimensions = std::array<size_t, 3>;
 
+    // A helper object, which computes the spatial coordinate of a voxel upon request.
+    struct GridPositionHelper {
+        const VoxelGrid::GridDimensions shape;
+        AffineTransformation tm = AffineTransformation::Zero();
+        GridPositionHelper(const VoxelGrid* voxelGrid) : shape(voxelGrid->shape())
+        {
+            voxelGrid->verifyIntegrity();
+            switch(voxelGrid->gridType()) {
+                case VoxelGrid::GridType::CellData:
+                    OVITO_ASSERT(shape[0] < std::numeric_limits<FloatType>::max());
+                    OVITO_ASSERT(shape[1] < std::numeric_limits<FloatType>::max());
+                    OVITO_ASSERT(shape[2] < std::numeric_limits<FloatType>::max());
+                    if(shape[0] != 0 && shape[1] != 0 && shape[2] != 0) {
+                        tm = voxelGrid->domain()->cellMatrix() *
+                             Matrix3::diagonal(FloatType(1) / FloatType(shape[0]),
+                                               FloatType(1) / FloatType(shape[1]),
+                                               FloatType(1) / FloatType(shape[2])) *
+                             AffineTransformation::translation(
+                                 Vector3(FloatType(0.5), FloatType(0.5), voxelGrid->domain()->is2D() ? FloatType(0.0) : FloatType(0.5)));
+                    }
+                    break;
+                case VoxelGrid::GridType::PointData:
+                    OVITO_ASSERT(shape[0] < std::numeric_limits<int>::max());
+                    OVITO_ASSERT(shape[1] < std::numeric_limits<int>::max());
+                    OVITO_ASSERT(shape[2] < std::numeric_limits<int>::max());
+                    const int nx = ((voxelGrid->domain()->pbcFlags()[0] || shape[0] <= 1) ? shape[0] : (shape[0] - 1));
+                    const int ny = ((voxelGrid->domain()->pbcFlags()[1] || shape[1] <= 1) ? shape[1] : (shape[1] - 1));
+                    const int nz = ((voxelGrid->domain()->pbcFlags()[2] || shape[2] <= 1) ? shape[2] : (shape[2] - 1));
+                    if(nx != 0 && ny != 0 && nz != 0) {
+                        tm = voxelGrid->domain()->cellMatrix() * Matrix3::diagonal(FloatType(1) / nx, FloatType(1) / ny, FloatType(1) / nz);
+                    }
+                    break;
+            }
+        }
+        Point3 operator()(size_t voxelIndex) const
+        {
+            const std::array<size_t, 3> coords = {
+                voxelIndex % shape[0], (voxelIndex / shape[0]) % shape[1], voxelIndex / (shape[0] * shape[1])};
+            OVITO_ASSERT(coords[0] < std::numeric_limits<FloatType>::max());
+            OVITO_ASSERT(coords[1] < std::numeric_limits<FloatType>::max());
+            OVITO_ASSERT(coords[2] < std::numeric_limits<FloatType>::max());
+            return tm * Point3(coords[0], coords[1], coords[2]);
+        }
+    };
+
     /// The list of predefined voxel grid properties.
     enum Type {
         UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
