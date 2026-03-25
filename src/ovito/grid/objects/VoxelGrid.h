@@ -69,49 +69,57 @@ public:
     /// Data type used to store the number of cells of the voxel grid in each dimension.
     using GridDimensions = std::array<size_t, 3>;
 
-    // A helper object, which computes the spatial coordinate of a voxel upon request.
-    struct GridPositionHelper {
-        const VoxelGrid::GridDimensions shape;
-        AffineTransformation tm = AffineTransformation::Zero();
-        GridPositionHelper(const VoxelGrid* voxelGrid) : shape(voxelGrid->shape())
-        {
+    /// A utility class, which efficiently computes the spatial coordinates of one or more field points of a VoxelGrid.
+    /// For \c CellData grids, the field points are located at the centers of the voxels, while for \c PointData grids they are located at the grid points (cell corners).
+    class GridPositionHelper
+    {
+    public:
+        GridPositionHelper(const VoxelGrid* voxelGrid) : _shape(voxelGrid->shape()) {
             voxelGrid->verifyIntegrity();
             switch(voxelGrid->gridType()) {
-                case VoxelGrid::GridType::CellData:
-                    OVITO_ASSERT(shape[0] < std::numeric_limits<FloatType>::max());
-                    OVITO_ASSERT(shape[1] < std::numeric_limits<FloatType>::max());
-                    OVITO_ASSERT(shape[2] < std::numeric_limits<FloatType>::max());
-                    if(shape[0] != 0 && shape[1] != 0 && shape[2] != 0) {
-                        tm = voxelGrid->domain()->cellMatrix() *
-                             Matrix3::diagonal(FloatType(1) / FloatType(shape[0]),
-                                               FloatType(1) / FloatType(shape[1]),
-                                               FloatType(1) / FloatType(shape[2])) *
+                case VoxelGrid::GridType::CellData: {
+                    OVITO_ASSERT(_shape[0] < std::numeric_limits<FloatType>::max());
+                    OVITO_ASSERT(_shape[1] < std::numeric_limits<FloatType>::max());
+                    OVITO_ASSERT(_shape[2] < std::numeric_limits<FloatType>::max());
+                    if(_shape[0] != 0 && _shape[1] != 0 && _shape[2] != 0) {
+                        _tm = voxelGrid->domain()->cellMatrix() *
+                             Matrix3::diagonal(FloatType(1) / FloatType(_shape[0]),
+                                               FloatType(1) / FloatType(_shape[1]),
+                                               FloatType(1) / FloatType(_shape[2])) *
                              AffineTransformation::translation(
                                  Vector3(FloatType(0.5), FloatType(0.5), voxelGrid->domain()->is2D() ? FloatType(0.0) : FloatType(0.5)));
                     }
                     break;
-                case VoxelGrid::GridType::PointData:
-                    OVITO_ASSERT(shape[0] < std::numeric_limits<int>::max());
-                    OVITO_ASSERT(shape[1] < std::numeric_limits<int>::max());
-                    OVITO_ASSERT(shape[2] < std::numeric_limits<int>::max());
-                    const int nx = ((voxelGrid->domain()->pbcFlags()[0] || shape[0] <= 1) ? shape[0] : (shape[0] - 1));
-                    const int ny = ((voxelGrid->domain()->pbcFlags()[1] || shape[1] <= 1) ? shape[1] : (shape[1] - 1));
-                    const int nz = ((voxelGrid->domain()->pbcFlags()[2] || shape[2] <= 1) ? shape[2] : (shape[2] - 1));
+                }
+                case VoxelGrid::GridType::PointData: {
+                    OVITO_ASSERT(_shape[0] < std::numeric_limits<int>::max());
+                    OVITO_ASSERT(_shape[1] < std::numeric_limits<int>::max());
+                    OVITO_ASSERT(_shape[2] < std::numeric_limits<int>::max());
+                    const int nx = ((voxelGrid->domain()->pbcFlags()[0] || _shape[0] <= 1) ? _shape[0] : (_shape[0] - 1));
+                    const int ny = ((voxelGrid->domain()->pbcFlags()[1] || _shape[1] <= 1) ? _shape[1] : (_shape[1] - 1));
+                    const int nz = ((voxelGrid->domain()->pbcFlags()[2] || _shape[2] <= 1) ? _shape[2] : (_shape[2] - 1));
                     if(nx != 0 && ny != 0 && nz != 0) {
-                        tm = voxelGrid->domain()->cellMatrix() * Matrix3::diagonal(FloatType(1) / nx, FloatType(1) / ny, FloatType(1) / nz);
+                        _tm = voxelGrid->domain()->cellMatrix() * Matrix3::diagonal(FloatType(1) / nx, FloatType(1) / ny, FloatType(1) / nz);
                     }
+                    break;
+                }
+                default:
+                    OVITO_ASSERT(false); // Unrecognized grid type.
                     break;
             }
         }
-        Point3 operator()(size_t voxelIndex) const
-        {
-            const std::array<size_t, 3> coords = {
-                voxelIndex % shape[0], (voxelIndex / shape[0]) % shape[1], voxelIndex / (shape[0] * shape[1])};
+        Point3 operator()(const std::array<size_t, 3>& coords) const {
             OVITO_ASSERT(coords[0] < std::numeric_limits<FloatType>::max());
             OVITO_ASSERT(coords[1] < std::numeric_limits<FloatType>::max());
             OVITO_ASSERT(coords[2] < std::numeric_limits<FloatType>::max());
-            return tm * Point3(coords[0], coords[1], coords[2]);
+            return _tm * Point3(coords[0], coords[1], coords[2]);
         }
+        Point3 operator()(size_t voxelIndex) const {
+            return (*this)(voxelCoords(voxelIndex, _shape));
+        }
+    private:
+        const GridDimensions _shape;
+        AffineTransformation _tm = AffineTransformation::Zero();
     };
 
     /// The list of predefined voxel grid properties.
@@ -149,6 +157,14 @@ public:
         return z * (gridShape[0] * gridShape[1]) + y * gridShape[0] + x;
     }
 
+    /// Converts a linear array index into logical grid coordinates.
+    inline static std::array<size_t, 3> voxelCoords(size_t index, const GridDimensions& gridShape) {
+        OVITO_ASSERT(index < gridShape[0] * gridShape[1] * gridShape[2]);
+        size_t yz = gridShape[0] * gridShape[1];
+        OVITO_ASSERT(voxelIndex(index % gridShape[0], (index / gridShape[0]) % gridShape[1], index / yz, gridShape) == index);
+        return { index % gridShape[0], (index / gridShape[0]) % gridShape[1], index / yz };
+    }
+
     /// Converts logical grid coordinates to a linear array index.
     size_t voxelIndex(size_t x, size_t y, size_t z) const {
         return voxelIndex(x, y, z, shape());
@@ -156,10 +172,7 @@ public:
 
     /// Converts a linear array index into logical grid coordinates.
     std::array<size_t, 3> voxelCoords(size_t index) const {
-        OVITO_ASSERT(index < elementCount());
-        size_t yz = shape()[0] * shape()[1];
-        OVITO_ASSERT(voxelIndex(index % shape()[0], (index / shape()[0]) % shape()[1], index / yz) == index);
-        return { index % shape()[0], (index / shape()[0]) % shape()[1], index / yz };
+        return voxelCoords(index, shape());
     }
 
     /// Returns the data for visualizing a vector property from this container using a VectorVis element.
