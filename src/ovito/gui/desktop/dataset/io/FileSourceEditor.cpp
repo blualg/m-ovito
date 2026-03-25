@@ -199,7 +199,7 @@ void FileSourceEditor::onPickLocalInputFile()
             auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
             // Let the user select a file by displaying a dialog window.
-            ImportFileDialog dialog(importerClasses, container()->window(), tr("Pick input file"), false);
+            ImportFileDialog dialog(ui(), importerClasses, container()->window(), tr("Pick input file"), false);
 
             // Select the previously imported file in the file dialog.
             if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size()) {

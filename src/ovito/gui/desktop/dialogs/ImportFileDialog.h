@@ -57,7 +57,7 @@ public:
 public:
 
     /// Constructor.
-    ImportFileDialog(const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
+    ImportFileDialog(MainWindowUI& ui, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
 
     /// Returns the file to import after the dialog has been closed with "OK".
     QString fileToImport() const;

@@ -380,7 +380,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
     }
     else if(index == _colorGradientList->count() - 1) {
         performTransaction(tr("Change color gradient"), [this, mod]() {
-            LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
+            LoadImageFileDialog fileDialog(ui(), container(), tr("Pick color map image"));
             if(fileDialog.exec()) {
                 OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create();
                 gradient->loadImage(fileDialog.imageInfo().filename());
@@ -441,7 +441,7 @@ void ColorCodingModifierEditor::onExportColorScale()
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
     if(!mod || !mod->colorGradient()) return;
 
-    SaveImageFileDialog fileDialog(_colorLegendLabel, tr("Save color map"));
+    SaveImageFileDialog fileDialog(ui(), container(), tr("Save color map"));
     if(fileDialog.exec()) {
         // Create the color legend image.
         constexpr int legendWidth = 32;

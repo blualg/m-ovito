@@ -232,7 +232,6 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
     if(!fileStream.open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
 
-    qInfo() << "--- Loading dataset from file:" << absoluteFilepath;
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
     OORef<DataSet> dataSet = stream.loadObject<DataSet>();

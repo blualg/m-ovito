@@ -201,7 +201,7 @@ void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataO
                      "This method must be called from a handleExceptions() context.");
 
     // Let the user select a destination file.
-    HistoryFileDialog dialog("export", ui().mainWindow(), tr("Export Table"));
+    HistoryFileDialog dialog(ui(), QStringLiteral("export"), ui().mainWindow(), tr("Export Table"));
     dialog.setNameFilter(filterString);
     dialog.setOption(QFileDialog::DontUseNativeDialog);
     dialog.setAcceptMode(QFileDialog::AcceptSave);

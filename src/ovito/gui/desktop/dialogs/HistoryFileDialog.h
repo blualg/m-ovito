@@ -30,14 +30,14 @@ namespace Ovito {
 /**
  * \brief The file chooser dialog that saves a history of recently visited directories.
  */
-class OVITO_GUI_EXPORT HistoryFileDialog : public QFileDialog
+class OVITO_GUI_EXPORT HistoryFileDialog : public QFileDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructs the dialog window.
-    HistoryFileDialog(const QString& dialogClass, QWidget* parent = nullptr, const QString& caption = QString(), const QString& directory = QString(), const QString& filter = QString());
+    HistoryFileDialog(MainWindowUI& ui, const QString& dialogClass, QWidget* parent = nullptr, const QString& caption = QString(), const QString& directory = QString(), const QString& filter = QString());
 
     /// Returns whether the user has activated the program option to maintain separate
     /// working directories for different file I/O operations.
@@ -63,14 +63,6 @@ private Q_SLOTS:
 
     /// This is called when the user has pressed the OK button of the dialog box.
     void onFileSelected(const QString& file);
-
-protected:
-
-    /// Loads the list of most recently visited directories from the settings store.
-    QStringList loadDirHistory() const;
-
-    /// Saves the list of most recently visited directories to the settings store.
-    void saveDirHistory(const QStringList& list) const;
 
 private:
 

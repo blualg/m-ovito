@@ -224,7 +224,7 @@ void WidgetActionManager::on_FileImport_triggered()
 
     handleExceptions([&] {
         // Let the user select one or more files.
-        ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), mainWindow(), tr("Load File"), true);
+        ImportFileDialog dialog(ui(), PluginManager::instance().metaclassMembers<FileImporter>(), mainWindow(), tr("Load File"), true);
         if(dialog.exec() != QDialog::Accepted)
             return;
 
@@ -319,7 +319,7 @@ void WidgetActionManager::on_FileExport_triggered()
         settings.beginGroup("file/export");
 
         // Let the user select a destination file.
-        HistoryFileDialog dialog("export", mainWindow(), tr("Export Data"));
+        HistoryFileDialog dialog(ui(), "export", mainWindow(), tr("Export Data"));
         dialog.setNameFilters(filterStrings);
         dialog.setAcceptMode(QFileDialog::AcceptSave);
         dialog.setFileMode(QFileDialog::AnyFile);

@@ -119,7 +119,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         return;
 
     // Let the user select a destination file.
-    HistoryFileDialog dialog("export", ui().mainWindow(), tr("Export Attributes"));
+    HistoryFileDialog dialog(ui(), "export", ui().mainWindow(), tr("Export Attributes"));
     QString filterString = QStringLiteral("%1 (%2)").arg(AttributeFileExporter::OOClass().fileFilterDescription(), AttributeFileExporter::OOClass().fileFilter());
     dialog.setNameFilter(filterString);
     dialog.setOption(QFileDialog::DontUseNativeDialog);

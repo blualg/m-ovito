@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT LoadImageFileDialog : public HistoryFileDialog
 public:
 
     /// \brief Constructs the dialog window.
-    LoadImageFileDialog(QWidget* parent = nullptr, const QString& caption = QString(), const ImageInfo& imageInfo = ImageInfo());
+    LoadImageFileDialog(MainWindowUI& ui, QWidget* parent = nullptr, const QString& caption = QString(), const ImageInfo& imageInfo = ImageInfo());
 
     /// \brief Returns the file info after the dialog has been closed with "OK".
     const ImageInfo& imageInfo() const { return _imageInfo; }

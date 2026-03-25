@@ -30,8 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportFileDialog::ImportFileDialog(const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
-    HistoryFileDialog(dialogClass, parent, caption)
+ImportFileDialog::ImportFileDialog(MainWindowUI& ui, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
+    HistoryFileDialog(ui, dialogClass, parent, caption)
 {
     if(importerTypes.empty())
         throw Exception(tr("There are no importer plugins installed."));
@@ -66,7 +66,8 @@ ImportFileDialog::ImportFileDialog(const std::vector<const FileImporterClass*>& 
 QString ImportFileDialog::fileToImport() const
 {
     QStringList filesToImport = selectedFiles();
-    if(filesToImport.isEmpty()) return QString();
+    if(filesToImport.isEmpty())
+        return {};
     return filesToImport.front();
 }
 

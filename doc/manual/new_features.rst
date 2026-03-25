@@ -4,12 +4,17 @@
 Changelog
 =========
 
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.15.1>`__
+
 ----------------------------
 Version 3.15.1 (xx-xxx-2026)
 ----------------------------
 
 - The :ref:`visual_elements.surface_mesh` and :ref:`visual_elements.triangle_mesh` visual elements gained new options to control the width and color of wireframe lines
   rendered along mesh edges when the :guilabel:`Highlight mesh edges` option is enabled.
+- You can now specify an initial working directory for file imports when :ref:`launching OVITO from the command line <usage.import.command_line>`.
 - Fix bug labeling the central N atom of a Nitro group in the :ref:`particles.modifiers.bond_order` |ovito-pro| modifier (reported `here <https://www.ovito.org/forum/topic/functional-group-bug>`__).
 - Fix display of bond orders ``>3`` by clamping bond orders to the interval ``[0, 3]`` before display.
 - Fix bug with Voxel coordinate to Cartesian coordinate conversion for cell grids in the :ref:`particles.modifiers.compute_property` modifier.

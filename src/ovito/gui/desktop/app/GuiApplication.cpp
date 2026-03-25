@@ -356,24 +356,38 @@ void GuiApplication::initializeUserInterface(UserInterface& ui, const QStringLis
     // Import data file(s) specified on the command line.
     if(!arguments.empty()) {
         std::vector<QUrl> importUrls;
+        std::vector<QString> directoriesToOpen;
         int numSessionFiles = 0;
         for(const QString& importFilename : arguments) {
             if(importFilename.endsWith(".ovito", Qt::CaseInsensitive))
                 numSessionFiles++;
-            else
-                importUrls.push_back(Application::instance()->fileManager().urlFromUserInput(importFilename));
+            else {
+                QUrl url = Application::instance()->fileManager().urlFromUserInput(importFilename);
+                if(url.isLocalFile() && QFileInfo(url.toLocalFile()).isDir())
+                    directoriesToOpen.push_back(url.toLocalFile());
+                else
+                    importUrls.push_back(std::move(url));
+            }
         }
         ui.handleExceptions([&](){
             if(!importUrls.empty()) {
                 if(numSessionFiles)
-                    throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
+                    throw Exception(tr("Detected incompatible command line arguments: Cannot open a session state file and a simulation data file at the same time."));
                 if(MainWindowUI* mainWindowUI = dynamic_object_cast<MainWindowUI>(&ui))
                     mainWindowUI->importFiles(std::move(importUrls));
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }
+            if(!directoriesToOpen.empty()) {
+                if(directoriesToOpen.size() > 1)
+                    throw Exception(tr("Detected invalid command line arguments: Cannot open multiple directories at the same time."));
+                if(MainWindowUI* mainWindowUI = dynamic_object_cast<MainWindowUI>(&ui))
+                    mainWindowUI->openWorkingDirectory(directoriesToOpen.front());
+                else
+                    throw Exception(tr("Cannot open directory '%1' from the command line when running in console mode.").arg(directoriesToOpen.front()));
+            }
             if(numSessionFiles > 1)
-                throw Exception(tr("Detected incompatible arguments: Cannot open multiple session state files at the same time."));
+                throw Exception(tr("Detected incompatible command line arguments: Cannot open multiple session state files at the same time."));
         });
 
         // Make sure we start with a clean undo stack at application startup.

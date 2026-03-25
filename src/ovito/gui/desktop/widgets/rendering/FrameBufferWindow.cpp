@@ -30,9 +30,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FrameBufferWindow::FrameBufferWindow(MainWindow& mainWindow, QWidget* parent) :
+FrameBufferWindow::FrameBufferWindow(MainWindowUI& ui, QWidget* parent) :
     QMainWindow(parent, (Qt::WindowFlags)(Qt::Tool | Qt::CustomizeWindowHint | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint)),
-    _mainWindow(mainWindow)
+    UserInterfaceComponent<MainWindowUI>(ui)
 {
     // Note: The following setAttribute() call has been commented out, because it leads to sporadic program crashes (Qt 5.12.5).
     // setAttribute(Qt::WA_MacAlwaysShowToolWindow);
@@ -152,7 +152,7 @@ void FrameBufferWindow::showRenderingProgress(SharedFuture<void> renderingFuture
     _renderingFuture = std::move(renderingFuture);
 
     // Update UI whenever the progress of the rendering task changes.
-    _taskProgressUpdateConnection = connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &FrameBufferWindow::onTaskProgressUpdate);
+    _taskProgressUpdateConnection = connect(ui().mainWindow(), &MainWindow::taskProgressUpdate, this, &FrameBufferWindow::onTaskProgressUpdate);
 
     // Disable OVITO main window while rendering is in progress,
     // then immediately re-enable this floating child window.
@@ -171,7 +171,7 @@ void FrameBufferWindow::showRenderingProgress(SharedFuture<void> renderingFuture
     onTaskProgressUpdate();
 
     // Start watching the rendering task. Re-enable the window after rendering is done.
-    _renderingFuture.finally(ObjectExecutor(&_mainWindow.ui()), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
+    _renderingFuture.finally(ObjectExecutor(&ui()), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
         if(!self.isNull())
             self->onRenderingFinished(std::move(self->_renderingFuture));
     });
@@ -203,7 +203,7 @@ void FrameBufferWindow::onRenderingFinished(SharedFuture<void> future)
     // Check for exceptions thrown during rendering and display them to the user.
     if(future && future.isFinished() && !future.isCanceled()) {
         try { future.task()->throwPossibleException(); }
-        catch(const Exception& ex) { _mainWindow.ui().reportError(ex); }
+        catch(const Exception& ex) { ui().reportError(ex); }
     }
 }
 
@@ -216,11 +216,11 @@ void FrameBufferWindow::saveImage()
     if(!frameBuffer())
         return;
 
-    SaveImageFileDialog fileDialog(this, tr("Save image"));
+    SaveImageFileDialog fileDialog(ui(), this, tr("Save image"));
     if(fileDialog.exec()) {
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!frameBuffer()->image().save(imageFilename, fileDialog.imageInfo().format())) {
-            _mainWindow.reportError(tr("Failed to save image to file '%1'.").arg(imageFilename), this);
+            ui().mainWindow()->reportError(tr("Failed to save image to file '%1'.").arg(imageFilename), this);
         }
     }
 }
@@ -291,7 +291,7 @@ void FrameBufferWindow::onTaskProgressUpdate()
 {
     size_t index = 0;
 
-    _mainWindow.ui().visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
+    ui().visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
         if(text.isEmpty())
             return;
         QLabel* statusLabel;

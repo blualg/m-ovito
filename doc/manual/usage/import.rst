@@ -28,7 +28,17 @@ When launching OVITO from the terminal, you can specify the file(s) to load dire
   ovito sftp://hostname/path/filename
   ovito https://www.website.org/path/filename
 
-You can import multiple files at once. If they have the same format, they will be concatenated into an animatable trajectory. If they have different formats, OVITO will detect if they represent a pair of topology/trajectory files (see next section). Otherwise, they will be inserted as :ref:`separate objects into the scene <usage.import.multiple_datasets>` |ovito-pro|.
+You can import multiple files at once. If they have the same format, they will be concatenated into an animatable trajectory. If they have different formats, OVITO will detect if they represent a pair of topology/trajectory files (see next section).
+Otherwise, they will be inserted as :ref:`separate objects into the scene <usage.import.multiple_datasets>` |ovito-pro|.
+
+You can also specify a directory instead of a file:
+
+.. code-block:: shell
+
+  ovito /path/directory
+  ovito .
+
+The path will be set as current working directory and the file import dialog will open in that directory.
 
 .. _usage.import.sequence:
 

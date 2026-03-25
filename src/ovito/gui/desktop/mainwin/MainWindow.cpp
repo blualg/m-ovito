@@ -597,7 +597,7 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 {
     // Create the frame buffer window.
     if(!_frameBufferWindow) {
-        _frameBufferWindow = new FrameBufferWindow(*this, this);
+        _frameBufferWindow = new FrameBufferWindow(ui(), this);
         _frameBufferWindow->setWindowTitle(tr("Render output"));
     }
 

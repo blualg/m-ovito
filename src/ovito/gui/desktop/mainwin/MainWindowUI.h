@@ -107,6 +107,9 @@ public:
     /// \throw Exception on error.
     void importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
 
+    /// \brief Sets the current working directory and opens the file import dialog with the specified directory pre-selected.
+    void openWorkingDirectory(const QString& directoryPath);
+
     /// \brief Save the current dataset.
     /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
     /// \throw Exception on error.
@@ -141,10 +144,22 @@ public:
     /// A progress dialog may be displayed while waiting for the scene preparation to complete.
     void scheduleOperationAfterScenePreparation(Scene* scene, const QString& waitingMessage, operation_function&& operation);
 
+    /// Returns the history of most recently used directories for file selection dialog type (e.g. data files, state files, Python scripts, ...).
+    /// This function is used by the HistoryFileDialog class to maintain a separate history of recently used directories for different file I/O operations.
+    QStringList getRecentlyUsedDirectories(const QString& dialogClass);
+
+    /// Updates the history of most recently used directories for file selection dialog type (e.g. data files, state files, Python scripts, ...).
+    /// This function is used by the HistoryFileDialog class to maintain a separate history of recently used directories for different file I/O operations.
+    /// The given directory is moved to the top of the history list.
+    void updateMostRecentlyUsedDirectory(const QString& dialogClass, const QString& directory);
+
 private:
 
     /// Notifies all registered listeners that the progress state of the registered tasks has changed.
     void notifyProgressTasksChanged();
+
+    /// Saves the list of most recently visited directories to the settings store at shutdown time.
+    void saveMostRecentlyUsedDirectories();
 
 private:
 
@@ -165,6 +180,9 @@ private:
 
     /// Indicates that a delayed task progress update is underway.
     std::atomic_bool _progressUpdateScheduled{false};
+
+    /// History of most recently used directories, grouped by file selection dialog type (e.g. data files, state files, Python scripts, ...).
+    std::map<QString, QStringList> _recentlyUsedDirectories;
 
     friend class MainWindow; // Allow direct access to the _mainWindow pointer.
 };

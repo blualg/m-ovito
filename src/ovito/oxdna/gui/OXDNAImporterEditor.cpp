@@ -90,7 +90,7 @@ void OXDNAImporterEditor::onChooseTopologyFile()
     OXDNAImporter* importer = static_object_cast<OXDNAImporter>(editObject());
     if(!importer) return;
 
-    HistoryFileDialog fileDialog(QStringLiteral("import"), container(), tr("Pick oxDNA topology file"));
+    HistoryFileDialog fileDialog(ui(), QStringLiteral("import"), container(), tr("Pick oxDNA topology file"));
     fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
     fileDialog.setFileMode(QFileDialog::ExistingFile);
 

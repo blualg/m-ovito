@@ -290,7 +290,7 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
     }
     else if(index == _colorGradientList->count() - 1) {
         performTransaction(tr("Change color gradient"), [&]() {
-            LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
+            LoadImageFileDialog fileDialog(ui(), container(), tr("Pick color map image"));
             if(fileDialog.exec()) {
                 OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create();
                 gradient->loadImage(fileDialog.imageInfo().filename());
@@ -338,7 +338,7 @@ void PropertyColorMappingEditor::onExportColorScale()
     PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
     if(!mapping || !mapping->pseudoColorMapping().gradient()) return;
 
-    SaveImageFileDialog fileDialog(_colorLegendLabel, tr("Save color map"));
+    SaveImageFileDialog fileDialog(ui(), _colorLegendLabel, tr("Save color map"));
     if(fileDialog.exec()) {
         // Create the color legend image.
         constexpr int legendWidth = 32;

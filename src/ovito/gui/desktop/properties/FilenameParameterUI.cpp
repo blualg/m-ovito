@@ -108,7 +108,7 @@ void FilenameParameterUI::setEnabled(bool enabled)
 void FilenameParameterUI::onPickFilename()
 {
     performTransaction(tr("Pick file"), [&]() {
-        HistoryFileDialog fileDialog(QStringLiteral("filename_parameter"), editor()->container(), tr("Pick file"));
+        HistoryFileDialog fileDialog(ui(), QStringLiteral("filename_parameter"), editor()->container(), tr("Pick file"));
         fileDialog.setNameFilters(_fileFilter);
         fileDialog.setFileMode(_existingFile ? QFileDialog::ExistingFile : QFileDialog::AnyFile);
         fileDialog.setAcceptMode(_existingFile ? QFileDialog::AcceptOpen : QFileDialog::AcceptSave);

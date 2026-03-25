@@ -31,8 +31,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-SaveImageFileDialog::SaveImageFileDialog(QWidget* parent, const QString& caption, bool includeVideoFormats, const ImageInfo& imageInfo) :
-    HistoryFileDialog("save_image", parent, caption), _imageInfo(imageInfo)
+SaveImageFileDialog::SaveImageFileDialog(MainWindowUI& ui, QWidget* parent, const QString& caption, bool includeVideoFormats, const ImageInfo& imageInfo) :
+    HistoryFileDialog(ui, QStringLiteral("save_image"), parent, caption), _imageInfo(imageInfo)
 {
     connect(this, &QFileDialog::fileSelected, this, &SaveImageFileDialog::onFileSelected);
     connect(this, &QFileDialog::filterSelected, this, &SaveImageFileDialog::onFilterSelected);
@@ -53,8 +53,10 @@ SaveImageFileDialog::SaveImageFileDialog(QWidget* parent, const QString& caption
         // Add video formats.
         for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
             QString filterString = videoFormat.candidate->longName + " (";
-            for(const QString& ext : videoFormat.candidate->extensions) filterString += "*." + ext;
-            filterString += ")";
+            QStringList extensions;
+            for(const QString& ext : videoFormat.candidate->extensions)
+                extensions << QStringLiteral("*.%1").arg(ext);
+            filterString += extensions.join(" ") + ")";
             filterStrings << filterString;
             _formatList << QByteArray::fromRawData(videoFormat.candidate->name.data(), videoFormat.candidate->name.size());
         }

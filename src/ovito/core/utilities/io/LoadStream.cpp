@@ -71,8 +71,6 @@ LoadStream::LoadStream(QDataStream& source) : _is(source)
         *this >> _applicationVersionString;
     else
         _applicationVersionString = QStringLiteral("%1.%2.%3").arg(_applicationMajorVersion).arg(_applicationMinorVersion).arg(_applicationRevisionVersion);
-    qDebug() << "File format version:" << _fileFormat;
-    qDebug() << "Written by:" << _applicationName << _applicationVersionString;
 
     // Check file format version.
     if(_fileFormat > OVITO_FILE_FORMAT_VERSION)

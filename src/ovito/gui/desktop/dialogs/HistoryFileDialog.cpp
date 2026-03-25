@@ -23,15 +23,15 @@
 #include <ovito/gui/desktop/GUI.h>
 #include "HistoryFileDialog.h"
 
-#define MAX_DIRECTORY_HISTORY_SIZE  1
-
 namespace Ovito {
 
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent, const QString& caption, const QString& directory, const QString& filter) :
-    QFileDialog(parent, caption, directory, filter), _dialogClass(dialogClass)
+HistoryFileDialog::HistoryFileDialog(MainWindowUI& ui, const QString& dialogClass, QWidget* parent, const QString& caption, const QString& directory, const QString& filter)
+    : QFileDialog(parent, caption, directory, filter)
+    , UserInterfaceComponent<MainWindowUI>(ui)
+    , _dialogClass(dialogClass)
 {
     connect(this, &QFileDialog::fileSelected, this, &HistoryFileDialog::onFileSelected);
     connect(this, &QFileDialog::filesSelected, this, [&](const QStringList& selected) {
@@ -49,7 +49,7 @@ HistoryFileDialog::HistoryFileDialog(const QString& dialogClass, QWidget* parent
 #endif
 
     if(keepWorkingDirectoryHistoryEnabled()) {
-        QStringList history = loadDirHistory();
+        QStringList history = ui.getRecentlyUsedDirectories(_dialogClass);
         if(history.isEmpty() == false) {
             if(directory.isEmpty()) {
                 setDirectory(history.front());
@@ -66,40 +66,12 @@ void HistoryFileDialog::onFileSelected(const QString& file)
 {
     if(file.isEmpty())
         return;
+    qDebug() << "HistoryFileDialog::onFileSelected: " << file;
 
     if(keepWorkingDirectoryHistoryEnabled()) {
         QString currentDir = QFileInfo(file).absolutePath();
-        QStringList history = loadDirHistory();
-        int index = history.indexOf(currentDir);
-        if(index >= 0)
-            history.move(index, 0);
-        else {
-            history.push_front(currentDir);
-            if(history.size() > MAX_DIRECTORY_HISTORY_SIZE)
-                history.erase(history.begin() + MAX_DIRECTORY_HISTORY_SIZE, history.end());
-        }
-        saveDirHistory(history);
+        ui().updateMostRecentlyUsedDirectory(_dialogClass, currentDir);
     }
-}
-
-/******************************************************************************
-* Loads the list of most recently visited directories from the settings store.
-******************************************************************************/
-QStringList HistoryFileDialog::loadDirHistory() const
-{
-    QSettings settings;
-    settings.beginGroup("filedialog/" + _dialogClass);
-    return settings.value("history").toStringList();
-}
-
-/******************************************************************************
-* Saves the list of most recently visited directories to the settings store.
-******************************************************************************/
-void HistoryFileDialog::saveDirHistory(const QStringList& list) const
-{
-    QSettings settings;
-    settings.beginGroup("filedialog/" + _dialogClass);
-    settings.setValue("history", QVariant::fromValue(list));
 }
 
 }   // End of namespace

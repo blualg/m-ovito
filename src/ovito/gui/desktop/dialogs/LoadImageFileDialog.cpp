@@ -28,8 +28,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-LoadImageFileDialog::LoadImageFileDialog(QWidget* parent, const QString& caption, const ImageInfo& imageInfo) :
-    HistoryFileDialog("load_image", parent, caption), _imageInfo(imageInfo)
+LoadImageFileDialog::LoadImageFileDialog(MainWindowUI& ui, QWidget* parent, const QString& caption, const ImageInfo& imageInfo) :
+    HistoryFileDialog(ui, QStringLiteral("load_image"), parent, caption), _imageInfo(imageInfo)
 {
     connect(this, &QFileDialog::fileSelected, this, &LoadImageFileDialog::onFileSelected);
     setAcceptMode(QFileDialog::AcceptOpen);
