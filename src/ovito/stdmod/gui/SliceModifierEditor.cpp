@@ -127,14 +127,17 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     _centerPlaneBtn = new QPushButton(tr("Center in simulation cell"), rollout);
     connect(_centerPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onCenterOfBox);
     layout->addWidget(_centerPlaneBtn);
+    layout->addSpacing(4);
 
     // Add buttons for view alignment functions.
     QPushButton* alignViewToPlaneBtn = new QPushButton(tr("Align view to plane"), rollout);
     connect(alignViewToPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onAlignViewToPlane);
     layout->addWidget(alignViewToPlaneBtn);
+    layout->addSpacing(4);
     QPushButton* alignPlaneToViewBtn = new QPushButton(tr("Align plane to view"), rollout);
     connect(alignPlaneToViewBtn, &QPushButton::clicked, this, &SliceModifierEditor::onAlignPlaneToView);
     layout->addWidget(alignPlaneToViewBtn);
+    layout->addSpacing(4);
 
     OORef<PickPlanePointsInputMode> pickPlanePointsInputMode = OORef<PickPlanePointsInputMode>::create(this);
     connect(this, &QObject::destroyed, pickPlanePointsInputMode, &ViewportInputMode::removeMode);

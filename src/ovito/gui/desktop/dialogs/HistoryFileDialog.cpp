@@ -66,7 +66,6 @@ void HistoryFileDialog::onFileSelected(const QString& file)
 {
     if(file.isEmpty())
         return;
-    qDebug() << "HistoryFileDialog::onFileSelected: " << file;
 
     if(keepWorkingDirectoryHistoryEnabled()) {
         QString currentDir = QFileInfo(file).absolutePath();
