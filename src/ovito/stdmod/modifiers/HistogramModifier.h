@@ -69,7 +69,10 @@ public:
     }
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        // Note: Whenever the source property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
+        return sourceProperty().nameWithComponent();
+    }
 
 protected:
 

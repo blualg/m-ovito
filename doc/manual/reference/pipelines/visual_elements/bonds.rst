@@ -56,6 +56,8 @@ All these options are disabled when the ``Color`` per-bond property is defined, 
    or :ref:`particles.modifiers.color_coding` modifiers to set the ``Color`` bond property.
    Once this property exists, it takes precedence over all coloring mode options.
 
+.. _visual_elements.bonds.fractional:
+
 Fractional bonds
 ''''''''''''''''
 

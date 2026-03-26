@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !shouldIgnoreChanges()) {
         updateAnimationFrameLabels();
         adjustAnimationInterval();
     }

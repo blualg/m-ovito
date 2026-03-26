@@ -109,7 +109,7 @@ bool Scene::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void Scene::onAnimationFramesChanged()
 {
-    if(!isBeingLoaded()) {
+    if(!shouldIgnoreChanges()) {
         // Automatically adjust scene's animation interval to length of loaded source animations.
         if(animationSettings() && animationSettings()->autoAdjustInterval()) {
             UndoSuspender noUndo;

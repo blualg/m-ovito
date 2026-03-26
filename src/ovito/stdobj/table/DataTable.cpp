@@ -127,7 +127,7 @@ ConstPropertyPtr DataTable::getXValues() const
 void DataTable::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(PropertyContainer::properties)) {
-        if(!isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        if(!shouldIgnoreChanges() && !isUndoingOrRedoing()) {
             if(x() == oldTarget)
                 setX({});
             if(y() == oldTarget)

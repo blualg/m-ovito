@@ -91,8 +91,8 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 ******************************************************************************/
 void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(FreezePropertyModifier::sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of FreezePropertyModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(FreezePropertyModifier::sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

@@ -75,7 +75,7 @@ void ViewportLayoutCell::removeChild(qsizetype index)
 ******************************************************************************/
 void ViewportLayoutCell::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(children) && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(children) && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         auto weights = childWeights();
         OVITO_ASSERT(weights.size() + 1 == children().size());
         weights.insert(weights.begin() + listIndex, 1.0);
@@ -90,7 +90,7 @@ void ViewportLayoutCell::referenceInserted(const PropertyFieldDescriptor* field,
 ******************************************************************************/
 void ViewportLayoutCell::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(children) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(children) && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         auto weights = childWeights();
         OVITO_ASSERT(weights.size() == children().size() + 1);
         weights.erase(weights.begin() + listIndex);

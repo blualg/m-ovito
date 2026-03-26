@@ -71,8 +71,8 @@ void EditTypesModifier::initializeModifier(const ModifierInitializationRequest& 
 ******************************************************************************/
 void EditTypesModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(EditTypesModifier::sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of EditTypesModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(EditTypesModifier::sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
         // Reset the lists of edited and deleted types when the source property changes.
         if(!isUndoingOrRedoing()) {
@@ -148,6 +148,7 @@ Future<PipelineFlowState> EditTypesModifier::evaluateModifier(const ModifierEval
 QVariant EditTypesModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
     if(node && sourceProperty()) {
+        // Note: Whenever the source property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
         QString title = sourceProperty().dataTitleOrPath();
         // Shorten the full path to show only the property name.
         int lastSepPos = title.lastIndexOf(QStringLiteral(u" \u2192 "));  // Unicode arrow path separator

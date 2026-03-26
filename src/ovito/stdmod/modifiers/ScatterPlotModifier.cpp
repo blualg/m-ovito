@@ -105,8 +105,8 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of ScatterPlotModifier::getPipelineEditorShortInfo().
+    if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

@@ -733,7 +733,7 @@ void AMBERNetCDFImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ParticleImporter::propertyChanged(field);
 
-    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !isBeingLoaded()) {
+    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !shouldIgnoreChanges()) {
         requestReload();
     }
 }

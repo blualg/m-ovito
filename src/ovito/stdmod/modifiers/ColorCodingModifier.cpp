@@ -126,15 +126,15 @@ void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of ColorCodingModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
-    else if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    else if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         // If symmetric range is active, keep start and end value in sync.
         setStartValue(-endValue());
     }
-    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         // If symmetric range is activated, symmetrize existing range.
         FloatType range = std::max(std::abs(startValue()), std::abs(endValue()));
 

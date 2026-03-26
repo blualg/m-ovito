@@ -52,7 +52,7 @@ void GSDImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ParticleImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(roundingResolution) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(roundingResolution) && !shouldIgnoreChanges()) {
         // Clear shape cache and reload GSD file when the rounding resolution is changed.
         _cacheSynchronization.lockForWrite();
         _particleShapeCache.clear();

@@ -101,8 +101,8 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 ******************************************************************************/
 void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(HistogramModifier::sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of HistogramModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(HistogramModifier::sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

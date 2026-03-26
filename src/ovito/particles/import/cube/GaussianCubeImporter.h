@@ -58,7 +58,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds(), gridType());
+        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds(), gridType(), convertFieldBohrToAngstrom());
     }
 
 protected:
@@ -74,7 +74,11 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds, VoxelGrid::GridType gridType) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell), _generateBonds(generateBonds), _gridType(gridType) {}
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds, VoxelGrid::GridType gridType, bool convertFieldBohrToAngstrom)
+            : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell)
+            , _generateBonds(generateBonds)
+            , _gridType(gridType)
+            , _convertFieldBohrToAngstrom(convertFieldBohrToAngstrom) {}
 
     protected:
 
@@ -88,12 +92,18 @@ private:
 
         /// The type of grid to be imported.
         VoxelGrid::GridType _gridType;
+
+        /// Controls whether field values are assumed to be density values given in Bohr units (atomic units) and require conversion to Angstroms.
+        bool _convertFieldBohrToAngstrom;
     };
 
 private:
 
     /// Controls whether the grid's sampling points are point-based or cell-based.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelGrid::GridType{VoxelGrid::GridType::PointData}, gridType, setGridType);
+
+    /// Controls whether field values are assumed to be density values given in Bohr units (atomic units) and require conversion to Angstroms.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, convertFieldBohrToAngstrom, setConvertFieldBohrToAngstrom);
 };
 
 }   // End of namespace

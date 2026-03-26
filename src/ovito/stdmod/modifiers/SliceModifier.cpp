@@ -381,7 +381,7 @@ void SliceModifier::replaceVisualElement(DataVis* visElement, const std::functio
 bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && (source == distanceController() || source == normalController())) {
-        // Changes of some modifier parameters affect the result of SliceModifier::getPipelineEditorShortInfo().
+        // Changes of some modifier parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -684,6 +684,7 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
 ******************************************************************************/
 QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
+    // Note: Whenever the normal or distance controller changes, we need to notify the pipeline editor to update the displayed short info string.
     Vector3 normal = this->normal();
     return QStringLiteral("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6);
 }

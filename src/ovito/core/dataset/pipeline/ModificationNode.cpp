@@ -141,7 +141,7 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Propagate pipeline changed events from upstream.
         return true;
     }
-    else if(event.type() == ReferenceEvent::AnimationFramesChanged && (source == input() || source == modifier()) && !isBeingLoaded()) {
+    else if(event.type() == ReferenceEvent::AnimationFramesChanged && (source == input() || source == modifier()) && !shouldIgnoreChanges()) {
         // Propagate animation interval events from the modifier or the upstream pipeline.
         return true;
     }
@@ -201,7 +201,7 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(modifier)) {
-        if(!isBeingLoaded() && !isBeingDeleted()) {
+        if(!shouldIgnoreChanges()) {
             // Update the status of the Modifier when it is detached from the ModificationNode.
             if(Modifier* oldMod = static_object_cast<Modifier>(oldTarget)) {
                 oldMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
@@ -222,7 +222,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
         }
     }
     else if(field == PROPERTY_FIELD(input)) {
-        if(!isBeingLoaded() && !isBeingDeleted()) {
+        if(!shouldIgnoreChanges()) {
             // Reset the node's pipeline caches.
             pipelineCache().invalidate();
             partialResultsCache().reset();
@@ -239,7 +239,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(oldTarget) static_object_cast<ModifierGroup>(oldTarget)->unregisterNode(this);
         if(newTarget) static_object_cast<ModifierGroup>(newTarget)->registerNode(this);
 
-        if(!isBeingLoaded() && !isBeingDeleted() && modifier()) {
+        if(!shouldIgnoreChanges() && modifier()) {
             // Whenever the modification node is moved in or out of a modifier group,
             // its effective enabled/disabled status may change. Emulate a corresponding notification event in this case.
             ModifierGroup* oldGroup = static_object_cast<ModifierGroup>(oldTarget);

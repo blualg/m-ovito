@@ -119,7 +119,7 @@ QStringList ComputePropertyModifier::effectiveComponentNames() const
 ******************************************************************************/
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         if(delegate())
             delegate()->setComponentCount(propertyComponentCount());
     }
@@ -131,8 +131,8 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
-        // Changes to some of the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
+        // Changes to some of the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
         // Adjust vector component list if a standard property is being selected by the user.
         if(delegate() && delegate()->inputContainerClass() && outputProperty()) {

@@ -45,11 +45,11 @@ extent of the grid in 3d space. OVITO supports two- and three-dimensional grids,
   A three-dimensional voxel grid made of :math:`n_x \times n_y \times n_z` cells. The three edge vectors
   spanning the grid's domain can be arbitrary, non-collinear directions in 3d space.
 
-Cell-based and vertex-based data
-""""""""""""""""""""""""""""""""
+Cell-based and point-based data
+"""""""""""""""""""""""""""""""
 
-In OVITO, voxel grids can be either **cell-based** or **vertex-based**. In a cell-based grid, each voxel cell is
-associated with a field value. In a vertex-based grid, each intersection point is associated with a field value:
+In OVITO, voxel grids can be either **cell-based** or **point-based**. In a cell-based grid, the interior of each voxel cell is
+associated with a local field value. In a point-based grid, each grid intersection point is associated with a local field value:
 
 .. figure:: /images/scene_objects/grid_cell_based.png
   :figwidth: 21%
@@ -59,9 +59,9 @@ associated with a field value. In a vertex-based grid, each intersection point i
 .. figure:: /images/scene_objects/grid_vertex_based.png
   :figwidth: 20%
 
-  Vertex-based grid
+  Point-based grid
 
-In a vertex-based grid, the number of data points along each dimension is one more than the number of voxel cells -
+In a point-based grid, the number of field values along each dimension is one more than the number of voxel cells -
 with the exception of directions with **periodic boundary conditions (PBCs)**, where the number of physical data points
 is equal to the number of cells along that dimension. OVITO automatically supplements the grid with "ghost" data points, i.e.,
 virtual copies of the field values at the edges of the grid, to enforce periodicity in the PBC direction.

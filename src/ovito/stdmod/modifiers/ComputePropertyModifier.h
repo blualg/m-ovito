@@ -142,7 +142,10 @@ public:
     QStringList effectiveComponentNames() const;
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return outputProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        // Note: Whenever the output property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
+        return outputProperty().nameWithComponent();
+    }
 
     /// Indicates that a preliminary viewport update will be performed immediately after this modifier
 	/// has computed new results.

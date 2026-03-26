@@ -61,13 +61,13 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TextLabelOverlay, fontSize, FloatParameterUni
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && this_task::isInteractive()) {
+    if(field == PROPERTY_FIELD(alignment) && !shouldIgnoreChanges() && !isUndoingOrRedoing() && this_task::isInteractive()) {
         // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
         setOffsetX(0);
         setOffsetY(0);
     }
-    else if(field == PROPERTY_FIELD(TextLabelOverlay::labelText) && !isBeingLoaded()) {
-        // Changes of some the overlay's parameters affect the result of TextLabelOverlay::getPipelineEditorShortInfo().
+    else if(field == PROPERTY_FIELD(TextLabelOverlay::labelText) && !shouldIgnoreChanges()) {
+        // Changes of some the overlay's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -80,6 +80,7 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 {
+    // Note: Whenever the label text changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
     return labelText();
 }
 

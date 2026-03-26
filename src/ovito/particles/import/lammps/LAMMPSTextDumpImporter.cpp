@@ -567,7 +567,7 @@ void LAMMPSTextDumpImporter::propertyChanged(const PropertyFieldDescriptor* fiel
 {
     ParticleImporter::propertyChanged(field);
 
-    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !isBeingLoaded()) {
+    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !shouldIgnoreChanges()) {
         requestReload();
     }
 }

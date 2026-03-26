@@ -39,7 +39,7 @@ DEFINE_REFERENCE_FIELD(ViewportConfiguration, layoutRootCell);
 void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(layoutRootCell)) {
-        if(!isBeingLoaded() && !isBeingDeleted())
+        if(!shouldIgnoreChanges())
             updateListOfViewports();
     }
     RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -51,7 +51,7 @@ void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* fie
 bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        if(source == layoutRootCell() && !isBeingLoaded() && !isBeingDeleted()) {
+        if(source == layoutRootCell() && !shouldIgnoreChanges()) {
             updateListOfViewports();
         }
     }
@@ -137,6 +137,8 @@ void ViewportConfiguration::loadFromStreamComplete(ObjectLoadStream& stream)
         rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
         setLayoutRootCell(std::move(rootCell));
     }
+
+    updateListOfViewports();
 }
 
 }   // End of namespace

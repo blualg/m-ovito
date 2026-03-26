@@ -63,8 +63,8 @@ void ExpressionSelectionModifier::initializeObject(ObjectInitializationFlags fla
 ******************************************************************************/
 void ExpressionSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(ExpressionSelectionModifier::expression) && !isBeingLoaded()) {
-        // Changes of some modifier parameters affect the result of ExpressionSelectionModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(ExpressionSelectionModifier::expression) && !shouldIgnoreChanges()) {
+        // Changes of some modifier parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

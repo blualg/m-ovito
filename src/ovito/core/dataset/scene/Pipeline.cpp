@@ -265,7 +265,7 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
         // Invalidate caches when the pipeline's data provider is replaced.
         invalidatePipelineCache();
 
-        if(!isBeingLoaded() && !isBeingDeleted()) {
+        if(!shouldIgnoreChanges()) {
             // The animation length and the title of the pipeline might have changed.
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
@@ -500,7 +500,7 @@ void Pipeline::requestObjectDeletion()
 ******************************************************************************/
 void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(replacementVisElements) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(replacementVisElements) && !shouldIgnoreChanges()) {
         // Reset pipeline cache if a new replacement for a visual element is assigned.
         invalidatePipelineCache();
     }
@@ -512,7 +512,7 @@ void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void Pipeline::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(replacementVisElements) && !isBeingDeleted()) {
+    if(field == PROPERTY_FIELD(replacementVisElements) && !shouldIgnoreChanges()) {
         // Reset pipeline cache if a replacement for a visual element is removed.
         invalidatePipelineCache();
     }

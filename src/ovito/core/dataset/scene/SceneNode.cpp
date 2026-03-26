@@ -310,7 +310,7 @@ void SceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarge
         invalidateBoundingBox();
 
         // The animation length might have changed when an object has been removed from the scene.
-        if(!isBeingLoaded())
+        if(!shouldIgnoreChanges())
             onAnimationFramesChanged();
     }
     RefTarget::referenceInserted(field, newTarget, listIndex);

@@ -259,8 +259,8 @@ bool ReplicateModifier::OOMetaClass::isApplicableTo(const DataCollection& input)
 ******************************************************************************/
 void ReplicateModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if((field == PROPERTY_FIELD(ReplicateModifier::numImagesX) || field == PROPERTY_FIELD(ReplicateModifier::numImagesY) || field == PROPERTY_FIELD(ReplicateModifier::numImagesZ)) && !isBeingLoaded()) {
-        // Changes of some modifier parameters affect the result of ReplicateModifier::getPipelineEditorShortInfo().
+    if((field == PROPERTY_FIELD(ReplicateModifier::numImagesX) || field == PROPERTY_FIELD(ReplicateModifier::numImagesY) || field == PROPERTY_FIELD(ReplicateModifier::numImagesZ)) && !shouldIgnoreChanges()) {
+        // Changes of some modifier parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

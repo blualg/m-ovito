@@ -35,7 +35,9 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(GaussianCubeImporter);
 OVITO_CLASSINFO(GaussianCubeImporter, "DisplayName", "Cube");
 DEFINE_PROPERTY_FIELD(GaussianCubeImporter, gridType);
+DEFINE_PROPERTY_FIELD(GaussianCubeImporter, convertFieldBohrToAngstrom);
 SET_PROPERTY_FIELD_LABEL(GaussianCubeImporter, gridType, "Grid type");
+SET_PROPERTY_FIELD_LABEL(GaussianCubeImporter, convertFieldBohrToAngstrom, "Convert density values from Bohr units to Angstroms");
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -44,7 +46,7 @@ void GaussianCubeImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ParticleImporter::propertyChanged(field);
 
-    if((field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(gridType)) && !isBeingLoaded()) {
+    if((field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(gridType) || field == PROPERTY_FIELD(convertFieldBohrToAngstrom)) && !shouldIgnoreChanges()) {
         // Reload input file(s) when this option gets changed by the user.
         requestReload();
     }
@@ -246,6 +248,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
                     FloatType value;
                     if(!parseFloatType(token, s, value))
                         throw Exception(tr("Invalid value in line %1 of Cube file: \"%2\"").arg(stream.lineNumber()).arg(QString::fromLocal8Bit(token, s - token)));
+                    if(isBohrUnits && _convertFieldBohrToAngstrom)
+                        value /= 0.52917721067 * 0.52917721067 * 0.52917721067;  // Convert density values from Bohr units to Angstroms units (1/Bohr^3 --> 1/Angstrom^3).
                     fieldQuantity.set(z * gridSize[0] * gridSize[1] + y * gridSize[0] + x, compnt, value);
                     if(*s != '\0')
                         s++;

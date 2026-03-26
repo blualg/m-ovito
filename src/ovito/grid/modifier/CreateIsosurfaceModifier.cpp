@@ -76,8 +76,8 @@ void CreateIsosurfaceModifier::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 void CreateIsosurfaceModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of CreateIsosurfaceModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -90,7 +90,7 @@ void CreateIsosurfaceModifier::propertyChanged(const PropertyFieldDescriptor* fi
 bool CreateIsosurfaceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == isolevelController()) {
-        // Changes of some the modifier's parameters affect the result of CreateIsosurfaceModifier::getPipelineEditorShortInfo().
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

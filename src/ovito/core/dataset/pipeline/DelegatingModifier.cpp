@@ -201,8 +201,8 @@ Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const Modifier
 ******************************************************************************/
 bool MultiDelegatingModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    if(event.type() == ReferenceEvent::TargetChanged && delegates().contains(source) && !isBeingLoaded()) {
-        // Changes to the modifier's delegates may affect the result of MultiDelegatingModifier::getPipelineEditorShortInfo().
+    if(event.type() == ReferenceEvent::TargetChanged && delegates().contains(source) && !shouldIgnoreChanges()) {
+        // Changes to the modifier's delegates may affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

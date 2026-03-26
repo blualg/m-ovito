@@ -55,7 +55,7 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
     FileSourceImporter::propertyChanged(field);
 
     if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell) || field == PROPERTY_FIELD(generateBoundingBox)) {
-        if(!isBeingLoaded()) {
+        if(!shouldIgnoreChanges()) {
             // Reload input file(s) when these options are changed by the user.
             // But there is no need to refetch the data file(s) from the remote location. Re-parsing the cached files is sufficient.
             requestReload();

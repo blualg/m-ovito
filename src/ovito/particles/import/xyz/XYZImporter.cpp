@@ -644,7 +644,7 @@ void XYZImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ParticleImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(columnMapping) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(columnMapping) && !shouldIgnoreChanges()) {
         requestReload();
     }
 }

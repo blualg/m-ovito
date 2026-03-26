@@ -53,7 +53,10 @@ public:
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        // Note: Whenever the source property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
+        return sourceProperty().nameWithComponent();
+    }
 
     /// Implementation of the color-by-type algorithm.
     static void colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath = {}, const Property* selection = nullptr);

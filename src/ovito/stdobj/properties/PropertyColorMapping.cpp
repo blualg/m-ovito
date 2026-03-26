@@ -95,11 +95,11 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
  ******************************************************************************/
 void PropertyColorMapping::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         // Keep start value in sync when symmetricRange is active and end value changes
         setStartValue(-endValue());
     }
-    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !shouldIgnoreChanges() && !isUndoingOrRedoing()) {
         // Symmetrize existing range when symmetricRange is turned on
         FloatType range = std::max(std::abs(startValue()), std::abs(endValue()));
         bool inverted = startValue() > endValue();

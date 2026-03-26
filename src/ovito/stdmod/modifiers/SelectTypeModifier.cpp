@@ -86,8 +86,8 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 ******************************************************************************/
 void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if((field == PROPERTY_FIELD(SelectTypeModifier::sourceProperty) || field == PROPERTY_FIELD(SelectTypeModifier::selectedTypeIDs)) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of SelectTypeModifier::getPipelineEditorShortInfo().
+    if((field == PROPERTY_FIELD(SelectTypeModifier::sourceProperty) || field == PROPERTY_FIELD(SelectTypeModifier::selectedTypeIDs)) && !shouldIgnoreChanges()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -225,6 +225,7 @@ QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, Modificati
 
     QString shortInfo;
     if(node && subject() && sourceProperty()) {
+        // Note: Whenever the source property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
         const PipelineFlowState& state = node->getCachedPipelineNodeInput(scene->animationSettings()->currentTime());
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
             if(const Property* inputProperty = sourceProperty().findInContainer(container)) {

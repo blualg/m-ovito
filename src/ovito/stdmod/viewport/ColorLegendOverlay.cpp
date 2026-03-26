@@ -172,13 +172,13 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 ******************************************************************************/
 void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && this_task::isInteractive()) {
+    if(field == PROPERTY_FIELD(alignment) && !shouldIgnoreChanges() && !isUndoingOrRedoing() && this_task::isInteractive()) {
         // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
         setOffsetX(0);
         setOffsetY(0);
     }
-    else if(field == PROPERTY_FIELD(ColorLegendOverlay::sourceProperty) && !isBeingLoaded()) {
-        // Changes of some the overlay's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+    else if(field == PROPERTY_FIELD(ColorLegendOverlay::sourceProperty) && !shouldIgnoreChanges()) {
+        // Changes of some the overlay's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -191,7 +191,7 @@ void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 bool ColorLegendOverlay::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == modifier()) {
-        // Changes of some the object's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+        // Changes of some the object's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -203,8 +203,8 @@ bool ColorLegendOverlay::referenceEvent(RefTarget* source, const ReferenceEvent&
 ******************************************************************************/
 void ColorLegendOverlay::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if((field == PROPERTY_FIELD(modifier) || field == PROPERTY_FIELD(colorMapping)) && !isBeingLoaded()) {
-        // Changes of some the object's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+    if((field == PROPERTY_FIELD(modifier) || field == PROPERTY_FIELD(colorMapping)) && !shouldIgnoreChanges()) {
+        // Changes of some the object's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -217,6 +217,7 @@ void ColorLegendOverlay::referenceReplaced(const PropertyFieldDescriptor* field,
 ******************************************************************************/
 QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 {
+    // Note: Whenever the source property, color mapping, or modifier changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged() or referenceEvent() or referenceReplaced().
     if(modifier()) {
         return modifier()->sourceProperty().nameWithComponent();
     }

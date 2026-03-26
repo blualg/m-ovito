@@ -82,7 +82,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinateTripodOverlay, fontSize, FloatParam
 ******************************************************************************/
 void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && this_task::isInteractive()) {
+    if(field == PROPERTY_FIELD(alignment) && !shouldIgnoreChanges() && !isUndoingOrRedoing() && this_task::isInteractive()) {
         // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
         setOffsetX(0);
         setOffsetY(0);

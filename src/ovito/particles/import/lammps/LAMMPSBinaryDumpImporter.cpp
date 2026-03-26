@@ -591,7 +591,7 @@ void LAMMPSBinaryDumpImporter::propertyChanged(const PropertyFieldDescriptor* fi
 {
     ParticleImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(columnMapping) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(columnMapping) && !shouldIgnoreChanges()) {
         requestReload();
     }
 }

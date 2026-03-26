@@ -376,7 +376,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
     if(event.type() == ReferenceEvent::TargetChanged) {
         if(source == viewNode()) {
             // Adopt camera information from view node.
-            if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isBeingDeleted() && scene()) {
+            if(viewType() == VIEW_SCENENODE && !shouldIgnoreChanges() && scene()) {
                 // Get camera transformation and settings (FOV etc.).
                 AnimationTime time = currentTime();
                 TimeInterval iv;
@@ -401,7 +401,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             }
         }
     }
-    else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged && !isBeingLoaded()) {
+    else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged && !shouldIgnoreChanges()) {
         // Update viewport title when camera node has been renamed.
         updateViewportTitle();
         updateViewport();
@@ -410,7 +410,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         // If a new pipeline is being added to the scene, inform all viewport overlays.
         // In case they are not associated any pipeline, they can automatically attach to the new pipeline.
         const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
-        if(refEvent.field() == PROPERTY_FIELD(SceneNode::children) && !isUndoingOrRedoing() && !isBeingLoaded()) {
+        if(refEvent.field() == PROPERTY_FIELD(SceneNode::children) && !isUndoingOrRedoing() && !shouldIgnoreChanges()) {
             for(ViewportOverlay* overlay : overlays())
                 overlay->sceneNodeAdded(static_object_cast<SceneNode>(refEvent.newTarget()));
             for(ViewportOverlay* overlay : underlays())
@@ -425,7 +425,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(viewNode) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(viewNode) && !shouldIgnoreChanges()) {
         if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
             // If the camera node has been deleted, switch to Orthographic or Perspective view type.
             setViewType(isPerspectiveProjection() ? VIEW_PERSPECTIVE : VIEW_ORTHO, true);
@@ -450,7 +450,7 @@ void Viewport::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
 {
     if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
         if(ViewportOverlay* overlay = static_object_cast<ViewportOverlay>(newTarget)) {
-            if(!isUndoingOrRedoing() && !isBeingLoaded())
+            if(!isUndoingOrRedoing() && !shouldIgnoreChanges())
                 overlay->initializeOverlay(this);
         }
         updateViewport();
@@ -475,10 +475,10 @@ void Viewport::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget*
 void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 {
     RefTarget::propertyChanged(field);
-    if(field == PROPERTY_FIELD(viewType) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(viewType) && !shouldIgnoreChanges()) {
         updateViewportTitle();
     }
-    else if(field == PROPERTY_FIELD(cameraUpDirection) && !isBeingLoaded()) {
+    else if(field == PROPERTY_FIELD(cameraUpDirection) && !shouldIgnoreChanges()) {
         // Update view matrix when the up-vector has been changed.
         setCameraDirection(cameraDirection());
     }

@@ -90,7 +90,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(ColorByTypeModifier::sourceProperty) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(ColorByTypeModifier::sourceProperty) && !shouldIgnoreChanges()) {
         // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }

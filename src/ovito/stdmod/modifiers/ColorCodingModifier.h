@@ -129,7 +129,10 @@ public:
     }
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        // Note: Whenever the source property changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged().
+        return sourceProperty().nameWithComponent();
+    }
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property.
     /// Returns true if successful.

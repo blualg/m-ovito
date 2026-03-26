@@ -68,7 +68,7 @@ void AssignColorModifier::initializeObject(ObjectInitializationFlags flags)
 bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == colorController()) {
-        // Changes to some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
+        // Changes to some the modifier's parameters affect the result of getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 

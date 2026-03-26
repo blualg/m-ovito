@@ -72,9 +72,9 @@ public:
         if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value);
     }
 
-    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor
-    /// list.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        // Note: Whenever the source property or the isolevel changes, we trigger a ReferenceEvent::ObjectStatusChanged event in propertyChanged() and referenceEvent(), respectively.
         if(sourceProperty())
             return QStringLiteral("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel());
         return {};
