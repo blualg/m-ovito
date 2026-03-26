@@ -18,6 +18,7 @@ Version 3.15.1 (27-Mar-2026)
 - :ref:`file_formats.input.cube`: Added new option :guilabel:`Convert density values from Bohr units to Angstroms` controlling whether the grid values are converted from :math:`\text{bohr}^{-3}` units to :math:`\text{Å}^{-3}` (OVITO's internal units).
 - Fixed bug labeling the central N atom of a Nitro group in the :ref:`particles.modifiers.bond_order` modifier (reported `here <https://www.ovito.org/forum/topic/functional-group-bug>`__).
 - Fixed display of :ref:`bonds with bond order <visual_elements.bonds.fractional>` greater than 3 by clamping bond order values to the interval [0,3].
+- Breaking change in the :ref:`file_formats.input.poscar`: The CHGCAR :ref:`grid type <scene_objects.voxel_grid>` has been changed from *cell-data* to *point-data*. This new interpretation is in line with the grid definition in the `VASP wiki <https://www.vasp.at/wiki/CHGCAR>`__.
 
 .. sidebar::
 

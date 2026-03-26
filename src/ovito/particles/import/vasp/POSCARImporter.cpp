@@ -418,6 +418,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
         voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
     }
     voxelGrid->setDomain(simulationCell());
+    voxelGrid->setGridType(VoxelGrid::PointData);
     voxelGrid->setIdentifier(QStringLiteral("charge-density"));
     voxelGrid->setShape(gridSize);
     voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
