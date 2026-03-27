@@ -8,7 +8,7 @@ Changelog
 Version 3.15.2 (DD-MM-2026)
 ----------------------------
 
-- Add support for double precision floats in the GSD file reader (`issue <https://gitlab.com/stuko/ovito/-/work_items/237>`__).
+- Add support for double precision floats in the GSD file reader and writer (`issue <https://gitlab.com/stuko/ovito/-/work_items/237>`__).
 
 .. sidebar::
 

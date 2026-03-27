@@ -53,6 +53,11 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
     OVITO_CLASS_META(GSDExporter, OOMetaClass)
 
 public:
+    enum DataType
+    {
+        Float32 = QMetaType::Float,
+        Float64 = QMetaType::Double,
+    };
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() override { return true; }
@@ -61,6 +66,10 @@ protected:
 
     /// Creates a worker performing the actual data export.
     virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
+
+private:
+    /// Controls whether atomic coordinates are written in reduced form to the POSCAR file.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(DataType{Float64}, dataType, setDataType, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

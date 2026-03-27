@@ -82,6 +82,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         import/fhi_aims/FHIAimsImporterEditor.cpp
         import/fhi_aims/FHIAimsLogFileImporterEditor.cpp
         export/FileColumnParticleExporterEditor.cpp
+        export/gsd/GSDExporterEditor.cpp
         export/lammps/LAMMPSDataExporterEditor.cpp
         export/lammps/LAMMPSDumpExporterEditor.cpp
         export/vasp/POSCARExporterEditor.cpp
