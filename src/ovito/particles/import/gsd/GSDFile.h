@@ -111,8 +111,41 @@ public:
         return ::gsd_find_matching_chunk_name(&_handle, match, prev);
     }
 
+    [[nodiscard]] static std::pair<int, size_t> getChunkDataTypeAndComponentCount(const gsd_index_entry* chunk)
+    {
+        OVITO_ASSERT(chunk);
+        switch(chunk->type) {
+            case GSD_TYPE_INT8: return {Property::Int8, chunk->M};
+            case GSD_TYPE_UINT8:
+            case GSD_TYPE_INT16:
+            case GSD_TYPE_UINT16:
+            case GSD_TYPE_INT32: return {Property::Int32, chunk->M};
+            case GSD_TYPE_UINT32:  // Note: We map unsigned int32 to the signed int64 in OVITO to avoid overflows.
+            case GSD_TYPE_INT64:
+            case GSD_TYPE_UINT64: return {Property::Int64, chunk->M};
+            case GSD_TYPE_FLOAT: return {Property::Float32, chunk->M};
+            case GSD_TYPE_DOUBLE: return {Property::Float64, chunk->M};
+            default: throw Exception(GSDImporter::tr("GSD file I/O error. Unknown chunk data type."));
+        }
+    }
+
+    /// Determines the corresponding OVITO data type of a GSD chunk and the number of vector components at a specific frame.
+    [[nodiscard]] std::pair<int, size_t> getChunkDataTypeAndComponentCount(const char* chunkName, uint64_t frame)
+    {
+        const gsd_index_entry* chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
+        // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
+        if(!chunk && frame != 0) {
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        }
+        if(!chunk) {
+            return {-1, 0};
+        }
+        return getChunkDataTypeAndComponentCount(chunk);
+    }
+
     /// Determines the corresponding OVITO data type of a GSD chunk and the number of vector components.
-    std::pair<int, size_t> getChunkDataTypeAndComponentCount(const char* chunkName) {
+    [[nodiscard]] std::pair<int, size_t> getChunkDataTypeAndComponentCount(const char* chunkName)
+    {
         const gsd_index_entry* chunk = nullptr;
         uint64_t nframes = numerOfFrames();
         for(uint64_t frame = 0; frame < nframes; frame++) {
@@ -122,25 +155,7 @@ public:
         }
         if(!chunk)
             throw Exception(GSDImporter::tr("GSD file I/O error. Chunk %1 does not exist.").arg(chunkName));
-        switch(chunk->type) {
-            case GSD_TYPE_INT8:
-                return { Property::Int8, chunk->M };
-            case GSD_TYPE_UINT8:
-            case GSD_TYPE_INT16:
-            case GSD_TYPE_UINT16:
-            case GSD_TYPE_INT32:
-                return { Property::Int32, chunk->M };
-            case GSD_TYPE_UINT32: // Note: We map unsigned int32 to the signed int64 in OVITO to avoid overflows.
-            case GSD_TYPE_INT64:
-            case GSD_TYPE_UINT64:
-                return { Property::Int64, chunk->M };
-            case GSD_TYPE_FLOAT:
-                return { Property::Float32, chunk->M };
-            case GSD_TYPE_DOUBLE:
-                return { Property::Float64, chunk->M };
-            default:
-                throw Exception(GSDImporter::tr("GSD file I/O error. Unknown chunk data type."));
-        }
+        return getChunkDataTypeAndComponentCount(chunk);
     }
 
     /// Reads a single unsigned 64-bit integer from the GSD file, or returns a default value if the chunk is not present in the file.

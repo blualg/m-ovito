@@ -1,6 +1,5 @@
-// Copyright (c) 2016-2020 The Regents of the University of Michigan
-// This file is part of the General Simulation Data (GSD) project, released under the BSD 2-Clause
-// License.
+// Copyright (c) 2016-2026 The Regents of the University of Michigan
+// Part of GSD, released under the BSD 2-Clause License.
 
 #ifndef GSD_H
 #define GSD_H
@@ -48,7 +47,10 @@ enum gsd_type
     GSD_TYPE_FLOAT,
 
     /// 64-bit floating point number.
-    GSD_TYPE_DOUBLE
+    GSD_TYPE_DOUBLE,
+
+    /// 8-bit character.
+    GSD_TYPE_CHARACTER
 };
 
 /// Flag for GSD file open options
@@ -118,13 +120,12 @@ enum
 
 /** GSD file header
 
-    The in-memory and on-disk storage of the GSD file header. Stored in the first 256 bytes of the
-    file.
+    The in-memory and on-disk storage of the GSD file header. Stored in the first 256 bytes of
+    the file.
 
     @warning All members are **read-only** to the caller.
 */
-struct gsd_header
-{
+struct gsd_header {
     /// Magic number marking that this is a GSD file.
     uint64_t magic;
 
@@ -162,8 +163,7 @@ struct gsd_header
 
     @warning All members are **read-only** to the caller.
 */
-struct gsd_index_entry
-{
+struct gsd_index_entry {
     /// Frame index of the chunk.
     uint64_t frame;
 
@@ -190,8 +190,7 @@ struct gsd_index_entry
 
     A string name paired with an ID. Used for storing sorted name/id mappings in a hash map.
 */
-struct gsd_name_id_pair
-{
+struct gsd_name_id_pair {
     /// Pointer to name (actual name storage is allocated in gsd_handle)
     char* name;
 
@@ -206,8 +205,7 @@ struct gsd_name_id_pair
 
     A hash map of string names to integer identifiers.
 */
-struct gsd_name_id_map
-{
+struct gsd_name_id_map {
     /// Name/id mappings
     struct gsd_name_id_pair* v;
 
@@ -219,8 +217,7 @@ struct gsd_name_id_map
 
     May point to a mapped location of index entries in the file or an in-memory buffer.
 */
-struct gsd_index_buffer
-{
+struct gsd_index_buffer {
     /// Indices in the buffer
     struct gsd_index_entry* data;
 
@@ -242,8 +239,7 @@ struct gsd_index_buffer
     Used to buffer of small data chunks held for a buffered write at the end of a frame. Also
     used to hold the names.
 */
-struct gsd_byte_buffer
-{
+struct gsd_byte_buffer {
     /// Data
     char* data;
 
@@ -256,11 +252,10 @@ struct gsd_byte_buffer
 
 /** Name buffer
 
-    Holds a list of string names in order separated by NULL terminators. In v1 files, each name is
-    64 bytes. In v2 files, only one NULL terminator is placed between each name.
+    Holds a list of string names in order separated by NULL terminators. In v1 files, each name
+    is 64 bytes. In v2 files, only one NULL terminator is placed between each name.
 */
-struct gsd_name_buffer
-{
+struct gsd_name_buffer {
     /// Data
     struct gsd_byte_buffer data;
 
@@ -272,13 +267,12 @@ struct gsd_name_buffer
 
     A handle to an open GSD file.
 
-    This handle is obtained when opening a GSD file and is passed into every method that operates
-    on the file.
+    This handle is obtained when opening a GSD file and is passed into every method that
+    operates on the file.
 
     @warning All members are **read-only** to the caller.
 */
-struct gsd_handle
-{
+struct gsd_handle {
     /// File descriptor
     int fd;
 
@@ -287,9 +281,6 @@ struct gsd_handle
 
     /// Mapped data chunk index
     struct gsd_index_buffer file_index;
-
-    /// Index entries to append to the current frame
-    struct gsd_index_buffer frame_index;
 
     /// Buffered index entries to append to the current frame
     struct gsd_index_buffer buffer_index;
@@ -303,8 +294,11 @@ struct gsd_handle
     /// List of names added in the current frame
     struct gsd_name_buffer frame_names;
 
-    /// The index of the last frame in the file
-    uint64_t cur_frame;
+    /// The index of the last frame in the buffer
+    uint64_t buffer_frame;
+
+    /// The index of the last frame comitted to the file
+    uint64_t file_frame;
 
     /// Size of the file (in bytes)
     int64_t file_size;
@@ -314,9 +308,15 @@ struct gsd_handle
 
     /// Access the names in the namelist
     struct gsd_name_id_map name_map;
+
+    /// Number of index entries pending in the current frame.
+    uint64_t pending_index_entries;
+
+    /// Maximum write buffer size (bytes).
+    uint64_t maximum_write_buffer_size;
 };
 
-/** Specify a version
+/** Specify a version.
 
     @param major major version
     @param minor minor version
@@ -325,15 +325,16 @@ struct gsd_handle
 */
 uint32_t gsd_make_version(unsigned int major, unsigned int minor);
 
-/** Create a GSD file
+/** Create a GSD file.
 
-    @param fname File name.
+    @param fname File name (UTF-8 encoded).
     @param application Generating application name (truncated to 63 chars).
     @param schema Schema name for data to be written in this GSD file (truncated to 63 chars).
-    @param schema_version Version of the scheme data to be written (make with gsd_make_version()).
+    @param schema_version Version of the scheme data to be written (make with
+    gsd_make_version()).
 
-    @post Create an empty gsd file in a file of the given name. Overwrite any existing file at that
-    location.
+    @post Create an empty gsd file in a file of the given name. Overwrite any existing file at
+    that location.
 
     The generated gsd file is not opened. Call gsd_open() to open it for writing.
 
@@ -341,22 +342,16 @@ uint32_t gsd_make_version(unsigned int major, unsigned int minor);
       - GSD_SUCCESS (0) on success. Negative value on failure:
       - GSD_ERROR_IO: IO error (check errno).
 */
-#ifndef _WIN32
-int gsd_create(const char* fname,
-#else
-int gsd_create(const wchar_t* fname,
-#endif
-               const char* application,
-               const char* schema,
-               uint32_t schema_version);
+int gsd_create(const char* fname, const char* application, const char* schema, uint32_t schema_version);
 
-/** Create and open a GSD file
+/** Create and open a GSD file.
 
     @param handle Handle to open.
-    @param fname File name.
+    @param fname File name (UTF-8 encoded).
     @param application Generating application name (truncated to 63 chars).
     @param schema Schema name for data to be written in this GSD file (truncated to 63 chars).
-    @param schema_version Version of the scheme data to be written (make with gsd_make_version()).
+    @param schema_version Version of the scheme data to be written (make with
+        gsd_make_version()).
     @param flags Either GSD_OPEN_READWRITE, or GSD_OPEN_APPEND.
     @param exclusive_create Set to non-zero to force exclusive creation of the file.
 
@@ -376,21 +371,17 @@ int gsd_create(const wchar_t* fname,
       - GSD_ERROR_MEMORY_ALLOCATION_FAILED: Unable to allocate memory.
 */
 int gsd_create_and_open(struct gsd_handle* handle,
-#ifndef _WIN32
                         const char* fname,
-#else
-                        const wchar_t* fname,
-#endif
                         const char* application,
                         const char* schema,
                         uint32_t schema_version,
                         enum gsd_open_flag flags,
                         int exclusive_create);
 
-/** Open a GSD file
+/** Open a GSD file.
 
     @param handle Handle to open.
-    @param fname File name to open.
+    @param fname File name to open (UTF-8 encoded).
     @param flags Either GSD_OPEN_READWRITE, GSD_OPEN_READONLY, or GSD_OPEN_APPEND.
 
     @pre The file name *fname* is a GSD file.
@@ -407,20 +398,16 @@ int gsd_create_and_open(struct gsd_handle* handle,
       - GSD_ERROR_FILE_CORRUPT: Corrupt file.
       - GSD_ERROR_MEMORY_ALLOCATION_FAILED: Unable to allocate memory.
 */
-#ifndef _WIN32
 int gsd_open(struct gsd_handle* handle, const char* fname, enum gsd_open_flag flags);
-#else
-int gsd_open(struct gsd_handle* handle, const wchar_t* fname, enum gsd_open_flag flags);
-#endif
 
-/** Truncate a GSD file
+/** Truncate a GSD file.
 
     @param handle Open GSD file to truncate.
 
-    After truncating, a file will have no frames and no data chunks. The file size will be that of a
-    newly created gsd file. The application, schema, and schema version metadata will be kept.
-    Truncate does not close and reopen the file, so it is suitable for writing restart files on
-    Lustre file systems without any metadata access.
+    After truncating, a file will have no frames and no data chunks. The file size will be that
+    of a newly created gsd file. The application, schema, and schema version metadata will be
+    kept. Truncate does not close and reopen the file, so it is suitable for writing restart
+    files on Lustre file systems without any metadata access.
 
     @return
       - GSD_SUCCESS (0) on success. Negative value on failure:
@@ -432,17 +419,20 @@ int gsd_open(struct gsd_handle* handle, const wchar_t* fname, enum gsd_open_flag
 */
 int gsd_truncate(struct gsd_handle* handle);
 
-/** Close a GSD file
+/** Close a GSD file.
 
     @param handle GSD file to close.
 
     @pre *handle* was opened by gsd_open().
-    @pre gsd_end_frame() has been called since the last call to gsd_write_chunk().
 
+    @post Writable files: All data and index entries buffered before the previous call to
+          gsd_end_frame() is written to the file by implicitly calling gsd_flush().
     @post The file is closed.
     @post *handle* is freed and can no longer be used.
 
-    @warning Ensure that all gsd_write_chunk() calls are committed with gsd_end_frame() before
+    @note There is no need to manually call gsd_flush() before gsd_close().
+
+    @warning Ensure that all gsd_write_chunk() calls are completed with gsd_end_frame() before
     closing the file.
 
     @return
@@ -452,14 +442,17 @@ int gsd_truncate(struct gsd_handle* handle);
 */
 int gsd_close(struct gsd_handle* handle);
 
-/** Commit the current frame and increment the frame counter.
+/** Complete the current frame.
 
     @param handle Handle to an open GSD file
 
     @pre *handle* was opened by gsd_open().
-    @pre gsd_write_chunk() has been called at least once since the last call to gsd_end_frame().
 
-    @post The current frame counter is increased by 1 and cached indexes are written to disk.
+    @post The current frame counter is increased by 1.
+
+    @note Starting with GSD 4.0, gsd_end_frame() does NOT automatically flush buffered frames
+    to the filesystem. Callers must manually call gsd_flush() or gsd_close() to commit the
+    buffered frames to the filesystem.
 
     @return
       - GSD_SUCCESS (0) on success. Negative value on failure:
@@ -470,7 +463,26 @@ int gsd_close(struct gsd_handle* handle);
 */
 int gsd_end_frame(struct gsd_handle* handle);
 
-/** Write a data chunk to the current frame
+/** Flush the write buffer.
+
+    @param handle Handle to an open GSD file
+
+    @pre *handle* was opened by gsd_open().
+
+    @post All data buffered by gsd_write_chunk() are present in the file.
+    @post All index entries buffered by gsd_write_chunk() prior to the last call to
+          gsd_end_frame() are present in the file.
+
+    @return
+      - GSD_SUCCESS (0) on success. Negative value on failure:
+      - GSD_ERROR_IO: IO error (check errno).
+      - GSD_ERROR_INVALID_ARGUMENT: *handle* is NULL.
+      - GSD_ERROR_FILE_MUST_BE_WRITABLE: The file was opened read-only.
+      - GSD_ERROR_MEMORY_ALLOCATION_FAILED: Unable to allocate memory.
+*/
+int gsd_flush(struct gsd_handle* handle);
+
+/** Add a data chunk to the current frame.
 
     @param handle Handle to an open GSD file.
     @param name Name of the data chunk.
@@ -484,11 +496,14 @@ int gsd_end_frame(struct gsd_handle* handle);
     @pre *name* is a unique name for data chunks in the given frame.
     @pre data is allocated and contains at least `N * M * gsd_sizeof_type(type)` bytes.
 
-    @post The given data chunk is written to the end of the file and its location is updated in the
-    in-memory index.
+    @post When there is space in the buffer: The given data is present in the write buffer.
+          Otherwise, the data is present at the end of the file.
+    @post The index is present in the buffer.
 
     @note If the GSD file is version 1.0, the chunk name is truncated to 63 bytes. GSD version
     2.0 files support arbitrarily long names.
+
+    @note *N* == 0 is allowed. When *N* is 0, *data* may be NULL.
 
     @return
       - GSD_SUCCESS (0) on success. Negative value on failure:
@@ -499,15 +514,10 @@ int gsd_end_frame(struct gsd_handle* handle);
       - GSD_ERROR_NAMELIST_FULL: The file cannot store any additional unique chunk names.
       - GSD_ERROR_MEMORY_ALLOCATION_FAILED: failed to allocate memory.
 */
-int gsd_write_chunk(struct gsd_handle* handle,
-                    const char* name,
-                    enum gsd_type type,
-                    uint64_t N,
-                    uint32_t M,
-                    uint8_t flags,
-                    const void* data);
+int gsd_write_chunk(
+    struct gsd_handle* handle, const char* name, enum gsd_type type, uint64_t N, uint32_t M, uint8_t flags, const void* data);
 
-/** Find a chunk in the GSD file
+/** Find a chunk in the GSD file.
 
     @param handle Handle to an open GSD file
     @param frame Frame to look for chunk
@@ -515,15 +525,17 @@ int gsd_write_chunk(struct gsd_handle* handle,
 
     @pre *handle* was opened by gsd_open() in read or readwrite mode.
 
-    The found entry contains size and type metadata and can be passed to gsd_read_chunk() to read
-    the data.
+    The found entry contains size and type metadata and can be passed to gsd_read_chunk() to
+    read the data.
 
     @return A pointer to the found chunk, or NULL if not found.
-*/
-const struct gsd_index_entry*
-gsd_find_chunk(struct gsd_handle* handle, uint64_t frame, const char* name);
 
-/** Read a chunk from the GSD file
+    @note In read/write files gsd_find_chunk() can only find chunks that have been committed
+    to the file with gsd_flush().
+*/
+const struct gsd_index_entry* gsd_find_chunk(struct gsd_handle* handle, uint64_t frame, const char* name);
+
+/** Read a chunk from the GSD file.
 
     @param handle Handle to an open GSD file.
     @param data Data buffer to read into.
@@ -531,7 +543,8 @@ gsd_find_chunk(struct gsd_handle* handle, uint64_t frame, const char* name);
 
     @pre *handle* was opened in read or readwrite mode.
     @pre *chunk* was found by gsd_find_chunk().
-    @pre *data* points to an allocated buffer with at least `N * M * gsd_sizeof_type(type)` bytes.
+    @pre *data* points to an allocated buffer with at least `N * M * gsd_sizeof_type(type)`
+   bytes.
 
     @return
       - GSD_SUCCESS (0) on success. Negative value on failure:
@@ -539,10 +552,13 @@ gsd_find_chunk(struct gsd_handle* handle, uint64_t frame, const char* name);
       - GSD_ERROR_INVALID_ARGUMENT: *handle* is NULL, *data* is NULL, or *chunk* is NULL.
       - GSD_ERROR_FILE_MUST_BE_READABLE: The file was opened in append mode.
       - GSD_ERROR_FILE_CORRUPT: The GSD file is corrupt.
+
+    @note In read/write files gsd_read_chunk() can only read chunks that have been committed
+    to the file with gsd_flush().
 */
 int gsd_read_chunk(struct gsd_handle* handle, void* data, const struct gsd_index_entry* chunk);
 
-/** Get the number of frames in the GSD file
+/** Get the number of frames in the GSD file.
 
     @param handle Handle to an open GSD file
 
@@ -569,15 +585,17 @@ size_t gsd_sizeof_type(enum gsd_type type);
     @pre *handle* was opened by gsd_open()
     @pre *prev* was returned by a previous call to gsd_find_matching_chunk_name()
 
-    To find the first matching chunk name, pass NULL for prev. Pass in the previous found string to
-    find the next after that, and so on. Chunk names match if they begin with the string in *match*.
-    Chunk names returned by this function may be present in at least one frame.
+    To find the first matching chunk name, pass NULL for prev. Pass in the previous found string
+    to find the next after that, and so on. Chunk names match if they begin with the string in
+    *match*. Chunk names returned by this function may be present in at least one frame.
 
-    @return Pointer to a string, NULL if no more matching chunks are found found, or NULL if *prev*
-    is invalid
+    @return Pointer to a string, NULL if no more matching chunks are found found, or NULL if
+    *prev* is invalid
+
+    @note In read/write files gsd_find_matching_chunk_names() can only find names that have
+    been committed to the file with gsd_flush().
 */
-const char*
-gsd_find_matching_chunk_name(struct gsd_handle* handle, const char* match, const char* prev);
+const char* gsd_find_matching_chunk_name(struct gsd_handle* handle, const char* match, const char* prev);
 
 /** Upgrade a GSD file to the latest specification.
 
@@ -593,6 +611,31 @@ gsd_find_matching_chunk_name(struct gsd_handle* handle, const char* match, const
       - GSD_ERROR_FILE_MUST_BE_WRITABLE: The file was opened in read-only mode.
 */
 int gsd_upgrade(struct gsd_handle* handle);
+
+/** Get the maximum write buffer size.
+
+    @param handle Handle to an open GSD file
+
+    @pre *handle* was opened by gsd_open().
+
+    @return The maximum write buffer size in bytes, or 0 on error.
+*/
+uint64_t gsd_get_maximum_write_buffer_size(struct gsd_handle* handle);
+
+/** Set the maximum write buffer size.
+
+    @param handle Handle to an open GSD file
+    @param size Maximum number of bytes to allocate in the write buffer (must be greater than
+    0).
+
+    @pre *handle* was opened by gsd_open().
+
+    @return
+      - GSD_SUCCESS (0) on success. Negative value on failure:
+      - GSD_ERROR_INVALID_ARGUMENT: *handle* is NULL
+      - GSD_ERROR_INVALID_ARGUMENT: size == 0
+*/
+int gsd_set_maximum_write_buffer_size(struct gsd_handle* handle, uint64_t size);
 
 #ifdef __cplusplus
 }

@@ -170,15 +170,35 @@ void GSDImporter::FrameLoader::loadFile()
     uint8_t ndimensions = gsd.readOptionalScalar<uint8_t>("configuration/dimensions", frameNumber, 3);
 
     // Parse simulation box.
-    std::array<float,6> boxValues = {1,1,1,0,0,0};
-    gsd.readOptional1DArray("configuration/box", frameNumber, boxValues);
+    const int cellDataType = gsd.getChunkDataTypeAndComponentCount("configuration/box", frameNumber).first;
+
     AffineTransformation simCell = AffineTransformation::Identity();
-    simCell(0,0) = boxValues[0];
-    simCell(1,1) = boxValues[1];
-    simCell(2,2) = boxValues[2];
-    simCell(0,1) = boxValues[3] * boxValues[1];
-    simCell(0,2) = boxValues[4] * boxValues[2];
-    simCell(1,2) = boxValues[5] * boxValues[2];
+    const auto fillSimCell = [&simCell](const auto& boxValues) {
+        simCell(0, 0) = boxValues[0];
+        simCell(1, 1) = boxValues[1];
+        simCell(2, 2) = boxValues[2];
+        simCell(0, 1) = boxValues[3] * boxValues[1];
+        simCell(0, 2) = boxValues[4] * boxValues[2];
+        simCell(1, 2) = boxValues[5] * boxValues[2];
+    };
+
+    if(cellDataType == -1) {
+        // getChunkDataTypeAndComponentCount did not find "configuration/box" in this case we use the default box
+    }
+    else if((Property::DataTypes)cellDataType == Property::Float32) {
+        std::array<float, 6> boxValues = {1, 1, 1, 0, 0, 0};
+        gsd.readOptional1DArray("configuration/box", frameNumber, boxValues);
+        fillSimCell(boxValues);
+    }
+    else if((Property::DataTypes)cellDataType == Property::Float64) {
+        std::array<double, 6> boxValues = {1, 1, 1, 0, 0, 0};
+        gsd.readOptional1DArray("configuration/box", frameNumber, boxValues);
+        fillSimCell(boxValues);
+    }
+    else {
+        throw Exception(tr("GSD file I/O error: Unsupported data type for 'configuration/box' chunk."));
+    }
+
     simCell.translation() = simCell.linear() * Vector3(FloatType(-0.5));
     simulationCell()->setIs2D(ndimensions == 2);
     simulationCell()->setCellMatrix(simCell);

@@ -3,7 +3,7 @@
 GSD code license
 ----------------
 
-Copyright (c) 2016-2020 The Regents of the University of Michigan
+Copyright (c) 2016-2026 The Regents of the University of Michigan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

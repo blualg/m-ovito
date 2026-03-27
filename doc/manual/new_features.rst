@@ -4,6 +4,12 @@
 Changelog
 =========
 
+----------------------------
+Version 3.15.2 (DD-MM-2026)
+----------------------------
+
+- Add support for double precision floats in the GSD file reader (`issue <https://gitlab.com/stuko/ovito/-/work_items/237>`__).
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.15.1>`__
