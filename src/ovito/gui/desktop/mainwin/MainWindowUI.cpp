@@ -600,7 +600,7 @@ void MainWindowUI::importFiles(const std::vector<QUrl>& urls, const FileImporter
 void MainWindowUI::openWorkingDirectory(const QString& directoryPath)
 {
     QDir::setCurrent(directoryPath);
-    updateMostRecentlyUsedDirectory(QStringLiteral("import"), directoryPath);
+    updateMostRecentlyUsedDirectory(QStringLiteral("import"), directoryPath); // Note: "import" is the dialog class for the FileImportDialog.
     actionManager()->getAction(ACTION_FILE_IMPORT)->trigger();
 }
 
@@ -734,7 +734,7 @@ void MainWindowUI::updateMostRecentlyUsedDirectory(const QString& dialogClass, c
     constexpr int MAX_DIRECTORY_HISTORY_SIZE = 1;
 
     QStringList history = getRecentlyUsedDirectories(dialogClass);
-    int index = history.indexOf(directory);
+    auto index = history.indexOf(directory);
     if(index >= 0)
         history.move(index, 0);
     else {

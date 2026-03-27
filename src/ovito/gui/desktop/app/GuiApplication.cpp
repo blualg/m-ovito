@@ -363,8 +363,13 @@ void GuiApplication::initializeUserInterface(UserInterface& ui, const QStringLis
                 numSessionFiles++;
             else {
                 QUrl url = Application::instance()->fileManager().urlFromUserInput(importFilename);
-                if(url.isLocalFile() && QFileInfo(url.toLocalFile()).isDir())
-                    directoriesToOpen.push_back(url.toLocalFile());
+                if(url.isLocalFile()) {
+                    QFileInfo fi(url.toLocalFile());
+                    if(fi.isDir())
+                        directoriesToOpen.push_back(fi.absoluteFilePath());
+                    else
+                        importUrls.push_back(std::move(url));
+                }
                 else
                     importUrls.push_back(std::move(url));
             }
