@@ -69,9 +69,9 @@ void Viewport::initializeObject(ObjectInitializationFlags flags)
     _viewportSettingsChangedConnection = QObject::connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, [this](ViewportSettings* newSettings) { viewportSettingsChanged(newSettings); });
 
     // Automatically associate the new viewport with the global scene (if there is one).
-    // This is needed for the Python interface, where each viewport created by the user must automatically be
-    // associated with some scene.
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && this_task::isScripting()) {
+    // This is needed for the Python interface, where each newly created Viewport must be
+    // associated with the global scene in the constructor.
+    if(flags.testFlag(ObjectInitializationFlag::CreatedByPython)) {
         setScene(this_task::ui()->datasetContainer().activeScene());
     }
 }
