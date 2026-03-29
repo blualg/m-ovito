@@ -35,6 +35,7 @@ enum ObjectInitializationFlag
     NoFlags               = 0,        //< Selects standard object initialization behavior.
     DontInitializeObject  = (1 << 0), //< Indicates that an object is being cloned. Means do not default-initialize parameters and don't create child objects.
     DontCreateVisElement  = (1 << 1), //< Do not automatically attach a visual element when creating a new data object.
+    CreatedByPython       = (1 << 2), //< The object was created by Python code.
 };
 Q_DECLARE_FLAGS(ObjectInitializationFlags, ObjectInitializationFlag);
 
