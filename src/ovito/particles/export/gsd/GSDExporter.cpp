@@ -505,11 +505,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
             FileExportJob::initializeObject(exporter, filePath, false);
 
             // Open the input file for writing.
-#ifndef Q_OS_WIN
-            _gsdFile = GSDFile::create(QFile::encodeName(QDir::toNativeSeparators(filePath)).constData(), "ovito", "hoomd", 1, 4);
-#else
-            _gsdFile = GSDFile::create(QDir::toNativeSeparators(filePath).toStdWString().c_str(), "ovito", "hoomd", 1, 4);
-#endif
+            _gsdFile = GSDFile::create(QDir::toNativeSeparators(filePath).toUtf8().constData(), "ovito", "hoomd", 1, 4);
         }
 
         /// Writes the exportable data of a single trajectory frame to the output file.

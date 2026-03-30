@@ -50,11 +50,7 @@ class GSDFile
 public:
 
     /// Constructor.
-#ifndef Q_OS_WIN
     GSDFile(const char* filename, const gsd_open_flag flags = GSD_OPEN_READONLY) {
-#else
-    GSDFile(const wchar_t* filename, const gsd_open_flag flags = GSD_OPEN_READONLY) {
-#endif
         switch(::gsd_open(&_handle, filename, flags)) {
             case gsd_error::GSD_SUCCESS: break;
             case gsd_error::GSD_ERROR_IO: throw Exception(GSDImporter::tr("Failed to open GSD file for reading. I/O error."));
@@ -67,11 +63,7 @@ public:
     }
 
     /// Creates a new GSD file and opens it for writing.
-#ifndef Q_OS_WIN
     static std::unique_ptr<GSDFile> create(const char* filename, const char* application, const char* schema, unsigned int schema_version_major, unsigned int schema_version_minor) {
-#else
-    static std::unique_ptr<GSDFile> create(const wchar_t* filename, const char* application, const char* schema, unsigned int schema_version_major, unsigned int schema_version_minor) {
-#endif
         switch(::gsd_create(filename, application, schema, ::gsd_make_version(schema_version_major, schema_version_minor))) {
             case gsd_error::GSD_SUCCESS: break;
             case gsd_error::GSD_ERROR_IO: throw Exception(GSDImporter::tr("Failed to create GSD file. I/O error."));
