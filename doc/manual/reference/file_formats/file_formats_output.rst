@@ -7,6 +7,7 @@ Output file formats
   :hidden:
 
   output/gltf
+  output/gsd
   output/ase_trajectory
 
 OVITO can export data in the following file formats:

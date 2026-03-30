@@ -9,10 +9,10 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.15.2>`__
 
 ----------------------------
-Version 3.15.2 (30-Mar-2026)
+Version 3.15.2 (31-Mar-2026)
 ----------------------------
 
-- Add support for double precision floats in the :ref:`GSD file reader <file_formats.input.gsd>` and writer (`issue <https://gitlab.com/stuko/ovito/-/work_items/237>`__).
+- Add support for double precision floats in the :ref:`file_formats.input.gsd` and :ref:`file_formats.output.gsd` (`issue <https://gitlab.com/stuko/ovito/-/work_items/237>`__).
 - Fixed list of pipelines sometimes not being updated after loading a .ovito state file (`issue <https://www.ovito.org/forum/topic/ovito-state-files-generated-by-ovito-pro-3-14-1-are-not-properly-loaded-in-ovito-pro-3-15-0/>`__).
 
 .. sidebar::

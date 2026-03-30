@@ -131,7 +131,8 @@ nitpick_ignore = [
     ('py:class', 'int'),
     ('py:class', 'tuple'),
     ('py:class', 'str'),
-    ('py:class', 'float')
+    ('py:class', 'float'),
+    ('py:class', 'numpy.typing.DTypeLike'),
 ]
 
 # Locations and names of other projects that should be linked to in this documentation.

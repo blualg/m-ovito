@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(GSDExporter, GSDExporterEditor);
 void GSDExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("GSD format"), rolloutParams);
+    QWidget* rollout = createRollout(tr("GSD format"), rolloutParams, "manual:file_formats.output.gsd");
 
     // Create the rollout contents.
     QHBoxLayout* layout = new QHBoxLayout(rollout);
@@ -47,7 +47,7 @@ void GSDExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     sublayout->setColumnStretch(3, 1);
     layout->addLayout(sublayout);
 
-    // Grid type
+    // Floating point precision
     int row = 0;
     sublayout->addWidget(new QLabel(tr("%1:").arg(PROPERTY_FIELD(GSDExporter::dataType)->displayName())), row, 0);
     auto* dataTypeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(GSDExporter::dataType));
