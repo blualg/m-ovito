@@ -125,6 +125,9 @@ public:
 
     /// Returns an open gzipped file back to the global cache.
     void returnGzipOpenFile(std::unique_ptr<GzipIODevice> uncompressor, std::unique_ptr<QIODevice> underlyingDevice);
+
+    /// Flushes the cache of open gzipped files, which is necessary to release file locks on Windows and allow deleting files that have been read from.
+    void flushGzipOpenFileCache();
 #endif
 
 #ifdef OVITO_SSH_CLIENT

@@ -574,6 +574,16 @@ void FileManager::returnGzipOpenFile(std::unique_ptr<GzipIODevice> uncompressor,
         }
     }
 }
+
+/******************************************************************************
+* Flushes the cache of open gzipped files, which is necessary to release file
+* locks on Windows and allow deleting files that have been read from.
+******************************************************************************/
+void FileManager::flushGzipOpenFileCache()
+{
+    QMutexLocker lock(&_mutex);
+    _gzipOpenFileCache.clear();
+}
 #endif
 
 }   // End of namespace
