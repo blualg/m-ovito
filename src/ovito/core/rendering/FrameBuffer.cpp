@@ -26,9 +26,7 @@
 #include <ovito/core/rendering/TextPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/viewport/ViewProjectionParameters.h>
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-    #include <ovito/core/utilities/io/video/VideoEncoder.h>
-#endif
+#include <ovito/core/utilities/io/video/VideoEncoder.h>
 
 namespace Ovito {
 
@@ -56,7 +54,6 @@ bool ImageInfo::guessFormatFromFilename()
         setFormat("jpg");
         return true;
     }
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
         for(const QString& extension : videoFormat.candidate->extensions) {
             if(filename().endsWith(QStringLiteral(".") + extension, Qt::CaseInsensitive)) {
@@ -65,7 +62,6 @@ bool ImageInfo::guessFormatFromFilename()
             }
         }
     }
-#endif
 
     return false;
 }
@@ -75,11 +71,8 @@ bool ImageInfo::guessFormatFromFilename()
 ******************************************************************************/
 bool ImageInfo::isMovie() const
 {
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     return std::ranges::any_of(VideoEncoder::supportedFormats(),
                                [this](const auto& videoFormat) { return format() == videoFormat.candidate->name; });
-#endif
-    return false;
 }
 
 /******************************************************************************

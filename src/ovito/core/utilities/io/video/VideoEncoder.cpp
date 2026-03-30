@@ -22,7 +22,9 @@
 
 #include <ovito/core/Core.h>
 #include "VideoEncoder.h"
-#include "InternalVideoEncoderBackend.h"
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+    #include "InternalVideoEncoderBackend.h"
+#endif
 #include "ExternalVideoEncoderBackend.h"
 
 namespace Ovito {
@@ -33,7 +35,11 @@ namespace Ovito {
 VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 {
     if(getBackend() == Backend::INTERNAL) {
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
         _backend = std::make_unique<InternalVideoEncoderBackend>();
+#else
+        throw Exception(QStringLiteral("Internal video encoding support is not available in this build of OVITO."));
+#endif
     }
     else {
         _backend = std::make_unique<ExternalVideoEncoderBackend>(this);
@@ -63,7 +69,11 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats(std::optional<Backend
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::INTERNAL) {
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
         return InternalVideoEncoderBackend::supportedFormats();
+#else
+        return {};
+#endif
     }
     else if(b == Backend::EXTERNAL) {
         return ExternalVideoEncoderBackend::supportedFormats(path.value_or(ExternalVideoEncoderBackend::getExecutablePath()));
@@ -81,7 +91,11 @@ QList<const VideoEncoder::CandidateCodec*> VideoEncoder::supportedCodecs(std::op
 {
     const Backend b = backend ? *backend : getBackend();
     if(b == Backend::INTERNAL) {
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
         return InternalVideoEncoderBackend::supportedCodecs();
+#else
+        return {};
+#endif
     }
     else if(b == Backend::EXTERNAL) {
         return ExternalVideoEncoderBackend::supportedCodecs(path.value_or(ExternalVideoEncoderBackend::getExecutablePath()));

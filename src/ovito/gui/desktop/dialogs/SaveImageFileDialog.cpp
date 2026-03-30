@@ -21,9 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-    #include <ovito/core/utilities/io/video/VideoEncoder.h>
-#endif
+#include <ovito/core/utilities/io/video/VideoEncoder.h>
 #include "SaveImageFileDialog.h"
 
 namespace Ovito {
@@ -48,7 +46,6 @@ SaveImageFileDialog::SaveImageFileDialog(MainWindowUI& ui, QWidget* parent, cons
     if(supportedFormats.contains("tiff")) { filterStrings << tr("TIFF Tagged image file (*.tif *.tiff)"); _formatList << "tiff"; }
     if(supportedFormats.contains("tga")) { filterStrings << tr("TGA Targa image file (*.tga)"); _formatList << "tga"; }
 
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     if(includeVideoFormats) {
         // Add video formats.
         for(const auto& videoFormat : VideoEncoder::supportedFormats()) {
@@ -61,7 +58,6 @@ SaveImageFileDialog::SaveImageFileDialog(MainWindowUI& ui, QWidget* parent, cons
             _formatList << QByteArray::fromRawData(videoFormat.candidate->name.data(), videoFormat.candidate->name.size());
         }
     }
-#endif
 
     if(filterStrings.isEmpty())
         throw Exception(tr("There are no image format plugins available."));

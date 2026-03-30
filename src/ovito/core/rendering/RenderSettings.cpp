@@ -25,16 +25,13 @@
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/io/video/VideoEncoder.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/UserInterface.h>
 #include "RenderSettings.h"
-
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-    #include <ovito/core/utilities/io/video/VideoEncoder.h>
-#endif
 
 namespace Ovito {
 
@@ -250,22 +247,18 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         vpData.destinationRect = destinationRect;
     }
 
-    VideoEncoder* videoEncoder = nullptr;
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-    std::unique_ptr<VideoEncoder> videoEncoderPtr;
+    std::unique_ptr<VideoEncoder> videoEncoder;
     // Initialize video encoder.
     if(saveToFile() && imageInfo().isMovie()) {
         if(imageFilename().isEmpty())
             throw Exception(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
 
-        videoEncoderPtr = std::make_unique<VideoEncoder>();
-        videoEncoder = videoEncoderPtr.get();
+        videoEncoder = std::make_unique<VideoEncoder>();
         float fps = framesPerSecond();
         if(fps <= 0)
             fps = animationSettings ? animationSettings->framesPerSecond() : 1.0f;
         videoEncoder->openFile(imageFilename(), outputImageWidth(), outputImageHeight(), fps);
     }
-#endif
 
     // The visualization data cache used for building the frame graph.
     const std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
@@ -379,18 +372,16 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
                     throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
             }
             else {
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
                 videoEncoder->writeFrame(frameBuffer->image());
-#endif
             }
         }
     }
 
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     // Finalize movie file.
-    if(videoEncoder)
+    if(videoEncoder) {
         videoEncoder->closeFile();
-#endif
+        videoEncoder.reset();
+    }
 }
 
 /******************************************************************************
