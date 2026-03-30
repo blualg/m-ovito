@@ -29,7 +29,7 @@ namespace Ovito {
 * Constructs the dialog window.
 ******************************************************************************/
 HistoryFileDialog::HistoryFileDialog(MainWindowUI& ui, const QString& dialogClass, QWidget* parent, const QString& caption, const QString& directory, const QString& filter)
-    : QFileDialog(parent, caption, directory, filter)
+    : QFileDialog(parent, caption, directory.isEmpty() ? QDir::currentPath() : directory, filter)
     , UserInterfaceComponent<MainWindowUI>(ui)
     , _dialogClass(dialogClass)
 {
@@ -38,15 +38,14 @@ HistoryFileDialog::HistoryFileDialog(MainWindowUI& ui, const QString& dialogClas
         if(!selected.empty()) onFileSelected(selected.front());
     });
 
-#if 0 // Disabled this legacy option from OVITO 3.7:
+    // Removed this legacy option from OVITO 3.7:
     // The user can request the Qt file dialog instead of the native dialog by settings the corresponding
     // option in the application settings.
     // The native dialogs of some platforms don't provide the directory history function but may be faster
     // than the Qt implementation.
     QSettings settings;
-    if(settings.value("file/use_qt_dialog", false).toBool())
+    if(settings.value("file/dialog_type").toString() == "qt")
         setOption(QFileDialog::DontUseNativeDialog);
-#endif
 
     if(keepWorkingDirectoryHistoryEnabled()) {
         QStringList history = ui.getRecentlyUsedDirectories(_dialogClass);
