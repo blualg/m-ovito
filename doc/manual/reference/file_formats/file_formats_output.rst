@@ -60,7 +60,7 @@ OVITO can export data in the following file formats:
     - Binary molecular dynamics format used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code.
       See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers, :ref:`global attributes <usage.global_attributes>`
-    -
+    - :ref:`Details <file_formats.output.gsd>`
 
   * - Table of Global Attributes
     - A simple tabular text file with scalar quantities computed by OVITO's data pipeline.
