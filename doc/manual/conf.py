@@ -141,7 +141,7 @@ if os.getenv("OVITO_PYDOC_INTERSPHINX_LOCATION"):
 else:
     intersphinx_mapping = { 'pydoc': ('https://ovito.org/docs/current/python/', None) }
 
-intersphinx_mapping['scipy'] = ('https://docs.scipy.org/doc/scipy/', None)
+intersphinx_mapping['scipy'] = ('https://docs.scipy.org/doc/scipy/', (None, 'https://www.ovito.org/download/data/documentation/sphinx/scipy/objects.inv'))
 
 # -- Options for HTML output ----------------------------------------------
 
