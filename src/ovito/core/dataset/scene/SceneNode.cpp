@@ -631,4 +631,26 @@ bool SceneNode::isHiddenInViewport(const Viewport* vp, bool includeHierarchyPare
         return false;
 }
 
+/******************************************************************************
+* Returns whether this scene node is currently hidden in all viewports.
+******************************************************************************/
+bool SceneNode::isHiddenInAllViewports(bool includeHierarchyParent) const
+{
+    OVITO_ASSERT(this_task::isMainThread());
+
+    Scene* scene = this->scene();
+    if(!scene)
+        return true;
+
+    bool hiddenInAll = true;
+    scene->visitDependents([&](RefMaker* dependent) {
+        if(Viewport* vp = dynamic_object_cast<Viewport>(dependent)) {
+            if(hiddenInAll && !isHiddenInViewport(vp, includeHierarchyParent)) {
+                hiddenInAll = false;
+            }
+        }
+    });
+    return hiddenInAll;
+}
+
 }   // End of namespace

@@ -13,6 +13,7 @@ Version 3.15.3 (xx-xxx-2026)
 ----------------------------
 
 - New :menuselection:`File->Recent Files` menu provides quick access to recently opened files and scenes.
+- The pipeline list now provides a button to toggle the visibility of individual pipelines in all viewports.
 
 .. sidebar::
 

@@ -124,6 +124,8 @@
 	<file>icons/ovito-light/actions/particles_highlight_selection_off.svg</file>
 
 	<file>icons/ovito-light/actions/restore_object.svg</file>
+	<file>icons/ovito-light/actions/visibility_on.svg</file>
+	<file>icons/ovito-light/actions/visibility_off.svg</file>
 
 </qresource>
 
@@ -251,6 +253,9 @@
 	<file>icons/ovito-dark/actions/particles_highlight_selection_off.svg</file>
 
 	<file>icons/ovito-dark/actions/restore_object.svg</file>
+	<file>icons/ovito-dark/actions/visibility_on.svg</file>
+	<file>icons/ovito-dark/actions/visibility_off.svg</file>
+
 </qresource>
 
 <qresource prefix="/guibase">

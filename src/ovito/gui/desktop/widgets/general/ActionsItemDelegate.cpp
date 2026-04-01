@@ -240,8 +240,11 @@ bool ActionsItemDelegate::eventFilter(QObject* obj, QEvent* event)
             QAction* action = std::exchange(_mousePressAction, nullptr);
             event->accept();
             view()->setCurrentIndex(index);
-            if(QComboBox* cb = qobject_cast<QComboBox*>(parent()))
-                cb->hidePopup();
+            if(!action->isCheckable()) {
+                // Close combobox popup unless the action is a toggle button, in which case we want to keep the popup open to allow multiple actions to be toggled in a row.
+                if(QComboBox* cb = qobject_cast<QComboBox*>(parent()))
+                    cb->hidePopup();
+            }
             action->trigger();
             if(ItemAction* itemAction = qobject_cast<ItemAction*>(action))
                 Q_EMIT itemAction->triggeredForItem(index);

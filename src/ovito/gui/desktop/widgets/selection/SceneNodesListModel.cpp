@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/viewport/Viewport.h>
 #include "SceneNodesListModel.h"
 
 namespace Ovito {
@@ -50,8 +51,11 @@ SceneNodesListModel::SceneNodesListModel(MainWindowUI& ui, QWidget* parent) :
     // Listen for events of the other scene nodes.
     _nodeListener.connect(this, &SceneNodesListModel::onNodeNotificationEvent);
 
-    // Font for rendering currently selected scene nodes.
+    // Fonts for rendering currently selected and/or hidden scene nodes.
     _selectedNodeFont.setBold(true);
+    _hiddenNodeFont.setItalic(true);
+    _selectedHiddenNodeFont.setBold(true);
+    _selectedHiddenNodeFont.setItalic(true);
 
     updateColorPalette(QGuiApplication::palette());
 QT_WARNING_PUSH
@@ -69,11 +73,17 @@ QT_WARNING_POP
     _pipelineActions.push_back(nullptr); // Separator
     _pipelineActions.push_back(actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
 
-    // Create per-item actions for renaming and deleting individual pipelines.
+    // Create per-item actions for toggling visibility, renaming and deleting individual scene nodes.
+    _visibilityOnAction = new ItemAction(QIcon::fromTheme("visibility_on"), tr("Toggle visibility"), this);
+    _visibilityOffAction = new ItemAction(QIcon::fromTheme("visibility_off"), tr("Toggle visibility"), this);
+    _visibilityOnAction->setCheckable(true);
+    _visibilityOffAction->setCheckable(true);
     _renameAction = new ItemAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Rename"), this);
     _deleteAction = new ItemAction(QIcon::fromTheme("edit_delete_pipeline"), tr("Delete"), this);
-    connect(_renameAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::renameItem);
-    connect(_deleteAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::deleteItem);
+    connect(_visibilityOnAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::toggleNodeVisibility);
+    connect(_visibilityOffAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::toggleNodeVisibility);
+    connect(_renameAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::renameSceneNode);
+    connect(_deleteAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::deleteSceneNode);
 }
 
 /******************************************************************************
@@ -108,8 +118,10 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
             return tr("Existing pipelines:");
 
         int pipelineIndex = index.row() - firstSceneNodeIndex();
-        if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size())
-            return _nodeListener.targets()[pipelineIndex]->objectTitle();
+        if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+            SceneNode* node = sceneNodes()[pipelineIndex];
+            return node->objectTitle();
+        }
         else if(pipelineIndex == 0)
             return tr("‹None›");
 
@@ -141,8 +153,15 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
     else if(role == Qt::FontRole) {
         int pipelineIndex = index.row() - firstSceneNodeIndex();
         if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
-            if(_nodeListener.targets()[pipelineIndex]->isSelected())
-                return _selectedNodeFont;
+            SceneNode* node = sceneNodes()[pipelineIndex];
+            bool isSelected = node->isSelected();
+            bool isHidden = node->isHiddenInAllViewports(false);
+            if(isSelected && isHidden)
+                return _selectedHiddenNodeFont;
+            else if(isSelected)
+                 return _selectedNodeFont;
+            else if(isHidden)
+                return _hiddenNodeFont;
         }
     }
     else if(role == Qt::DecorationRole) {
@@ -162,9 +181,13 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
     else if(role == ActionsRole) {
         int pipelineIndex = index.row() - firstSceneNodeIndex();
         if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+            SceneNode* node = sceneNodes()[pipelineIndex];
             QList<QAction*> actions;
             actions.push_back(_deleteAction);
             actions.push_back(_renameAction);
+            // Use the "visibility_on" icon if the node is currently visible (hiddenInViewports does not include all viewports),
+            // or "visibility_off" if it is hidden in at least one viewport.
+            actions.push_back(!node->isHiddenInAllViewports(false) ? _visibilityOnAction : _visibilityOffAction);
             return QVariant::fromValue(actions);
         }
         return {};
@@ -240,7 +263,7 @@ void SceneNodesListModel::onSceneSelectionChanged(SelectionSet* selection)
 ******************************************************************************/
 void SceneNodesListModel::onSceneNotificationEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    onNodeNotificationEvent(_sceneListener.target(), event);
+    onNodeNotificationEvent(scene(), event);
 }
 
 /******************************************************************************
@@ -291,6 +314,18 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
                 QTimer::singleShot(400, this, &SceneNodesListModel::deferredNodeUpdate);
         }
     }
+
+    // If the hiddenInViewports property of a node changed, update its list item to refresh the visibility icon.
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        const PropertyFieldEvent& propEvent = static_cast<const PropertyFieldEvent&>(event);
+        if(propEvent.field() == PROPERTY_FIELD(SceneNode::hiddenInViewports)) {
+            int idx = sceneNodes().indexOf(static_object_cast<SceneNode>(source));
+            if(idx >= 0) {
+                QModelIndex modelIndex = createIndex(idx + firstSceneNodeIndex(), 0);
+                Q_EMIT dataChanged(modelIndex, modelIndex, {Qt::FontRole, ActionsRole});
+            }
+        }
+    }
 }
 
 /******************************************************************************
@@ -338,9 +373,36 @@ void SceneNodesListModel::activateItem(int index)
 }
 
 /******************************************************************************
-* Performs a deletion action on an item.
+* Toggles the visibility of a scene node in all viewports.
 ******************************************************************************/
-void SceneNodesListModel::deleteItem(const QModelIndex& index)
+void SceneNodesListModel::toggleNodeVisibility(const QModelIndex& index)
+{
+    if(OORef<SceneNode> node = sceneNodeFromListIndex(index.row())) {
+        // Determine the current visibility state of the node.
+        // The node is considered "visible" if hiddenInViewports list does not include all viewports.
+        bool isVisible = !node->isHiddenInAllViewports(false);
+
+        performTransaction(tr("Toggle pipeline visibility"), [&]() {
+            if(isVisible) {
+                // Hide the node in all viewports by adding all viewports to the hiddenInViewports list.
+                std::vector<OOWeakRef<Viewport>> allViewports;
+                scene()->visitDependents([&](RefMaker* dependent) {
+                    if(Viewport* vp = dynamic_object_cast<Viewport>(dependent))
+                        allViewports.push_back(vp);
+                });
+                node->setHiddenInViewports(std::move(allViewports));
+            } else {
+                // Show the node in all viewports by clearing the hiddenInViewports list.
+                node->setHiddenInViewports({});
+            }
+        });
+    }
+}
+
+/******************************************************************************
+* Deletes a scene node.
+******************************************************************************/
+void SceneNodesListModel::deleteSceneNode(const QModelIndex& index)
 {
     // Change scene node selection when a scene node has been selected in the combobox.
     int pipelineIndex = index.row() - firstSceneNodeIndex();
@@ -351,18 +413,17 @@ void SceneNodesListModel::deleteItem(const QModelIndex& index)
                 node->requestObjectDeletion();
 
                 // Automatically select one of the remaining nodes.
-                Scene* scene = _sceneListener.target();
-                if(wasSelected && scene && scene->children().isEmpty() == false)
-                    scene->selection()->setNode(scene->children().front());
+                if(wasSelected && scene() && scene()->children().isEmpty() == false)
+                    scene()->selection()->setNode(scene()->children().front());
             });
         }
     }
 }
 
 /******************************************************************************
-* Lets the user rename a list item.
+* Lets the user rename a scene node.
 ******************************************************************************/
-void SceneNodesListModel::renameItem(const QModelIndex& index)
+void SceneNodesListModel::renameSceneNode(const QModelIndex& index)
 {
     if(OORef<SceneNode> sceneNode = sceneNodeFromListIndex(index.row())) {
         QString oldName = sceneNode->objectTitle();

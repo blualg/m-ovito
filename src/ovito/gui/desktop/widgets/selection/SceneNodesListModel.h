@@ -56,6 +56,9 @@ public:
     /// Returns the item flags for the given index.
     virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
+    /// Returns the current scene.
+    Scene* scene() const { return _sceneListener.target(); }
+
     /// Returns the current list of scene nodes in the scene.
     const auto& sceneNodes() const { return _nodeListener.targets(); }
 
@@ -70,11 +73,14 @@ public Q_SLOTS:
     /// This slot executes the action associated with the given list item.
     void activateItem(int index);
 
-    /// Performs a deletion action on an item.
-    void deleteItem(const QModelIndex& index);
+    /// Toggles the visibility of a scene node in all viewports.
+    void toggleNodeVisibility(const QModelIndex& index);
 
-    /// Lets the user rename a list item.
-    void renameItem(const QModelIndex& index);
+    /// Deletes a scene node.
+    void deleteSceneNode(const QModelIndex& index);
+
+    /// Lets the user rename a scene node.
+    void renameSceneNode(const QModelIndex& index);
 
 Q_SIGNALS:
 
@@ -127,11 +133,19 @@ private:
     /// Icon representing a pipeline scene node.
     QIcon _pipelineSceneNodeIcon;
 
-    /// Font for rendering selected scene nodes.
+    /// Fonts for rendering selected and/or hidden scene nodes.
     QFont _selectedNodeFont;
+    QFont _hiddenNodeFont;
+    QFont _selectedHiddenNodeFont;
 
     /// List items to be updated only occasional.
     QVector<SceneNode*> _deferredUpdateList;
+
+    /// Action for toggling the visibility of a pipeline when it is currently visible.
+    ItemAction* _visibilityOnAction;
+
+    /// Action for toggling the visibility of a pipeline when it is currently hidden.
+    ItemAction* _visibilityOffAction;
 
     /// Action for renaming a pipeline.
     ItemAction* _renameAction;

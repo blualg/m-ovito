@@ -249,6 +249,9 @@ public:
     /// specifically in the given viewport.
     bool isHiddenInViewport(const Viewport* vp, bool includeHierarchyParent) const;
 
+    /// Returns whether this scene node is currently hidden in all viewports.
+    bool isHiddenInAllViewports(bool includeHierarchyParent) const;
+
 protected:
 
     /// From RefMaker.
