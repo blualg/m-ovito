@@ -12,18 +12,23 @@ On this tab of the :ref:`application settings dialog <application_settings>`, yo
 User interface options
 """"""""""""""""""""""
 
-Enable automatic dark mode
+Auto-detect color scheme and enable dark mode
   Lets OVITO use a UI color scheme that matches the current light/dark mode settings of the operating system.
-  This option is permanently active on Linux and macOS platforms. Note that the :ref:`color of the viewport windows <application_settings.viewports>`
+  This option is permanently active on Linux and macOS platforms. Note that the :ref:`background color of the viewport windows <application_settings.viewports>`
   is controlled by a separate option.
 
 Use separate working directories for data import/export and session states
-  If this is turned on, OVITO remembers across program sessions the most recently used folders
-  for different file I/O operations, e.g., data file import & export,
+  If this option is turned on (default), OVITO remembers the most recently used folders
+  for different file I/O operations across program sessions, e.g., data file import & export,
   session state loading & saving, or image output.
 
-  When off, the global working directory is used as initial choice in all file selection dialogs.
-  It typically depends on where OVITO was launched from (on the command line).
+  If turned off, the current working directory of the process is used as initial choice in all file operations.
+  This typically depends on where OVITO was launched from on the terminal.
+
+Use native file selection dialog
+  By default, OVITO uses the native file selection dialog provided by the operating system, which is typically the best choice.
+  However, on certain platforms (e.g. Linux with older GNOME desktops) the native dialog may ignore the working directory set by OVITO and always start in the same default directory, which can be very inconvenient.
+  In such cases, you can disable this option to force OVITO to use the Qt widget-based file selection dialog instead of the native dialog.
 
 Data import options
 """""""""""""""""""

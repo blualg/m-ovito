@@ -38,11 +38,11 @@ HistoryFileDialog::HistoryFileDialog(MainWindowUI& ui, const QString& dialogClas
         if(!selected.empty()) onFileSelected(selected.front());
     });
 
-    // This legacy option has been removed from the GUI since OVITO 3.7:
-    // The user can request Qt's widget-based file dialog instead of the native OS dialog by settings the corresponding option in the application settings.
-    // The native dialogs of some platforms don't provide the directory history function but is typically faster than the Qt implementation.
-    QSettings settings;
-    if(settings.value("file/dialog_type").toString() == "qt")
+    // The user can request Qt's widget-based file dialog instead of the native OS dialog by settings the corresponding option in the application settings dialog.
+    // The native dialog (our default choice) is typically faster than the Qt widget implementation.
+    // On the other hand, on certain platforms (e.g. Linux with older GNOME desktops) the native dialog may ignore the current working directory settings of the application and always start in the same default directory, which can be very inconvenient.
+    // In this case, the user can switch to the Qt dialog, which respects the application's working directory settings.
+    if(useQtFileDialog())
         setOption(QFileDialog::DontUseNativeDialog);
 
     if(keepWorkingDirectoryHistoryEnabled()) {

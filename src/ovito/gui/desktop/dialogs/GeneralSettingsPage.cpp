@@ -49,13 +49,16 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout1->addWidget(uiGroupBox);
     QGridLayout* layout2 = new QGridLayout(uiGroupBox);
 
-    _enableAutomaticDarkMode = new QCheckBox(tr("Enable automatic dark mode"));
-    _enableAutomaticDarkMode->setToolTip(tr(
-            "<p>Automatically switch between light and dark UI depending on current system color scheme.</p>"));
+    _enableAutomaticDarkMode = new QCheckBox(tr("Auto-detect color scheme and enable dark mode"));
+    _enableAutomaticDarkMode->setToolTip(tr("<p>If enabled, will switch between light and dark UI depending on current system color theme.</p>"));
     layout2->addWidget(_enableAutomaticDarkMode, 0, 0);
     _enableAutomaticDarkMode->setChecked(GuiApplication::automaticallyEnableDarkMode());
-#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+#if defined(Q_OS_LINUX)
     _enableAutomaticDarkMode->setEnabled(false);
+    _enableAutomaticDarkMode->setText(_enableAutomaticDarkMode->text() + tr(" (always enabled on Linux)"));
+#elif defined(Q_OS_MACOS)
+    _enableAutomaticDarkMode->setEnabled(false);
+    _enableAutomaticDarkMode->setText(_enableAutomaticDarkMode->text() + tr(" (always enabled on macOS)"));
 #else
     #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
         _enableAutomaticDarkMode->setText(_enableAutomaticDarkMode->text() + tr(" (requires application restart to take effect)"));
@@ -65,10 +68,14 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 #endif
 
     _keepDirHistory = new QCheckBox(tr("Use separate working directories for data import/export and session states"));
-    _keepDirHistory->setToolTip(tr(
-            "<p>Maintain individual working directories for different types of file I/O operations.</p>"));
+    _keepDirHistory->setToolTip(tr("<p>If enabled, OVITO maintains individual working directories for different kinds of file operations and remembers them across program sessions.</p><p>If disabled, the same current working directory is used for all file operations.</p>"));
     layout2->addWidget(_keepDirHistory, 1, 0);
     _keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
+
+    _useNativeFileDialog = new QCheckBox(tr("Use native file selection dialog"));
+    _useNativeFileDialog->setToolTip(tr("<p>If disabled, OVITO will use the Qt widget-based file selection dialog instead of the native dialog provided by the operating system, which is the default choice.</p>"));
+    layout2->addWidget(_useNativeFileDialog, 2, 0);
+    _useNativeFileDialog->setChecked(!HistoryFileDialog::useQtFileDialog());
 
     // Group "Data import":
     QGroupBox* importGroupBox = new QGroupBox(tr("Data import options"), page);
@@ -116,6 +123,7 @@ void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     QSettings settings;
     HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
+    HistoryFileDialog::setUseQtFileDialog(!_useNativeFileDialog->isChecked());
 #if !(defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if(_enableAutomaticDarkMode->isChecked())
         settings.setValue("ui/automatic_dark_mode", true);
