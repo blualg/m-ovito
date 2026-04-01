@@ -32,7 +32,7 @@ namespace Ovito {
 #define OVITO_OPENGL_MINIMUM_VERSION_MINOR          1
 
 // OpenGL debugging macro:
-#ifdef OVITO_DEBUG
+#if 0
     #define OVITO_CHECK_OPENGL(renderer, cmd)                       \
     {                                                               \
         cmd;                                                        \
