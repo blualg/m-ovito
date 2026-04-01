@@ -6,6 +6,16 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.15.3>`__
+
+----------------------------
+Version 3.15.3 (xx-xxx-2026)
+----------------------------
+
+- New :menuselection:`File->Recent Files` menu provides quick access to recently opened files and scenes.
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.15.2>`__
 
 ----------------------------

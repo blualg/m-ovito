@@ -15,6 +15,7 @@
 	<file>icons/ovito-light/actions/file_import_object_reload.svg</file>
 	<file>icons/ovito-light/actions/file_import_object_refresh_animation.svg</file>
 	<file>icons/ovito-light/actions/file_cache_pipeline_output.svg</file>
+	<file>icons/ovito-light/actions/file_open_recent.svg</file>
 
 	<file>icons/ovito-light/actions/application_about.svg</file>
 	<file>icons/ovito-light/actions/application_preferences.svg</file>
@@ -141,6 +142,7 @@
 	<file>icons/ovito-dark/actions/file_import_object_reload.svg</file>
 	<file>icons/ovito-dark/actions/file_import_object_refresh_animation.svg</file>
 	<file>icons/ovito-dark/actions/file_cache_pipeline_output.svg</file>
+	<file>icons/ovito-dark/actions/file_open_recent.svg</file>
 
 	<file>icons/ovito-dark/actions/application_about.svg</file>
 	<file>icons/ovito-dark/actions/application_preferences.svg</file>

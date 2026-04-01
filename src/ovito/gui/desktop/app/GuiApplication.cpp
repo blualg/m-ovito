@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/OvitoStyle.h>
+#include <ovito/gui/desktop/mainwin/RecentFilesList.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/undo/UndoStack.h>
@@ -423,11 +424,14 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
                     ui.askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(openEvent->file());
-                    if(ui.checkLoadedDataset(dataset))
+                    if(ui.checkLoadedDataset(dataset)) {
                         ui.datasetContainer().setCurrentSet(std::move(dataset));
+                        RecentFilesList::instance().addSessionFileEntry(QUrl::fromLocalFile(openEvent->file()));
+                    }
                 }
                 else {
                     ui.importFiles({openEvent->url()});
+                    RecentFilesList::instance().addEntry({openEvent->url()});
                 }
             });
         }

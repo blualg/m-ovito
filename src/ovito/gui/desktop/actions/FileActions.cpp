@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/RecentFilesList.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
@@ -168,8 +169,10 @@ void WidgetActionManager::on_FileOpen_triggered()
         }
 
         OORef<DataSet> dataset = DataSet::createFromFile(filename);
-        if(ui().checkLoadedDataset(dataset))
+        if(ui().checkLoadedDataset(dataset)) {
             datasetContainer().setCurrentSet(std::move(dataset));
+            RecentFilesList::instance().addSessionFileEntry(QUrl::fromLocalFile(filename));
+        }
     });
 }
 
@@ -240,16 +243,19 @@ void WidgetActionManager::on_FileImport_triggered()
             OORef<DataSet> dataset = DataSet::createFromFile(urlsToImport.front().toLocalFile());
             if(ui().checkLoadedDataset(dataset)) {
                 datasetContainer().setCurrentSet(std::move(dataset));
+                RecentFilesList::instance().addSessionFileEntry(urlsToImport.front());
             }
             return;
         }
 
-        performTransaction(tr("Import data"), [&, importerClass=&importerClass, importerFormat=&importerFormat] {
+        if(performTransaction(tr("Import data"), [&, importerClass=&importerClass, importerFormat=&importerFormat] {
             // Import the selected file(s).
             ui().importFiles(
                 urlsToImport,
                 *importerClass, *importerFormat);
-        });
+        })) {
+            RecentFilesList::instance().addEntry(std::move(urlsToImport), importerClass, importerFormat);
+        }
     });
 }
 
@@ -261,7 +267,10 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
     if(!dataset())
         return;
 
-    performTransaction(tr("Import data"), [&] {
+    std::vector<QUrl> importedRemoteUrls;
+    const FileImporterClass* remoteImporterClass = nullptr;
+    QString remoteImporterFormat;
+    if(performTransaction(tr("Import data"), [&] {
         const auto [importUrls, importerClass, importerFormat] = [&]() -> std::tuple<std::vector<QUrl>, const FileImporterClass*, QString> {
             // Let the user enter the URL of the remote file.
             ImportRemoteFileDialog dialog(ui(), PluginManager::instance().metaclassMembers<FileImporter>(), mainWindow(), tr("Load Remote File"));
@@ -275,9 +284,15 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 
         // Import URL.
         if(!importUrls.empty()) {
+            importedRemoteUrls = importUrls;
+            remoteImporterClass = importerClass;
+            remoteImporterFormat = importerFormat;
             ui().importFiles(std::move(importUrls), importerClass, importerFormat);
         }
-    });
+    })) {
+        if(!importedRemoteUrls.empty())
+            RecentFilesList::instance().addEntry(std::move(importedRemoteUrls), remoteImporterClass, remoteImporterFormat);
+    }
 }
 
 /******************************************************************************

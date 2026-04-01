@@ -39,6 +39,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/oo/OvitoClass.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -48,6 +49,7 @@
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include "MainWindow.h"
+#include "RecentFilesList.h"
 #include "ViewportsPanel.h"
 #include "TaskDisplayWidget.h"
 #include "cmdpanel/CommandPanel.h"
@@ -331,6 +333,11 @@ void MainWindow::createMainMenu()
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_REMOTE_IMPORT));
 #endif
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_EXPORT));
+    _recentFilesMenu = fileMenu->addMenu(tr("Recent Files"));
+    _recentFilesMenu->setObjectName(QStringLiteral("RecentFilesMenu"));
+    _recentFilesMenu->setIcon(QIcon::fromTheme("file_open_recent"));
+    connect(&RecentFilesList::instance(), &RecentFilesList::listChanged, this, &MainWindow::updateRecentFilesMenu);
+    updateRecentFilesMenu();
     fileMenu->addSeparator();
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_OPEN));
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_SAVE));
@@ -513,6 +520,87 @@ void MainWindow::setCurrentCommandPanelPage(CommandPanelPage page)
 }
 
 /******************************************************************************
+* Rebuilds the contents of the "Recent Files" submenu.
+******************************************************************************/
+void MainWindow::updateRecentFilesMenu()
+{
+    if(!_recentFilesMenu)
+        return;
+    _recentFilesMenu->clear();
+    const QList<RecentFilesList::Entry>& entries = RecentFilesList::instance().entries();
+    if(entries.isEmpty()) {
+        QAction* noFilesAction = _recentFilesMenu->addAction(tr("No recent files"));
+        noFilesAction->setEnabled(false);
+    }
+    else {
+        for(int i = 0; i < entries.size(); ++i) {
+            const RecentFilesList::Entry& entry = entries[i];
+            OVITO_ASSERT(!entry.urls.empty());
+            QString displayPath = entry.urls.front().toDisplayString(QUrl::PreferLocalFile | QUrl::NormalizePathSegments);
+            if(entry.urls.size() > 1)
+                displayPath += tr(" + %1 more").arg(entry.urls.size() - 1);
+            QAction* action = _recentFilesMenu->addAction(displayPath);
+            connect(action, &QAction::triggered, this, [this, i]() {
+                openRecentFile(i);
+            });
+        }
+    }
+}
+
+/******************************************************************************
+* Opens the file(s) corresponding to the given recent files list entry.
+******************************************************************************/
+void MainWindow::openRecentFile(int index)
+{
+    const QList<RecentFilesList::Entry>& entries = RecentFilesList::instance().entries();
+    if(index < 0 || index >= entries.size())
+        return;
+
+    // Make a copy of the entry in case it gets removed during error handling.
+    const RecentFilesList::Entry entry = entries[index];
+
+    bool openFailed = false;
+    handleExceptions([&] {
+        try {
+            if(entry.isSessionFile()) {
+                // This is a .ovito session file.
+                OVITO_ASSERT(entry.urls.size() == 1);
+                ui().askForSaveChanges();
+                OORef<DataSet> dataset = DataSet::createFromFile(entry.urls.front().toLocalFile());
+                if(ui().checkLoadedDataset(dataset))
+                    datasetContainer().setCurrentSet(std::move(dataset));
+            }
+            else {
+                // This is a data file import.
+                const FileImporterClass* importerClass = nullptr;
+                OvitoClassPtr clazz = OvitoClass::decodeFromString(entry.importerClassName);
+                importerClass = dynamic_cast<const FileImporterClass*>(clazz);
+                performTransaction(tr("Import data"), [&] {
+                    ui().importFiles(entry.urls, importerClass, entry.importerFormat);
+                });
+            }
+        }
+        catch(const OperationCanceled&) { throw; }
+        catch(...) {
+            openFailed = true;
+            throw;
+        }
+    });
+
+    if(openFailed) {
+        // Remove the broken entry from the list.
+        // Re-check the index in case the list changed.
+        const QList<RecentFilesList::Entry>& currentEntries = RecentFilesList::instance().entries();
+        for(int i = 0; i < currentEntries.size(); ++i) {
+            if(currentEntries[i].urls == entry.urls) {
+                RecentFilesList::instance().removeEntry(i);
+                break;
+            }
+        }
+    }
+}
+
+/******************************************************************************
 * Sets the file path associated with this window and updates the window's title.
 ******************************************************************************/
 void MainWindow::setWindowFilePath(const QString& filePath)
@@ -541,14 +629,17 @@ void MainWindow::dropEvent(QDropEvent* event)
 {
     event->acceptProposedAction();
     std::vector<QUrl> importUrls;
+    QUrl sessionFileUrl;
     bool success = handleExceptions([&] {
         for(const QUrl& url : event->mimeData()->urls()) {
             if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
                 if(url.isLocalFile()) {
                     ui().askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(url.toLocalFile());
-                    if(ui().checkLoadedDataset(dataset))
+                    if(ui().checkLoadedDataset(dataset)) {
                         datasetContainer().setCurrentSet(std::move(dataset));
+                        sessionFileUrl = url;
+                    }
                     importUrls.clear();
                     return;
                 }
@@ -558,10 +649,15 @@ void MainWindow::dropEvent(QDropEvent* event)
             }
         }
     });
+    if(success && sessionFileUrl.isValid())
+        RecentFilesList::instance().addSessionFileEntry(sessionFileUrl);
     if(success && !importUrls.empty()) {
-        performTransaction(tr("Import data"), [&] {
+        std::vector<QUrl> importUrlsCopy = importUrls;
+        if(performTransaction(tr("Import data"), [&] {
             ui().importFiles(std::move(importUrls));
-        });
+        })) {
+            RecentFilesList::instance().addEntry(std::move(importUrlsCopy));
+        }
     }
 }
 

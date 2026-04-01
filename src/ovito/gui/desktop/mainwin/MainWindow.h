@@ -154,7 +154,13 @@ private Q_SLOTS:
     /// Displays an error message box. This slot is called by reportError().
     void showErrorMessages();
 
+    /// Rebuilds the contents of the "Recent Files" submenu.
+    void updateRecentFilesMenu();
+
 private:
+
+    /// Opens the file(s) corresponding to the given recent files list entry.
+    void openRecentFile(int index);
 
     /// Constructor.
     explicit MainWindow(MainWindowUI& ui) : UserInterfaceComponent<MainWindowUI>(ui) {
@@ -222,6 +228,9 @@ private:
 
     /// The current screen the window is on (to detect screen changes).
     QScreen* _currentScreen = nullptr;
+
+    /// The "Recent Files" submenu in the File menu.
+    QMenu* _recentFilesMenu = nullptr;
 
     friend class MainWindowUI; // Allow MainWindowUI to access private constructor
 };
