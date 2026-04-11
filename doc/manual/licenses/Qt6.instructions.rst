@@ -31,4 +31,4 @@ OVITO for Linux includes a copy of Qt shared libraries, which have been built fr
 macOS
 """""
 
-OVITO for macOS includes an unmodified copy of the Qt framework (version 6.10.2), as distributed by the Qt Company.
+OVITO for macOS includes an unmodified copy of the Qt framework (version 6.10.3), as distributed by the Qt Company.

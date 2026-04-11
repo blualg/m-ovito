@@ -35,11 +35,11 @@ macOS
 
 OVITO Pro for macOS ships with a copy of the PySide6 module that has been built from the original sources provided by
 the Qt Company, following the standard procedure described `here <https://doc.qt.io/qtforpython-6/gettingstarted/macOS.html>`__.
-PySide6 v6.10.2 has been compiled against Qt 6.10.2 (macOS) and a standard installation of the `CPython <https://www.python.org>`__ 3.13 interpreter for macOS (universal2 binary)::
+PySide6 v6.10.3 has been compiled against Qt 6.10.3 (macOS) and a standard installation of the `CPython <https://www.python.org>`__ 3.13 interpreter for macOS (universal2 binary)::
 
   git clone --recursive https://code.qt.io/pyside/pyside-setup
   cd pyside-setup
-  git checkout v6.10.2
+  git checkout v6.10.3
 
   sudo CLANG_INSTALL_DIR=$HOME/progs/libclang \
     python3.13 setup.py install \
