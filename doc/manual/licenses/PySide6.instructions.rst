@@ -9,7 +9,7 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-*OVITO Pro* for Windows includes a copy of the PySide6-Essentials module (version 6.10.2) from
+*OVITO Pro* for Windows includes a copy of the PySide6-Essentials module (version 6.10.3) from
 the official `PyPI repository <https://pypi.org/project/PySide6/>`__.
 
 Linux

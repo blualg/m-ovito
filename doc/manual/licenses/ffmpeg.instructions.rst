@@ -13,7 +13,7 @@ OVITO for Windows includes binaries that have been built from the unmodified sou
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2022 (command line tools) + MSYS2 environment
-  # zlib version: 1.3.1
+  # zlib version: 1.3.2
   ./configure \
     --toolchain=msvc \
     --target-os=win64 \

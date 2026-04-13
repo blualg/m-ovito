@@ -13,8 +13,8 @@ OVITO for Windows includes binaries that have been built from the unmodified sou
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2022 (command line tools)
-  # OpenSSL version: 3.0.19
-  # zlib version: 1.3.1
+  # OpenSSL version: 3.0.22
+  # zlib version: 1.3.2
   cd libssh-0.11.4
   mkdir build
   cd build
