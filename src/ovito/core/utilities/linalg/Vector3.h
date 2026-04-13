@@ -287,23 +287,13 @@ public:
     /// \param epsilon The epsilon used to test if this vector is zero.
     /// \return The normalized vector.
     /// \sa normalized(), normalizeSafely()
-    template<bool returnOptional = false>
-    [[nodiscard]] constexpr inline std::conditional_t<returnOptional, std::optional<Vector_3>, Vector_3> safelyNormalized(
-        T epsilon = Ovito::epsilon_v<T>) const
+    [[nodiscard]] constexpr inline Vector_3 safelyNormalized(T epsilon = Ovito::epsilon_v<T>) const
     {
         const T l = length();
-        if constexpr(returnOptional) {
-            if(l > epsilon)
-                return *this / l;
-            else
-                return std::nullopt;
-        }
-        else {
-            if(l > epsilon)
-                return *this / l;
-            else
-                return Vector_3::Zero();
-        }
+        if(l > epsilon)
+            return *this / l;
+        else
+            return Vector_3::Zero();
     }
 
     /// \brief Normalizes this vector to make it a unit vector (only if it is non-zero).

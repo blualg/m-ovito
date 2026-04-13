@@ -13,7 +13,9 @@ Version 3.15.3 (xx-xxx-2026)
 ----------------------------
 
 - New :menuselection:`File->Recent Files` menu provides quick access to recently opened files and scenes.
-- The pipeline list now provides a button to toggle the visibility of individual pipelines in all viewports.
+- The list of pipelines now provides a button to toggle the visibility of individual pipelines in all viewports.
+- Fixed a bug in rendering of bonds with :ref:`fractional bond orders <visual_elements.bonds.fractional>`.
+- Fixed picking of bonds with bonds orders greater than 1 in the :ref:`particles.modifiers.manual_selection` modifier.
 - Updated dependencies: Python 3.13.13, Qt 6.10.3, pyside6 6.10.3, OpenSSL 3.0.20, libsodium 1.0.22, zlib 1.3.2, boost 1.90.0
 
 .. sidebar::

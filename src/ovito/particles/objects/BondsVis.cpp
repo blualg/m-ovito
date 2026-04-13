@@ -43,12 +43,14 @@ DEFINE_PROPERTY_FIELD(BondsVis, shadingMode);
 DEFINE_PROPERTY_FIELD(BondsVis, coloringMode);
 DEFINE_PROPERTY_FIELD(BondsVis, filledSegments);
 DEFINE_PROPERTY_FIELD(BondsVis, filledFraction);
+DEFINE_PROPERTY_FIELD(BondsVis, visualizeBondOrder);
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Bond width");
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Uniform bond color");
 SET_PROPERTY_FIELD_LABEL(BondsVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_LABEL(BondsVis, filledSegments, "Number of filled segments");
 SET_PROPERTY_FIELD_LABEL(BondsVis, filledFraction, "Filled segment fraction");
+SET_PROPERTY_FIELD_LABEL(BondsVis, visualizeBondOrder, "Visualize bond order property");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, filledSegments, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(BondsVis, filledFraction, PercentParameterUnit, 0, 1);
@@ -140,98 +142,85 @@ inline bool isFractionalBond(GraphicsFloatType bondOrder)
 
 /******************************************************************************
  * Calculate the out of plane vector (normal) for each bond and its neighbors
- * to orient the bond cylinders
+ * to orient the bond cylinders.
  * The normal is estimated as the accumulated normal (cross product)
- * of all neihbor bond combinations
- * For bond "networks" perfectly aligned with the z-axis alginment along x is
- * taken as fallback
+ * of all neighbor bond combinations.
+ * For bond "networks" perfectly aligned with the z-axis alignment along x is
+ * taken as fallback.
  * Estimate the center of the current partial bond "network" for fractional
- * bonds to draw the dashed bond always towards the ring center
+ * bonds to draw the dashed bond always towards the ring center.
  ******************************************************************************/
 std::pair<Vector3G, Vector3G> getBondNormalVector(const ParticleIndexPair& particleIndices,
-                                                  const std::optional<ParticleBondMap>& bondsMap,
+                                                  const ParticleBondMap& bondsMap,
                                                   const BufferReadAccess<Point3>& positions,
                                                   const BufferReadAccess<GraphicsFloatType>& bondOrder,
-                                                  const SimulationCell* cell)
+                                                  const SimulationCellDataG& cell)
 {
-    if(bondsMap) {
-        // Normals towards x and z-axis
-        Vector3G normal_z = Vector3G::Zero();
-        Vector3G normal_x = Vector3G::Zero();
-        // Estimate the center of the current partial bond "network"
-        Vector3G direction = Vector3G::Zero();
+    OVITO_ASSERT(bondOrder);
 
-        std::array<Vector3G, 2> neighbors;
-        for(size_t index : particleIndices) {
-            size_t count = 0;
+    // Normals towards x and z-axis
+    Vector3G normal_z = Vector3G::Zero();
+    Vector3G normal_x = Vector3G::Zero();
+    // Estimate the center of the current partial bond "network"
+    Vector3G direction = Vector3G::Zero();
 
-            const Point3& p1 = positions[index];
-            // Loop over all bonded neighbors of the two particles making up the bond
-            for(const BondWithIndex& bond : bondsMap->bondsOfParticle(index)) {
-                OVITO_ASSERT(bond.index1 == index);
-                OVITO_ASSERT(bond.index2 != index);
+    std::array<Vector3G, 2> neighbors;
+    for(size_t index : particleIndices) {
+        size_t count = 0;
 
-                // Compute bond vector and its length.
-                const Point3& p1 = positions[bond.index1];
-                const Point3& p2 = positions[bond.index2];
-                Vector3G delta1 = (p2 - p1).toDataType<GraphicsFloatType>();
-                if(cell) {
-                    delta1 += (cell * bond.pbcShift).toDataType<GraphicsFloatType>();
-                }
-                neighbors[count % neighbors.size()] = delta1;
+        // Loop over all bonded neighbors of the two particles making up the bond
+        for(const BondWithIndex& bond : bondsMap.bondsOfParticle(index)) {
+            OVITO_ASSERT(bond.index1 == index);
+            OVITO_ASSERT(bond.index2 != index);
 
-                // Center only relevant for fractional bonds
-                if(bondOrder && isFractionalBond(bondOrder[bond.bondIndex])) {
-                    direction += delta1;
-                }
+            // Compute unwrapped bond vector.
+            const Point3G p1 = positions[bond.index1].toDataType<GraphicsFloatType>();
+            const Point3G p2 = positions[bond.index2].toDataType<GraphicsFloatType>();
+            Vector3G delta1 = p2 - p1;
+            delta1 += cell.cellMatrix() * bond.pbcShift.toDataType<GraphicsFloatType>();
+            neighbors[count % neighbors.size()] = delta1;
 
-                // Compute and accumulate normals
-                if(count >= neighbors.size() - 1) {
-                    Vector3G localNormal = neighbors[0].cross(neighbors[1]);
-                    if(!localNormal.normalizeSafely()) {
-                        localNormal = Vector3G{0, 0, 1};
-                    }
-                    GraphicsFloatType dot = localNormal.dot(Vector3G(0, 0, 1));
-                    if(dot > (GraphicsFloatType)0) {
-                        normal_z += localNormal;
-                    }
-                    else {
-                        normal_z -= localNormal;
-                    }
-                    dot = localNormal.dot(Vector3G(1, 0, 0));
-                    if(dot > (GraphicsFloatType)0) {
-                        normal_x += localNormal;
-                    }
-                    else {
-                        normal_x -= localNormal;
-                    }
-                }
-                count++;
+            // Center only relevant for fractional bonds
+            if(isFractionalBond(bondOrder[bond.bondIndex])) {
+                direction += delta1;
             }
+
+            // Compute and accumulate normals
+            if(count >= neighbors.size() - 1) {
+                Vector3G localNormal = neighbors[0].cross(neighbors[1]);
+                localNormal.normalizeSafely();
+                if(localNormal.z() > 0)
+                    normal_z += localNormal;
+                else
+                    normal_z -= localNormal;
+                if(localNormal.x() > 0)
+                    normal_x += localNormal;
+                else
+                    normal_x -= localNormal;
+            }
+            count++;
         }
-        return {normal_z.squaredLength() <= (Ovito::epsilon_v<GraphicsFloatType> * Ovito::epsilon_v<GraphicsFloatType>) ? normal_x : normal_z, direction};
     }
-    return {{0, 0, 1}, Vector3G::Zero()};
+    if(normal_z.squaredLength() <= (Ovito::epsilon_v<GraphicsFloatType> * Ovito::epsilon_v<GraphicsFloatType>))
+        return {normal_x, direction};
+    else
+        return {normal_z, direction};
 }
 
 /******************************************************************************
  * Calculate the (reduced) bond width based on the bond order
  ******************************************************************************/
-inline GraphicsFloatType getBondWidth(const BufferReadAccess<GraphicsFloatType>& bondInputWidths,
-                                      size_t bondIndex,
-                                      FloatType bondDiameter,
-                                      size_t bondRepCount)
+inline GraphicsFloatType getEffectiveBondWidth(const BufferReadAccess<GraphicsFloatType>& bondInputWidths, size_t bondIndex, FloatType bondDiameter, int bondRepCount)
 {
     OVITO_ASSERT(bondRepCount >= 0 && bondRepCount <= 3);
-    FloatType bondWidthValue = bondDiameter;
-    bondWidthValue = (bondInputWidths && bondInputWidths[bondIndex] > GraphicsFloatType(0)) ? bondInputWidths[bondIndex] : bondDiameter;
+    GraphicsFloatType bondWidthValue = (bondInputWidths && bondInputWidths[bondIndex] > GraphicsFloatType(0)) ? bondInputWidths[bondIndex] : static_cast<GraphicsFloatType>(bondDiameter);
     if(bondRepCount > 1 && bondRepCount <= 2) {
         bondWidthValue *= (GraphicsFloatType)0.8;
     }
     else if(bondRepCount > 2) {
         bondWidthValue *= (GraphicsFloatType)0.63;
     }
-    return (GraphicsFloatType)bondWidthValue;
+    return bondWidthValue;
 }
 
 /******************************************************************************
@@ -252,7 +241,7 @@ inline Vector3G getBondOffsetVector(size_t bondRepCount,
                                     const Vector3G& gvec,
                                     const Vector3G& normal,
                                     const Vector3G& shiftDir,
-                                    GraphicsFloatType bondWidth)
+                                    const GraphicsFloatType bondWidth)
 {
     OVITO_ASSERT(bondRepCount >= 0 && bondRepCount <= 3);
     OVITO_ASSERT(bondRepIdx >= 0 && bondRepIdx < 3);
@@ -268,7 +257,7 @@ inline Vector3G getBondOffsetVector(size_t bondRepCount,
     if(bondRepCount > 1) {
         // Shift vector points towards the local center of fractional bonds
         // -> used to have the dashed bond on the inside of rings
-        Vector3G cross = gvec.cross(normal).normalized();
+        Vector3G cross = gvec.cross(normal).safelyNormalized();
         if(shiftDir != Vector3G::Zero() && cross.dot(shiftDir) >= 0) {
             cross = -cross;
         }
@@ -281,65 +270,23 @@ inline Vector3G getBondOffsetVector(size_t bondRepCount,
  Determine the number of cylinders to be rendered for the given dashed bond based on the number of filled segments
  Used to preallocated all the output arrays.
  ******************************************************************************/
-inline size_t filledSegmentsToCylinderCount(const int filledSegments, const GraphicsFloatType filledFraction)
+inline size_t filledSegmentsToCylinderCount(const int filledSegments, const FloatType filledFraction)
 {
-    if(filledSegments == 0) {
+    if(filledSegments <= 0 || filledFraction <= 0) {
         return 0;
     }
 
-    // Needs to be odd for center line symmetry in the dashes
-    OVITO_ASSERT(filledSegments % 2 == 1);
-
-    // Use hard coded values to estimate the number of segments
-    constexpr GraphicsFloatType totalLength = 1;
-
-    // Number of odd indices (on)
-    const GraphicsFloatType numOnSegments = filledSegments / 2;
-    // Lenght of on segment
-    const GraphicsFloatType onLength = (numOnSegments > 0) ? filledFraction * totalLength / numOnSegments : 0;
-
-    //  Number of even indices (off)
-    const GraphicsFloatType numOffSegments = (filledSegments + 1) / 2;
-    // Length of off segment
-    const GraphicsFloatType offLength = (numOffSegments > 0) ? (1 - filledFraction) * totalLength / numOffSegments : 0;
-
-    GraphicsFloatType currentPos = 0;
-    GraphicsFloatType accumulatedLength = 0;
-    size_t count = 0;
-    for(size_t i = 0; i < filledSegments; i++) {
-        const bool on = (i % 2 == 1);
-        if(on) {
-            // On segment
-            if(accumulatedLength < 0.5 * totalLength && accumulatedLength + onLength >= 0.5 * totalLength) {
-                // Extra cylinder is needed to handle color change in on region
-                count += 2;
-            }
-            else {
-                // On segment
-                count += 1;
-            }
-        }
-        accumulatedLength += on ? onLength : offLength;
+    if(filledFraction >= 1) {
+        return 2;
     }
 
-    return count;
-}
-
-/******************************************************************************
- * Determines the number of cylinders to be rendered for the given bond order
- * based on the number of filled segments.
- * Used to preallocated all the output arrays.
- ******************************************************************************/
-inline size_t bondOrderToCylinderCount(GraphicsFloatType bondOrder, const size_t cylindersPerFilledSegment)
-{
-    bondOrder = clampBondOrder(bondOrder);
-    GraphicsFloatType intPart;
-    const GraphicsFloatType remainder = std::modf(bondOrder, &intPart);
-    size_t count = 2 * (size_t)std::clamp(intPart, (GraphicsFloatType)0, (GraphicsFloatType)3);
-    if(remainder > Ovito::epsilon_v<GraphicsFloatType>) {
-        count += cylindersPerFilledSegment;
+    // If the number of filled segments is odd, we need one additional cylinder, because the center line is split in half.
+    if(filledSegments % 2 == 1) {
+        return filledSegments + 1;
     }
-    return count;
+    else {
+        return filledSegments;
+    }
 }
 
 }  // namespace
@@ -351,28 +298,33 @@ inline size_t bondOrderToCylinderCount(GraphicsFloatType bondOrder, const size_t
 size_t BondsVis::getCylinderCount(const Property* bondTopologyProperty,
                                   const Property* bondOrderProperty,
                                   const int filledSegments,
-                                  const GraphicsFloatType filledFraction)
+                                  const FloatType filledFraction)
 {
     // No bond topology
     if(!bondTopologyProperty) {
         return 0;
     }
-    // Default case, no bond order
+    // Simple case, no bond order property --> two half-bond cylinders per bond
     if(!bondOrderProperty) {
         return 2 * bondTopologyProperty->size();
     }
     OVITO_ASSERT(bondTopologyProperty->size() == bondOrderProperty->size());
     OVITO_ASSERT(filledSegments >= 0);
 
-    // Estimate the number of cylinders that will be required per dashed bond
-    const size_t cylindersPerFilledSegment = filledSegmentsToCylinderCount(filledSegments, filledFraction);
+    // Number of cylinders that will be required per dashed bond
+    const size_t cylindersPerDashedBond = filledSegmentsToCylinderCount(filledSegments, filledFraction);
 
-    // Count the number of cylinders that will be required
+    // Count the total number of cylinders that will be required for all bonds.
     size_t count = 0;
     BufferReadAccess<GraphicsFloatType> bondOrderAcc(bondOrderProperty);
     for(GraphicsFloatType bondOrder : bondOrderAcc) {
-        // Bond order can be in the range from 0 to 3
-        count += bondOrderToCylinderCount(bondOrder, cylindersPerFilledSegment);
+        // Determine how many full and dashed bonds we need to draw for this bond based on its order.
+        GraphicsFloatType intPart;
+        const GraphicsFloatType remainder = std::modf(clampBondOrder(bondOrder), &intPart);
+        count += 2 * (size_t)intPart;
+        if(remainder > Ovito::epsilon_v<GraphicsFloatType>) {
+            count += cylindersPerDashedBond;
+        }
     }
     return count;
 }
@@ -399,7 +351,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
     const Property* bondWidthProperty = bonds->getProperty(Bonds::WidthProperty);
     const Property* bondSelectionProperty = frameGraph.isInteractive() ? bonds->getProperty(Bonds::SelectionProperty) : nullptr;
     const Property* transparencyProperty = bonds->getProperty(Bonds::TransparencyProperty);
-    const Property* bondOrderProperty = bonds->getProperty(Bonds::OrderProperty);
+    const Property* bondOrderProperty = visualizeBondOrder() ? bonds->getProperty(Bonds::OrderProperty) : nullptr;
 
     // Obtain particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
@@ -410,26 +362,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
     if(coloringMode() == ParticleBasedColoring && particleVis) {
         particleColorProperty = particles->getProperty(Particles::ColorProperty);
         particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
-    }
-
-    // Needs to be odd for center line symmetry in the dashes
-    const int numFilledSegments = (2 * filledSegments()) + 1;
-
-    // Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
-    const bool useBondOrder = bondOrderProperty ? std::ranges::any_of(BufferReadAccess<GraphicsFloatType>(bondOrderProperty),
-                                                                      [](GraphicsFloatType bondOrder) { return bondOrder != 1; })
-                                                : false;
-
-    // Count the number of cylinders that will be required for each dashed bond
-    const size_t dashedCylinderCount =
-        useBondOrder ? filledSegmentsToCylinderCount(numFilledSegments, (GraphicsFloatType)filledFraction()) : 0;
-
-    // Make sure we don't exceed our internal limits.
-    const size_t cylinderCount =
-        getCylinderCount(bondTopologyProperty, bondOrderProperty, numFilledSegments, (GraphicsFloatType)filledFraction());
-
-    if(bondTopologyProperty && cylinderCount > (size_t)std::numeric_limits<int>::max()) {
-        throw Exception(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
     }
 
     // The key type used for caching the rendering primitive:
@@ -450,13 +382,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                          FloatType,           // Bond width
                                          FloatType,           // Radius scaling factor
                                          int,                 // Filled segments
-                                         FloatType,           // Filled faction
+                                         FloatType,           // Filled fraction
                                          Color,               // Bond uniform color
                                          ColoringMode,        // Bond coloring mode
                                          ShadingMode,         // Bond shading mode
                                          bool                 // Render nodal vertices
                                          >;
 
+    // Decide whether to render additional spheres at the nodal positions of the bonds.
     const bool renderNodalVertices = !transparencyProperty && !bondWidthProperty &&
                                      (!particleVis || !particleVis->isEnabled() || particleTransparencyProperty != nullptr);
 
@@ -478,7 +411,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                      simulationCell,
                      bondWidth(),
                      particleVis->radiusScaleFactor(),
-                     numFilledSegments,
+                     filledSegments(),
                      filledFraction(),
                      bondColor(),
                      coloringMode(),
@@ -486,24 +419,45 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                      renderNodalVertices),
             [&](CylinderPrimitive& cylinders, ParticlePrimitive& vertices, OORef<BondPickInfo>& pickInfo) {
                 const SimulationCellDataG cellData(simulationCell);
-                const FloatType bondDiameter = bondWidth();
-                // Remap cylinders to bonds
-                auto subobjectToBondMapping = (useBondOrder) ? BufferFactory<int32_t>(cylinderCount) : BufferFactory<int32_t>();
+                const FloatType uniformBondWidth = bondWidth();
 
-                if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
-                    // Allocate buffers for the bonds geometry.
-                    BufferFactory<Point3G> bondPositions1(cylinderCount);
-                    BufferFactory<Point3G> bondPositions2(cylinderCount);
-                    BufferFactory<ColorG> bondColors(cylinderCount);
-                    BufferFactory<GraphicsFloatType> bondTransparencies =
-                        transparencyProperty ? BufferFactory<GraphicsFloatType>(cylinderCount) : BufferFactory<GraphicsFloatType>{};
-                    BufferFactory<GraphicsFloatType> bondWidths = bondWidthProperty || bondOrderProperty
-                                                                      ? BufferFactory<GraphicsFloatType>(cylinderCount)
+                // Are bond orders in play, which require multi-cylinder rendering for double / triple bonds and dashed bonds for fractional bond orders?
+                const bool useBondOrder = bondOrderProperty ? std::ranges::any_of(BufferReadAccess<GraphicsFloatType>(bondOrderProperty),
+                                                                                [](GraphicsFloatType bondOrder) { return bondOrder != 1; })
+                                                            : false;
+
+                // Count the number of cylinders that will be required per dashed bond.
+                const size_t dashedCylinderCount = useBondOrder ? filledSegmentsToCylinderCount(filledSegments(), filledFraction()) : 0;
+                OVITO_ASSERT(dashedCylinderCount % 2 == 0); // Always an even number of cylinders, because in case of an odd number of filled segments, the central segment is split in half, resulting in an even number of cylinders.
+
+                // Count the total number of cylinders that will be required for all bonds.
+                const size_t totalCylinderCount = getCylinderCount(bondTopologyProperty, useBondOrder ? bondOrderProperty : nullptr, filledSegments(), filledFraction());
+
+                // Make sure we don't exceed our internal limits.
+                if(totalCylinderCount > (size_t)std::numeric_limits<int>::max()) {
+                    throw Exception(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
+                }
+
+                // Mapping from cylinder indices to original bonds
+                BufferFactory<int32_t> subobjectToBondMapping;
+
+                if(bondTopologyProperty && positionProperty && uniformBondWidth > 0) {
+
+                    // Mapping from cylinder indices to original bonds
+                    if(useBondOrder)
+                        subobjectToBondMapping = BufferFactory<int32_t>(totalCylinderCount);
+
+                    // Allocate buffers for the cylinders geometry.
+                    BufferFactory<Point3G> cylinderPositions1(totalCylinderCount);
+                    BufferFactory<Point3G> cylinderPositions2(totalCylinderCount);
+                    BufferFactory<ColorG> cylinderColors(totalCylinderCount);
+                    BufferFactory<GraphicsFloatType> cylinderTransparencies = transparencyProperty ? BufferFactory<GraphicsFloatType>(totalCylinderCount) : BufferFactory<GraphicsFloatType>{};
+                    BufferFactory<GraphicsFloatType> cylinderWidths = bondWidthProperty || bondOrderProperty
+                                                                      ? BufferFactory<GraphicsFloatType>(totalCylinderCount)
                                                                       : BufferFactory<GraphicsFloatType>{};
 
                     // Allocate buffers for the nodal vertices.
-                    BufferFactory<ColorG> nodalColors =
-                        renderNodalVertices ? BufferFactory<ColorG>(positionProperty->size()) : BufferFactory<ColorG>{};
+                    BufferFactory<ColorG> nodalColors = renderNodalVertices ? BufferFactory<ColorG>(positionProperty->size()) : BufferFactory<ColorG>{};
                     BufferFactory<GraphicsFloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty)
                                                                                ? BufferFactory<GraphicsFloatType>(positionProperty->size())
                                                                                : BufferFactory<GraphicsFloatType>{};
@@ -511,27 +465,31 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
                     OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
-                    // Cache some values.
+                    // Access particle coords.
                     BufferReadAccess<Point3> positions(positionProperty);
-                    size_t particleCount = positions.size();
-                    const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
+                    const size_t particleCount = positions.size();
 
                     // Obtain the radii of the particles.
                     BufferReadAccessAndRef<GraphicsFloatType> particleRadii;
-                    if(particleVis) particleRadii = ConstDataBufferPtr(particleVis->particleRadii(particles, true));
-                    // Make sure the particle radius array has the correct
-                    // length.
+                    if(particleVis) particleRadii = particleVis->particleRadii(particles, true);
+                    // Make sure the particle radius array has the correct length.
                     if(particleRadii && particleRadii.size() != particleCount) particleRadii.reset();
 
                     // Determine half-bond colors.
-                    std::vector<ColorG> colors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
-                    OVITO_ASSERT(colors.size() == 2 * bonds->elementCount());
+                    const size_t bondCount = bondTopologyProperty->size();
+                    std::vector<ColorG> hbondColors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
+                    OVITO_ASSERT(hbondColors.size() == 2 * bondCount);
 
                     // Bonds enumerator used to determine the normal vector to align double / triple bonds.
                     std::optional<ParticleBondMap> bondsMap;
-                    if(useBondOrder) {
+                    if(useBondOrder)
                         bondsMap.emplace(bondTopologyProperty, bondPeriodicImageProperty);
-                    }
+
+                    // Number of on and off segments for dashed bonds.
+                    const int numOnSegments = filledSegments();
+                    const int numOffSegments = filledSegments() + 1;
+                    OVITO_ASSERT(numOnSegments > 0);
+                    OVITO_ASSERT(numOffSegments > 0);
 
                     size_t cylinderIndex = 0;
                     BufferReadAccess<ParticleIndexPair> bonds(bondTopologyProperty);
@@ -539,243 +497,194 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     BufferReadAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
                     BufferReadAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
                     BufferReadAccess<GraphicsFloatType> bondInputOrders(bondOrderProperty);
-                    for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
-                        // How many bonds do we need to draw for this bond
-                        // based on its order?
-                        const size_t bondRepCount = useBondOrder ? (size_t)clampBondOrder(std::ceil(bondInputOrders[bondIndex])) : 1;
-                        // Skip bonds with zero / negative order- safe
-                        // because these are not included in the cylinder
-                        // count
-                        if(bondInputOrders && bondRepCount <= 0) {
-                            continue;
+                    for(size_t bondIndex = 0; bondIndex < bondCount; bondIndex++) {
+                        // Determine how many full and dashed bond cylinders we need to draw for this bond based on its order.
+                        int bondRepCount;
+                        size_t cylinderCount;
+                        bool lastBondRepIsDashed = false;
+                        if(!useBondOrder) {
+                            bondRepCount = 1;
+                            cylinderCount = 2; // Two half-bonds per bond
                         }
-                        // Get the bond width
-                        const GraphicsFloatType bondWidth = getBondWidth(bondInputWidths, bondIndex, bondDiameter, bondRepCount);
-
-                        const ParticleIndexPair& particleIndices = bonds[bondIndex];
-                        if(particleIndices[0] < particleCount && particleIndices[1] < particleCount) {
-                            // Determine the normal vector and local center direction to align double / triple bonds.
-                            auto [normal, centerVec] =
-                                (useBondOrder && bondRepCount > 1)
-                                    ? getBondNormalVector(particleIndices, bondsMap, positions, bondInputOrders, simulationCell)
-                                    : std::make_pair(Vector3G::Zero(), Vector3G::Zero());
-                            // Fallback, normal cannot be zero
-                            if(!useBondOrder || bondRepCount <= 1 || !normal.normalizeSafely()) {
-                                normal = Vector3G{0, 0, 1};
+                        else {
+                            GraphicsFloatType intPart;
+                            const GraphicsFloatType remainder = std::modf(clampBondOrder(bondInputOrders[bondIndex]), &intPart);
+                            bondRepCount = (int)intPart;
+                            cylinderCount = 2 * bondRepCount;
+                            if(remainder > Ovito::epsilon_v<GraphicsFloatType>) {
+                                bondRepCount += 1;
+                                cylinderCount += dashedCylinderCount;
+                                lastBondRepIsDashed = filledFraction() < 1;
                             }
-                            // Bond vector
-                            Vector3 bondVec = positions[particleIndices[1]] - positions[particleIndices[0]];
+
+                            // Skip bonds with zero / negative order. That's safe because these are not included in the cylinder count
+                            if(bondRepCount <= 0)
+                                continue;
+                        }
+                        OVITO_ASSERT(cylinderCount % 2 == 0); // Always an even number of cylinders, because we render double bonds as two half-bonds and dashed bonds always have an even effective number of segments.
+
+                        size_t oldCylinderIndex = cylinderIndex; // Only used for debugging purposes
+
+                        bool isDegenerateBond = false;
+                        const ParticleIndexPair& particleIndices = bonds[bondIndex];
+                        // Handle invalid (out-of-range) particle indices in the bond topology.
+                        if(particleIndices[0] >= particleCount || particleIndices[1] >= particleCount) {
+                            isDegenerateBond = true;
+                        }
+                        else {
+                            // Get the effective cylinder width for this bond, which depends on the bond order and the option "Width" bond property.
+                            const GraphicsFloatType bondWidth = getEffectiveBondWidth(bondInputWidths, bondIndex, uniformBondWidth, bondRepCount);
+
+                            // Determine the normal vector and local center direction to align double/triple bonds.
+                            Vector3G normal = Vector3G::Zero(), centerVec = Vector3G::Zero();
+                            if(useBondOrder && bondRepCount > 1) {
+                                std::tie(normal, centerVec) = getBondNormalVector(particleIndices, *bondsMap, positions, bondInputOrders, cellData);
+                                // Fallback, normal cannot be zero
+                                if(!useBondOrder || bondRepCount <= 1 || !normal.normalizeSafely()) {
+                                    normal = Vector3G{0, 0, 1};
+                                }
+                            }
+
+                            // Compute unwrapped bond vector.
+                            Vector3G bondVecG = positions[particleIndices[1]].toDataType<GraphicsFloatType>() - positions[particleIndices[0]].toDataType<GraphicsFloatType>();
                             bool isSplitBond = false;
                             if(bondPeriodicImageProperty) {
                                 for(size_t k = 0; k < 3; k++) {
-                                    if(int d = bondPeriodicImages[bondIndex][k]) {
-                                        bondVec += cell.column(k) * (FloatType)d;
+                                    if(auto d = bondPeriodicImages[bondIndex][k]) {
+                                        bondVecG += cellData.cellMatrix().column(k) * d;
                                         isSplitBond = true;
                                     }
                                 }
                             }
-                            const Vector3G& bondVecG = bondVec.toDataType<GraphicsFloatType>();
-                            GraphicsFloatType t = 0.5;
-                            const GraphicsFloatType blen = bondVecG.length() * GraphicsFloatType(2);
-                            if(particleRadii && blen != 0) {
-                                // This calculation determines the point
-                                // where to split the bond into the two
-                                // half-bonds such that the border appears
-                                // halfway between the two particles, which
-                                // may have two different sizes.
-                                t = GraphicsFloatType(0.5) + std::min(GraphicsFloatType(0.5), particleRadii[particleIndices[0]] / blen) -
-                                    std::min(GraphicsFloatType(0.5), particleRadii[particleIndices[1]] / blen);
+
+                            // Skip degenerate bonds with length 0.
+                            const GraphicsFloatType blen = bondVecG.length();
+                            if(blen <= Ovito::epsilon_v<GraphicsFloatType>) {
+                                isDegenerateBond = true;
                             }
-
-                            const size_t colorIndex = 2 * bondIndex;
-                            OVITO_ASSERT(colorIndex + 1 < colors.size());
-                            // Cylinder count can be greater due to dashed bonds
-                            const size_t cylinderCount =
-                                (useBondOrder) ? bondOrderToCylinderCount(bondInputOrders[bondIndex], numFilledSegments) : 2 * bondRepCount;
-
-                            for(size_t bondRepIdx = 0; bondRepIdx < bondRepCount; bondRepIdx++) {
-                                const Vector3G& offSetVec =
-                                    getBondOffsetVector(bondRepCount, bondRepIdx, bondVecG, normal, centerVec, bondWidth);
-                                if(cylinderCount == 2 * bondRepCount || bondRepIdx != bondRepCount - 1) {
-                                    // Solid bond with two cylinders each representing a single half bond
-                                    for(uint_fast8_t cylinderIdx = 0; cylinderIdx < 2; cylinderIdx++) {
-                                        // Shift individual bonds base on the current bond order
-                                        OVITO_ASSERT(cylinderIndex < bondColors.size());
-                                        bondColors[cylinderIndex] = colors[colorIndex + cylinderIdx];
-                                        if(nodalColors && bondRepCount == 1 && !visitedParticles.test(particleIndices[cylinderIdx])) {
-                                            nodalColors[particleIndices[cylinderIdx]] = bondColors[cylinderIndex];
-                                            if(nodalTransparencies)
-                                                nodalTransparencies[particleIndices[cylinderIdx]] = bondInputTransparency[bondIndex];
-                                            visitedParticles.set(particleIndices[cylinderIdx]);
-                                            nodalIndices.push_back(particleIndices[cylinderIdx]);
-                                        }
-                                        if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
-                                        if(bondWidths) {
-                                            bondWidths[cylinderIndex] = bondWidth;
-                                        }
-                                        bondPositions1[cylinderIndex] =
-                                            positions[particleIndices[cylinderIdx]].toDataType<GraphicsFloatType>() + offSetVec;
-                                        bondPositions2[cylinderIndex] =
-                                            (cylinderIdx == 0) ? bondPositions1[cylinderIndex] + bondVecG * t
-                                                               : bondPositions1[cylinderIndex] - bondVecG * (GraphicsFloatType(1) - t);
-                                        if(isSplitBond) swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
-                                        if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                                        cylinderIndex++;
-                                    }
+                            else {
+                                // This calculation determines the point where to split the bond into the two half-bonds such that the border appears
+                                // halfway between the two particles, which may have two different sizes.
+                                GraphicsFloatType t = GraphicsFloatType(0.5);
+                                if(particleRadii && blen > Ovito::epsilon_v<GraphicsFloatType>) {
+                                    const GraphicsFloatType blen2 = blen * GraphicsFloatType(2);
+                                    t = GraphicsFloatType(0.5) + std::min(GraphicsFloatType(0.5), particleRadii[particleIndices[0]] / blen2) -
+                                        std::min(GraphicsFloatType(0.5), particleRadii[particleIndices[1]] / blen2);
                                 }
-                                else {
-                                    // Dashed bond
-                                    OVITO_ASSERT(dashedCylinderCount > 0);
-                                    std::optional<Vector3> bondVecNorm = bondVec.safelyNormalized<true>();
-                                    // Bond has no length
-                                    if(!bondVecNorm) {
-                                        // Bonds of length 0 are skipped
-                                        for(size_t cylinderIdx = 0; cylinderIdx < dashedCylinderCount; cylinderIdx++) {
-                                            bondColors[cylinderIndex] = colors[colorIndex];
-                                            bondPositions1[cylinderIndex] = Point3G::Origin();
-                                            bondPositions2[cylinderIndex] = Point3G::Origin();
+
+                                for(size_t bondRepIdx = 0; bondRepIdx < bondRepCount; bondRepIdx++) {
+
+                                    // Displace individual cylinders based on the current bond order.
+                                    const Vector3G offSetVec = getBondOffsetVector(bondRepCount, bondRepIdx, bondVecG, normal, centerVec, bondWidth);
+
+                                    if(!lastBondRepIsDashed || bondRepIdx < bondRepCount - 1) {
+                                        // Generate a solid bond made of two cylinders, each representing a half-bond.
+                                        for(int cylinderIdx = 0; cylinderIdx < 2; cylinderIdx++) {
+                                            OVITO_ASSERT(cylinderIndex < totalCylinderCount);
+                                            cylinderColors[cylinderIndex] = hbondColors[2 * bondIndex + cylinderIdx];
+                                            if(nodalColors && bondRepCount == 1 && !visitedParticles.test(particleIndices[cylinderIdx])) {
+                                                nodalColors[particleIndices[cylinderIdx]] = cylinderColors[cylinderIndex];
+                                                if(nodalTransparencies)
+                                                    nodalTransparencies[particleIndices[cylinderIdx]] = bondInputTransparency[bondIndex];
+                                                visitedParticles.set(particleIndices[cylinderIdx]);
+                                                nodalIndices.push_back(particleIndices[cylinderIdx]);
+                                            }
+                                            if(cylinderTransparencies) cylinderTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+                                            if(cylinderWidths) cylinderWidths[cylinderIndex] = bondWidth;
+                                            const Point3G startPos = positions[particleIndices[cylinderIdx]].toDataType<GraphicsFloatType>() + offSetVec;
+                                            cylinderPositions1[cylinderIndex] = startPos;
+                                            cylinderPositions2[cylinderIndex] = (cylinderIdx == 0) ? (startPos + bondVecG * t) : (startPos - bondVecG * (GraphicsFloatType(1) - t));
+                                            if(isSplitBond) swap(cylinderPositions1[cylinderIndex], cylinderPositions2[cylinderIndex]);
                                             if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
                                             cylinderIndex++;
                                         }
                                     }
-                                    else {
-                                        const Vector3G bondVecG = bondVec.toDataType<GraphicsFloatType>();
-                                        GraphicsFloatType bondLength = bondVecG.length();
-                                        const Vector3G bondDirG = bondVecG / bondLength;
+                                    else if(dashedCylinderCount > 0) {
+                                        // Generate a dashed bond.
+                                        const Vector3G bondDirG = bondVecG / blen;
 
-                                        // Bond starting position based on particle radius
-                                        Point3G currentPos = positions[particleIndices[0]].toDataType<GraphicsFloatType>() + offSetVec;
-                                        currentPos += (particleRadii ? particleRadii[particleIndices[0]] * bondDirG : Vector3G{0, 0, 0});
-                                        const Point3G startPos = currentPos;
-
-                                        // Bond ending position based on particle radius
-                                        Point3G endPos = currentPos + bondVecG;
-                                        endPos -= (particleRadii ? particleRadii[particleIndices[1]] * bondDirG : Vector3G{0, 0, 0});
-
-                                        // Reduce bond length by particle radii
-                                        bondLength -=
-                                            (particleRadii ? (particleRadii[particleIndices[0]] + particleRadii[particleIndices[1]]) : 0);
-
-                                        // Number of on and off segments
-                                        const int numOnSegments = filledSegments();
-                                        const int numOffSegments = filledSegments() + 1;
+                                        // Reduce bond length by particle radii to get effective bond length.
+                                        GraphicsFloatType effectiveBondLength = blen;
+                                        if(particleRadii) {
+                                            effectiveBondLength -= particleRadii[particleIndices[0]];
+                                            effectiveBondLength -= particleRadii[particleIndices[1]];
+                                        }
 
                                         // Length of each on and off segment
-                                        const GraphicsFloatType onSegmentLength =
-                                            numOnSegments > 0
-                                                ? (GraphicsFloatType)filledFraction() * bondLength / (GraphicsFloatType)numOnSegments
-                                                : 0;
-                                        const GraphicsFloatType offSegmentLength =
-                                            numOffSegments > 0 ? ((GraphicsFloatType)1 - (GraphicsFloatType)filledFraction()) * bondLength /
-                                                                     (GraphicsFloatType)numOffSegments
-                                                               : 0;
+                                        GraphicsFloatType onSegmentLength = (GraphicsFloatType)filledFraction() * effectiveBondLength / numOnSegments;
+                                        GraphicsFloatType offSegmentLength = ((GraphicsFloatType)1 - (GraphicsFloatType)filledFraction()) * effectiveBondLength / numOffSegments;
 
-                                        ColorG& currentColor = colors[colorIndex];
-                                        // Length already filled by current dashed segments
-                                        GraphicsFloatType accumulatedLength = 0;
-                                        const GraphicsFloatType halfBondLength = (GraphicsFloatType)0.5 * bondLength;
+                                        // Bond start point is based on particle radius.
+                                        Point3G currentPos1 = positions[particleIndices[0]].toDataType<GraphicsFloatType>() + offSetVec;
+                                        currentPos1 += (particleRadii ? particleRadii[particleIndices[0]] : 0) * bondDirG;
 
-                                        // Loop over all bond to draw dashed segments
-                                        for(size_t cylinderIdx = 0; cylinderIdx < (numOnSegments + numOffSegments); cylinderIdx++) {
-                                            const bool on = cylinderIdx % 2 == 1;
-                                            // End position of current segment
-                                            endPos = currentPos + bondDirG * (on ? onSegmentLength : offSegmentLength);
+                                        // Bond end point is based on particle radius.
+                                        Point3G currentPos2 = positions[particleIndices[1]].toDataType<GraphicsFloatType>() + offSetVec;
+                                        currentPos2 -= (particleRadii ? particleRadii[particleIndices[1]] : 0) * bondDirG;
 
-                                            bool currWrapped = false;
-                                            bool endWrapped = false;
-                                            Point3G currPosWrapped;
-                                            Point3G endPosWrapped;
-                                            if(isSplitBond) {
-                                                currPosWrapped = cellData.wrapPoint(currentPos);
-                                                endPosWrapped = cellData.wrapPoint(endPos);
-                                                currWrapped = isSplitBond && !currentPos.equals(currPosWrapped);
-                                                endWrapped = isSplitBond && !endPos.equals(endPosWrapped);
+                                        // Generate cylinders for segments, always in symmetric pairs.
+                                        int numSegmentsPerSide = dashedCylinderCount / 2; // Number of segments to generate per half-bond
+                                        for(int segment = 0; segment < numSegmentsPerSide; segment++) {
+                                            if(segment == numSegmentsPerSide - 1 && filledSegments() % 2 == 1) {
+                                                // If the number of filled segments is odd, the last segment is split in half, so we need to adjust the segment length for the last segment.
+                                                onSegmentLength *= (GraphicsFloatType)0.5;
                                             }
 
-                                            if(on) {
-                                                // Color transition across half bond
-                                                if(accumulatedLength < halfBondLength &&
-                                                   accumulatedLength + onSegmentLength >= halfBondLength) {
-                                                    const Point3G centerPoint = startPos + bondDirG * halfBondLength;
-                                                    // First half of split segment (first color)
-                                                    bondPositions1[cylinderIndex] =
-                                                        (currWrapped && endWrapped) ? currPosWrapped : currentPos;
-                                                    bondPositions2[cylinderIndex] =
-                                                        (currWrapped && endWrapped) ? endPosWrapped : centerPoint;
-                                                    bondColors[cylinderIndex] = currentColor;
-                                                    if(bondWidths) {
-                                                        bondWidths[cylinderIndex] = bondWidth;
-                                                    }
-                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                                                    cylinderIndex++;
-                                                    // Second half of split segment (second color)
-                                                    currentColor = colors[colorIndex + 1];
-                                                    bondPositions1[cylinderIndex] =
-                                                        (currWrapped && endWrapped) ? currPosWrapped : centerPoint;
-                                                    bondPositions2[cylinderIndex] = (currWrapped && endWrapped) ? endPosWrapped : endPos;
-                                                    bondColors[cylinderIndex] = currentColor;
-                                                    if(bondWidths) {
-                                                        bondWidths[cylinderIndex] = bondWidth;
-                                                    }
-                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                                                    cylinderIndex++;
-                                                }
-                                                else {
-                                                    // Segment without color change -> full color across full length
-                                                    bondPositions1[cylinderIndex] =
-                                                        (currWrapped && endWrapped) ? currPosWrapped : currentPos;
-                                                    bondPositions2[cylinderIndex] = (currWrapped && endWrapped) ? endPosWrapped : endPos;
-                                                    bondColors[cylinderIndex] = currentColor;
-                                                    if(bondWidths) {
-                                                        bondWidths[cylinderIndex] = bondWidth;
-                                                    }
-                                                    if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                                                    cylinderIndex++;
-                                                }
-                                            }
-                                            else {
-                                                // Bond off - still allow for color transition
-                                                if(accumulatedLength < halfBondLength &&
-                                                   accumulatedLength + offSegmentLength >= halfBondLength) {
-                                                    currentColor = colors[colorIndex + 1];
-                                                }
-                                            }
-                                            // Increase accumulated length by current cylinder length and update current position
-                                            accumulatedLength += on ? onSegmentLength : offSegmentLength;
-                                            currentPos = endPos;
+                                            currentPos1 += bondDirG * offSegmentLength;
+                                            currentPos2 -= bondDirG * offSegmentLength;
+                                            Point3G nextPos1 = currentPos1 + bondDirG * onSegmentLength;
+                                            Point3G nextPos2 = currentPos2 - bondDirG * onSegmentLength;
+
+                                            OVITO_ASSERT(cylinderIndex < totalCylinderCount);
+                                            cylinderPositions1[cylinderIndex] = currentPos1;
+                                            cylinderPositions2[cylinderIndex] = nextPos1;
+                                            cylinderColors[cylinderIndex] = hbondColors[2 * bondIndex + 0];
+                                            if(cylinderWidths) cylinderWidths[cylinderIndex] = bondWidth;
+                                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
+                                            cylinderIndex++;
+
+                                            OVITO_ASSERT(cylinderIndex < totalCylinderCount);
+                                            cylinderPositions1[cylinderIndex] = currentPos2;
+                                            cylinderPositions2[cylinderIndex] = nextPos2;
+                                            cylinderColors[cylinderIndex] = hbondColors[2 * bondIndex + 1];
+                                            if(cylinderWidths) cylinderWidths[cylinderIndex] = bondWidth;
+                                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
+                                            cylinderIndex++;
+
+                                            currentPos1 = nextPos1;
+                                            currentPos2 = nextPos2;
                                         }
                                     }
                                 }
                             }
                         }
-                        else {
-                            OVITO_ASSERT(2 * bondIndex + 1 < colors.size());
-                            bondColors[cylinderIndex] = colors[2 * bondIndex];
-                            if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
-                            if(bondWidths) bondWidths[cylinderIndex] = 0;
-                            bondPositions1[cylinderIndex] = Point3G::Origin();
-                            bondPositions2[cylinderIndex] = Point3G::Origin();
-                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                            cylinderIndex++;
 
-                            bondColors[cylinderIndex] = colors[2 * bondIndex + 1];
-                            if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
-                            if(bondWidths) bondWidths[cylinderIndex] = 0;
-                            bondPositions1[cylinderIndex] = Point3G::Origin();
-                            bondPositions2[cylinderIndex] = Point3G::Origin();
-                            if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
-                            cylinderIndex++;
+                        if(isDegenerateBond) {
+                            // Generate dummy cylinders (invisible in the viewport) if the bond is degenerate - only to maintain the original cylinder count.
+                            for(size_t i = 0; i < cylinderCount; i++) {
+                                OVITO_ASSERT(cylinderIndex < totalCylinderCount);
+                                cylinderColors[cylinderIndex].setBlack();
+                                if(cylinderTransparencies) cylinderTransparencies[cylinderIndex] = 0;
+                                if(cylinderWidths) cylinderWidths[cylinderIndex] = 0;
+                                cylinderPositions1[cylinderIndex] = Point3G::Origin();
+                                cylinderPositions2[cylinderIndex] = Point3G::Origin();
+                                if(subobjectToBondMapping) subobjectToBondMapping[cylinderIndex] = (int32_t)bondIndex;
+                                cylinderIndex++;
+                            }
                         }
+
+                        OVITO_ASSERT(cylinderIndex - oldCylinderIndex == cylinderCount);
                     }
+                    OVITO_ASSERT(cylinderIndex == totalCylinderCount);
 
                     cylinders.setShape(CylinderPrimitive::CylinderShape);
                     cylinders.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
                     cylinders.setRenderSingleCylinderCap(transparencyProperty != nullptr);
-                    cylinders.setUniformWidth(bondDiameter);
-                    cylinders.setWidths(bondWidths.take());
-                    cylinders.setPositions(bondPositions1.take(), bondPositions2.take());
-                    cylinders.setColors(bondColors.take());
-                    cylinders.setTransparencies(bondTransparencies.take());
+                    cylinders.setUniformWidth(uniformBondWidth);
+                    cylinders.setWidths(cylinderWidths.take());
+                    cylinders.setPositions(cylinderPositions1.take(), cylinderPositions2.take());
+                    cylinders.setColors(cylinderColors.take());
+                    cylinders.setTransparencies(cylinderTransparencies.take());
 
                     if(renderNodalVertices) {
                         OVITO_ASSERT(positionProperty);
@@ -784,7 +693,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                                                                  : ParticlePrimitive::FlatShading);
                         vertices.setRenderingQuality(ParticlePrimitive::HighQuality);
                         vertices.setPositions(positionProperty);
-                        vertices.setUniformRadius(0.5 * bondDiameter);
+                        vertices.setUniformRadius(0.5 * uniformBondWidth);
                         vertices.setColors(nodalColors.take());
                         vertices.setIndices(nodalIndices.take());
                         vertices.setTransparencies(nodalTransparencies.take());
@@ -922,6 +831,23 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles,
 }
 
 /******************************************************************************
+* Given an sub-object ID returned by the Viewport::pick() method, looks up the
+* corresponding bond index.
+******************************************************************************/
+size_t BondPickInfo::bondIndexFromSubObjectID(uint32_t subobjectId) const
+{
+    OVITO_ASSERT(_subobjectToBondMapping ? subobjectId < _subobjectToBondMapping->size() : true);
+    if(_subobjectToBondMapping && subobjectId < _subobjectToBondMapping->size()) {
+        // Look up the bond index in the subobject to bond mapping.
+        return BufferReadAccess<int32_t>(_subobjectToBondMapping)[subobjectId];
+    }
+    else {
+        // Default case, only single bonds.
+        return subobjectId / 2;
+    }
+}
+
+/******************************************************************************
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
@@ -929,17 +855,8 @@ QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
 
-    size_t bondIndex;
-    OVITO_ASSERT(_subobjectToBondMapping ? subobjectId < _subobjectToBondMapping->size() : true);
-    if(_subobjectToBondMapping && subobjectId < _subobjectToBondMapping->size()) {
-        // Look up the bond index in the subobject to bond mapping.
-        bondIndex = BufferReadAccess<int32_t>(_subobjectToBondMapping)[subobjectId];
-    }
-    else {
-        // Default case, no no duoble / triple / dashed bonds
-        bondIndex = subobjectId / 2;
-    }
     if(particles()->bonds()) {
+        size_t bondIndex = bondIndexFromSubObjectID(subobjectId);
         BufferReadAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
         if(topologyProperty && topologyProperty.size() > bondIndex) {
             size_t index1 = topologyProperty[bondIndex][0];

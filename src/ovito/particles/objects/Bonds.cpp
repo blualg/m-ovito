@@ -409,7 +409,7 @@ std::pair<size_t, ConstDataObjectPath> Bonds::OOMetaClass::elementFromPickResult
 {
     // Check if a bond was picked.
     if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(pickResult.pickInfo().get())) {
-        size_t bondIndex = pickResult.subobjectId() / 2;
+        size_t bondIndex = pickInfo->bondIndexFromSubObjectID(pickResult.subobjectId());
         if(pickInfo->particles()->bonds() && bondIndex < pickInfo->particles()->bonds()->elementCount()) {
             return std::make_pair(bondIndex, ConstDataObjectPath{{pickInfo->particles(), pickInfo->particles()->bonds()}});
         }

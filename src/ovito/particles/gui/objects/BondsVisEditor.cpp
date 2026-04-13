@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -108,26 +109,28 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     // Update the coloring controls when a parameter of the vis element has been changed.
     connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);
 
-    // Fractional bonds box
-    _fractionalBondsBox = new QGroupBox(tr("Fractional bonds"));
-    layout = new QGridLayout(_fractionalBondsBox);
+    // Bond order box
+    _bondOrderBox = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(BondsVis::visualizeBondOrder));
+    layout = new QGridLayout(_bondOrderBox->childContainer());
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setHorizontalSpacing(4);
     layout->setVerticalSpacing(5);
-    layout->setColumnStretch(1, 1);
-    layout->setRowMinimumHeight(3, 1);  // Extra space below the last option to better align the uniform color picker.
-    mainLayout->addWidget(_fractionalBondsBox);
+    layout->setColumnMinimumWidth(0, 20);
+    layout->setColumnStretch(2, 1);
+    mainLayout->addWidget(_bondOrderBox->groupBox());
+
+    layout->addWidget(new QLabel(tr("Fractional bonds:")), 0, 0, 1, 3);
 
     auto* filledSegmentsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(BondsVis::filledSegments));
-    layout->addWidget(filledSegmentsPUI->label(), 3, 0);
-    layout->addLayout(filledSegmentsPUI->createFieldLayout(), 3, 1);
+    layout->addWidget(filledSegmentsPUI->label(), 1, 1);
+    layout->addLayout(filledSegmentsPUI->createFieldLayout(), 1, 2);
 
     auto* filledFractionPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(BondsVis::filledFraction));
-    layout->addWidget(filledFractionPUI->label(), 4, 0);
-    layout->addLayout(filledFractionPUI->createFieldLayout(), 4, 1);
+    layout->addWidget(filledFractionPUI->label(), 2, 1);
+    layout->addLayout(filledFractionPUI->createFieldLayout(), 2, 2);
 
-    // Update the fractional bonds box when a parameter of the data object has been changed.
-    connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateFractionalBondOptions);
+    // Update the bond order box when the input of the vis element changes.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateBondOrderOptions);
 }
 
 /******************************************************************************
@@ -151,17 +154,24 @@ void BondsVisEditor::updateColoringOptions()
 }
 
 /******************************************************************************
- * Updates the fractional bond display UI.
+ * Updates the bond order display UI.
  ******************************************************************************/
-void BondsVisEditor::updateFractionalBondOptions()
+void BondsVisEditor::updateBondOrderOptions()
 {
-    // Retrieve the Bonds this vis element is associated with.
-    DataOORef<const Bonds> bonds = dynamic_object_cast<const Bonds>(getVisDataObject());
+    bool hasBondOrder = false;
 
     // Do the bonds have a bond order property?
-    bool hasBondOrder = (bonds && bonds->getProperty(Bonds::OrderProperty));
+    // Check all Bonds objects this vis element is associated with.
+    for(const auto& obj : getVisDataObjects()) {
+        if(const Bonds* bonds = dynamic_object_cast<Bonds>(obj.get())) {
+            if(bonds->getProperty(Bonds::OrderProperty)) {
+                hasBondOrder = true;
+                break;
+            }
+        }
+    }
 
-    _fractionalBondsBox->setEnabled(editObject() && hasBondOrder);
+    _bondOrderBox->setEnabled(hasBondOrder);
 }
 
 }   // End of namespace

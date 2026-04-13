@@ -89,8 +89,8 @@ public:
     /// Determines the number of cylinders to be rendered for the given bond topology.
     [[nodiscard]] static size_t getCylinderCount(const Property* bondTopologyProperty,
                                                  const Property* bondOrderProperty,
-                                                 int filledSegments,
-                                                 GraphicsFloatType filledFraction);
+                                                 const int filledSegments,
+                                                 const FloatType filledFraction);
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const Bonds* bonds) const;
@@ -109,14 +109,14 @@ protected:
     /// Determines how the bonds are colored.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode{ParticleBasedColoring}, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
 
-    /// Number of filled segments for dashed bonds rendering
+    /// Controls whether the bond order property is used to determine the number of cylinders to be rendered per bond.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, visualizeBondOrder, setVisualizeBondOrder);
+
+    /// Number of filled segments for dashed bonds rendering.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{4}, filledSegments, setFilledSegments, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 
-    /// Number of filled segments for dashed bonds rendering
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.5},
-                                            filledFraction,
-                                            setFilledFraction,
-                                            PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
+    /// Relative length of filled segments for dashed bonds rendering.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.5}, filledFraction, setFilledFraction, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 };
 
 /**
@@ -148,6 +148,10 @@ public:
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
     virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
+
+    /// Given an sub-object ID returned by the Viewport::pick() method, looks up the
+    /// corresponding bond index.
+    size_t bondIndexFromSubObjectID(uint32_t subobjID) const;
 
 private:
 
