@@ -42,6 +42,12 @@ public:
     /// Returns the preferred size for this widget.
     QSize sizeHint() const override;
 
+    /// Returns the action associated with this label.
+    QAction* action() const { return _action; }
+
+    /// Programmatically sets the hovered state (used by keyboard search).
+    void setHovered(bool hovered);
+
 Q_SIGNALS:
 
     /// Emitted when the label is clicked.
@@ -61,6 +67,9 @@ protected:
     /// Called when the mouse leaves the widget area.
     void leaveEvent(QEvent* event) override;
 
+    /// Called when the mouse is moved within the widget area.
+    void mouseMoveEvent(QMouseEvent* event) override;
+
     /// Called when the mouse button is pressed.
     void mousePressEvent(QMouseEvent* event) override;
 
@@ -69,7 +78,7 @@ private:
     /// The action associated with this label.
     QPointer<QAction> _action;
 
-    /// Whether the mouse is currently hovering over this label.
+    /// Whether the mouse (or keyboard search) is currently highlighting this label.
     bool _hovered = false;
 };
 
@@ -97,6 +106,9 @@ protected:
     /// Handles hover events for the "Get more XXX..." button.
     bool eventFilter(QObject* watched, QEvent* event) override;
 
+    /// Handles keyboard input for quick item search.
+    void keyPressEvent(QKeyEvent* event) override;
+
 Q_SIGNALS:
 
     /// Emitted when the "Get more XXX..." button is clicked.
@@ -112,6 +124,12 @@ private:
     /// Rebuilds the card layout from the model data.
     void populateCards();
 
+    /// Moves keyboard highlight to the given label (or clears it if nullptr).
+    void setKeyboardHighlight(ClickableActionLabel* label);
+
+    /// Searches _allLabels for the first item matching _searchString and highlights it.
+    void performKeyboardSearch();
+
     /// The model providing the available actions.
     QAbstractItemModel* _model;
 
@@ -123,6 +141,18 @@ private:
 
     /// The "Get more XXX..." button.
     QPushButton* _getMoreButton = nullptr;
+
+    /// Flat list of all action labels in display order, rebuilt by populateCards().
+    std::vector<ClickableActionLabel*> _allLabels;
+
+    /// Accumulated keyboard search string.
+    QString _searchString;
+
+    /// Timer that clears _searchString after a period of inactivity.
+    QTimer* _searchResetTimer = nullptr;
+
+    /// The label currently highlighted.
+    QPointer<ClickableActionLabel> _highlightedLabel;
 };
 
 }   // End of namespace

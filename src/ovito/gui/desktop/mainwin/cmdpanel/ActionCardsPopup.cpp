@@ -55,6 +55,18 @@ QSize ClickableActionLabel::sizeHint() const
 }
 
 /******************************************************************************
+* Programmatically sets the hovered state (used by keyboard search).
+******************************************************************************/
+void ClickableActionLabel::setHovered(bool isHovered)
+{
+    if(_hovered != isHovered) {
+        _hovered = isHovered;
+        update();
+        Q_EMIT hovered(isHovered ? _action : nullptr);
+    }
+}
+
+/******************************************************************************
 * Paints the label with optional hover highlighting.
 ******************************************************************************/
 void ClickableActionLabel::paintEvent(QPaintEvent*)
@@ -89,9 +101,8 @@ void ClickableActionLabel::paintEvent(QPaintEvent*)
 ******************************************************************************/
 void ClickableActionLabel::enterEvent(QEnterEvent*)
 {
-    _hovered = true;
-    update();
-    Q_EMIT hovered(_action);
+    if(_action && _action->isEnabled())
+        setHovered(true);
 }
 
 /******************************************************************************
@@ -99,9 +110,19 @@ void ClickableActionLabel::enterEvent(QEnterEvent*)
 ******************************************************************************/
 void ClickableActionLabel::leaveEvent(QEvent*)
 {
-    _hovered = false;
-    update();
-    Q_EMIT hovered(nullptr);
+    if(_action && _action->isEnabled())
+        setHovered(false);
+}
+
+/******************************************************************************
+* Called when the mouse is moved within the widget area.
+******************************************************************************/
+void ClickableActionLabel::mouseMoveEvent(QMouseEvent* event)
+{
+    if(_action && _action->isEnabled())
+        setHovered(true);
+
+    QWidget::mouseMoveEvent(event);
 }
 
 /******************************************************************************
@@ -122,6 +143,15 @@ ActionCardsPopup::ActionCardsPopup(QAbstractItemModel* model, const QString& get
     : QFrame(parent, Qt::Popup), _model(model)
 {
     setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+    setFocusPolicy(Qt::StrongFocus);
+
+    // Timer that resets the keyboard search string after some time of inactivity.
+    _searchResetTimer = new QTimer(this);
+    _searchResetTimer->setSingleShot(true);
+    _searchResetTimer->setInterval(QApplication::keyboardInputInterval());
+    connect(_searchResetTimer, &QTimer::timeout, this, [this]() {
+        _searchString.clear();
+    });
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(8);
@@ -196,6 +226,7 @@ void ActionCardsPopup::showBelow(QWidget* anchor)
 
     move(pos);
     show();
+    setFocus();
 }
 
 /******************************************************************************
@@ -212,6 +243,13 @@ void ActionCardsPopup::updateContent()
 ******************************************************************************/
 void ActionCardsPopup::populateCards()
 {
+    // Reset keyboard search state whenever cards are rebuilt.
+    _allLabels.clear();
+    _highlightedLabel.clear();
+    _searchString.clear();
+    if(_searchResetTimer)
+        _searchResetTimer->stop();
+
     // Clear existing layout
     if(_cardsContainer->layout()) {
         QLayoutItem* item;
@@ -330,6 +368,7 @@ void ActionCardsPopup::populateCards()
             });
             connect(itemLabel, &ClickableActionLabel::hovered, this, &ActionCardsPopup::onActionHovered);
             cardLayout->addWidget(itemLabel);
+            _allLabels.push_back(itemLabel);
         }
 
         columnLayouts[minCol]->addWidget(card);
@@ -347,10 +386,20 @@ void ActionCardsPopup::populateCards()
 ******************************************************************************/
 void ActionCardsPopup::onActionHovered(QAction* action)
 {
+    // When the mouse enters a new item, dismiss any previous highlight.
+    if(_highlightedLabel && _highlightedLabel->action() != action) {
+        _highlightedLabel->setHovered(false);
+    }
+
     if(action)
         _statusLabel->setText(action->statusTip());
     else
         _statusLabel->clear();
+
+    if(action)
+        _highlightedLabel = qobject_cast<ClickableActionLabel*>(QObject::sender());
+    else
+        _highlightedLabel = nullptr;
 }
 
 /******************************************************************************
@@ -367,6 +416,86 @@ bool ActionCardsPopup::eventFilter(QObject* watched, QEvent* event)
         }
     }
     return QFrame::eventFilter(watched, event);
+}
+
+/******************************************************************************
+* Moves the keyboard highlight to the given label, or clears it if nullptr.
+******************************************************************************/
+void ActionCardsPopup::setKeyboardHighlight(ClickableActionLabel* label)
+{
+    if(_highlightedLabel == label)
+        return;
+    if(label) {
+        label->setHovered(true);
+        OVITO_ASSERT(_highlightedLabel == label);
+    }
+    else if(_highlightedLabel) {
+        _highlightedLabel->setHovered(false);
+        OVITO_ASSERT(_highlightedLabel == nullptr);
+    }
+}
+
+/******************************************************************************
+* Searches all labels for the first enabled item whose text starts with
+* _searchString (case-insensitive) and highlights it.
+******************************************************************************/
+void ActionCardsPopup::performKeyboardSearch()
+{
+    if(_searchString.isEmpty()) {
+        setKeyboardHighlight(nullptr);
+        return;
+    }
+    for(ClickableActionLabel* label : _allLabels) {
+        if(!label) continue;
+        QAction* action = label->action();
+        if(!action || !action->isEnabled()) continue;
+        if(action->text().startsWith(_searchString, Qt::CaseInsensitive)) {
+            setKeyboardHighlight(label);
+            return;
+        }
+    }
+    // No match: clear the highlight to give visual feedback.
+    setKeyboardHighlight(nullptr);
+}
+
+/******************************************************************************
+* Handles keyboard input for quick item search and activation.
+******************************************************************************/
+void ActionCardsPopup::keyPressEvent(QKeyEvent* event)
+{
+    if(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        if(_highlightedLabel) {
+            QAction* action = _highlightedLabel->action();
+            if(action && action->isEnabled()) {
+                hide();
+                action->trigger();
+                return;
+            }
+        }
+        event->accept();
+        return;
+    }
+
+    if(event->key() == Qt::Key_Backspace) {
+        if(!_searchString.isEmpty()) {
+            _searchString.chop(1);
+            _searchResetTimer->start();
+            performKeyboardSearch();
+        }
+        event->accept();
+        return;
+    }
+
+    const QString text = event->text();
+    if(!text.isEmpty() && text.at(0).isPrint()) {
+        _searchString += text;
+        _searchResetTimer->start();
+        performKeyboardSearch();
+        event->accept();
+        return;
+    }
+
+    QFrame::keyPressEvent(event);
 }
 
 }   // End of namespace
