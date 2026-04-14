@@ -410,7 +410,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                      bondWidthProperty,
                      simulationCell,
                      bondWidth(),
-                     particleVis->radiusScaleFactor(),
+                     particleVis ? particleVis->radiusScaleFactor() : 0,
                      filledSegments(),
                      filledFraction(),
                      bondColor(),
