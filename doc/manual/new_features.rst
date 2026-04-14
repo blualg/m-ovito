@@ -15,6 +15,7 @@ Version 3.15.3 (15-Apr-2026)
 - The new :menuselection:`File --> Recent Files` menu provides quick access to recently opened files and scenes.
 - The pipelines list widget in the upper right corner of the OVITO window now provides a button to toggle the visibility of individual pipelines in all viewports.
 - The redesigned modifier selector widget now supports keyboard input for quick item search: typing one or more characters highlights the first matching entry, and pressing :kbd:`Enter` adds it. This restores a UI behavior that was present before the redesigned selector widget was introduced in OVITO 3.15.0.
+- The :ref:`application settings <application_settings.general>` now provide an option to switch from the operating system's file selection dialog to the Qt widget-based file selection dialog, which can be useful on certain platforms (e.g. Linux with older GNOME desktops) where the native file dialog may ignore the working directory set by OVITO and always start in the same default folder.
 - Fixed a bug in rendering of bonds with :ref:`fractional bond orders <visual_elements.bonds.fractional>`.
 - Fixed picking of bonds with bonds orders greater than 1 in the :ref:`particles.modifiers.manual_selection` modifier.
 - Updated dependencies: Python 3.13.13, Qt 6.10.3, pyside6 6.10.3, OpenSSL 3.0.20, libsodium 1.0.22, zlib 1.3.2, boost 1.90.0
