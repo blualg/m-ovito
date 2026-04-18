@@ -1,6 +1,7 @@
 *~
 .*
 build/
+/build-modern*/
 releases/
 doc/develop/apidoc/
 doc/python/example_snippets/output/

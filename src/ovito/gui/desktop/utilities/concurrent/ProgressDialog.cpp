@@ -26,6 +26,61 @@
 
 namespace Ovito {
 
+namespace {
+
+struct AggregatedTaskProgress {
+    QString text;
+    int progressValue = 0;
+    int progressMaximum = 0;
+    int taskCount = 0;
+    bool indeterminate = false;
+};
+
+std::vector<AggregatedTaskProgress> collectAggregatedRunningTasks(MainWindowUI& ui)
+{
+    std::vector<AggregatedTaskProgress> aggregatedTasks;
+    QHash<QString, int> taskIndexByText;
+
+    ui.visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
+        if(text.isEmpty())
+            return;
+
+        const auto existingIndex = taskIndexByText.constFind(text);
+        if(existingIndex == taskIndexByText.constEnd()) {
+            AggregatedTaskProgress aggregatedTask;
+            aggregatedTask.text = text;
+            aggregatedTask.progressValue = std::max(progressValue, 0);
+            aggregatedTask.progressMaximum = std::max(progressMaximum, 0);
+            aggregatedTask.taskCount = 1;
+            aggregatedTask.indeterminate = (progressMaximum <= 0);
+            taskIndexByText.insert(text, static_cast<int>(aggregatedTasks.size()));
+            aggregatedTasks.push_back(std::move(aggregatedTask));
+            return;
+        }
+
+        AggregatedTaskProgress& aggregatedTask = aggregatedTasks[existingIndex.value()];
+        aggregatedTask.taskCount++;
+        aggregatedTask.progressValue += std::max(progressValue, 0);
+        if(progressMaximum > 0 && !aggregatedTask.indeterminate)
+            aggregatedTask.progressMaximum += progressMaximum;
+        else {
+            aggregatedTask.indeterminate = true;
+            aggregatedTask.progressMaximum = 0;
+        }
+    });
+
+    return aggregatedTasks;
+}
+
+QString aggregatedTaskLabel(const AggregatedTaskProgress& aggregatedTask)
+{
+    if(aggregatedTask.taskCount <= 1)
+        return aggregatedTask.text;
+    return ProgressDialog::tr("%1 (%2 tasks)").arg(aggregatedTask.text).arg(aggregatedTask.taskCount);
+}
+
+} // namespace
+
 /******************************************************************************
 * Creates a progress dialog for the currently running task.
 ******************************************************************************/
@@ -156,9 +211,9 @@ void ProgressDialog::updateTaskList()
     size_t index = 0;
     QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(this->layout());
 
-    ui().visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
-        if(text.isEmpty())
-            return;
+    const std::vector<AggregatedTaskProgress> aggregatedTasks = collectAggregatedRunningTasks(ui());
+
+    for(const AggregatedTaskProgress& aggregatedTask : aggregatedTasks) {
         QLabel* statusLabel;
         QProgressBar* progressBar;
         if(index == _taskWidgets.size()) {
@@ -172,11 +227,11 @@ void ProgressDialog::updateTaskList()
         else {
             std::tie(statusLabel, progressBar) = _taskWidgets[index];
         }
-        statusLabel->setText(text);
-        progressBar->setMaximum(progressMaximum);
-        progressBar->setValue(progressValue);
+        statusLabel->setText(aggregatedTaskLabel(aggregatedTask));
+        progressBar->setMaximum(aggregatedTask.indeterminate ? 0 : aggregatedTask.progressMaximum);
+        progressBar->setValue(aggregatedTask.indeterminate ? 0 : aggregatedTask.progressValue);
         index++;
-    });
+    }
 
     // Hide any remaining task widgets that are no longer needed.
     while(index < _taskWidgets.size()) {

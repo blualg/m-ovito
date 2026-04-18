@@ -83,6 +83,29 @@ ENDIF()
 # Set name of executable.
 SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
 
+# Small developer utility for headless transport regression checks against
+# external references such as PyLAT on local Windows builds.
+IF(WIN32)
+    ADD_EXECUTABLE(OvitoTransportHarness transport_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoTransportHarness PRIVATE
+        Core
+        Gui
+        Particles
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoTransportHarness)
+    SET_TARGET_PROPERTIES(OvitoTransportHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_transport_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoTransportHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoTransportHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+ENDIF()
+
 # Copy in HTML/JS launch files.
 IF(EMSCRIPTEN)
     GET_TARGET_PROPERTY(APPNAME Ovito OUTPUT_NAME)

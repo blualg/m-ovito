@@ -154,7 +154,14 @@ void PluginManager::loadAllPlugins()
             QLibrary* library = new QLibrary(filePath, this);
             library->setLoadHints(QLibrary::ExportExternalSymbolsHint);
             if(!library->load()) {
-                Application::instance()->reportError(QStringLiteral("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, library->errorString()));
+                const QString errorText = library->errorString();
+                if(errorText.contains(QStringLiteral("Application Control policy has blocked this file"), Qt::CaseInsensitive)) {
+                    qWarning().noquote() << QStringLiteral("WARNING: Skipping native plugin library blocked by Windows Application Control policy.\nLibrary file: %1\nError: %2")
+                        .arg(filePath, errorText);
+                }
+                else {
+                    Application::instance()->reportError(QStringLiteral("Failed to load native plugin library.\nLibrary file: %1\nError: %2").arg(filePath, errorText));
+                }
             }
         }
     }

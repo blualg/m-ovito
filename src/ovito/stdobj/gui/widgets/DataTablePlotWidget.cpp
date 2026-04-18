@@ -36,7 +36,42 @@
 #include <qwt/qwt_plot_panner.h>
 #include <qwt/qwt_painter.h>
 
+#include <cmath>
+
 namespace Ovito {
+
+namespace {
+
+bool isFinite(double value)
+{
+    return std::isfinite(value);
+}
+
+QVector<QPointF> filteredCurveSamples(const QVector<double>& xcoords, const QVector<double>& ycoords)
+{
+    OVITO_ASSERT(xcoords.size() == ycoords.size());
+
+    QVector<QPointF> samples;
+    samples.reserve(xcoords.size());
+    for(int i = 0; i < xcoords.size(); ++i) {
+        if(isFinite(xcoords[i]) && isFinite(ycoords[i]))
+            samples.push_back(QPointF(xcoords[i], ycoords[i]));
+    }
+    return samples;
+}
+
+QVector<QwtPoint3D> filteredScatterSamples(const QVector<QwtPoint3D>& coords)
+{
+    QVector<QwtPoint3D> samples;
+    samples.reserve(coords.size());
+    for(const QwtPoint3D& point : coords) {
+        if(isFinite(point.x()) && isFinite(point.y()) && isFinite(point.z()))
+            samples.push_back(point);
+    }
+    return samples;
+}
+
+}
 
 /******************************************************************************
 * Constructor.
@@ -201,7 +236,7 @@ void DataTablePlotWidget::updateDataPlot()
         for(size_t cmpnt = 0; cmpnt < colCount; cmpnt++) {
             xvalues->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].rx() = v; });
             y->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].ry() = v; });
-            _spectroCurves[cmpnt]->setSamples(coords);
+            _spectroCurves[cmpnt]->setSamples(filteredScatterSamples(coords));
         }
 
 #if 0
@@ -278,7 +313,7 @@ void DataTablePlotWidget::updateDataPlot()
         QVector<double> ycoords(y->size());
         for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
             y->copyComponentTo(ycoords.begin(), cmpnt);
-            _curves[cmpnt]->setSamples(xcoords, ycoords);
+            _curves[cmpnt]->setSamples(filteredCurveSamples(xcoords, ycoords));
         }
     }
     else if(plotMode == DataTable::BarChart) {
@@ -307,7 +342,8 @@ void DataTablePlotWidget::updateDataPlot()
                 using T = decltype(_);
                 BufferReadAccess<T*> yarray(y);
                 for(int i = 0; i < y->size(); i++) {
-                    ycoords.push_back((double)yarray.get(i, 0));
+                    const double value = static_cast<double>(yarray.get(i, 0));
+                    ycoords.push_back(isFinite(value) ? value : 0.0);
                 }
             });
         }

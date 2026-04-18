@@ -54,6 +54,7 @@ SET(SourceFiles
     modifier/analysis/cluster/ClusterAnalysisModifier.cpp
     modifier/analysis/wignerseitz/WignerSeitzAnalysisModifier.cpp
     modifier/analysis/ptm/PolyhedralTemplateMatchingModifier.cpp
+    modifier/analysis/transport/TransportModifier.cpp
     modifier/analysis/ptm/PTMAlgorithm.cpp
     modifier/analysis/surface/ConstructSurfaceModifier.cpp
     modifier/selection/ExpandSelectionModifier.cpp
