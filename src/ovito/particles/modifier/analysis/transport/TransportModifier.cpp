@@ -1919,41 +1919,47 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
             std::vector<double> msdTimesSI = pyLatMSD.timesSI;
-            std::vector<double> msdOverallTrimmed = pyLatMSD.overall;
-            std::vector<double> msdOverallSI(msdOverallTrimmed.size(), 0.0);
-            std::ranges::transform(msdOverallTrimmed, msdOverallSI.begin(), [lengthScaleToSI](double value) { return value * lengthScaleToSI * lengthScaleToSI; });
+            const std::vector<double>& msdOverallTrimmed = pyLatMSD.overall;
+            const std::vector<std::vector<double>>& msdPerTypeTrimmed = pyLatMSD.perType;
 
-            std::vector<double> diffusionFromMSDRaw(msdOverallTrimmed.size(), 0.0);
-            std::vector<double> diffusionFromMSDSI(msdOverallTrimmed.size(), 0.0);
-            for(size_t i = 1; i < msdOverallTrimmed.size(); ++i) {
-                if(msdTimesRaw[i] > 0)
-                    diffusionFromMSDRaw[i] = msdOverallTrimmed[i] / (2.0 * dimensionality * msdTimesRaw[i]);
-                if(msdTimesSI[i] > 0)
-                    diffusionFromMSDSI[i] = msdOverallSI[i] / (2.0 * dimensionality * msdTimesSI[i]);
-            }
-
-            std::vector<std::vector<double>> msdPerTypeTrimmed = pyLatMSD.perType;
+            std::vector<double> msdOverallSI;
+            std::vector<double> diffusionFromMSDRaw;
+            std::vector<double> diffusionFromMSDSI;
             std::vector<std::vector<double>> msdPerTypeSI;
             std::vector<std::vector<double>> diffusionPerTypeMSDRaw;
             std::vector<std::vector<double>> diffusionPerTypeMSDSI;
-            msdPerTypeSI.reserve(msdPerTypeTrimmed.size());
-            diffusionPerTypeMSDRaw.reserve(msdPerTypeTrimmed.size());
-            diffusionPerTypeMSDSI.reserve(msdPerTypeTrimmed.size());
-            for(const std::vector<double>& curve : msdPerTypeTrimmed) {
-                std::vector<double> curveSI(curve.size(), 0.0);
-                std::ranges::transform(curve, curveSI.begin(),
-                                       [lengthScaleToSI](double value) { return value * lengthScaleToSI * lengthScaleToSI; });
-                std::vector<double> diffRaw(curve.size(), 0.0);
-                std::vector<double> diffSI(curve.size(), 0.0);
-                for(size_t i = 1; i < curve.size(); ++i) {
+            if(needMSDOutput) {
+                msdOverallSI.resize(msdOverallTrimmed.size(), 0.0);
+                std::ranges::transform(msdOverallTrimmed, msdOverallSI.begin(), [lengthScaleToSI](double value) { return value * lengthScaleToSI * lengthScaleToSI; });
+
+                diffusionFromMSDRaw.assign(msdOverallTrimmed.size(), 0.0);
+                diffusionFromMSDSI.assign(msdOverallTrimmed.size(), 0.0);
+                for(size_t i = 1; i < msdOverallTrimmed.size(); ++i) {
                     if(msdTimesRaw[i] > 0)
-                        diffRaw[i] = curve[i] / (2.0 * dimensionality * msdTimesRaw[i]);
+                        diffusionFromMSDRaw[i] = msdOverallTrimmed[i] / (2.0 * dimensionality * msdTimesRaw[i]);
                     if(msdTimesSI[i] > 0)
-                        diffSI[i] = curveSI[i] / (2.0 * dimensionality * msdTimesSI[i]);
+                        diffusionFromMSDSI[i] = msdOverallSI[i] / (2.0 * dimensionality * msdTimesSI[i]);
                 }
-                msdPerTypeSI.push_back(std::move(curveSI));
-                diffusionPerTypeMSDRaw.push_back(std::move(diffRaw));
-                diffusionPerTypeMSDSI.push_back(std::move(diffSI));
+
+                msdPerTypeSI.reserve(msdPerTypeTrimmed.size());
+                diffusionPerTypeMSDRaw.reserve(msdPerTypeTrimmed.size());
+                diffusionPerTypeMSDSI.reserve(msdPerTypeTrimmed.size());
+                for(const std::vector<double>& curve : msdPerTypeTrimmed) {
+                    std::vector<double> curveSI(curve.size(), 0.0);
+                    std::ranges::transform(curve, curveSI.begin(),
+                                           [lengthScaleToSI](double value) { return value * lengthScaleToSI * lengthScaleToSI; });
+                    std::vector<double> diffRaw(curve.size(), 0.0);
+                    std::vector<double> diffSI(curve.size(), 0.0);
+                    for(size_t i = 1; i < curve.size(); ++i) {
+                        if(msdTimesRaw[i] > 0)
+                            diffRaw[i] = curve[i] / (2.0 * dimensionality * msdTimesRaw[i]);
+                        if(msdTimesSI[i] > 0)
+                            diffSI[i] = curveSI[i] / (2.0 * dimensionality * msdTimesSI[i]);
+                    }
+                    msdPerTypeSI.push_back(std::move(curveSI));
+                    diffusionPerTypeMSDRaw.push_back(std::move(diffRaw));
+                    diffusionPerTypeMSDSI.push_back(std::move(diffSI));
+                }
             }
 
             if(msdTimesRaw.empty() && !pyLatChargeTransport.timesRaw.empty()) {
