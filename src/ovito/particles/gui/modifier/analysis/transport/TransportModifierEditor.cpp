@@ -41,6 +41,7 @@
 #include <QCheckBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QToolButton>
 
 namespace Ovito {
 
@@ -220,6 +221,35 @@ void hideMarker(QwtPlotMarker* marker)
         marker->setVisible(false);
 }
 
+QWidget* createDropdownSection(QWidget* parent, const QString& title, QWidget* content, bool expanded = false)
+{
+    auto* container = new QWidget(parent);
+    auto* containerLayout = new QVBoxLayout(container);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setSpacing(4);
+
+    auto* toggleButton = new QToolButton(container);
+    toggleButton->setText(title);
+    toggleButton->setCheckable(true);
+    toggleButton->setChecked(expanded);
+    toggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toggleButton->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+    toggleButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    toggleButton->setStyleSheet(QStringLiteral("QToolButton { font-weight: 600; text-align: left; }"));
+    containerLayout->addWidget(toggleButton);
+
+    content->setParent(container);
+    content->setVisible(expanded);
+    containerLayout->addWidget(content);
+
+    QObject::connect(toggleButton, &QToolButton::toggled, container, [toggleButton, content](bool checked) {
+        toggleButton->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+        content->setVisible(checked);
+    });
+
+    return container;
+}
+
 }
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TransportModifierEditor);
@@ -281,7 +311,15 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::includeVACFCrossTerms))->checkBox());
     layout->addWidget(analysisBox);
 
-    auto* unitsBox = new QGroupBox(tr("Time And Units"), rollout);
+    auto* settingsRow = new QWidget(rollout);
+    auto* settingsRowLayout = new QGridLayout(settingsRow);
+    settingsRowLayout->setContentsMargins(0, 0, 0, 0);
+    settingsRowLayout->setHorizontalSpacing(8);
+    settingsRowLayout->setVerticalSpacing(0);
+    settingsRowLayout->setColumnStretch(0, 3);
+    settingsRowLayout->setColumnStretch(1, 2);
+
+    auto* unitsBox = new QGroupBox(tr("Time And Units"), settingsRow);
     auto* unitsLayout = new QGridLayout(unitsBox);
     unitsLayout->setContentsMargins(4, 4, 4, 4);
     unitsLayout->setColumnStretch(1, 1);
@@ -313,29 +351,27 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     FloatParameterUI* temperatureUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TransportModifier::temperature));
     unitsLayout->addWidget(temperatureUI->label(), 4, 0);
     unitsLayout->addLayout(temperatureUI->createFieldLayout(), 4, 1);
-    layout->addWidget(unitsBox);
+    settingsRowLayout->addWidget(unitsBox, 0, 0);
 
-    auto* pyLatBox = new QGroupBox(tr("Fitting"), rollout);
+    auto* pyLatBox = new QGroupBox(tr("Fitting"), settingsRow);
     auto* pyLatLayout = new QGridLayout(pyLatBox);
     pyLatLayout->setContentsMargins(4, 4, 4, 4);
     pyLatLayout->setColumnStretch(1, 1);
 
-    auto* fittingHelp = new QLabel(tr("Transport analysis follows the trajectory cadence directly. MSD-based quantities use the built-in automatic fit and Green-Kubo conductivity uses an automatic plateau window."),
-                                   pyLatBox);
-    fittingHelp->setWordWrap(true);
-    pyLatLayout->addWidget(fittingHelp, 0, 0, 1, 2);
-
     FloatParameterUI* pyLatDiffTolUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TransportModifier::pyLatDiffusivityTolerance));
-    pyLatLayout->addWidget(pyLatDiffTolUI->label(), 1, 0);
-    pyLatLayout->addLayout(pyLatDiffTolUI->createFieldLayout(), 1, 1);
+    pyLatLayout->addWidget(pyLatDiffTolUI->label(), 0, 0);
+    pyLatLayout->addLayout(pyLatDiffTolUI->createFieldLayout(), 0, 1);
 
     FloatParameterUI* pyLatCondTolUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TransportModifier::pyLatConductivityTolerance));
-    pyLatLayout->addWidget(pyLatCondTolUI->label(), 2, 0);
-    pyLatLayout->addLayout(pyLatCondTolUI->createFieldLayout(), 2, 1);
-    layout->addWidget(pyLatBox);
+    pyLatLayout->addWidget(pyLatCondTolUI->label(), 1, 0);
+    pyLatLayout->addLayout(pyLatCondTolUI->createFieldLayout(), 1, 1);
+    settingsRowLayout->addWidget(pyLatBox, 0, 1);
+    layout->addWidget(settingsRow);
 
-    auto* overridesBox = new QGroupBox(tr("Overrides"), rollout);
-    auto* overridesLayout = new QVBoxLayout(overridesBox);
+    const TransportModifier* currentModifier = modifier();
+
+    auto* overridesContent = new QWidget(rollout);
+    auto* overridesLayout = new QVBoxLayout(overridesContent);
     overridesLayout->setContentsMargins(4, 4, 4, 4);
     overridesLayout->setSpacing(6);
 
@@ -377,14 +413,23 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     manualTypeChargesUI->setTextBox(manualTypeChargesEdit);
     manualTypeChargesLayout->addWidget(manualTypeChargesUI->textBox());
 
-    layout->addWidget(overridesBox);
+    const bool overridesExpanded = currentModifier &&
+        (currentModifier->useManualMoleculeDefinitions() || currentModifier->useManualTypeCharges());
+    layout->addWidget(createDropdownSection(rollout, tr("Overrides"), overridesContent, overridesExpanded));
 
-    BooleanGroupBoxParameterUI* intervalGroupUI =
-        createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(TransportModifier::useCustomFrameInterval));
-    layout->addWidget(intervalGroupUI->groupBox());
+    auto* intervalContent = new QWidget(rollout);
+    auto* intervalContentLayout = new QVBoxLayout(intervalContent);
+    intervalContentLayout->setContentsMargins(4, 4, 4, 4);
+    intervalContentLayout->setSpacing(4);
 
-    auto* intervalLayout = new QGridLayout(intervalGroupUI->childContainer());
-    intervalLayout->setContentsMargins(0, 0, 0, 0);
+    auto* intervalEnabledCheckBox =
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::useCustomFrameInterval))->checkBox();
+    intervalEnabledCheckBox->setText(tr("Enable restricted analysis interval"));
+    intervalContentLayout->addWidget(intervalEnabledCheckBox);
+
+    auto* intervalFieldsWidget = new QWidget(intervalContent);
+    auto* intervalLayout = new QGridLayout(intervalFieldsWidget);
+    intervalLayout->setContentsMargins(20, 0, 0, 0);
     intervalLayout->setColumnStretch(1, 1);
 
     IntegerParameterUI* intervalStartUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::intervalStart));
@@ -394,6 +439,12 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     IntegerParameterUI* intervalEndUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::intervalEnd));
     intervalLayout->addWidget(intervalEndUI->label(), 1, 0);
     intervalLayout->addLayout(intervalEndUI->createFieldLayout(), 1, 1);
+    intervalContentLayout->addWidget(intervalFieldsWidget);
+    intervalFieldsWidget->setEnabled(intervalEnabledCheckBox->isChecked());
+    connect(intervalEnabledCheckBox, &QCheckBox::toggled, intervalFieldsWidget, &QWidget::setEnabled);
+
+    const bool intervalExpanded = currentModifier && currentModifier->useCustomFrameInterval();
+    layout->addWidget(createDropdownSection(rollout, tr("Restrict analysis interval"), intervalContent, intervalExpanded));
 
     _summaryLabel = new QLabel(tr("Transport results are idle. Open the Run section and click 'Run transport analysis' to compute the selected observables."), rollout);
     _summaryLabel->setWordWrap(true);
