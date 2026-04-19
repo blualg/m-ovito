@@ -1839,38 +1839,47 @@ Future<PipelineFlowState> TransportModifier::evaluateModifier(const ModifierEval
  ******************************************************************************/
 Future<PipelineFlowState> TransportModifier::computeTransportData(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
+    OORef<TransportModificationNode> modNode = dynamic_object_cast<TransportModificationNode>(request.modificationNode());
+    if(!modNode)
+        return std::move(state);
+
     const std::vector<int> frames = sampledFrames(request.modificationNode());
-    const int cacheGenerationId = dynamic_object_cast<TransportModificationNode>(request.modificationNode())
-        ? dynamic_object_cast<TransportModificationNode>(request.modificationNode())->cacheGenerationId()
-        : 0;
-    std::vector<SharedFuture<PipelineFlowState>> sampleFutures;
-    sampleFutures.reserve(frames.size());
-    for(const int frame : frames) {
-        ModifierEvaluationRequest frameRequest(request);
-        frameRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
-        sampleFutures.push_back(request.modificationNode()->evaluateInput(frameRequest).asFuture());
-    }
+    const std::vector<std::vector<int>> frameBatches = buildFrameBatches(frames, 64);
+    const int cacheGenerationId = modNode->cacheGenerationId();
+    std::vector<PipelineFlowState> sampleStates;
+    sampleStates.reserve(frames.size());
 
-    return when_all_futures(std::move(sampleFutures))
-        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), cacheGenerationId](std::vector<SharedFuture<PipelineFlowState>> futures) mutable -> Future<PipelineFlowState> {
-            std::vector<PipelineFlowState> sampleStates;
-            sampleStates.reserve(futures.size());
-            for(SharedFuture<PipelineFlowState>& future : futures)
-                sampleStates.push_back(future.result());
-
+    return for_each_sequential(
+            frameBatches,
+            DeferredObjectExecutor(this),
+            [request = ModifierEvaluationRequest(request), modNode = OORef<TransportModificationNode>(modNode)](const std::vector<int>& frameBatch, std::vector<PipelineFlowState>&) mutable {
+                std::vector<SharedFuture<PipelineFlowState>> batchFutures;
+                batchFutures.reserve(frameBatch.size());
+                for(int frame : frameBatch) {
+                    ModifierEvaluationRequest frameRequest(request);
+                    frameRequest.setTime(modNode->sourceFrameToAnimationTime(frame));
+                    batchFutures.push_back(modNode->evaluateInput(frameRequest).asFuture());
+                }
+                return when_all_futures(std::move(batchFutures));
+            },
+            [](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, std::vector<PipelineFlowState>& sampleStates) {
+                for(SharedFuture<PipelineFlowState>& future : futures)
+                    sampleStates.push_back(future.result());
+            },
+            std::move(sampleStates))
+        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), modNode = OORef<TransportModificationNode>(modNode), cacheGenerationId](std::vector<PipelineFlowState> sampleStates) mutable -> Future<PipelineFlowState> {
             const int completedRunRequestId = runRequestId();
+            const OOWeakRef<const PipelineNode> createdByNode = modNode;
 
             return asyncLaunch([this,
                                 self = OORef<TransportModifier>(this),
-                                request = ModifierEvaluationRequest(request),
+                                modNode = OORef<TransportModificationNode>(modNode),
+                                createdByNode,
                                 state = std::move(state),
                                 sampleStates = std::move(sampleStates),
                                 completedRunRequestId,
                                 cacheGenerationId]() mutable {
                 TransportComputationResult computationResult{std::move(state)};
-                TransportModificationNode* modNode = dynamic_object_cast<TransportModificationNode>(request.modificationNode());
-                if(!modNode)
-                    return computationResult;
 
                 PipelineFlowState state = std::move(computationResult.state);
 
@@ -2121,9 +2130,9 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             }
 
             const bool pyLatCompatibilityEnabled = true;
-            if(pyLatCompatibilityEnabled && needConductivityOutput) {
-                const PyLATGreenKuboCurves pyLatGK =
-                    computePyLATGreenKuboCurves(prepared, timeScaleToSI, lengthScaleToSI, chargeScaleToSI, conductivityScaleToSI, temperature());
+                if(pyLatCompatibilityEnabled && needConductivityOutput) {
+                    const PyLATGreenKuboCurves pyLatGK =
+                        computePyLATGreenKuboCurves(prepared, timeScaleToSI, lengthScaleToSI, chargeScaleToSI, conductivityScaleToSI, temperature());
                 if(!pyLatGK.totalCurrentCorrelationRaw.empty()) {
                     const size_t conductivitySize = msdTimesRaw.size();
                     currentCorrelationRaw = pyLatGK.totalCurrentCorrelationRaw;
@@ -2135,7 +2144,6 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             }
 
                 DataOORef<DataCollection> results = DataOORef<DataCollection>::create();
-                const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();
 
             const QString aggregateCurveLabel = useOnlySelectedParticles()
                 ? tr("Selected subset atoms (persisted across all sampled frames)")
@@ -2365,8 +2373,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 computationResult.completedRunRequestId = completedRunRequestId;
                 computationResult.cacheGenerationId = cacheGenerationId;
                 return computationResult;
-            }).then(ObjectExecutor(this), [this, request = ModifierEvaluationRequest(request)](TransportComputationResult computationResult) mutable {
-                TransportModificationNode* modNode = dynamic_object_cast<TransportModificationNode>(request.modificationNode());
+            }).then(ObjectExecutor(this), [this, request = ModifierEvaluationRequest(request), modNode = OORef<TransportModificationNode>(modNode)](TransportComputationResult computationResult) mutable {
                 if(!modNode || !computationResult.results)
                     return std::move(computationResult.state);
 
