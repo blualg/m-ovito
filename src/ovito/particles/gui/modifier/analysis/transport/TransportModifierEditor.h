@@ -29,6 +29,7 @@
 class QLabel;
 class QCheckBox;
 class QPushButton;
+class QwtPlotMarker;
 
 namespace Ovito {
 
@@ -49,6 +50,7 @@ private Q_SLOTS:
     void updatePlots();
     void updateSummary();
     void updateControlStates();
+    void updateGreenKuboPreview(const PipelineFlowState& state);
 
 private:
 
@@ -60,6 +62,13 @@ private:
     DataTablePlotWidget* _msdPlot = nullptr;
     DataTablePlotWidget* _vacfPlot = nullptr;
     DataTablePlotWidget* _conductivityPlot = nullptr;
+    DataTablePlotWidget* _gkCorrelationPreviewPlot = nullptr;
+    DataTablePlotWidget* _gkConductivityPreviewPlot = nullptr;
+    QwtPlotMarker* _gkCorrelationStartMarker = nullptr;
+    QwtPlotMarker* _gkCorrelationEndMarker = nullptr;
+    QwtPlotMarker* _gkConductivityStartMarker = nullptr;
+    QwtPlotMarker* _gkConductivityEndMarker = nullptr;
+    QwtPlotMarker* _gkConductivityPlateauMarker = nullptr;
     QLabel* _summaryLabel = nullptr;
 };
 

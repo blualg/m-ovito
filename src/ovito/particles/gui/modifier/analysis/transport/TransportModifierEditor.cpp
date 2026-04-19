@@ -31,9 +31,13 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include "TransportModifierEditor.h"
+#include <qwt/qwt_plot_marker.h>
+#include <qwt/qwt_scale_engine.h>
 #include <QCheckBox>
 #include <QPointer>
 #include <QPushButton>
@@ -110,6 +114,110 @@ QString formatDualValue(const QVariant& rawValue,
                         const QString& siUnit)
 {
     return QObject::tr("%1 %2 | %3 %4").arg(formatValue(rawValue), rawUnit, formatValue(siValue), siUnit);
+}
+
+double timeScaleToSI(TransportModifier::TimeUnit unit)
+{
+    switch(unit) {
+    case TransportModifier::Femtoseconds: return 1e-15;
+    case TransportModifier::Picoseconds: return 1e-12;
+    case TransportModifier::Nanoseconds: return 1e-9;
+    }
+    return 1e-12;
+}
+
+double lengthScaleToSI(TransportModifier::LengthUnit unit)
+{
+    switch(unit) {
+    case TransportModifier::Angstroms: return 1e-10;
+    case TransportModifier::Nanometers: return 1e-9;
+    case TransportModifier::Meters: return 1.0;
+    }
+    return 1e-10;
+}
+
+double chargeScaleToSI(TransportModifier::ChargeUnit unit)
+{
+    switch(unit) {
+    case TransportModifier::ElementaryCharges: return 1.602176634e-19;
+    case TransportModifier::Coulombs: return 1.0;
+    }
+    return 1.602176634e-19;
+}
+
+double conductivityScaleToSI(const TransportModifier* modifier, int dimensionality)
+{
+    if(!modifier)
+        return 1.0;
+    return std::pow(chargeScaleToSI(modifier->chargeUnit()), 2.0) /
+           (timeScaleToSI(modifier->timeUnit()) * std::pow(lengthScaleToSI(modifier->lengthUnit()), dimensionality - 2.0));
+}
+
+int findComponentIndex(const Property* yProperty, const QString& componentName)
+{
+    if(!yProperty)
+        return -1;
+    if(componentName.isEmpty())
+        return 0;
+
+    const QStringList& componentNames = yProperty->componentNames();
+    const int index = componentNames.indexOf(componentName);
+    return (index >= 0) ? index : -1;
+}
+
+DataOORef<const DataTable> createPreviewLineTable(const QString& title,
+                                                  const QString& axisLabelX,
+                                                  const QString& axisLabelY,
+                                                  const QString& componentName,
+                                                  const std::vector<double>& xValues,
+                                                  const std::vector<double>& yValues)
+{
+    if(xValues.empty() || xValues.size() != yValues.size())
+        return {};
+
+    PropertyPtr y = DataTable::OOClass().createUserProperty(DataBuffer::Initialized,
+                                                            xValues.size(),
+                                                            Property::FloatDefault,
+                                                            1,
+                                                            axisLabelY,
+                                                            0,
+                                                            QStringList{componentName});
+    BufferWriteAccess<FloatType*, access_mode::discard_write> yAcc(y);
+    for(size_t i = 0; i < yValues.size(); ++i)
+        yAcc.set(i, 0, static_cast<FloatType>(yValues[i]));
+
+    PropertyPtr x = DataTable::OOClass().createUserProperty(DataBuffer::Initialized,
+                                                            xValues.size(),
+                                                            Property::FloatDefault,
+                                                            1,
+                                                            QStringLiteral("Time"));
+    BufferWriteAccess<FloatType, access_mode::discard_write> xAcc(x);
+    for(size_t i = 0; i < xValues.size(); ++i)
+        xAcc[i] = static_cast<FloatType>(xValues[i]);
+
+    DataOORef<DataTable> table = DataOORef<DataTable>::create(ObjectInitializationFlag::DontCreateVisElement,
+                                                              DataTable::Line,
+                                                              title,
+                                                              std::move(y),
+                                                              std::move(x));
+    table->setAxisLabelX(axisLabelX);
+    table->setAxisLabelY(axisLabelY);
+    return table;
+}
+
+void configureMarker(QwtPlotMarker* marker, QwtPlotMarker::LineStyle style, const QPen& pen)
+{
+    if(!marker)
+        return;
+    marker->setLineStyle(style);
+    marker->setLinePen(pen);
+    marker->setVisible(false);
+}
+
+void hideMarker(QwtPlotMarker* marker)
+{
+    if(marker)
+        marker->setVisible(false);
 }
 
 }
@@ -306,6 +414,47 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->addWidget(new QLabel(tr("Conductivity:"), rollout));
     layout->addWidget(_conductivityPlot);
 
+    auto* gkPreviewBox = new QGroupBox(tr("Green-Kubo Preview"), rollout);
+    auto* gkPreviewLayout = new QVBoxLayout(gkPreviewBox);
+    gkPreviewLayout->setContentsMargins(4, 4, 4, 4);
+    gkPreviewLayout->setSpacing(4);
+    auto* gkPreviewHelp = new QLabel(tr("Paper-style Green-Kubo preview: normalized current autocorrelation and SI conductivity on a logarithmic time axis. The blue guide lines show the automatic plateau window and the horizontal line marks the reported conductivity plateau."), gkPreviewBox);
+    gkPreviewHelp->setWordWrap(true);
+    gkPreviewLayout->addWidget(gkPreviewHelp);
+
+    _gkCorrelationPreviewPlot = new DataTablePlotWidget();
+    _gkCorrelationPreviewPlot->setMinimumHeight(180);
+    _gkCorrelationPreviewPlot->setMaximumHeight(180);
+    _gkCorrelationPreviewPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+    gkPreviewLayout->addWidget(new QLabel(tr("Normalized current autocorrelation:"), gkPreviewBox));
+    gkPreviewLayout->addWidget(_gkCorrelationPreviewPlot);
+
+    _gkConductivityPreviewPlot = new DataTablePlotWidget();
+    _gkConductivityPreviewPlot->setMinimumHeight(180);
+    _gkConductivityPreviewPlot->setMaximumHeight(180);
+    _gkConductivityPreviewPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+    gkPreviewLayout->addWidget(new QLabel(tr("Green-Kubo conductivity (SI):"), gkPreviewBox));
+    gkPreviewLayout->addWidget(_gkConductivityPreviewPlot);
+    layout->addWidget(gkPreviewBox);
+
+    const QPen fitMarkerPen(QColor(65, 105, 225), 1.0, Qt::DashLine);
+    const QPen plateauMarkerPen(QColor(65, 105, 225), 1.0, Qt::DashLine);
+    _gkCorrelationStartMarker = new QwtPlotMarker();
+    _gkCorrelationEndMarker = new QwtPlotMarker();
+    _gkConductivityStartMarker = new QwtPlotMarker();
+    _gkConductivityEndMarker = new QwtPlotMarker();
+    _gkConductivityPlateauMarker = new QwtPlotMarker();
+    configureMarker(_gkCorrelationStartMarker, QwtPlotMarker::VLine, fitMarkerPen);
+    configureMarker(_gkCorrelationEndMarker, QwtPlotMarker::VLine, fitMarkerPen);
+    configureMarker(_gkConductivityStartMarker, QwtPlotMarker::VLine, fitMarkerPen);
+    configureMarker(_gkConductivityEndMarker, QwtPlotMarker::VLine, fitMarkerPen);
+    configureMarker(_gkConductivityPlateauMarker, QwtPlotMarker::HLine, plateauMarkerPen);
+    _gkCorrelationStartMarker->attach(_gkCorrelationPreviewPlot);
+    _gkCorrelationEndMarker->attach(_gkCorrelationPreviewPlot);
+    _gkConductivityStartMarker->attach(_gkConductivityPreviewPlot);
+    _gkConductivityEndMarker->attach(_gkConductivityPreviewPlot);
+    _gkConductivityPlateauMarker->attach(_gkConductivityPreviewPlot);
+
     layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
@@ -379,6 +528,15 @@ void TransportModifierEditor::updatePlots()
             _msdPlot->setTable(nullptr);
             _vacfPlot->setTable(nullptr);
             _conductivityPlot->setTable(nullptr);
+            if(_gkCorrelationPreviewPlot)
+                _gkCorrelationPreviewPlot->setTable(nullptr);
+            if(_gkConductivityPreviewPlot)
+                _gkConductivityPreviewPlot->setTable(nullptr);
+            hideMarker(_gkCorrelationStartMarker);
+            hideMarker(_gkCorrelationEndMarker);
+            hideMarker(_gkConductivityStartMarker);
+            hideMarker(_gkConductivityEndMarker);
+            hideMarker(_gkConductivityPlateauMarker);
             return;
         }
 
@@ -386,7 +544,131 @@ void TransportModifierEditor::updatePlots()
         _msdPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::MSDTableId));
         _vacfPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::VACFTableId));
         _conductivityPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::ConductivityTableId));
+        updateGreenKuboPreview(state);
     });
+}
+
+/******************************************************************************
+ * Updates the paper-style Green-Kubo preview plots.
+ ******************************************************************************/
+void TransportModifierEditor::updateGreenKuboPreview(const PipelineFlowState& state)
+{
+    if(!_gkCorrelationPreviewPlot || !_gkConductivityPreviewPlot)
+        return;
+
+    _gkCorrelationPreviewPlot->setTable(nullptr);
+    _gkConductivityPreviewPlot->setTable(nullptr);
+    hideMarker(_gkCorrelationStartMarker);
+    hideMarker(_gkCorrelationEndMarker);
+    hideMarker(_gkConductivityStartMarker);
+    hideMarker(_gkConductivityEndMarker);
+    hideMarker(_gkConductivityPlateauMarker);
+
+    const TransportModifier* mod = modifier();
+    const DataTable* currentCorrelationTable = state.getObjectBy<DataTable>(modificationNode(), TransportModifier::CurrentCorrelationTableId);
+    const DataTable* conductivityTable = state.getObjectBy<DataTable>(modificationNode(), TransportModifier::ConductivityTableId);
+    if(!mod || !currentCorrelationTable || !conductivityTable || !currentCorrelationTable->y() || !conductivityTable->y())
+        return;
+
+    ConstPropertyPtr currentXProperty = currentCorrelationTable->getXValues();
+    ConstPropertyPtr conductivityXProperty = conductivityTable->getXValues();
+    if(!currentXProperty || !conductivityXProperty)
+        return;
+
+    const int currentComponent = findComponentIndex(currentCorrelationTable->y(), QStringLiteral("Current autocorrelation"));
+    const int conductivityComponent = findComponentIndex(conductivityTable->y(), QStringLiteral("Green-Kubo (V)"));
+    if(currentComponent < 0 || conductivityComponent < 0)
+        return;
+
+    BufferReadAccessAndRef<FloatType> currentX(currentXProperty);
+    BufferReadAccessAndRef<FloatType*> currentY(currentCorrelationTable->y());
+    BufferReadAccessAndRef<FloatType> conductivityX(conductivityXProperty);
+    BufferReadAccessAndRef<FloatType*> conductivityY(conductivityTable->y());
+    if(currentX.size() == 0 || conductivityX.size() == 0)
+        return;
+
+    double zeroLagValue = std::numeric_limits<double>::quiet_NaN();
+    if(currentY.size() > 0)
+        zeroLagValue = static_cast<double>(currentY.get(0, currentComponent));
+    if(!std::isfinite(zeroLagValue) || zeroLagValue == 0.0)
+        return;
+
+    std::vector<double> normalizedCorrelationTimes;
+    std::vector<double> normalizedCorrelationValues;
+    normalizedCorrelationTimes.reserve(currentX.size());
+    normalizedCorrelationValues.reserve(currentY.size());
+    for(size_t i = 0; i < currentX.size(); ++i) {
+        const double x = static_cast<double>(currentX[i]);
+        const double y = static_cast<double>(currentY.get(i, currentComponent));
+        if(x > 0.0 && std::isfinite(x) && std::isfinite(y)) {
+            normalizedCorrelationTimes.push_back(x);
+            normalizedCorrelationValues.push_back(y / zeroLagValue);
+        }
+    }
+
+    const int dimensionality = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.dimensionality")).toInt();
+    const double conductivityToSI = conductivityScaleToSI(mod, dimensionality > 0 ? dimensionality : 3);
+    std::vector<double> conductivityTimes;
+    std::vector<double> conductivityValuesSI;
+    conductivityTimes.reserve(conductivityX.size());
+    conductivityValuesSI.reserve(conductivityY.size());
+    for(size_t i = 0; i < conductivityX.size(); ++i) {
+        const double x = static_cast<double>(conductivityX[i]);
+        const double y = static_cast<double>(conductivityY.get(i, conductivityComponent));
+        if(x > 0.0 && std::isfinite(x) && std::isfinite(y)) {
+            conductivityTimes.push_back(x);
+            conductivityValuesSI.push_back(y * conductivityToSI);
+        }
+    }
+
+    const QString timeLabel = timeUnitLabel(mod->timeUnit());
+    const QString conductivitySIUnit = conductivitySIUnitLabel(dimensionality > 0 ? dimensionality : 3);
+
+    _gkCorrelationPreviewPlot->setTable(createPreviewLineTable(tr("Normalized current autocorrelation"),
+                                                               tr("Time (%1)").arg(timeLabel),
+                                                               tr("<J(t)*J(0)> / <J(0)*J(0)>"),
+                                                               tr("Green-Kubo"),
+                                                               normalizedCorrelationTimes,
+                                                               normalizedCorrelationValues));
+    _gkConductivityPreviewPlot->setTable(createPreviewLineTable(tr("Green-Kubo conductivity"),
+                                                                tr("Time (%1)").arg(timeLabel),
+                                                                tr("Conductivity (%1)").arg(conductivitySIUnit),
+                                                                tr("Green-Kubo"),
+                                                                conductivityTimes,
+                                                                conductivityValuesSI));
+
+    const int fitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_start_lag")).toInt();
+    const int fitEndLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_end_lag")).toInt();
+    const QVariant sigmaGkSIValue = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.sigma_green_kubo_vavg"));
+    const double sigmaGkSI = sigmaGkSIValue.toDouble();
+
+    auto markerTimeForLag = [&](int lag) -> double {
+        if(lag >= 0 && lag < static_cast<int>(currentX.size()))
+            return static_cast<double>(currentX[lag]);
+        return std::numeric_limits<double>::quiet_NaN();
+    };
+
+    const double fitStartTime = markerTimeForLag(fitStartLag);
+    const double fitEndTime = markerTimeForLag(std::max(fitStartLag, fitEndLag - 1));
+    if(std::isfinite(fitStartTime) && fitStartTime > 0.0) {
+        _gkCorrelationStartMarker->setXValue(fitStartTime);
+        _gkConductivityStartMarker->setXValue(fitStartTime);
+        _gkCorrelationStartMarker->setVisible(true);
+        _gkConductivityStartMarker->setVisible(true);
+    }
+    if(std::isfinite(fitEndTime) && fitEndTime > 0.0) {
+        _gkCorrelationEndMarker->setXValue(fitEndTime);
+        _gkConductivityEndMarker->setXValue(fitEndTime);
+        _gkCorrelationEndMarker->setVisible(true);
+        _gkConductivityEndMarker->setVisible(true);
+    }
+    if(std::isfinite(sigmaGkSI)) {
+        _gkConductivityPlateauMarker->setYValue(sigmaGkSI);
+        _gkConductivityPlateauMarker->setVisible(true);
+    }
+
+    _gkCorrelationPreviewPlot->replot();
+    _gkConductivityPreviewPlot->replot();
 }
 
 /******************************************************************************
