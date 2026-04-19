@@ -29,9 +29,11 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/transport/TransportModifier.h>
+#include <ovito/stdobj/table/DataTable.h>
 
 #include <QDir>
 #include <QFile>
@@ -259,13 +261,52 @@ QJsonObject collectSummary(const DataCollection* collection)
     return summary;
 }
 
-void writeSummaryFile(const HarnessConfig& config, const QJsonObject& summary)
+QJsonObject collectLineTable(const DataCollection* collection, const QStringView identifier)
+{
+    const DataTable* table = static_object_cast<DataTable>(collection->getLeafObject(DataTable::OOClass(), identifier));
+    if(!table || !table->y())
+        return {};
+
+    ConstPropertyPtr x = table->getXValues();
+    if(!x)
+        return {};
+
+    BufferReadAccessAndRef<FloatType> xAcc(x);
+    BufferReadAccessAndRef<FloatType*> yAcc(table->y());
+
+    QJsonArray time;
+    std::vector<QJsonArray> componentArrays(yAcc.componentCount());
+    const QStringList componentNames = table->y()->componentNames();
+
+    for(size_t row = 0; row < yAcc.size(); ++row) {
+        time.append(toJsonValue(QVariant::fromValue(static_cast<double>(xAcc[row]))));
+        for(size_t component = 0; component < yAcc.componentCount(); ++component)
+            componentArrays[component].append(toJsonValue(QVariant::fromValue(static_cast<double>(yAcc.get(row, component)))));
+    }
+
+    QJsonObject components;
+    for(size_t component = 0; component < yAcc.componentCount(); ++component) {
+        const QString componentName = (component < static_cast<size_t>(componentNames.size()) && !componentNames[static_cast<int>(component)].isEmpty())
+            ? componentNames[static_cast<int>(component)]
+            : QStringLiteral("Component %1").arg(component + 1);
+        components.insert(componentName, componentArrays[component]);
+    }
+
+    QJsonObject result;
+    result.insert(QStringLiteral("time"), time);
+    result.insert(QStringLiteral("components"), components);
+    return result;
+}
+
+void writeSummaryFile(const HarnessConfig& config, const QJsonObject& summary, const QJsonObject& curves)
 {
     QJsonObject root;
     root.insert(QStringLiteral("data_dir"), QDir::toNativeSeparators(config.dataDir));
     root.insert(QStringLiteral("temperature_K"), config.temperature);
     root.insert(QStringLiteral("delta_t_fs"), config.deltaT);
     root.insert(QStringLiteral("summary"), summary);
+    if(!curves.isEmpty())
+        root.insert(QStringLiteral("curves"), curves);
 
     QFile outputFile(config.outputPath);
     if(!outputFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
@@ -313,7 +354,12 @@ void runHarness(const HarnessConfig& config)
         throw Exception(QStringLiteral("Transport evaluation did not return a data collection."));
 
     const QJsonObject summary = collectSummary(state.data());
-    writeSummaryFile(config, summary);
+    QJsonObject curves;
+    if(const QJsonObject currentCorrelation = collectLineTable(state.data(), TransportModifier::CurrentCorrelationTableId); !currentCorrelation.isEmpty())
+        curves.insert(QStringLiteral("current_autocorrelation"), currentCorrelation);
+    if(const QJsonObject conductivity = collectLineTable(state.data(), TransportModifier::ConductivityTableId); !conductivity.isEmpty())
+        curves.insert(QStringLiteral("ionic_conductivity"), conductivity);
+    writeSummaryFile(config, summary, curves);
 
     std::cout << "Wrote OVITO transport summary to " << QDir::toNativeSeparators(config.outputPath).toStdString() << std::endl;
 }

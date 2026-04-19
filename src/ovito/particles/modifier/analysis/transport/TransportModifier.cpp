@@ -327,6 +327,17 @@ std::vector<T> trimVector(const std::vector<T>& input, size_t newSize)
     return std::vector<T>(input.begin(), input.begin() + std::min(input.size(), newSize));
 }
 
+template<typename T>
+std::vector<T> padVector(const std::vector<T>& input, size_t newSize, T padValue)
+{
+    if(input.size() >= newSize)
+        return input;
+
+    std::vector<T> padded = input;
+    padded.resize(newSize, padValue);
+    return padded;
+}
+
 size_t effectiveSizeFromCounts(const std::vector<size_t>& counts)
 {
     size_t size = counts.size();
@@ -2027,6 +2038,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             std::vector<std::vector<double>> diffusionPerTypeVACFSI;
             std::vector<double> currentCorrelationRaw;
             std::vector<double> conductivityGKAverageVolumeSI;
+            std::vector<double> conductivityGKAverageVolumeRaw;
             std::vector<double> conductivityGKLagTimesRaw;
             std::vector<double> conductivityGKLagTimesSI;
 
@@ -2150,13 +2162,10 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                  (timeScaleToSI * std::pow(lengthScaleToSI, dimensionality - 2.0));
             std::vector<double> conductivityCorrelatedAverageVolumeRaw(conductivityCorrelatedAverageVolumeSI.size(), 0.0);
             std::vector<double> conductivityNernstEinsteinAverageVolumeRaw(conductivityNernstEinsteinAverageVolumeSI.size(), 0.0);
-            std::vector<double> conductivityGKAverageVolumeRaw(conductivityGKAverageVolumeSI.size(), 0.0);
             if(conductivityScaleToSI > 0) {
                 std::ranges::transform(conductivityCorrelatedAverageVolumeSI, conductivityCorrelatedAverageVolumeRaw.begin(),
                                        [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
                 std::ranges::transform(conductivityNernstEinsteinAverageVolumeSI, conductivityNernstEinsteinAverageVolumeRaw.begin(),
-                                       [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
-                std::ranges::transform(conductivityGKAverageVolumeSI, conductivityGKAverageVolumeRaw.begin(),
                                        [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
             }
 
@@ -2165,14 +2174,33 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                     const PyLATGreenKuboCurves pyLatGK =
                         computePyLATGreenKuboCurves(prepared, timeScaleToSI, lengthScaleToSI, chargeScaleToSI, conductivityScaleToSI, temperature());
                 if(!pyLatGK.totalCurrentCorrelationRaw.empty()) {
-                    const size_t conductivitySize = msdTimesRaw.size();
                     currentCorrelationRaw = pyLatGK.totalCurrentCorrelationRaw;
-                    conductivityGKAverageVolumeRaw = trimVector(pyLatGK.totalConductivityRaw, conductivitySize);
-                    conductivityGKAverageVolumeSI = trimVector(pyLatGK.totalConductivitySI, conductivitySize);
+                    conductivityGKAverageVolumeRaw = pyLatGK.totalConductivityRaw;
+                    conductivityGKAverageVolumeSI = pyLatGK.totalConductivitySI;
                     conductivityGKLagTimesRaw = pyLatGK.timesRaw;
                     conductivityGKLagTimesSI = pyLatGK.timesSI;
                 }
             }
+
+            std::vector<double> conductivityTimesRaw = msdTimesRaw;
+            const size_t conductivityDisplaySize = std::max(conductivityTimesRaw.size(), conductivityGKLagTimesRaw.size());
+            if(conductivityDisplaySize == conductivityGKLagTimesRaw.size() && !conductivityGKLagTimesRaw.empty()) {
+                conductivityTimesRaw = conductivityGKLagTimesRaw;
+            }
+            if(conductivityDisplaySize > conductivityTimesRaw.size())
+                conductivityTimesRaw.resize(conductivityDisplaySize, std::numeric_limits<double>::quiet_NaN());
+            conductivityCorrelatedAverageVolumeRaw = padVector(conductivityCorrelatedAverageVolumeRaw, conductivityDisplaySize,
+                                                               std::numeric_limits<double>::quiet_NaN());
+            conductivityNernstEinsteinAverageVolumeRaw = padVector(conductivityNernstEinsteinAverageVolumeRaw, conductivityDisplaySize,
+                                                                   std::numeric_limits<double>::quiet_NaN());
+            conductivityCorrelatedAverageVolumeSI = padVector(conductivityCorrelatedAverageVolumeSI, conductivityDisplaySize,
+                                                              std::numeric_limits<double>::quiet_NaN());
+            conductivityNernstEinsteinAverageVolumeSI = padVector(conductivityNernstEinsteinAverageVolumeSI, conductivityDisplaySize,
+                                                                  std::numeric_limits<double>::quiet_NaN());
+            conductivityGKAverageVolumeRaw = padVector(conductivityGKAverageVolumeRaw, conductivityDisplaySize,
+                                                       std::numeric_limits<double>::quiet_NaN());
+            conductivityGKAverageVolumeSI = padVector(conductivityGKAverageVolumeSI, conductivityDisplaySize,
+                                                      std::numeric_limits<double>::quiet_NaN());
 
                 DataOORef<DataCollection> results = DataOORef<DataCollection>::create();
 
@@ -2282,7 +2310,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                     conductivityColumns.push_back(conductivityGKAverageVolumeSI);
                 }
 
-                createLineTable(results, ConductivityTableId, tr("Ionic conductivity"), msdTimesRaw, conductivityColumnsRaw, conductivityNames,
+                createLineTable(results, ConductivityTableId, tr("Ionic conductivity"), conductivityTimesRaw, conductivityColumnsRaw, conductivityNames,
                                 tr("Time (%1)").arg(timeLabel),
                                 tr("Conductivity (%1)").arg(conductivityRawUnitLabel(chargeLabel, timeLabel, lengthLabel, dimensionality)),
                                 createdByNode);
