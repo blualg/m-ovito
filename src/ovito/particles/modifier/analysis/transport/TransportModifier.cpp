@@ -2048,58 +2048,119 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const size_t maxLagVelocity =
                     std::min<size_t>((maxLag() > 0 ? static_cast<size_t>(maxLag()) : lastValidVelocityFrame - firstValidVelocityFrame),
                                      lastValidVelocityFrame - firstValidVelocityFrame);
+                const bool needCollectiveVACF = includeVACFCrossTerms();
+                const bool needPerTypeVACF = !prepared.groups.empty();
+                std::vector<int> groupIndexByParticle;
+                if(needPerTypeVACF) {
+                    groupIndexByParticle.assign(particleCount, -1);
+                    for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                        for(size_t particleIndex : prepared.groups[groupIndex].memberIndices) {
+                            if(particleIndex < groupIndexByParticle.size())
+                                groupIndexByParticle[particleIndex] = static_cast<int>(groupIndex);
+                        }
+                    }
+                }
+
+                struct VACFPartial {
+                    std::vector<size_t> counts;
+                    std::vector<double> lagTimesRaw;
+                    std::vector<double> lagTimesSI;
+                    std::vector<double> self;
+                    std::vector<double> total;
+                    std::vector<std::vector<double>> perType;
+                };
+                std::vector<VACFPartial> partials;
+                const size_t originCount = lastValidVelocityFrame - firstValidVelocityFrame + 1;
+                parallelForChunks(originCount, 32,
+                    [&](size_t workerCount) {
+                        partials.resize(workerCount);
+                        for(VACFPartial& partial : partials) {
+                            partial.counts.assign(maxLagVelocity + 1, 0);
+                            partial.lagTimesRaw.assign(maxLagVelocity + 1, 0.0);
+                            partial.lagTimesSI.assign(maxLagVelocity + 1, 0.0);
+                            partial.self.assign(maxLagVelocity + 1, 0.0);
+                            if(needCollectiveVACF)
+                                partial.total.assign(maxLagVelocity + 1, 0.0);
+                            if(needPerTypeVACF)
+                                partial.perType.assign(prepared.groups.size(), std::vector<double>(maxLagVelocity + 1, 0.0));
+                        }
+                    },
+                    [&](size_t workerIndex, size_t fromOriginOffset, size_t toOriginOffset) {
+                        VACFPartial& partial = partials[workerIndex];
+                        std::vector<double> selfDotPerType(needPerTypeVACF ? prepared.groups.size() : 0, 0.0);
+                        for(size_t originOffset = fromOriginOffset; originOffset < toOriginOffset; ++originOffset) {
+                            this_task::throwIfCanceled();
+                            const size_t origin = firstValidVelocityFrame + originOffset;
+                            for(size_t lag = 0; lag <= maxLagVelocity && origin + lag <= lastValidVelocityFrame; ++lag) {
+                                const size_t target = origin + lag;
+                                const double dtRaw = prepared.frames[target].timeRaw - prepared.frames[origin].timeRaw;
+                                const double dtSI = prepared.frames[target].timeSI - prepared.frames[origin].timeSI;
+
+                                double selfDot = 0.0;
+                                Vector3 totalVelocityOrigin = Vector3::Zero();
+                                Vector3 totalVelocityTarget = Vector3::Zero();
+                                if(needPerTypeVACF)
+                                    std::fill(selfDotPerType.begin(), selfDotPerType.end(), 0.0);
+
+                                for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex) {
+                                    const Vector3& v0 = prepared.frames[origin].velocities[particleIndex];
+                                    const Vector3& v1 = prepared.frames[target].velocities[particleIndex];
+                                    const double dot = v0.dot(v1);
+                                    selfDot += dot;
+                                    if(needCollectiveVACF) {
+                                        totalVelocityOrigin += v0;
+                                        totalVelocityTarget += v1;
+                                    }
+                                    if(needPerTypeVACF) {
+                                        const int groupIndex = groupIndexByParticle[particleIndex];
+                                        if(groupIndex >= 0)
+                                            selfDotPerType[static_cast<size_t>(groupIndex)] += dot;
+                                    }
+                                }
+
+                                partial.self[lag] += selfDot / (static_cast<double>(particleCount) * dimensionality);
+                                if(needCollectiveVACF)
+                                    partial.total[lag] += totalVelocityOrigin.dot(totalVelocityTarget) / (static_cast<double>(particleCount) * dimensionality);
+                                if(needPerTypeVACF) {
+                                    for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                                        if(!prepared.groups[groupIndex].memberIndices.empty()) {
+                                            partial.perType[groupIndex][lag] += selfDotPerType[groupIndex] /
+                                                                                (static_cast<double>(prepared.groups[groupIndex].memberIndices.size()) * dimensionality);
+                                        }
+                                    }
+                                }
+
+                                partial.lagTimesRaw[lag] += dtRaw;
+                                partial.lagTimesSI[lag] += dtSI;
+                                partial.counts[lag] += 1;
+                            }
+                        }
+                    });
 
                 std::vector<size_t> vacfCounts(maxLagVelocity + 1, 0);
                 std::vector<double> vacfLagTimesRaw(maxLagVelocity + 1, 0.0);
                 std::vector<double> vacfLagTimesSI(maxLagVelocity + 1, 0.0);
                 vacfSelf.assign(maxLagVelocity + 1, 0.0);
-                vacfTotal.assign(maxLagVelocity + 1, 0.0);
-                vacfPerType.assign(prepared.groups.size(), std::vector<double>(maxLagVelocity + 1, 0.0));
+                if(needCollectiveVACF)
+                    vacfTotal.assign(maxLagVelocity + 1, 0.0);
+                if(needPerTypeVACF)
+                    vacfPerType.assign(prepared.groups.size(), std::vector<double>(maxLagVelocity + 1, 0.0));
 
-                for(size_t origin = firstValidVelocityFrame; origin <= lastValidVelocityFrame; ++origin) {
+                for(const VACFPartial& partial : partials) {
                     this_task::throwIfCanceled();
-                    for(size_t lag = 0; lag <= maxLagVelocity && origin + lag <= lastValidVelocityFrame; ++lag) {
-                        const size_t target = origin + lag;
-                        const double dtRaw = prepared.frames[target].timeRaw - prepared.frames[origin].timeRaw;
-                        const double dtSI = prepared.frames[target].timeSI - prepared.frames[origin].timeSI;
-
-                        double selfDot = 0.0;
-                        std::vector<double> selfDotPerType(prepared.groups.size(), 0.0);
-                        Vector3 totalVelocityOrigin = Vector3::Zero();
-                        Vector3 totalVelocityTarget = Vector3::Zero();
-                        Vector3 totalCurrentOrigin = Vector3::Zero();
-                        Vector3 totalCurrentTarget = Vector3::Zero();
-
-                        for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex) {
-                            const Vector3& v0 = prepared.frames[origin].velocities[particleIndex];
-                            const Vector3& v1 = prepared.frames[target].velocities[particleIndex];
-                            const double dot = v0.dot(v1);
-                            selfDot += dot;
-                            totalVelocityOrigin += v0;
-                            totalVelocityTarget += v1;
-                            totalCurrentOrigin += v0 * static_cast<FloatType>(prepared.chargesRaw[particleIndex]);
-                            totalCurrentTarget += v1 * static_cast<FloatType>(prepared.chargesRaw[particleIndex]);
-                        }
-
+                    for(size_t lag = 0; lag <= maxLagVelocity; ++lag) {
+                        vacfCounts[lag] += partial.counts[lag];
+                        vacfLagTimesRaw[lag] += partial.lagTimesRaw[lag];
+                        vacfLagTimesSI[lag] += partial.lagTimesSI[lag];
+                        vacfSelf[lag] += partial.self[lag];
+                        if(needCollectiveVACF)
+                            vacfTotal[lag] += partial.total[lag];
+                    }
+                    if(needPerTypeVACF) {
                         for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
-                            for(size_t particleIndex : prepared.groups[groupIndex].memberIndices) {
-                                selfDotPerType[groupIndex] += prepared.frames[origin].velocities[particleIndex].dot(
-                                    prepared.frames[target].velocities[particleIndex]);
-                            }
+                            for(size_t lag = 0; lag <= maxLagVelocity; ++lag)
+                                vacfPerType[groupIndex][lag] += partial.perType[groupIndex][lag];
                         }
-
-                        vacfSelf[lag] += selfDot / (static_cast<double>(particleCount) * dimensionality);
-                        vacfTotal[lag] += totalVelocityOrigin.dot(totalVelocityTarget) / (static_cast<double>(particleCount) * dimensionality);
-                        for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
-                            if(!prepared.groups[groupIndex].memberIndices.empty()) {
-                                vacfPerType[groupIndex][lag] += selfDotPerType[groupIndex] /
-                                                               (static_cast<double>(prepared.groups[groupIndex].memberIndices.size()) * dimensionality);
-                            }
-                        }
-
-                        vacfLagTimesRaw[lag] += dtRaw;
-                        vacfLagTimesSI[lag] += dtSI;
-                        vacfCounts[lag] += 1;
                     }
                 }
 
@@ -2108,7 +2169,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                         continue;
                     const double normalization = static_cast<double>(vacfCounts[lag]);
                     vacfSelf[lag] /= normalization;
-                    vacfTotal[lag] /= normalization;
+                    if(needCollectiveVACF)
+                        vacfTotal[lag] /= normalization;
                     vacfLagTimesRaw[lag] /= normalization;
                     vacfLagTimesSI[lag] /= normalization;
                     for(std::vector<double>& curve : vacfPerType)
@@ -2117,28 +2179,43 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
                 const size_t vacfEffectiveSize = effectiveSizeFromCounts(vacfCounts);
                 vacfSelf = trimVector(vacfSelf, vacfEffectiveSize);
-                vacfTotal = trimVector(vacfTotal, vacfEffectiveSize);
+                if(needCollectiveVACF)
+                    vacfTotal = trimVector(vacfTotal, vacfEffectiveSize);
+                else
+                    vacfTotal.clear();
                 vacfTimesRaw = trimVector(vacfLagTimesRaw, vacfEffectiveSize);
                 vacfTimesSI = trimVector(vacfLagTimesSI, vacfEffectiveSize);
-                vacfCross.resize(vacfSelf.size(), 0.0);
-                for(size_t i = 0; i < vacfSelf.size(); ++i)
-                    vacfCross[i] = vacfTotal[i] - vacfSelf[i];
-                for(std::vector<double>& curve : vacfPerType)
-                    curve = trimVector(curve, vacfEffectiveSize);
+                if(needCollectiveVACF) {
+                    vacfCross.resize(vacfSelf.size(), 0.0);
+                    for(size_t i = 0; i < vacfSelf.size(); ++i)
+                        vacfCross[i] = vacfTotal[i] - vacfSelf[i];
+                }
+                else {
+                    vacfCross.clear();
+                }
+                if(needPerTypeVACF) {
+                    for(std::vector<double>& curve : vacfPerType)
+                        curve = trimVector(curve, vacfEffectiveSize);
+                }
+                else {
+                    vacfPerType.clear();
+                }
 
                 diffusionFromVACFRaw = cumulativeTrapezoid(vacfTimesRaw, vacfSelf);
                 diffusionFromVACFSI.resize(diffusionFromVACFRaw.size(), 0.0);
                 const double diffusionScaleToSI = lengthScaleToSI * lengthScaleToSI / timeScaleToSI;
                 std::ranges::transform(diffusionFromVACFRaw, diffusionFromVACFSI.begin(), [diffusionScaleToSI](double value) { return value * diffusionScaleToSI; });
 
-                diffusionPerTypeVACFRaw.reserve(vacfPerType.size());
-                diffusionPerTypeVACFSI.reserve(vacfPerType.size());
-                for(const std::vector<double>& curve : vacfPerType) {
-                    std::vector<double> diffusionCurveRaw = cumulativeTrapezoid(vacfTimesRaw, curve);
-                    std::vector<double> diffusionCurveSI(diffusionCurveRaw.size(), 0.0);
-                    std::ranges::transform(diffusionCurveRaw, diffusionCurveSI.begin(), [diffusionScaleToSI](double value) { return value * diffusionScaleToSI; });
-                    diffusionPerTypeVACFRaw.push_back(std::move(diffusionCurveRaw));
-                    diffusionPerTypeVACFSI.push_back(std::move(diffusionCurveSI));
+                if(needPerTypeVACF) {
+                    diffusionPerTypeVACFRaw.reserve(vacfPerType.size());
+                    diffusionPerTypeVACFSI.reserve(vacfPerType.size());
+                    for(const std::vector<double>& curve : vacfPerType) {
+                        std::vector<double> diffusionCurveRaw = cumulativeTrapezoid(vacfTimesRaw, curve);
+                        std::vector<double> diffusionCurveSI(diffusionCurveRaw.size(), 0.0);
+                        std::ranges::transform(diffusionCurveRaw, diffusionCurveSI.begin(), [diffusionScaleToSI](double value) { return value * diffusionScaleToSI; });
+                        diffusionPerTypeVACFRaw.push_back(std::move(diffusionCurveRaw));
+                        diffusionPerTypeVACFSI.push_back(std::move(diffusionCurveSI));
+                    }
                 }
             }
 
