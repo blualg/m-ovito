@@ -437,9 +437,6 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     auto* gkPreviewLayout = new QVBoxLayout(gkPreviewBox);
     gkPreviewLayout->setContentsMargins(4, 4, 4, 4);
     gkPreviewLayout->setSpacing(4);
-    auto* gkPreviewHelp = new QLabel(tr("Paper-style Green-Kubo preview: normalized current autocorrelation and SI conductivity on a logarithmic time axis. The blue guide lines show the automatic plateau window and the horizontal line marks the reported conductivity plateau."), gkPreviewBox);
-    gkPreviewHelp->setWordWrap(true);
-    gkPreviewLayout->addWidget(gkPreviewHelp);
 
     _gkCorrelationPreviewPlot = new DataTablePlotWidget();
     _gkCorrelationPreviewPlot->setMinimumHeight(180);
