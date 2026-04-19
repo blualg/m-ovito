@@ -39,12 +39,49 @@
 #include <qwt/qwt_plot_marker.h>
 #include <qwt/qwt_scale_engine.h>
 #include <QCheckBox>
+#include <QFontMetrics>
+#include <QLabel>
+#include <QLayout>
 #include <QPointer>
 #include <QPushButton>
 
 namespace Ovito {
 
 namespace {
+
+class SummaryLabel : public QLabel
+{
+public:
+    using QLabel::QLabel;
+
+    bool hasHeightForWidth() const override
+    {
+        return wordWrap();
+    }
+
+    int heightForWidth(int width) const override
+    {
+        if(!wordWrap())
+            return QLabel::heightForWidth(width);
+
+        const QMargins margins = contentsMargins();
+        const int horizontalPadding = margins.left() + margins.right() + frameWidth() * 2;
+        const int verticalPadding = margins.top() + margins.bottom() + frameWidth() * 2;
+        const int textWidth = std::max(1, width - horizontalPadding);
+        const QRect bounds = fontMetrics().boundingRect(QRect(0, 0, textWidth, 0),
+                                                        alignment() | Qt::TextWordWrap,
+                                                        text());
+        return bounds.height() + verticalPadding;
+    }
+
+    QSize sizeHint() const override
+    {
+        if(!wordWrap())
+            return QLabel::sizeHint();
+        const int widthHint = (width() > 0) ? width() : 360;
+        return QSize(widthHint, heightForWidth(widthHint));
+    }
+};
 
 QString formatValue(const QVariant& value)
 {
@@ -220,6 +257,24 @@ void hideMarker(QwtPlotMarker* marker)
         marker->setVisible(false);
 }
 
+void refreshSummaryLabelLayout(QLabel* label)
+{
+    if(!label)
+        return;
+
+    label->updateGeometry();
+    label->adjustSize();
+
+    QWidget* widget = label;
+    while((widget = widget->parentWidget()) != nullptr) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
+}
+
 }
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TransportModifierEditor);
@@ -376,8 +431,9 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     intervalLayout->addWidget(intervalEndUI->label(), 1, 0);
     intervalLayout->addLayout(intervalEndUI->createFieldLayout(), 1, 1);
 
-    _summaryLabel = new QLabel(rollout);
+    _summaryLabel = new SummaryLabel(rollout);
     _summaryLabel->setWordWrap(true);
+    _summaryLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     _summaryLabel->setVisible(false);
     layout->addWidget(_summaryLabel);
 
@@ -696,6 +752,7 @@ void TransportModifierEditor::updateSummary()
         if(transportAnalysisIsIdle(mod, modificationNode())) {
             _summaryLabel->clear();
             _summaryLabel->setVisible(false);
+            refreshSummaryLabelLayout(_summaryLabel);
             return;
         }
 
@@ -730,6 +787,7 @@ void TransportModifierEditor::updateSummary()
         if(!dMsdRaw.isValid() && !sigmaCorrRaw.isValid()) {
             _summaryLabel->clear();
             _summaryLabel->setVisible(false);
+            refreshSummaryLabelLayout(_summaryLabel);
             return;
         }
 
@@ -739,6 +797,7 @@ void TransportModifierEditor::updateSummary()
                 _summaryLabel->setText(warningPrefix + QStringLiteral("\n\n") + text);
             else
                 _summaryLabel->setText(text);
+            refreshSummaryLabelLayout(_summaryLabel);
         };
 
         QStringList summaryNotes;
