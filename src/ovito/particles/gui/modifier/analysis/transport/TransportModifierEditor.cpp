@@ -240,10 +240,6 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     runLayout->setContentsMargins(4, 4, 4, 4);
     runLayout->setSpacing(6);
 
-    QLabel* runInfoLabel = new QLabel(tr("Transport analysis stays idle until you explicitly start it. After changing any setting or the upstream data, click Run again to recompute the results."), runRollout);
-    runInfoLabel->setWordWrap(true);
-    runLayout->addWidget(runInfoLabel);
-
     _runButton = new QPushButton(tr("Run transport analysis"), runRollout);
     runLayout->addWidget(_runButton);
     connect(_runButton, &QPushButton::clicked, this, &TransportModifierEditor::runAnalysis);
@@ -320,18 +316,13 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     pyLatLayout->setContentsMargins(4, 4, 4, 4);
     pyLatLayout->setColumnStretch(1, 1);
 
-    auto* fittingHelp = new QLabel(tr("Transport analysis follows the trajectory cadence directly. MSD-based quantities use the built-in automatic fit and Green-Kubo conductivity uses an automatic plateau window."),
-                                   pyLatBox);
-    fittingHelp->setWordWrap(true);
-    pyLatLayout->addWidget(fittingHelp, 0, 0, 1, 2);
-
     FloatParameterUI* pyLatDiffTolUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TransportModifier::pyLatDiffusivityTolerance));
-    pyLatLayout->addWidget(pyLatDiffTolUI->label(), 1, 0);
-    pyLatLayout->addLayout(pyLatDiffTolUI->createFieldLayout(), 1, 1);
+    pyLatLayout->addWidget(pyLatDiffTolUI->label(), 0, 0);
+    pyLatLayout->addLayout(pyLatDiffTolUI->createFieldLayout(), 0, 1);
 
     FloatParameterUI* pyLatCondTolUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TransportModifier::pyLatConductivityTolerance));
-    pyLatLayout->addWidget(pyLatCondTolUI->label(), 2, 0);
-    pyLatLayout->addLayout(pyLatCondTolUI->createFieldLayout(), 2, 1);
+    pyLatLayout->addWidget(pyLatCondTolUI->label(), 1, 0);
+    pyLatLayout->addLayout(pyLatCondTolUI->createFieldLayout(), 1, 1);
     layout->addWidget(pyLatBox);
 
     auto* overridesBox = new QGroupBox(tr("Overrides"), rollout);
@@ -345,11 +336,6 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     auto* manualMoleculeLayout = new QVBoxLayout(manualMoleculeDefinitionsGroupUI->childContainer());
     manualMoleculeLayout->setContentsMargins(0, 0, 0, 0);
     manualMoleculeLayout->setSpacing(4);
-    auto* manualMoleculeHelp = new QLabel(
-        tr("Use one molecule template per line, for example:\nWater = O:1, H:2\nPF6 = P:1, F:6\nAtoms are matched as contiguous particle-type blocks in the reference-frame ordering. This override is used whenever whole molecules are analyzed, including selected atoms with 'Select as molecules' enabled."),
-        manualMoleculeDefinitionsGroupUI->childContainer());
-    manualMoleculeHelp->setWordWrap(true);
-    manualMoleculeLayout->addWidget(manualMoleculeHelp);
     StringParameterUI* manualMoleculeDefinitionsUI =
         createParamUI<StringParameterUI>(PROPERTY_FIELD(TransportModifier::manualMoleculeDefinitions));
     auto* manualMoleculeDefinitionsEdit = new AutocompleteTextEdit(manualMoleculeDefinitionsGroupUI->childContainer());
@@ -364,11 +350,6 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     auto* manualTypeChargesLayout = new QVBoxLayout(manualTypeChargesGroupUI->childContainer());
     manualTypeChargesLayout->setContentsMargins(0, 0, 0, 0);
     manualTypeChargesLayout->setSpacing(4);
-    auto* manualTypeChargesHelp = new QLabel(
-        tr("Override charges by particle type with one entry per line, for example:\nNa = 1\nCl = -1\n1 = 0.423\nUnlisted particle types keep their trajectory charge or fall back to q = 1 if no Charge property exists."),
-        manualTypeChargesGroupUI->childContainer());
-    manualTypeChargesHelp->setWordWrap(true);
-    manualTypeChargesLayout->addWidget(manualTypeChargesHelp);
     StringParameterUI* manualTypeChargesUI =
         createParamUI<StringParameterUI>(PROPERTY_FIELD(TransportModifier::manualTypeCharges));
     auto* manualTypeChargesEdit = new AutocompleteTextEdit(manualTypeChargesGroupUI->childContainer());
@@ -395,8 +376,9 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     intervalLayout->addWidget(intervalEndUI->label(), 1, 0);
     intervalLayout->addLayout(intervalEndUI->createFieldLayout(), 1, 1);
 
-    _summaryLabel = new QLabel(tr("Transport results are idle. Open the Run section and click 'Run transport analysis' to compute the selected observables."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
+    _summaryLabel->setVisible(false);
     layout->addWidget(_summaryLabel);
 
     _msdSection = new QWidget(rollout);
@@ -712,7 +694,8 @@ void TransportModifierEditor::updateSummary()
 
         TransportModifier* mod = modifier();
         if(transportAnalysisIsIdle(mod, modificationNode())) {
-            _summaryLabel->setText(tr("Transport results are idle. Open the Run section and click 'Run transport analysis' to compute the selected observables."));
+            _summaryLabel->clear();
+            _summaryLabel->setVisible(false);
             return;
         }
 
@@ -745,11 +728,13 @@ void TransportModifierEditor::updateSummary()
         const int pyLatGkFitEndLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_end_lag")).toInt();
 
         if(!dMsdRaw.isValid() && !sigmaCorrRaw.isValid()) {
-            _summaryLabel->setText(tr("Transport results are idle. Open the Run section and click 'Run transport analysis' to compute the selected observables."));
+            _summaryLabel->clear();
+            _summaryLabel->setVisible(false);
             return;
         }
 
         auto applySummaryText = [&](const QString& text) {
+            _summaryLabel->setVisible(true);
             if(!warningPrefix.isEmpty())
                 _summaryLabel->setText(warningPrefix + QStringLiteral("\n\n") + text);
             else
