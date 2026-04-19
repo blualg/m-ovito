@@ -764,9 +764,6 @@ void TransportModifierEditor::updateSummary()
         const int dimensionality = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.dimensionality")).toInt();
         const QString conductivityRawUnit = conductivityRawUnitLabel(chargeLabel, timeLabel, lengthLabel, dimensionality > 0 ? dimensionality : 3);
         const QString conductivitySIUnit = conductivitySIUnitLabel(dimensionality > 0 ? dimensionality : 3);
-        const QString warningPrefix = (state.status().type() == PipelineStatus::Warning && !state.status().text().isEmpty())
-                                          ? tr("Warning: %1").arg(state.status().text())
-                                          : QString{};
 
         const QVariant dMsdRaw = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.D_MSD"));
         const QVariant dMsdSI = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.D_MSD_SI"));
@@ -793,10 +790,7 @@ void TransportModifierEditor::updateSummary()
 
         auto applySummaryText = [&](const QString& text) {
             _summaryLabel->setVisible(true);
-            if(!warningPrefix.isEmpty())
-                _summaryLabel->setText(warningPrefix + QStringLiteral("\n\n") + text);
-            else
-                _summaryLabel->setText(text);
+            _summaryLabel->setText(text);
             refreshSummaryLabelLayout(_summaryLabel);
         };
 
