@@ -29,6 +29,7 @@
 class QLabel;
 class QCheckBox;
 class QPushButton;
+class QWidget;
 class QwtPlotMarker;
 
 namespace Ovito {
@@ -57,8 +58,15 @@ private:
     TransportModifier* modifier() const;
 
     QPushButton* _runButton = nullptr;
+    QCheckBox* _computeMSDCheckBox = nullptr;
+    QCheckBox* _computeVACFCheckBox = nullptr;
+    QCheckBox* _computeConductivityCheckBox = nullptr;
     QCheckBox* _useOnlySelectedParticlesCheckBox = nullptr;
     QCheckBox* _selectAsMoleculesCheckBox = nullptr;
+    QWidget* _msdSection = nullptr;
+    QWidget* _vacfSection = nullptr;
+    QWidget* _conductivitySection = nullptr;
+    QWidget* _gkPreviewSection = nullptr;
     DataTablePlotWidget* _msdPlot = nullptr;
     DataTablePlotWidget* _vacfPlot = nullptr;
     DataTablePlotWidget* _conductivityPlot = nullptr;

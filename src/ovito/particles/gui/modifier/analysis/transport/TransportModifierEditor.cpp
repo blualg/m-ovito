@@ -258,9 +258,12 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     auto* analysisLayout = new QVBoxLayout(analysisBox);
     analysisLayout->setContentsMargins(4, 4, 4, 4);
     analysisLayout->setSpacing(4);
-    analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeMSD))->checkBox());
-    analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeVACF))->checkBox());
-    analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeConductivity))->checkBox());
+    _computeMSDCheckBox = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeMSD))->checkBox();
+    analysisLayout->addWidget(_computeMSDCheckBox);
+    _computeVACFCheckBox = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeVACF))->checkBox();
+    analysisLayout->addWidget(_computeVACFCheckBox);
+    _computeConductivityCheckBox = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeConductivity))->checkBox();
+    analysisLayout->addWidget(_computeConductivityCheckBox);
     analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computePerType))->checkBox());
     _useOnlySelectedParticlesCheckBox =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::useOnlySelectedParticles))->checkBox();
@@ -396,25 +399,41 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     _summaryLabel->setWordWrap(true);
     layout->addWidget(_summaryLabel);
 
+    _msdSection = new QWidget(rollout);
+    auto* msdLayout = new QVBoxLayout(_msdSection);
+    msdLayout->setContentsMargins(0, 0, 0, 0);
+    msdLayout->setSpacing(4);
     _msdPlot = new DataTablePlotWidget();
     _msdPlot->setMinimumHeight(180);
     _msdPlot->setMaximumHeight(180);
-    layout->addWidget(new QLabel(tr("MSD:"), rollout));
-    layout->addWidget(_msdPlot);
+    msdLayout->addWidget(new QLabel(tr("MSD:"), _msdSection));
+    msdLayout->addWidget(_msdPlot);
+    layout->addWidget(_msdSection);
 
+    _vacfSection = new QWidget(rollout);
+    auto* vacfLayout = new QVBoxLayout(_vacfSection);
+    vacfLayout->setContentsMargins(0, 0, 0, 0);
+    vacfLayout->setSpacing(4);
     _vacfPlot = new DataTablePlotWidget();
     _vacfPlot->setMinimumHeight(180);
     _vacfPlot->setMaximumHeight(180);
-    layout->addWidget(new QLabel(tr("VACF:"), rollout));
-    layout->addWidget(_vacfPlot);
+    vacfLayout->addWidget(new QLabel(tr("VACF:"), _vacfSection));
+    vacfLayout->addWidget(_vacfPlot);
+    layout->addWidget(_vacfSection);
 
+    _conductivitySection = new QWidget(rollout);
+    auto* conductivityLayout = new QVBoxLayout(_conductivitySection);
+    conductivityLayout->setContentsMargins(0, 0, 0, 0);
+    conductivityLayout->setSpacing(4);
     _conductivityPlot = new DataTablePlotWidget();
     _conductivityPlot->setMinimumHeight(180);
     _conductivityPlot->setMaximumHeight(180);
-    layout->addWidget(new QLabel(tr("Conductivity:"), rollout));
-    layout->addWidget(_conductivityPlot);
+    conductivityLayout->addWidget(new QLabel(tr("Conductivity:"), _conductivitySection));
+    conductivityLayout->addWidget(_conductivityPlot);
+    layout->addWidget(_conductivitySection);
 
     auto* gkPreviewBox = new QGroupBox(tr("Green-Kubo Preview"), rollout);
+    _gkPreviewSection = gkPreviewBox;
     auto* gkPreviewLayout = new QVBoxLayout(gkPreviewBox);
     gkPreviewLayout->setContentsMargins(4, 4, 4, 4);
     gkPreviewLayout->setSpacing(4);
@@ -460,6 +479,12 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &TransportModifierEditor::updatePlots);
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &TransportModifierEditor::updateSummary);
+    if(_computeMSDCheckBox)
+        connect(_computeMSDCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+    if(_computeVACFCheckBox)
+        connect(_computeVACFCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+    if(_computeConductivityCheckBox)
+        connect(_computeConductivityCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_useOnlySelectedParticlesCheckBox)
         connect(_useOnlySelectedParticlesCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_selectAsMoleculesCheckBox)
@@ -537,6 +562,9 @@ void TransportModifierEditor::updatePlots()
             hideMarker(_gkConductivityStartMarker);
             hideMarker(_gkConductivityEndMarker);
             hideMarker(_gkConductivityPlateauMarker);
+            if(_gkPreviewSection)
+                _gkPreviewSection->setVisible(false);
+            updateControlStates();
             return;
         }
 
@@ -545,6 +573,7 @@ void TransportModifierEditor::updatePlots()
         _vacfPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::VACFTableId));
         _conductivityPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::ConductivityTableId));
         updateGreenKuboPreview(state);
+        updateControlStates();
     });
 }
 
@@ -563,6 +592,8 @@ void TransportModifierEditor::updateGreenKuboPreview(const PipelineFlowState& st
     hideMarker(_gkConductivityStartMarker);
     hideMarker(_gkConductivityEndMarker);
     hideMarker(_gkConductivityPlateauMarker);
+    if(_gkPreviewSection)
+        _gkPreviewSection->setVisible(false);
 
     const TransportModifier* mod = modifier();
     const DataTable* currentCorrelationTable = state.getObjectBy<DataTable>(modificationNode(), TransportModifier::CurrentCorrelationTableId);
@@ -636,6 +667,8 @@ void TransportModifierEditor::updateGreenKuboPreview(const PipelineFlowState& st
                                                                 tr("Green-Kubo"),
                                                                 conductivityTimes,
                                                                 conductivityValuesSI));
+    if(_gkPreviewSection)
+        _gkPreviewSection->setVisible(true);
 
     const int fitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_start_lag")).toInt();
     const int fitEndLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_end_lag")).toInt();
@@ -764,7 +797,20 @@ void TransportModifierEditor::updateSummary()
  ******************************************************************************/
 void TransportModifierEditor::updateControlStates()
 {
+    const bool computeMSD = _computeMSDCheckBox && _computeMSDCheckBox->isChecked();
+    const bool computeVACF = _computeVACFCheckBox && _computeVACFCheckBox->isChecked();
+    const bool computeConductivity = _computeConductivityCheckBox && _computeConductivityCheckBox->isChecked();
     const bool useOnlySelectedParticles = _useOnlySelectedParticlesCheckBox && _useOnlySelectedParticlesCheckBox->isChecked();
+
+    if(_msdSection)
+        _msdSection->setVisible(computeMSD);
+    if(_vacfSection)
+        _vacfSection->setVisible(computeVACF);
+    if(_conductivitySection)
+        _conductivitySection->setVisible(computeConductivity);
+    if(_gkPreviewSection && !computeConductivity)
+        _gkPreviewSection->setVisible(false);
+
     if(_selectAsMoleculesCheckBox)
         _selectAsMoleculesCheckBox->setEnabled(useOnlySelectedParticles);
 }
