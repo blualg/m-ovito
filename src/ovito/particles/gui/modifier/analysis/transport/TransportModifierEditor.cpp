@@ -35,6 +35,7 @@
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "TransportModifierEditor.h"
 #include <QCheckBox>
+#include <QPointer>
 #include <QPushButton>
 
 namespace Ovito {
@@ -338,7 +339,26 @@ void TransportModifierEditor::runAnalysis()
         _summaryLabel->setText(tr("Running transport analysis over the sampled trajectory..."));
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        scheduleOperationAfter(node->evaluate(request).asFuture(), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
+        auto future = node->evaluate(request).asFuture();
+        future.finally(ObjectExecutor(this), [self = QPointer<TransportModifierEditor>(this),
+                                              editObject = OOWeakRef<RefTarget>(editObject()),
+                                              startedRunRequestId,
+                                              startedGenerationId](auto& task) noexcept {
+            if(!task.isCanceled() && !task.exceptionStore())
+                return;
+            if(self.isNull() || self->editObject() != editObject.lock().get())
+                return;
+
+            TransportModifier* mod = self->modifier();
+            auto* transportNode = dynamic_object_cast<TransportModificationNode>(self->modificationNode());
+            if(!mod || !transportNode || mod->runRequestId() != startedRunRequestId || transportNode->cacheGenerationId() != startedGenerationId)
+                return;
+
+            transportNode->setCompletedRunRequestId(startedRunRequestId);
+            self->updatePlots();
+            self->updateSummary();
+        });
+        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
             TransportModifier* mod = modifier();
             const auto* transportNode = dynamic_object_cast<const TransportModificationNode>(modificationNode());
             if(!mod || !transportNode || mod->runRequestId() != startedRunRequestId || transportNode->cacheGenerationId() != startedGenerationId)

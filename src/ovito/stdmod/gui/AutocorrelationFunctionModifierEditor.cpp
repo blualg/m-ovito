@@ -36,6 +36,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "AutocorrelationFunctionModifierEditor.h"
+#include <QPointer>
 
 namespace Ovito {
 
@@ -344,7 +345,26 @@ void AutocorrelationFunctionModifierEditor::runAnalysis()
             _summaryLabel->setText(tr("Running autocorrelation analysis over the sampled trajectory..."));
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        scheduleOperationAfter(node->evaluate(request).asFuture(), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
+        auto future = node->evaluate(request).asFuture();
+        future.finally(ObjectExecutor(this), [self = QPointer<AutocorrelationFunctionModifierEditor>(this),
+                                              editObject = OOWeakRef<RefTarget>(editObject()),
+                                              startedRunRequestId,
+                                              startedGenerationId](auto& task) noexcept {
+            if(!task.isCanceled() && !task.exceptionStore())
+                return;
+            if(self.isNull() || self->editObject() != editObject.lock().get())
+                return;
+
+            AutocorrelationFunctionModifier* mod = self->modifier();
+            auto* acfNode = dynamic_object_cast<AutocorrelationFunctionModificationNode>(self->modificationNode());
+            if(!mod || !acfNode || mod->runRequestId() != startedRunRequestId || acfNode->cacheGenerationId() != startedGenerationId)
+                return;
+
+            acfNode->setCompletedRunRequestId(startedRunRequestId);
+            self->updatePlot();
+            self->updateSummary();
+        });
+        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
             AutocorrelationFunctionModifier* mod = modifier();
             const auto* acfNode = dynamic_object_cast<const AutocorrelationFunctionModificationNode>(modificationNode());
             if(!mod || !acfNode || mod->runRequestId() != startedRunRequestId || acfNode->cacheGenerationId() != startedGenerationId)

@@ -367,6 +367,7 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
     std::vector<double> means(componentCount, 0.0);
     if(subtractMean) {
         for(const std::vector<double>& frameValues : signal.frames) {
+            this_task::throwIfCanceled();
             for(size_t item = 0; item < signal.itemCount; ++item) {
                 for(size_t c = 0; c < componentCount; ++c)
                     means[c] += frameValues[item * componentCount + c];
@@ -379,6 +380,7 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
 
     parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
         for(size_t lag = fromLag; lag < toLag; ++lag) {
+            this_task::throwIfCanceled();
             const size_t originCount = frameCount - lag;
             double overallAccumulator = 0.0;
             double lagFrameAccumulator = 0.0;
@@ -926,6 +928,7 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
             },
             [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, SignalAccumulator& accumulator) {
                 for(SharedFuture<PipelineFlowState>& future : batchFutures) {
+                    this_task::throwIfCanceled();
                     const PipelineFlowState& sampleState = future.result();
                     switch(targetType()) {
                     case Attribute:
@@ -960,6 +963,7 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                 if(!dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode()))
                     return computationResult;
 
+                this_task::throwIfCanceled();
                 bool hadZeroLagNormalizationIssue = false;
                 const CorrelationCurves curves = computeCorrelationCurves(
                     accumulator.signal,
@@ -978,6 +982,7 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                 columns.push_back(curves.overall);
                 if(accumulator.signal.componentCount > 1) {
                     for(int c = 0; c < accumulator.signal.componentCount; ++c) {
+                        this_task::throwIfCanceled();
                         columnNames.push_back(accumulator.signal.componentNames.value(c, AutocorrelationFunctionModifier::tr("Component %1").arg(c + 1)));
                         columns.push_back(curves.perComponent[c]);
                     }

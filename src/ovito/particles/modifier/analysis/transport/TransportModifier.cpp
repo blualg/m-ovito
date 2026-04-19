@@ -586,6 +586,7 @@ double linearRegressionSlope(const std::vector<double>& x, const std::vector<dou
     double sumXX = 0.0;
     double sumXY = 0.0;
     for(size_t i = static_cast<size_t>(start); i < x.size(); ++i) {
+        this_task::throwIfCanceled();
         sumX += x[i];
         sumY += y[i];
         sumXX += x[i] * x[i];
@@ -609,6 +610,7 @@ int findPyLATLinearRegionStart(const std::vector<double>& values, const std::vec
     logValues.reserve(values.size() - 1);
     logTimes.reserve(times.size() - 1);
     for(size_t i = 1; i < values.size(); ++i) {
+        this_task::throwIfCanceled();
         if(values[i] <= 0 || times[i] <= 0)
             return 1;
         logValues.push_back(std::log(values[i]));
@@ -675,6 +677,7 @@ PyLATConvergenceWindow findPyLATConvergenceWindow(const std::vector<double>& sig
     int end = signalSize - 1;
 
     while(!converged) {
+        this_task::throwIfCanceled();
         if(i >= signalSize) {
             begin = i - 1;
             converged = true;
@@ -694,6 +697,7 @@ PyLATConvergenceWindow findPyLATConvergenceWindow(const std::vector<double>& sig
     }
 
     while(converged) {
+        this_task::throwIfCanceled();
         if(i >= signalSize) {
             end = i - 1;
             converged = false;
@@ -726,6 +730,7 @@ double averagePyLATRange(const std::vector<double>& values, int beginLag, int en
     double sum = 0.0;
     int count = 0;
     for(int i = begin; i < end; ++i) {
+        this_task::throwIfCanceled();
         if(std::isfinite(values[i])) {
             sum += values[i];
             ++count;
@@ -737,6 +742,7 @@ double averagePyLATRange(const std::vector<double>& values, int beginLag, int en
 double lastFiniteValue(const std::vector<double>& values)
 {
     for(auto iter = values.rbegin(); iter != values.rend(); ++iter) {
+        this_task::throwIfCanceled();
         if(std::isfinite(*iter))
             return *iter;
     }
@@ -761,6 +767,7 @@ PyLATMSDCurves computePyLATMSDCurves(const PreparedData& prepared)
     curves.perType.assign(prepared.groups.size(), std::vector<double>(lenMSD, 0.0));
 
     for(size_t lag = 0; lag < lenMSD; ++lag) {
+        this_task::throwIfCanceled();
         curves.timesRaw[lag] = prepared.frames[lag].timeRaw - prepared.frames.front().timeRaw;
         curves.timesSI[lag] = prepared.frames[lag].timeSI - prepared.frames.front().timeSI;
     }
@@ -782,6 +789,7 @@ PyLATMSDCurves computePyLATMSDCurves(const PreparedData& prepared)
         [&](size_t workerIndex, size_t fromOrigin, size_t toOrigin) {
             MSDPartial& partial = partials[workerIndex];
             for(size_t origin = fromOrigin; origin < toOrigin; ++origin) {
+                this_task::throwIfCanceled();
                 for(size_t lag = 0; lag < lenMSD; ++lag) {
                     const size_t target = origin + lag;
                     double totalSquaredDisplacement = 0.0;
@@ -805,6 +813,7 @@ PyLATMSDCurves computePyLATMSDCurves(const PreparedData& prepared)
         });
 
     for(const MSDPartial& partial : partials) {
+        this_task::throwIfCanceled();
         for(size_t lag = 0; lag < lenMSD; ++lag)
             curves.overall[lag] += partial.overall[lag];
         for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
@@ -818,6 +827,7 @@ PyLATMSDCurves computePyLATMSDCurves(const PreparedData& prepared)
         value /= normalizationOverall;
 
     for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+        this_task::throwIfCanceled();
         const size_t groupSize = prepared.groups[groupIndex].memberIndices.size();
         if(groupSize == 0)
             continue;
@@ -847,6 +857,7 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
     curves.nernstEinsteinNumerator.assign(lenMSD, 0.0);
 
     for(size_t lag = 0; lag < lenMSD; ++lag) {
+        this_task::throwIfCanceled();
         curves.timesRaw[lag] = prepared.frames[lag].timeRaw - prepared.frames.front().timeRaw;
         curves.timesSI[lag] = prepared.frames[lag].timeSI - prepared.frames.front().timeSI;
     }
@@ -868,6 +879,7 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
         [&](size_t workerIndex, size_t fromOrigin, size_t toOrigin) {
             ChargePartial& partial = partials[workerIndex];
             for(size_t origin = fromOrigin; origin < toOrigin; ++origin) {
+                this_task::throwIfCanceled();
                 for(size_t lag = 0; lag < lenMSD; ++lag) {
                     const size_t target = origin + lag;
                     Vector3 collectiveChargeDisplacement = Vector3::Zero();
@@ -887,6 +899,7 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
         });
 
     for(const ChargePartial& partial : partials) {
+        this_task::throwIfCanceled();
         for(size_t lag = 0; lag < lenMSD; ++lag) {
             curves.correlatedChargeDisplacement[lag] += partial.correlated[lag];
             curves.nernstEinsteinNumerator[lag] += partial.nernstEinstein[lag];
@@ -908,6 +921,7 @@ std::vector<double> directCorrelation(const std::vector<double>& a, const std::v
     std::vector<double> result(a.size(), 0.0);
     parallelForChunks(a.size(), 32, [&](size_t, size_t fromLag, size_t toLag) {
         for(size_t lag = fromLag; lag < toLag; ++lag) {
+            this_task::throwIfCanceled();
             double sum = 0.0;
             size_t count = 0;
             for(size_t index = 0; index + lag < a.size(); ++index) {
@@ -942,6 +956,7 @@ PyLATGreenKuboCurves computePyLATGreenKuboCurves(const PreparedData& prepared,
     std::vector<double> totalJz(frameCount, 0.0);
 
     for(size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+        this_task::throwIfCanceled();
         for(size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex) {
             const Vector3& velocity = prepared.frames[frameIndex].velocities[entityIndex];
             const double charge = prepared.chargesRaw[entityIndex];
@@ -963,6 +978,7 @@ PyLATGreenKuboCurves computePyLATGreenKuboCurves(const PreparedData& prepared,
     const double lagStepRaw = (frameCount > 1) ? (prepared.frames[1].timeRaw - prepared.frames[0].timeRaw) : 0.0;
     const double lagStepSI = lagStepRaw * timeScaleToSI;
     for(size_t lag = 0; lag < frameCount; ++lag) {
+        this_task::throwIfCanceled();
         curves.timesRaw[lag] = static_cast<double>(lag) * lagStepRaw;
         curves.timesSI[lag] = static_cast<double>(lag) * lagStepSI;
     }
@@ -975,6 +991,7 @@ PyLATGreenKuboCurves computePyLATGreenKuboCurves(const PreparedData& prepared,
     curves.totalConductivitySI.resize(totalIntegralRaw.size(), 0.0);
     curves.totalConductivityRaw.resize(totalIntegralRaw.size(), 0.0);
     for(size_t index = 0; index < totalIntegralRaw.size(); ++index) {
+        this_task::throwIfCanceled();
         curves.totalConductivitySI[index] = totalIntegralRaw[index] * conductivityFactorSI;
         if(conductivityScaleToSI > 0)
             curves.totalConductivityRaw[index] = curves.totalConductivitySI[index] / conductivityScaleToSI;
@@ -1029,6 +1046,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
         std::vector<std::unordered_map<IdentifierIntType, size_t>> idMaps;
         idMaps.reserve(sampleStates.size());
         for(const PipelineFlowState& sampleState : sampleStates) {
+            this_task::throwIfCanceled();
             const Particles* particles = sampleState.getObject<Particles>();
             if(!particles)
                 throw Exception(TransportModifier::tr("One of the sampled trajectory frames does not contain any particles."));
@@ -1040,6 +1058,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
         }
 
         for(size_t refIndex = 0; refIndex < referenceIds.size(); ++refIndex) {
+            this_task::throwIfCanceled();
             const IdentifierIntType id = referenceIds[refIndex];
             for(size_t frameIndex = 0; frameIndex < sampleStates.size(); ++frameIndex) {
                 const Particles* particles = sampleStates[frameIndex].getObject<Particles>();
@@ -1059,6 +1078,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
     }
     else {
         for(const PipelineFlowState& sampleState : sampleStates) {
+            this_task::throwIfCanceled();
             const Particles* particles = sampleState.getObject<Particles>();
             if(!particles)
                 throw Exception(TransportModifier::tr("One of the sampled trajectory frames does not contain any particles."));
@@ -1070,6 +1090,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
         }
 
         for(size_t particleIndex = 0; particleIndex < referenceCount; ++particleIndex) {
+            this_task::throwIfCanceled();
             for(size_t frameIndex = 0; frameIndex < sampleStates.size(); ++frameIndex)
                 mappedIndicesByReference[particleIndex][frameIndex] = particleIndex;
             if(useOnlySelectedParticles) {
@@ -1192,6 +1213,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             std::vector<size_t> referenceIndices;
             referenceIndices.reserve(referenceCount);
             for(size_t atomIndex = 0; atomIndex < referenceCount; ++atomIndex) {
+                this_task::throwIfCanceled();
                 if(atomPresentInAllFrames[atomIndex] && atomSelectedInAllFrames[atomIndex])
                     referenceIndices.push_back(atomIndex);
             }
@@ -1228,6 +1250,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             }
 
             for(size_t frameIndex = 0; frameIndex < sampleStates.size(); ++frameIndex) {
+                this_task::throwIfCanceled();
                 const PipelineFlowState& sampleState = sampleStates[frameIndex];
                 const Particles* particles = sampleState.expectObject<Particles>();
                 particles->verifyIntegrity();
@@ -1246,6 +1269,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
                 appendTimeAndVolume(frame, sampleState, frameIndex);
 
                 for(size_t referenceIndex : referenceIndices) {
+                    this_task::throwIfCanceled();
                     const size_t mappedIndex = mappedIndicesByReference[referenceIndex][frameIndex];
                     frame.positions.push_back(positions[mappedIndex]);
                     if(storedVelocitiesAvailable)
@@ -1295,6 +1319,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             const bool sumChargesAcrossAtoms = static_cast<bool>(referenceChargeProperty) || result.manualTypeChargesApplied;
 
             for(MoleculeInfo& molecule : allMolecules) {
+                this_task::throwIfCanceled();
                 const bool isPresentInAllFrames = std::ranges::all_of(molecule.referenceAtomIndices, [&](size_t atomIndex) {
                     return atomPresentInAllFrames[atomIndex];
                 });
@@ -1400,6 +1425,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
                                     : TransportModifier::tr("No persistent molecules were found for the current Transport configuration."));
 
             for(size_t frameIndex = 0; frameIndex < sampleStates.size(); ++frameIndex) {
+                this_task::throwIfCanceled();
                 const PipelineFlowState& sampleState = sampleStates[frameIndex];
                 const Particles* particles = sampleState.expectObject<Particles>();
                 particles->verifyIntegrity();
@@ -1418,6 +1444,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
                 appendTimeAndVolume(frame, sampleState, frameIndex);
 
                 for(const MoleculeInfo& molecule : includedMolecules) {
+                    this_task::throwIfCanceled();
                     const size_t firstAtomIndex = molecule.referenceAtomIndices.front();
                     const size_t mappedFirstAtom = mappedIndicesByReference[firstAtomIndex][frameIndex];
                     const Point3 referencePosition = positions[mappedFirstAtom];
@@ -1466,6 +1493,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             }
 
             for(size_t frameIndex = 1; frameIndex < result.frames.size(); ++frameIndex) {
+                this_task::throwIfCanceled();
                 for(size_t moleculeIndex = 0; moleculeIndex < result.frames[frameIndex].positions.size(); ++moleculeIndex) {
                     Point3& currentPosition = result.frames[frameIndex].positions[moleculeIndex];
                     const Point3& previousPosition = result.frames[frameIndex - 1].positions[moleculeIndex];
@@ -1495,6 +1523,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
         std::vector<size_t> referenceIndices;
         referenceIndices.reserve(referenceCount);
         for(size_t atomIndex = 0; atomIndex < referenceCount; ++atomIndex) {
+            this_task::throwIfCanceled();
             if(atomPresentInAllFrames[atomIndex] && (!useOnlySelectedParticles || atomSelectedInAllFrames[atomIndex]))
                 referenceIndices.push_back(atomIndex);
         }
@@ -1532,6 +1561,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             result.dimensionality = referenceCell->is2D() ? 2 : 3;
 
         for(size_t frameIndex = 0; frameIndex < sampleStates.size(); ++frameIndex) {
+            this_task::throwIfCanceled();
             const PipelineFlowState& sampleState = sampleStates[frameIndex];
             const Particles* particles = sampleState.expectObject<Particles>();
             particles->verifyIntegrity();
@@ -1569,6 +1599,7 @@ PreparedData prepareTransportData(const std::vector<PipelineFlowState>& sampleSt
             for(size_t frameIndex = 0; frameIndex < result.frames.size(); ++frameIndex)
                 result.frames[frameIndex].velocities.assign(analyzedEntityCount, Vector3::Zero());
             for(size_t frameIndex = 1; frameIndex + 1 < result.frames.size(); ++frameIndex) {
+                this_task::throwIfCanceled();
                 const double dtRaw = result.frames[frameIndex + 1].timeRaw - result.frames[frameIndex - 1].timeRaw;
                 if(dtRaw <= 0)
                     throw Exception(TransportModifier::tr("Encountered a non-positive timestep while deriving velocities from particle positions."));
