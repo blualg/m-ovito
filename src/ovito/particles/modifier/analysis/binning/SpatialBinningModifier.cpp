@@ -23,8 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/grid/objects/VoxelGridVis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
@@ -210,7 +208,6 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
     const FloatType yAxisRangeEnd = is1D() ? FloatType(0) : (yAxisRangeStart + axisExtent(cell, normalY));
 
     DataTable* table = nullptr;
-    VoxelGrid* grid = nullptr;
     if(is1D()) {
         table = state.createObject<DataTable>(QString(OutputIdentifier), request.modificationNode(), DataTable::Line, tr("Bin and reduce"));
         table->setElementCount(binCountX);
@@ -220,12 +217,8 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
         table->setIntervalEnd(xAxisRangeEnd);
     }
     else {
-        grid = state.createObject<VoxelGrid>(request.modificationNode(), QString(OutputIdentifier));
-        grid->setTitle(tr("Bin and reduce"));
-        grid->setGridType(VoxelGrid::CellData);
-        grid->setShape({size_t(binCountX), size_t(binCountY), size_t(1)});
-        grid->setElementCount(totalBinCount);
-        grid->setDomain(cell);
+        table = state.createObject<DataTable>(QString(OutputIdentifier), request.modificationNode(), DataTable::None, tr("Bin and reduce"));
+        table->setElementCount(totalBinCount);
     }
 
     return asyncLaunch([
@@ -250,7 +243,6 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
             periodicX,
             periodicY,
             table,
-            grid,
             is1D = is1D()]() mutable
     {
         std::vector<int64_t> counts(totalBinCount, 0);
@@ -337,7 +329,7 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
             }
         }
 
-        if(table) {
+        if(is1D) {
             Property* yProperty = table->createProperty(DataBuffer::Initialized,
                                                         outputPropertyName(inputProperty, vectorComponent),
                                                         Property::FloatDefault,
@@ -350,19 +342,36 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
             }
             table->setY(yProperty);
         }
-        else if(grid) {
-            Property* binnedProperty = grid->createProperty(DataBuffer::Initialized,
-                                                            outputPropertyName(inputProperty, vectorComponent),
-                                                            Property::FloatDefault,
-                                                            outputComponentCount,
-                                                            outputComponentNames);
-            BufferWriteAccess<FloatType*, access_mode::discard_write> values(binnedProperty);
+        else {
+            table->setAxisLabelX(SpatialBinningModifier::tr("Position"));
+            table->setAxisLabelY(outputPropertyName(inputProperty, vectorComponent));
+
+            Property* positionProperty = table->createProperty(DataBuffer::Initialized,
+                                                               SpatialBinningModifier::tr("Position"),
+                                                               Property::FloatDefault,
+                                                               2,
+                                                               QStringList{SpatialBinningModifier::tr("X"), SpatialBinningModifier::tr("Y")});
+            BufferWriteAccess<FloatType*, access_mode::discard_write> positionsOut(positionProperty);
+
+            Property* yProperty = table->createProperty(DataBuffer::Initialized,
+                                                        outputPropertyName(inputProperty, vectorComponent),
+                                                        Property::FloatDefault,
+                                                        outputComponentCount,
+                                                        outputComponentNames);
+            BufferWriteAccess<FloatType*, access_mode::discard_write> values(yProperty);
+
+            const FloatType spacingX = (xAxisRangeEnd - xAxisRangeStart) / FloatType(binCountX);
+            const FloatType spacingY = (yAxisRangeEnd - yAxisRangeStart) / FloatType(binCountY);
             for(size_t i = 0; i < totalBinCount; ++i) {
+                const size_t ix = i % size_t(binCountX);
+                const size_t iy = i / size_t(binCountX);
+                positionsOut.set(i, 0, xAxisRangeStart + (FloatType(ix) + FloatType(0.5)) * spacingX);
+                positionsOut.set(i, 1, yAxisRangeStart + (FloatType(iy) + FloatType(0.5)) * spacingY);
                 for(size_t component = 0; component < outputComponentCount; ++component)
                     values.set(i, component, static_cast<FloatType>(reduced[i * outputComponentCount + component]));
             }
-            if(VoxelGridVis* vis = grid->visElement<VoxelGridVis>())
-                vis->colorMapping()->setSourceProperty(PropertyReference(binnedProperty, outputComponentCount > 1 ? 0 : -1));
+            table->setX(positionProperty);
+            table->setY(yProperty);
         }
 
         QString statusText = SpatialBinningModifier::tr("Computed %1 over %2 spatial bins using %3.")
