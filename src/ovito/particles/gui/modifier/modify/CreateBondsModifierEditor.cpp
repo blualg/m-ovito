@@ -242,6 +242,10 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     connect(loadTopologyButton, &QPushButton::clicked, this, &CreateBondsModifierEditor::onLoadTopologyFromFile);
     layout2->addWidget(loadTopologyButton);
 
+    auto* topologyInfoLabel = new QLabel(tr("Loads topology and static particle properties such as bonds, angles, dihedrals, charges, masses, and molecule identifiers. If the trajectory file provides a property too, the trajectory values take precedence."));
+    topologyInfoLabel->setWordWrap(true);
+    layout2->addWidget(topologyInfoLabel);
+
     // Lower cutoff parameter.
     row = 0;
     gridlayout = new QGridLayout();
