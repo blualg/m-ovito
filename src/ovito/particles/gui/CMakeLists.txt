@@ -37,6 +37,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/chill_plus/ChillPlusModifierEditor.cpp
         modifier/analysis/cna/CommonNeighborAnalysisModifierEditor.cpp
         modifier/analysis/rdf/RadialDistributionFunctionModifierEditor.cpp
+        modifier/analysis/pdf/ProbabilityDistributionFunctionModifierEditor.cpp
         modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
         modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
         modifier/analysis/strain/AtomicStrainModifierEditor.cpp

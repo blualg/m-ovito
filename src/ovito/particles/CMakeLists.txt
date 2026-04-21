@@ -45,6 +45,7 @@ SET(SourceFiles
     modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
     modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
     modifier/analysis/rdf/RadialDistributionFunctionModifier.cpp
+    modifier/analysis/pdf/ProbabilityDistributionFunctionModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
     modifier/analysis/displacements/CalculateDisplacementsModifier.cpp
     modifier/analysis/centrosymmetry/CentroSymmetryModifier.cpp
