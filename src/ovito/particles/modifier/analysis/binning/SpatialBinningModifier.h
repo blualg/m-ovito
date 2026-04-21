@@ -44,30 +44,43 @@ public:
 
     enum ReductionOperation
     {
-        Sum,
         Mean,
+        Sum,
+        SumDividedByBinVolume,
         Min,
-        Max,
-        SumDividedByBinVolume
+        Max
     };
     Q_ENUM(ReductionOperation);
 
+    enum BinDirection
+    {
+        CellVector1 = 0,
+        CellVector2 = 1,
+        CellVector3 = 2,
+        CellVectors12 = 0 + (1 << 2),
+        CellVectors13 = 0 + (2 << 2),
+        CellVectors23 = 1 + (2 << 2)
+    };
+    Q_ENUM(BinDirection);
+
     static constexpr QStringView OutputIdentifier = u"binning";
 
+    virtual void initializeModifier(const ModifierInitializationRequest& request) override;
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    [[nodiscard]] bool is1D() const;
+    static bool is1D(BinDirection direction);
+    static int binDirectionX(BinDirection direction);
+    static int binDirectionY(BinDirection direction);
 
 private:
 
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(PropertyReference{}, sourceProperty, setSourceProperty, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, onlySelectedParticles, setOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ReductionOperation{Mean}, reductionOperation, setReductionOperation, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, firstDerivative, setFirstDerivative, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, binDirection1, setBinDirection1, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, binDirection2, setBinDirection2, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, binDirection3, setBinDirection3, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{50}, numberOfBins1, setNumberOfBins1, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{50}, numberOfBins2, setNumberOfBins2, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{20}, numberOfBins3, setNumberOfBins3, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BinDirection{CellVector3}, binDirection, setBinDirection, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, numberOfBinsX, setNumberOfBinsX, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, numberOfBinsY, setNumberOfBinsY, PROPERTY_FIELD_MEMORIZE);
 };
 
 }  // namespace Ovito

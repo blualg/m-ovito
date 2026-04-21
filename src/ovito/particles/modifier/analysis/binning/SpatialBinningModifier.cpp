@@ -22,11 +22,12 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
-#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/app/Application.h>
 #include "SpatialBinningModifier.h"
 
 namespace Ovito {
@@ -36,158 +37,126 @@ namespace {
 QString reductionLabel(SpatialBinningModifier::ReductionOperation op)
 {
     switch(op) {
-    case SpatialBinningModifier::Sum:
-        return SpatialBinningModifier::tr("sum");
-    case SpatialBinningModifier::Mean:
-        return SpatialBinningModifier::tr("mean");
-    case SpatialBinningModifier::Min:
-        return SpatialBinningModifier::tr("min");
-    case SpatialBinningModifier::Max:
-        return SpatialBinningModifier::tr("max");
-    case SpatialBinningModifier::SumDividedByBinVolume:
-        return SpatialBinningModifier::tr("sum / bin volume");
+    case SpatialBinningModifier::Mean: return SpatialBinningModifier::tr("mean");
+    case SpatialBinningModifier::Sum: return SpatialBinningModifier::tr("sum");
+    case SpatialBinningModifier::SumDividedByBinVolume: return SpatialBinningModifier::tr("sum divided by bin volume");
+    case SpatialBinningModifier::Min: return SpatialBinningModifier::tr("min");
+    case SpatialBinningModifier::Max: return SpatialBinningModifier::tr("max");
     }
     OVITO_ASSERT(false);
     return {};
 }
 
-QString outputPropertyName(const Property* property, int vectorComponent)
+Vector3 binNormalX(const SimulationCell* cell, SpatialBinningModifier::BinDirection dir)
 {
-    if(!property)
-        return SpatialBinningModifier::tr("Particle count");
-    if(vectorComponent >= 0)
-        return property->nameWithComponent(vectorComponent);
-    return property->name();
-}
-
-QString outputAxisLabel(const SpatialBinningModifier* modifier, const Property* property, int vectorComponent)
-{
-    return SpatialBinningModifier::tr("%1 (%2)")
-        .arg(outputPropertyName(property, vectorComponent), reductionLabel(modifier->reductionOperation()));
-}
-
-QString axisTitle(int axis)
-{
-    return SpatialBinningModifier::tr("Position along cell vector %1").arg(axis + 1);
-}
-
-QString outputTitle(int activeAxisCount)
-{
-    return (activeAxisCount == 1) ? SpatialBinningModifier::tr("Spatial binning profile") : SpatialBinningModifier::tr("Spatial binning");
-}
-
-std::array<bool, 3> activeDirections(const SpatialBinningModifier* modifier)
-{
-    return {modifier->binDirection1(), modifier->binDirection2(), modifier->binDirection3()};
-}
-
-int activeDirectionCount(const std::array<bool, 3>& active)
-{
-    return int(active[0]) + int(active[1]) + int(active[2]);
-}
-
-int firstActiveAxis(const std::array<bool, 3>& active)
-{
-    for(int axis = 0; axis < 3; ++axis) {
-        if(active[axis])
-            return axis;
+    switch(dir) {
+    case SpatialBinningModifier::CellVector1:
+    case SpatialBinningModifier::CellVectors12:
+    case SpatialBinningModifier::CellVectors13:
+        return cell->cellVector2().cross(cell->cellVector3());
+    case SpatialBinningModifier::CellVector2:
+    case SpatialBinningModifier::CellVectors23:
+        return cell->cellVector3().cross(cell->cellVector1());
+    case SpatialBinningModifier::CellVector3:
+        return cell->cellVector1().cross(cell->cellVector2());
     }
-    return -1;
+    OVITO_ASSERT(false);
+    return Vector3::Zero();
 }
 
-VoxelGrid::GridDimensions makeGridShape(const SpatialBinningModifier* modifier, const std::array<bool, 3>& active)
+Vector3 binNormalY(const SimulationCell* cell, SpatialBinningModifier::BinDirection dir)
 {
-    return {
-        size_t(active[0] ? std::max(1, modifier->numberOfBins1()) : 1),
-        size_t(active[1] ? std::max(1, modifier->numberOfBins2()) : 1),
-        size_t(active[2] ? std::max(1, modifier->numberOfBins3()) : 1)
-    };
-}
-
-FloatType activeAxisLength(const SimulationCell* cell, int axis)
-{
-    OVITO_ASSERT(cell != nullptr);
-    switch(axis) {
-    case 0:
-        return cell->cellVector1().length();
-    case 1:
-        return cell->cellVector2().length();
-    case 2:
-        return cell->cellVector3().length();
-    default:
-        OVITO_ASSERT(false);
-        return 0;
+    switch(dir) {
+    case SpatialBinningModifier::CellVectors12:
+        return cell->cellVector3().cross(cell->cellVector1());
+    case SpatialBinningModifier::CellVectors13:
+    case SpatialBinningModifier::CellVectors23:
+        return cell->cellVector1().cross(cell->cellVector2());
+    case SpatialBinningModifier::CellVector1:
+    case SpatialBinningModifier::CellVector2:
+    case SpatialBinningModifier::CellVector3:
+        return Vector3(1, 1, 1);
     }
+    OVITO_ASSERT(false);
+    return Vector3::Zero();
 }
 
-bool mapParticleToBin(const SimulationCell* cell,
-                      const Point3& position,
-                      const std::array<bool, 3>& active,
-                      const VoxelGrid::GridDimensions& shape,
-                      std::array<size_t, 3>& coords)
+FloatType axisExtent(const SimulationCell* cell, const Vector3& normal)
 {
-    constexpr FloatType tol = FloatType(1e-6);
-
-    Point3 reduced = cell->absoluteToReduced(position);
-    for(int axis = 0; axis < 3; ++axis) {
-        if(!active[axis]) {
-            coords[axis] = 0;
-            continue;
-        }
-
-        FloatType u = reduced[axis];
-        if(cell->hasPbcCorrected(axis))
-            u -= std::floor(u);
-
-        if(u < 0 && std::abs(u) <= tol)
-            u = 0;
-        if(u > 1 && std::abs(u - FloatType(1)) <= tol)
-            u = std::nextafter(FloatType(1), FloatType(0));
-
-        if(u < 0 || u > 1)
-            return false;
-        if(u == FloatType(1))
-            u = std::nextafter(FloatType(1), FloatType(0));
-
-        coords[axis] = std::min(shape[axis] - 1, static_cast<size_t>(std::floor(u * shape[axis])));
-    }
-
-    return true;
+    OVITO_ASSERT(normal != Vector3::Zero());
+    return (cell->is2D() ? cell->volume2D() : cell->volume3D()) / normal.length();
 }
 
-}  // namespace
+QString outputPropertyName(const Property* property)
+{
+    return property ? property->name() : QString{};
+}
+
+} // namespace
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialBinningModifier);
-OVITO_CLASSINFO(SpatialBinningModifier, "DisplayName", "Spatial binning");
-OVITO_CLASSINFO(SpatialBinningModifier, "Description", "Project particle properties onto a regular spatial binning grid.");
+OVITO_CLASSINFO(SpatialBinningModifier, "DisplayName", "Bin and reduce");
+OVITO_CLASSINFO(SpatialBinningModifier, "Description", "Bin particles along one or two cell vectors and reduce a particle property in each bin.");
 OVITO_CLASSINFO(SpatialBinningModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(SpatialBinningModifier, sourceProperty);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, onlySelectedParticles);
 DEFINE_PROPERTY_FIELD(SpatialBinningModifier, reductionOperation);
 DEFINE_PROPERTY_FIELD(SpatialBinningModifier, firstDerivative);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, binDirection1);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, binDirection2);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, binDirection3);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, numberOfBins1);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, numberOfBins2);
-DEFINE_PROPERTY_FIELD(SpatialBinningModifier, numberOfBins3);
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, sourceProperty, "Input property");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, onlySelectedParticles, "Use only selected particles");
+DEFINE_PROPERTY_FIELD(SpatialBinningModifier, binDirection);
+DEFINE_PROPERTY_FIELD(SpatialBinningModifier, numberOfBinsX);
+DEFINE_PROPERTY_FIELD(SpatialBinningModifier, numberOfBinsY);
+SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, sourceProperty, "Particle property");
 SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, reductionOperation, "Reduction operation");
 SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, firstDerivative, "Compute first derivative");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, binDirection1, "Cell vector 1");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, binDirection2, "Cell vector 2");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, binDirection3, "Cell vector 3");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, numberOfBins1, "Bins along cell vector 1");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, numberOfBins2, "Bins along cell vector 2");
-SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, numberOfBins3, "Bins along cell vector 3");
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SpatialBinningModifier, numberOfBins1, IntegerParameterUnit, 1);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SpatialBinningModifier, numberOfBins2, IntegerParameterUnit, 1);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SpatialBinningModifier, numberOfBins3, IntegerParameterUnit, 1);
+SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, binDirection, "Binning direction");
+SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, numberOfBinsX, "Number of spatial bins");
+SET_PROPERTY_FIELD_LABEL(SpatialBinningModifier, numberOfBinsY, "Number of spatial bins");
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SpatialBinningModifier, numberOfBinsX, IntegerParameterUnit, 1);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SpatialBinningModifier, numberOfBinsY, IntegerParameterUnit, 1);
 
 bool SpatialBinningModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
     return input.containsObject<Particles>();
+}
+
+bool SpatialBinningModifier::is1D() const
+{
+    return is1D(binDirection());
+}
+
+bool SpatialBinningModifier::is1D(BinDirection direction)
+{
+    return direction == CellVector1 || direction == CellVector2 || direction == CellVector3;
+}
+
+int SpatialBinningModifier::binDirectionX(BinDirection direction)
+{
+    return static_cast<int>(direction) & 3;
+}
+
+int SpatialBinningModifier::binDirectionY(BinDirection direction)
+{
+    return (static_cast<int>(direction) >> 2) & 3;
+}
+
+void SpatialBinningModifier::initializeModifier(const ModifierInitializationRequest& request)
+{
+    Modifier::initializeModifier(request);
+
+    if(!sourceProperty() && this_task::isInteractive()) {
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
+        if(const Particles* particles = input.getObject<Particles>()) {
+            PropertyReference bestProperty;
+            for(const Property* property : particles->properties()) {
+                if(property->dataType() == Property::Int8 || property->dataType() == Property::Int32 ||
+                   property->dataType() == Property::Int64 || property->dataType() == Property::Float32 ||
+                   property->dataType() == Property::Float64) {
+                    bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
+                }
+            }
+            if(bestProperty)
+                setSourceProperty(bestProperty);
+        }
+    }
 }
 
 Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
@@ -197,61 +166,57 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
 
     const SimulationCell* cell = state.getObject<SimulationCell>();
     if(!cell)
-        throw Exception(tr("Spatial binning requires a simulation cell."));
+        throw Exception(tr("Bin and reduce requires a simulation cell."));
     if(cell->isDegenerate())
-        throw Exception(tr("Cannot create spatial bins because the simulation cell is degenerate."));
+        throw Exception(tr("Cannot bin particles because the simulation cell is degenerate."));
+    if(!sourceProperty())
+        throw Exception(tr("No particle property selected."));
 
-    const std::array<bool, 3> active = activeDirections(this);
-    const int activeCount = activeDirectionCount(active);
-    if(activeCount == 0)
-        throw Exception(tr("Please activate at least one binning direction."));
-    if(cell->is2D() && active[2])
-        throw Exception(tr("Cannot bin along cell vector 3 for a two-dimensional simulation cell."));
-
-    const VoxelGrid::GridDimensions gridShape = makeGridShape(this, active);
-    const size_t totalBinCount = gridShape[0] * gridShape[1] * gridShape[2];
-    if(totalBinCount == 0)
-        throw Exception(tr("The bin grid is empty."));
-
-    BufferReadAccess<Point3> positions = particles->expectProperty(Particles::PositionProperty);
-    BufferReadAccess<SelectionIntType> selection(onlySelectedParticles() ? particles->getProperty(Particles::SelectionProperty) : nullptr);
-    if(onlySelectedParticles() && !selection)
-        throw Exception(tr("The option 'Use only selected particles' requires a particle selection. Add a selection modifier upstream or disable this option."));
-
+    QString propertyError;
     const Property* inputProperty = nullptr;
     int vectorComponent = -1;
-    QString propertyError;
-    if(sourceProperty()) {
-        std::tie(inputProperty, vectorComponent) = sourceProperty().findInContainerWithComponent(particles, propertyError, false);
-        if(!inputProperty)
-            throw Exception(std::move(propertyError));
-    }
+    std::tie(inputProperty, vectorComponent) = sourceProperty().findInContainerWithComponent(particles, propertyError, false);
+    if(!inputProperty)
+        throw Exception(std::move(propertyError));
 
-    const size_t outputComponentCount = inputProperty ? ((vectorComponent >= 0) ? 1 : inputProperty->componentCount()) : 1;
-    QStringList outputComponentNames;
-    if(inputProperty && vectorComponent < 0)
-        outputComponentNames = inputProperty->componentNames();
+    const int axisX = binDirectionX(binDirection());
+    const int axisY = binDirectionY(binDirection());
+    if(cell->is2D() && (!is1D() ? (axisX == 2 || axisY == 2) : axisX == 2))
+        throw Exception(tr("The selected binning direction is not available for a two-dimensional simulation cell."));
 
-    const QString propertyName = outputPropertyName(inputProperty, vectorComponent);
-    const QString yAxisLabel = outputAxisLabel(this, inputProperty, vectorComponent);
-    const FloatType binVolume = (cell->is2D() ? cell->volume2D() : cell->volume3D()) / FloatType(totalBinCount);
+    const int binCountX = std::max(1, numberOfBinsX());
+    const int binCountY = is1D() ? 1 : std::max(1, numberOfBinsY());
+    const size_t totalBinCount = size_t(binCountX) * size_t(binCountY);
+
+    BufferReadAccess<Point3> positions = particles->expectProperty(Particles::PositionProperty);
+    const bool periodicX = cell->hasPbcCorrected(axisX);
+    const bool periodicY = !is1D() && cell->hasPbcCorrected(axisY);
+
+    const Vector3 normalX = binNormalX(cell, binDirection());
+    const Vector3 normalY = binNormalY(cell, binDirection());
+    if(normalX == Vector3::Zero() || (!is1D() && normalY == Vector3::Zero()))
+        throw Exception(tr("Simulation cell is degenerate."));
+
+    const FloatType xAxisRangeStart = (cell->cellOrigin() - Point3::Origin()).dot(normalX.normalized());
+    const FloatType xAxisRangeEnd = xAxisRangeStart + axisExtent(cell, normalX);
+    const FloatType yAxisRangeStart = is1D() ? FloatType(0) : (cell->cellOrigin() - Point3::Origin()).dot(normalY.normalized());
+    const FloatType yAxisRangeEnd = is1D() ? FloatType(0) : (yAxisRangeStart + axisExtent(cell, normalY));
 
     DataTable* table = nullptr;
     VoxelGrid* grid = nullptr;
-    if(activeCount == 1) {
-        const int axis = firstActiveAxis(active);
-        table = state.createObject<DataTable>(QString(OutputIdentifier), request.modificationNode(), DataTable::Line, outputTitle(activeCount));
-        table->setElementCount(gridShape[axis]);
-        table->setAxisLabelX(axisTitle(axis));
-        table->setAxisLabelY(yAxisLabel);
-        table->setIntervalStart(0);
-        table->setIntervalEnd(activeAxisLength(cell, axis));
+    if(is1D()) {
+        table = state.createObject<DataTable>(QString(OutputIdentifier), request.modificationNode(), DataTable::Line, tr("Bin and reduce"));
+        table->setElementCount(binCountX);
+        table->setAxisLabelX(tr("Position"));
+        table->setAxisLabelY(outputPropertyName(inputProperty));
+        table->setIntervalStart(xAxisRangeStart);
+        table->setIntervalEnd(xAxisRangeEnd);
     }
     else {
         grid = state.createObject<VoxelGrid>(request.modificationNode(), QString(OutputIdentifier));
-        grid->setTitle(outputTitle(activeCount));
+        grid->setTitle(tr("Bin and reduce"));
         grid->setGridType(VoxelGrid::CellData);
-        grid->setShape(gridShape);
+        grid->setShape({size_t(binCountX), size_t(binCountY), size_t(1)});
         grid->setElementCount(totalBinCount);
         grid->setDomain(cell);
     }
@@ -259,177 +224,122 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
     return asyncLaunch([
             state = std::move(state),
             positions = std::move(positions),
-            selection = std::move(selection),
             cell,
             inputProperty,
             vectorComponent,
-            outputComponentCount,
-            outputComponentNames = std::move(outputComponentNames),
-            propertyName,
-            active,
-            activeCount,
-            firstDerivative = firstDerivative(),
-            gridShape,
+            binCountX,
+            binCountY,
             totalBinCount,
-            binVolume,
+            axisX,
+            axisY,
+            xAxisRangeStart,
+            xAxisRangeEnd,
+            yAxisRangeStart,
+            yAxisRangeEnd,
             reductionOperation = reductionOperation(),
+            firstDerivative = firstDerivative(),
+            periodicX,
+            periodicY,
             table,
-            grid]() mutable
+            grid,
+            is1D = is1D()]() mutable
     {
         std::vector<int64_t> counts(totalBinCount, 0);
-        std::vector<FloatType> sums(totalBinCount * outputComponentCount, FloatType(0));
-        std::vector<FloatType> mins(totalBinCount * outputComponentCount, std::numeric_limits<FloatType>::max());
-        std::vector<FloatType> maxs(totalBinCount * outputComponentCount, std::numeric_limits<FloatType>::lowest());
+        std::vector<double> reduced(totalBinCount, 0.0);
 
-        size_t includedParticleCount = 0;
-        size_t skippedOutsideCount = 0;
-
-        auto accumulateValues = [&](size_t particleIndex, auto valueGetter) {
-            std::array<size_t, 3> coords{};
-            if(!mapParticleToBin(cell, positions[particleIndex], active, gridShape, coords)) {
-                skippedOutsideCount++;
-                return;
+        auto applyValue = [&](size_t index, double value) {
+            if(reductionOperation == Mean || reductionOperation == Sum || reductionOperation == SumDividedByBinVolume) {
+                reduced[index] += value;
             }
-
-            const size_t binIndex = VoxelGrid::voxelIndex(coords, gridShape);
-            counts[binIndex]++;
-            includedParticleCount++;
-
-            for(size_t component = 0; component < outputComponentCount; ++component) {
-                const FloatType value = valueGetter(component);
-                const size_t offset = binIndex * outputComponentCount + component;
-                sums[offset] += value;
-                mins[offset] = std::min(mins[offset], value);
-                maxs[offset] = std::max(maxs[offset], value);
+            else if(counts[index] == 0) {
+                reduced[index] = value;
             }
+            else if(reductionOperation == Min) {
+                reduced[index] = std::min(reduced[index], value);
+            }
+            else if(reductionOperation == Max) {
+                reduced[index] = std::max(reduced[index], value);
+            }
+            counts[index]++;
         };
 
-        const SelectionIntType* selectionPtr = selection ? selection.cbegin() : nullptr;
-        if(!inputProperty) {
+        inputProperty->forAnyType([&](auto _) {
+            using T = decltype(_);
+            BufferReadAccess<T*> values(inputProperty);
+
             for(size_t particleIndex = 0; particleIndex < positions.size(); ++particleIndex) {
-                if(selectionPtr && !selectionPtr[particleIndex])
+                const Point3 reducedPos = cell->absoluteToReduced(positions[particleIndex]);
+                int ix = static_cast<int>(reducedPos[axisX] * binCountX);
+                int iy = is1D ? 0 : static_cast<int>(reducedPos[axisY] * binCountY);
+
+                if(periodicX)
+                    ix = SimulationCell::modulo(ix, binCountX);
+                if(!is1D && periodicY)
+                    iy = SimulationCell::modulo(iy, binCountY);
+
+                if(ix < 0 || ix >= binCountX || iy < 0 || iy >= binCountY)
                     continue;
-                accumulateValues(particleIndex, [](size_t) { return FloatType(1); });
+
+                const size_t binIndex = size_t(iy) * size_t(binCountX) + size_t(ix);
+                applyValue(binIndex, static_cast<double>(values.get(particleIndex, std::max(vectorComponent, 0))));
             }
-        }
-        else {
-            inputProperty->forAnyType([&](auto _) {
-                using T = decltype(_);
-                BufferReadAccess<T*> values(inputProperty);
-                for(size_t particleIndex = 0; particleIndex < positions.size(); ++particleIndex) {
-                    if(selectionPtr && !selectionPtr[particleIndex])
-                        continue;
-                    accumulateValues(particleIndex, [&](size_t component) {
-                        const int sourceComponent = (vectorComponent >= 0) ? vectorComponent : static_cast<int>(component);
-                        return static_cast<FloatType>(values.get(particleIndex, sourceComponent));
-                    });
-                }
-            });
+        });
+
+        const FloatType binVolume = (cell->is2D() ? cell->volume2D() : cell->volume3D()) / FloatType(totalBinCount);
+        for(size_t i = 0; i < totalBinCount; ++i) {
+            if(counts[i] == 0)
+                continue;
+            if(reductionOperation == Mean)
+                reduced[i] /= static_cast<double>(counts[i]);
+            else if(reductionOperation == SumDividedByBinVolume && binVolume > 0)
+                reduced[i] /= static_cast<double>(binVolume);
         }
 
-        auto reducedValue = [&](size_t binIndex, size_t component) {
-            const size_t offset = binIndex * outputComponentCount + component;
-            if(counts[binIndex] == 0)
-                return FloatType(0);
-
-            switch(reductionOperation) {
-            case Sum:
-                return sums[offset];
-            case Mean:
-                return sums[offset] / FloatType(counts[binIndex]);
-            case Min:
-                return mins[offset];
-            case Max:
-                return maxs[offset];
-            case SumDividedByBinVolume:
-                return (binVolume > FloatType(0)) ? (sums[offset] / binVolume) : FloatType(0);
-            }
-            OVITO_ASSERT(false);
-            return FloatType(0);
-        };
-
-        if(table && firstDerivative && table->elementCount() > 1) {
-            const int axis = firstActiveAxis(active);
-            const FloatType spacing = activeAxisLength(cell, axis) / FloatType(table->elementCount());
+        if(is1D && firstDerivative && binCountX > 1) {
+            const FloatType spacing = (xAxisRangeEnd - xAxisRangeStart) / FloatType(binCountX);
             if(spacing > FloatType(0)) {
-                std::vector<FloatType> derivativeData(table->elementCount() * outputComponentCount, FloatType(0));
-                const bool periodic = cell->hasPbcCorrected(axis);
-                for(size_t binIndex = 0; binIndex < table->elementCount(); ++binIndex) {
-                    size_t iPlus = binIndex + 1;
-                    size_t iMinus = (binIndex == 0) ? 0 : (binIndex - 1);
-                    FloatType denom = FloatType(2) * spacing;
-                    if(iPlus >= table->elementCount()) {
-                        if(periodic) {
-                            iPlus = 0;
-                        }
-                        else {
-                            iPlus = table->elementCount() - 1;
-                            denom = spacing;
-                        }
+                std::vector<double> derivative(binCountX, 0.0);
+                for(int i = 0; i < binCountX; ++i) {
+                    int plus = i + 1;
+                    int minus = i - 1;
+                    double denom = 2.0 * spacing;
+                    if(plus >= binCountX) {
+                        plus = periodicX ? 0 : (binCountX - 1);
+                        if(!periodicX) denom = spacing;
                     }
-                    if(binIndex == 0 && !periodic)
-                        denom = spacing;
-                    if(binIndex == 0 && periodic)
-                        iMinus = table->elementCount() - 1;
-
-                    for(size_t component = 0; component < outputComponentCount; ++component) {
-                        const FloatType plusValue = reducedValue(iPlus, component);
-                        const FloatType minusValue = reducedValue(iMinus, component);
-                        derivativeData[binIndex * outputComponentCount + component] = (plusValue - minusValue) / denom;
+                    if(minus < 0) {
+                        minus = periodicX ? (binCountX - 1) : 0;
+                        if(!periodicX) denom = spacing;
                     }
+                    derivative[i] = (reduced[plus] - reduced[minus]) / denom;
                 }
-                for(size_t binIndex = 0; binIndex < table->elementCount(); ++binIndex) {
-                    for(size_t component = 0; component < outputComponentCount; ++component)
-                        sums[binIndex * outputComponentCount + component] = derivativeData[binIndex * outputComponentCount + component];
-                }
+                reduced.swap(derivative);
             }
         }
 
         if(table) {
-            Property* yProperty = table->createProperty(DataBuffer::Initialized,
-                                                        propertyName,
-                                                        Property::FloatDefault,
-                                                        outputComponentCount,
-                                                        outputComponentNames);
-            BufferWriteAccess<FloatType*, access_mode::discard_write> yValues(yProperty);
-            for(size_t binIndex = 0; binIndex < table->elementCount(); ++binIndex) {
-                for(size_t component = 0; component < outputComponentCount; ++component)
-                    yValues.set(binIndex, component, firstDerivative ? sums[binIndex * outputComponentCount + component] : reducedValue(binIndex, component));
-            }
+            Property* yProperty = table->createProperty(DataBuffer::Initialized, outputPropertyName(inputProperty), Property::FloatDefault);
+            BufferWriteAccess<FloatType, access_mode::discard_write> yValues(yProperty);
+            for(int i = 0; i < binCountX; ++i)
+                yValues[i] = static_cast<FloatType>(reduced[i]);
             table->setY(yProperty);
         }
         else if(grid) {
-            Property* binnedProperty = grid->createProperty(DataBuffer::Initialized,
-                                                            propertyName,
-                                                            Property::FloatDefault,
-                                                            outputComponentCount,
-                                                            outputComponentNames);
-            BufferWriteAccess<FloatType*, access_mode::discard_write> values(binnedProperty);
-            for(size_t binIndex = 0; binIndex < totalBinCount; ++binIndex) {
-                for(size_t component = 0; component < outputComponentCount; ++component)
-                    values.set(binIndex, component, reducedValue(binIndex, component));
-            }
-
-            if(VoxelGridVis* vis = grid->visElement<VoxelGridVis>()) {
-                vis->colorMapping()->setSourceProperty(PropertyReference(binnedProperty, outputComponentCount > 1 ? 0 : -1));
-            }
+            Property* binnedProperty = grid->createProperty(DataBuffer::Initialized, outputPropertyName(inputProperty), Property::FloatDefault);
+            BufferWriteAccess<FloatType, access_mode::discard_write> values(binnedProperty);
+            for(size_t i = 0; i < totalBinCount; ++i)
+                values[i] = static_cast<FloatType>(reduced[i]);
+            if(VoxelGridVis* vis = grid->visElement<VoxelGridVis>())
+                vis->colorMapping()->setSourceProperty(PropertyReference(binnedProperty));
         }
 
-        const size_t activeBins = (activeCount == 1) ? gridShape[firstActiveAxis(active)] : totalBinCount;
-        QString statusText = SpatialBinningModifier::tr("Binned %1 particles into %2 spatial bins using %3.")
-            .arg(includedParticleCount)
-            .arg(activeBins)
+        QString statusText = SpatialBinningModifier::tr("Computed %1 over %2 spatial bins using %3.")
+            .arg(outputPropertyName(inputProperty))
+            .arg(totalBinCount)
             .arg(reductionLabel(reductionOperation));
-        if(firstDerivative && table)
-            statusText += SpatialBinningModifier::tr("\nComputed the first derivative of the 1D profile.");
-        if(skippedOutsideCount != 0) {
-            state.setStatus(PipelineStatus(PipelineStatus::Warning,
-                statusText + SpatialBinningModifier::tr("\nIgnored %1 particles outside the simulation cell domain.").arg(skippedOutsideCount)));
-        }
-        else {
-            state.setStatus(PipelineStatus(std::move(statusText)));
-        }
-
+        if(is1D && firstDerivative)
+            statusText += SpatialBinningModifier::tr("\nComputed first derivative of the 1D profile.");
+        state.setStatus(PipelineStatus(std::move(statusText)));
         return std::move(state);
     });
 }

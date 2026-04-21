@@ -25,8 +25,12 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <QLabel>
 
 namespace Ovito {
+
+class BooleanParameterUI;
+class IntegerParameterUI;
 
 class OVITO_PARTICLESGUI_EXPORT SpatialBinningModifierEditor : public PropertiesEditor
 {
@@ -40,10 +44,12 @@ public:
 private Q_SLOTS:
 
     void plotBinning();
-    void updatePlotVisibility();
+    void updateWidgets();
 
 private:
 
+    BooleanParameterUI* _firstDerivativeUI = nullptr;
+    IntegerParameterUI* _binsYUI = nullptr;
     QLabel* _plotTitleLabel = nullptr;
     DataTablePlotWidget* _plotWidget = nullptr;
 };

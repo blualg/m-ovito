@@ -33,6 +33,7 @@
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SpatialBinningModifierEditor.h"
+
 #include <QLabel>
 
 namespace Ovito {
@@ -42,70 +43,64 @@ SET_OVITO_OBJECT_EDITOR(SpatialBinningModifier, SpatialBinningModifierEditor);
 
 void SpatialBinningModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-    QWidget* rollout = createRollout(tr("Spatial binning"), rolloutParams, "manual:particles.modifiers.bin_and_reduce");
+    QWidget* rollout = createRollout(tr("Bin and reduce"), rolloutParams, "manual:particles.modifiers.bin_and_reduce");
 
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
 
-    auto* propertyUI = createParamUI<PropertyReferenceParameterUI>(
+    PropertyReferenceParameterUI* propertyUI = createParamUI<PropertyReferenceParameterUI>(
         PROPERTY_FIELD(SpatialBinningModifier::sourceProperty),
-        &Particles::OOClass(),
-        PropertyReferenceParameterUI::ShowComponentsAndVectorProperties);
-    propertyUI->setNullPropertyItem(tr("<None> (count particles)"));
-    layout->addWidget(new QLabel(tr("Input property")));
+        &Particles::OOClass());
+    layout->addWidget(new QLabel(tr("Particle property:")));
     layout->addWidget(propertyUI->comboBox());
 
-    auto* reductionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::reductionOperation));
-    reductionUI->comboBox()->addItem(tr("sum"), QVariant::fromValue((int)SpatialBinningModifier::Sum));
+    auto* reductionLayout = new QGridLayout();
+    reductionLayout->setContentsMargins(0, 0, 0, 0);
+    reductionLayout->setColumnStretch(1, 1);
+
+    reductionLayout->addWidget(new QLabel(tr("Reduction operation:")), 0, 0);
+    VariantComboBoxParameterUI* reductionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::reductionOperation));
     reductionUI->comboBox()->addItem(tr("mean"), QVariant::fromValue((int)SpatialBinningModifier::Mean));
+    reductionUI->comboBox()->addItem(tr("sum"), QVariant::fromValue((int)SpatialBinningModifier::Sum));
+    reductionUI->comboBox()->addItem(tr("sum divided by bin volume"), QVariant::fromValue((int)SpatialBinningModifier::SumDividedByBinVolume));
     reductionUI->comboBox()->addItem(tr("min"), QVariant::fromValue((int)SpatialBinningModifier::Min));
     reductionUI->comboBox()->addItem(tr("max"), QVariant::fromValue((int)SpatialBinningModifier::Max));
-    reductionUI->comboBox()->addItem(tr("sum divided by bin volume"), QVariant::fromValue((int)SpatialBinningModifier::SumDividedByBinVolume));
-    layout->addWidget(new QLabel(tr("Reduction operation")));
-    layout->addWidget(reductionUI->comboBox());
+    reductionLayout->addWidget(reductionUI->comboBox(), 0, 1);
+    layout->addLayout(reductionLayout);
 
-    auto* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::onlySelectedParticles));
-    layout->addWidget(onlySelectedUI->checkBox());
+    auto* directionLayout = new QGridLayout();
+    directionLayout->setContentsMargins(0, 0, 0, 0);
+    directionLayout->setColumnStretch(1, 1);
+    directionLayout->setColumnStretch(2, 1);
 
-    auto* firstDerivativeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::firstDerivative));
-    layout->addWidget(firstDerivativeUI->checkBox());
+    directionLayout->addWidget(new QLabel(tr("Binning direction:")), 0, 0);
+    VariantComboBoxParameterUI* directionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::binDirection));
+    directionUI->comboBox()->addItem(tr("cell vector 1"), QVariant::fromValue((int)SpatialBinningModifier::CellVector1));
+    directionUI->comboBox()->addItem(tr("cell vector 2"), QVariant::fromValue((int)SpatialBinningModifier::CellVector2));
+    directionUI->comboBox()->addItem(tr("cell vector 3"), QVariant::fromValue((int)SpatialBinningModifier::CellVector3));
+    directionUI->comboBox()->addItem(tr("vectors 1 and 2"), QVariant::fromValue((int)SpatialBinningModifier::CellVectors12));
+    directionUI->comboBox()->addItem(tr("vectors 1 and 3"), QVariant::fromValue((int)SpatialBinningModifier::CellVectors13));
+    directionUI->comboBox()->addItem(tr("vectors 2 and 3"), QVariant::fromValue((int)SpatialBinningModifier::CellVectors23));
+    directionLayout->addWidget(directionUI->comboBox(), 0, 1, 1, 2);
 
-    auto* directionsBox = new QGroupBox(tr("Binning directions"));
-    auto* directionsLayout = new QGridLayout(directionsBox);
-    directionsLayout->setContentsMargins(4, 4, 4, 4);
-    directionsLayout->setColumnStretch(2, 1);
+    IntegerParameterUI* binsXUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::numberOfBinsX));
+    directionLayout->addWidget(binsXUI->label(), 1, 0);
+    directionLayout->addLayout(binsXUI->createFieldLayout(), 1, 1);
 
-    auto* dir1UI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::binDirection1));
-    auto* bins1UI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::numberOfBins1));
-    directionsLayout->addWidget(dir1UI->checkBox(), 0, 0);
-    directionsLayout->addWidget(new QLabel(tr("Bins")), 0, 1);
-    directionsLayout->addLayout(bins1UI->createFieldLayout(), 0, 2);
+    _binsYUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::numberOfBinsY));
+    directionLayout->addLayout(_binsYUI->createFieldLayout(), 1, 2);
+    layout->addLayout(directionLayout);
 
-    auto* dir2UI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::binDirection2));
-    auto* bins2UI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::numberOfBins2));
-    directionsLayout->addWidget(dir2UI->checkBox(), 1, 0);
-    directionsLayout->addWidget(new QLabel(tr("Bins")), 1, 1);
-    directionsLayout->addLayout(bins2UI->createFieldLayout(), 1, 2);
-    bins2UI->setEnabled(false);
-    connect(dir2UI->checkBox(), &QCheckBox::toggled, bins2UI, &IntegerParameterUI::setEnabled);
+    _firstDerivativeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::firstDerivative));
+    layout->addWidget(_firstDerivativeUI->checkBox());
 
-    auto* dir3UI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::binDirection3));
-    auto* bins3UI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialBinningModifier::numberOfBins3));
-    directionsLayout->addWidget(dir3UI->checkBox(), 2, 0);
-    directionsLayout->addWidget(new QLabel(tr("Bins")), 2, 1);
-    directionsLayout->addLayout(bins3UI->createFieldLayout(), 2, 2);
-    bins3UI->setEnabled(false);
-    connect(dir3UI->checkBox(), &QCheckBox::toggled, bins3UI, &IntegerParameterUI::setEnabled);
-
-    layout->addWidget(directionsBox);
-
-    _plotTitleLabel = new QLabel(tr("1D binned profile:"));
+    _plotTitleLabel = new QLabel(tr("Reduction:"));
     layout->addWidget(_plotTitleLabel);
 
     _plotWidget = new DataTablePlotWidget();
-    _plotWidget->setMinimumHeight(200);
-    _plotWidget->setMaximumHeight(200);
+    _plotWidget->setMinimumHeight(220);
+    _plotWidget->setMaximumHeight(220);
     layout->addWidget(_plotWidget);
 
     layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
@@ -113,47 +108,39 @@ void SpatialBinningModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &SpatialBinningModifierEditor::plotBinning);
-    connect(this, &PropertiesEditor::contentsReplaced, this, &SpatialBinningModifierEditor::updatePlotVisibility);
-    connect(dir1UI->checkBox(), &QCheckBox::toggled, this, &SpatialBinningModifierEditor::updatePlotVisibility);
-    connect(dir2UI->checkBox(), &QCheckBox::toggled, this, &SpatialBinningModifierEditor::updatePlotVisibility);
-    connect(dir3UI->checkBox(), &QCheckBox::toggled, this, &SpatialBinningModifierEditor::updatePlotVisibility);
-    connect(dir1UI->checkBox(), &QCheckBox::toggled, firstDerivativeUI, [this, firstDerivativeUI]() {
-        firstDerivativeUI->setEnabled(_plotWidget && _plotWidget->isVisible());
-    });
-    connect(dir2UI->checkBox(), &QCheckBox::toggled, firstDerivativeUI, [this, firstDerivativeUI]() {
-        firstDerivativeUI->setEnabled(_plotWidget && _plotWidget->isVisible());
-    });
-    connect(dir3UI->checkBox(), &QCheckBox::toggled, firstDerivativeUI, [this, firstDerivativeUI]() {
-        firstDerivativeUI->setEnabled(_plotWidget && _plotWidget->isVisible());
-    });
+    connect(this, &PropertiesEditor::contentsReplaced, this, &SpatialBinningModifierEditor::updateWidgets);
+    connect(this, &PropertiesEditor::contentsChanged, this, &SpatialBinningModifierEditor::updateWidgets);
+    connect(directionUI->comboBox(), &QComboBox::currentIndexChanged, this, [this](int) { updateWidgets(); });
 
-    updatePlotVisibility();
-    firstDerivativeUI->setEnabled(_plotWidget && _plotWidget->isVisible());
+    updateWidgets();
 }
 
 void SpatialBinningModifierEditor::plotBinning()
 {
     handleExceptions([&]() {
-        DataOORef<const DataTable> table =
-            getPipelineOutput().getObjectBy<DataTable>(static_cast<const PipelineNode*>(modificationNode()),
-                                                       SpatialBinningModifier::OutputIdentifier);
-        _plotWidget->setTable(std::move(table));
-        updatePlotVisibility();
+        const bool showPlot = editObject() && static_object_cast<SpatialBinningModifier>(editObject())->is1D();
+        if(showPlot)
+            _plotWidget->setTable(getPipelineOutput().getObjectBy<DataTable>(modificationNode(), SpatialBinningModifier::OutputIdentifier));
+        else
+            _plotWidget->setTable({});
+        updateWidgets();
     });
 }
 
-void SpatialBinningModifierEditor::updatePlotVisibility()
+void SpatialBinningModifierEditor::updateWidgets()
 {
-    bool showPlot = false;
-    if(const auto* modifier = static_object_cast<SpatialBinningModifier>(editObject())) {
-        int activeDirections = int(modifier->binDirection1()) + int(modifier->binDirection2()) + int(modifier->binDirection3());
-        showPlot = (activeDirections == 1);
-    }
+    bool is1D = true;
+    if(const auto* modifier = static_object_cast<SpatialBinningModifier>(editObject()))
+        is1D = modifier->is1D();
 
+    if(_binsYUI)
+        _binsYUI->setEnabled(!is1D);
+    if(_firstDerivativeUI)
+        _firstDerivativeUI->setEnabled(is1D);
     if(_plotTitleLabel)
-        _plotTitleLabel->setVisible(showPlot);
+        _plotTitleLabel->setVisible(is1D);
     if(_plotWidget)
-        _plotWidget->setVisible(showPlot);
+        _plotWidget->setVisible(is1D);
 }
 
 }  // namespace Ovito
