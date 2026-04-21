@@ -21,17 +21,110 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/particles/modifier/modify/CreateBondsModifier.h>
+#include <ovito/particles/modifier/modify/LoadTrajectoryModifier.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
+#include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/dataset/io/FileImporter.h>
+#include <ovito/core/dataset/io/FileSource.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/pipeline/ModifierEvaluationRequest.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include "CreateBondsModifierEditor.h"
 
 namespace Ovito {
+
+namespace {
+
+bool pipelineContainsNode(Pipeline* pipeline, const ModificationNode* targetNode)
+{
+    if(!pipeline || !targetNode)
+        return false;
+
+    for(PipelineNode* node = pipeline->head(); node != nullptr; ) {
+        if(node == static_cast<const PipelineNode*>(targetNode))
+            return true;
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node))
+            node = modNode->input();
+        else
+            break;
+    }
+
+    return false;
+}
+
+Pipeline* findOwningPipeline(CreateBondsModifierEditor* editor, ModificationNode* targetNode)
+{
+    if(!editor || !targetNode)
+        return nullptr;
+
+    if(Pipeline* pipeline = editor->selectedPipeline(); pipelineContainsNode(pipeline, targetNode))
+        return pipeline;
+
+    Pipeline* owner = nullptr;
+    editor->visitScenePipelines([&](SceneNode* sceneNode) {
+        if(Pipeline* pipeline = sceneNode->pipeline(); pipelineContainsNode(pipeline, targetNode)) {
+            owner = pipeline;
+            return false;
+        }
+        return true;
+    });
+    return owner;
+}
+
+ModificationNode* bottomModificationNode(Pipeline* pipeline)
+{
+    auto* modNode = dynamic_object_cast<ModificationNode>(pipeline ? pipeline->head() : nullptr);
+    while(modNode) {
+        if(auto* predecessor = dynamic_object_cast<ModificationNode>(modNode->input()))
+            modNode = predecessor;
+        else
+            break;
+    }
+    return modNode;
+}
+
+OORef<FileImporter> createImporterForUrl(CreateBondsModifierEditor* editor, const QUrl& url, const FileImporterClass* importerType, const QString& importerFormat)
+{
+    OVITO_ASSERT(editor);
+
+    OORef<FileImporter> importer;
+    if(!importerType) {
+        importer = ProgressDialog::blockForFuture(FileImporter::autodetectFileFormat(url), editor->ui(), editor->parentWindow(), CreateBondsModifierEditor::tr("Inspecting topology file"));
+        if(!importer)
+            throw Exception(CreateBondsModifierEditor::tr("Could not auto-detect the format of the selected topology file."));
+    }
+    else {
+        importer = static_object_cast<FileImporter>(importerType->createInstance());
+        if(!importer)
+            throw Exception(CreateBondsModifierEditor::tr("Could not initialize the selected file importer."));
+        importer->setSelectedFileFormat(importerFormat);
+    }
+
+    for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+        if(OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz)) {
+            if(editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
+                if(OORef<FileImporterEditor> importerEditor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance())) {
+                    importerEditor->setUserInterface(editor->ui());
+                    importerEditor->inspectNewFile(importer, url);
+                }
+            }
+        }
+    }
+
+    return importer;
+}
+
+} // namespace
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CreateBondsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
@@ -145,6 +238,10 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     _onlyIntraMoleculeBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
     layout2->addWidget(_onlyIntraMoleculeBondsUI->checkBox());
 
+    auto* loadTopologyButton = new QPushButton(tr("Load topology from file..."));
+    connect(loadTopologyButton, &QPushButton::clicked, this, &CreateBondsModifierEditor::onLoadTopologyFromFile);
+    layout2->addWidget(loadTopologyButton);
+
     // Lower cutoff parameter.
     row = 0;
     gridlayout = new QGridLayout();
@@ -171,6 +268,105 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Update van der Waals radius list.
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &CreateBondsModifierEditor::updateVanDerWaalsList);
+}
+
+/******************************************************************************
+* Lets the user replace guessed bonds with topology imported from a separate file.
+******************************************************************************/
+void CreateBondsModifierEditor::onLoadTopologyFromFile()
+{
+    handleExceptions([this]() {
+        auto* createBondsModifier = static_object_cast<CreateBondsModifier>(editObject());
+        if(!createBondsModifier)
+            throw Exception(tr("No Create bonds modifier is currently being edited."));
+
+        ModificationNode* targetNode = modificationNode();
+        if(!targetNode)
+            targetNode = createBondsModifier->someNode();
+        if(!targetNode)
+            throw Exception(tr("Could not determine the pipeline node associated with this Create bonds modifier."));
+
+        Pipeline* pipeline = findOwningPipeline(this, targetNode);
+        if(!pipeline)
+            throw Exception(tr("Could not determine the pipeline containing this Create bonds modifier."));
+
+        OORef<PipelineNode> trajectorySource;
+        if(ModificationNode* firstModNode = bottomModificationNode(pipeline)) {
+            if(auto* loadTrajectoryModifier = dynamic_object_cast<LoadTrajectoryModifier>(firstModNode->modifier()))
+                trajectorySource = loadTrajectoryModifier->trajectorySource();
+        }
+        if(!trajectorySource)
+            trajectorySource = pipeline->source();
+        if(!trajectorySource)
+            throw Exception(tr("The current pipeline has no source that can be reused as the trajectory input."));
+
+        auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(ParticleImporter::OOClass());
+        ImportFileDialog dialog(ui(), importerClasses, parentWindow(), tr("Pick topology file"), false);
+        if(FileSource* fileSource = dynamic_object_cast<FileSource>(trajectorySource.get())) {
+            if(!fileSource->sourceUrls().empty() && fileSource->sourceUrls().front().isLocalFile()) {
+#ifndef Q_OS_LINUX
+                dialog.selectFile(fileSource->sourceUrls().front().toLocalFile());
+#else
+                dialog.setDirectory(QFileInfo(fileSource->sourceUrls().front().toLocalFile()).dir());
+#endif
+            }
+        }
+        if(dialog.exec() != QDialog::Accepted)
+            return;
+
+        const QUrl topologyUrl = dialog.urlToImport();
+        const auto& [importerType, importerFormat] = dialog.selectedFileImporter();
+        OORef<FileImporter> importer = createImporterForUrl(this, topologyUrl, importerType, importerFormat);
+
+        auto* particleImporter = dynamic_object_cast<ParticleImporter>(importer.get());
+        if(!particleImporter)
+            throw Exception(tr("The selected file does not provide particle topology information."));
+        if(particleImporter->isTrajectoryFormat())
+            throw Exception(tr("Please choose a topology file, not a trajectory file."));
+
+        auto* fileSourceImporter = dynamic_object_cast<FileSourceImporter>(importer.get());
+        if(!fileSourceImporter)
+            throw Exception(tr("The selected importer cannot be used as a pipeline file source."));
+
+        performTransaction(tr("Load topology file"), [this, createBondsModifier, pipeline = OORef<Pipeline>(pipeline), topologyUrl, fileSourceImporter = OORef<FileSourceImporter>(fileSourceImporter), trajectorySource = OORef<PipelineNode>(trajectorySource)]() {
+            OORef<FileSource> topologySource = OORef<FileSource>::create();
+            topologySource->setSource({topologyUrl}, fileSourceImporter, true);
+
+            ModificationNode* firstModNode = bottomModificationNode(pipeline);
+            LoadTrajectoryModifier* existingLoadTrajectory = firstModNode ? dynamic_object_cast<LoadTrajectoryModifier>(firstModNode->modifier()) : nullptr;
+
+            pipeline->setSource(topologySource);
+
+            if(!existingLoadTrajectory) {
+                std::vector<OORef<RefMaker>> dependentsList;
+                topologySource->visitDependents([&](RefMaker* dependent) {
+                    if(dynamic_object_cast<ModificationNode>(dependent) || dynamic_object_cast<Pipeline>(dependent))
+                        dependentsList.push_back(dependent);
+                });
+
+                OORef<LoadTrajectoryModifier> loadTrajectoryModifier = OORef<LoadTrajectoryModifier>::create();
+                OORef<ModificationNode> loadTrajectoryNode = loadTrajectoryModifier->createModificationNode();
+                loadTrajectoryNode->setModifier(loadTrajectoryModifier);
+                loadTrajectoryNode->setInput(topologySource);
+                loadTrajectoryModifier->setTrajectorySource(trajectorySource);
+                loadTrajectoryModifier->initializeModifier(ModifierInitializationRequest(currentAnimationTime(), false, true, loadTrajectoryNode));
+
+                for(RefMaker* dependent : dependentsList) {
+                    if(ModificationNode* predecessorModNode = dynamic_object_cast<ModificationNode>(dependent)) {
+                        if(predecessorModNode->input() == topologySource)
+                            predecessorModNode->setInput(loadTrajectoryNode);
+                    }
+                    else if(Pipeline* dependentPipeline = dynamic_object_cast<Pipeline>(dependent)) {
+                        if(dependentPipeline->head() == topologySource)
+                            dependentPipeline->setHead(loadTrajectoryNode);
+                    }
+                }
+            }
+
+            // Avoid creating duplicate guessed bonds once explicit topology has been loaded.
+            createBondsModifier->setEnabled(false);
+        });
+    });
 }
 
 /******************************************************************************
