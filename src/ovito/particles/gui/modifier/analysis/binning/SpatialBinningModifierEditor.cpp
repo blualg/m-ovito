@@ -51,7 +51,8 @@ void SpatialBinningModifierEditor::createUI(const RolloutInsertionParameters& ro
 
     PropertyReferenceParameterUI* propertyUI = createParamUI<PropertyReferenceParameterUI>(
         PROPERTY_FIELD(SpatialBinningModifier::sourceProperty),
-        &Particles::OOClass());
+        &Particles::OOClass(),
+        PropertyReferenceParameterUI::ShowComponentsAndVectorProperties);
     layout->addWidget(new QLabel(tr("Particle property:")));
     layout->addWidget(propertyUI->comboBox());
 

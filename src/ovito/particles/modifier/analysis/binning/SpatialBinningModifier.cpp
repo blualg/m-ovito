@@ -87,9 +87,13 @@ FloatType axisExtent(const SimulationCell* cell, const Vector3& normal)
     return (cell->is2D() ? cell->volume2D() : cell->volume3D()) / normal.length();
 }
 
-QString outputPropertyName(const Property* property)
+QString outputPropertyName(const Property* property, int vectorComponent)
 {
-    return property ? property->name() : QString{};
+    if(!property)
+        return {};
+    if(vectorComponent >= 0)
+        return property->nameWithComponent(vectorComponent);
+    return property->name();
 }
 
 } // namespace
@@ -150,7 +154,7 @@ void SpatialBinningModifier::initializeModifier(const ModifierInitializationRequ
                 if(property->dataType() == Property::Int8 || property->dataType() == Property::Int32 ||
                    property->dataType() == Property::Int64 || property->dataType() == Property::Float32 ||
                    property->dataType() == Property::Float64) {
-                    bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
+                    bestProperty = PropertyReference(property);
                 }
             }
             if(bestProperty)
@@ -178,6 +182,9 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
     std::tie(inputProperty, vectorComponent) = sourceProperty().findInContainerWithComponent(particles, propertyError, false);
     if(!inputProperty)
         throw Exception(std::move(propertyError));
+
+    const size_t outputComponentCount = (vectorComponent >= 0) ? 1 : inputProperty->componentCount();
+    const QStringList outputComponentNames = (vectorComponent >= 0) ? QStringList{} : inputProperty->componentNames();
 
     const int axisX = binDirectionX(binDirection());
     const int axisY = binDirectionY(binDirection());
@@ -208,7 +215,7 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
         table = state.createObject<DataTable>(QString(OutputIdentifier), request.modificationNode(), DataTable::Line, tr("Bin and reduce"));
         table->setElementCount(binCountX);
         table->setAxisLabelX(tr("Position"));
-        table->setAxisLabelY(outputPropertyName(inputProperty));
+        table->setAxisLabelY(outputPropertyName(inputProperty, vectorComponent));
         table->setIntervalStart(xAxisRangeStart);
         table->setIntervalEnd(xAxisRangeEnd);
     }
@@ -227,6 +234,8 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
             cell,
             inputProperty,
             vectorComponent,
+            outputComponentCount,
+            outputComponentNames = std::move(outputComponentNames),
             binCountX,
             binCountY,
             totalBinCount,
@@ -245,9 +254,10 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
             is1D = is1D()]() mutable
     {
         std::vector<int64_t> counts(totalBinCount, 0);
-        std::vector<double> reduced(totalBinCount, 0.0);
+        std::vector<double> reduced(totalBinCount * outputComponentCount, 0.0);
 
-        auto applyValue = [&](size_t index, double value) {
+        auto applyValue = [&](size_t binIndex, size_t component, double value) {
+            const size_t index = binIndex * outputComponentCount + component;
             if(reductionOperation == Mean || reductionOperation == Sum || reductionOperation == SumDividedByBinVolume) {
                 reduced[index] += value;
             }
@@ -281,7 +291,10 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
                     continue;
 
                 const size_t binIndex = size_t(iy) * size_t(binCountX) + size_t(ix);
-                applyValue(binIndex, static_cast<double>(values.get(particleIndex, std::max(vectorComponent, 0))));
+                for(size_t component = 0; component < outputComponentCount; ++component) {
+                    const int sourceComponent = (vectorComponent >= 0) ? vectorComponent : static_cast<int>(component);
+                    applyValue(binIndex, component, static_cast<double>(values.get(particleIndex, sourceComponent)));
+                }
             }
         });
 
@@ -289,16 +302,19 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
         for(size_t i = 0; i < totalBinCount; ++i) {
             if(counts[i] == 0)
                 continue;
-            if(reductionOperation == Mean)
-                reduced[i] /= static_cast<double>(counts[i]);
-            else if(reductionOperation == SumDividedByBinVolume && binVolume > 0)
-                reduced[i] /= static_cast<double>(binVolume);
+            for(size_t component = 0; component < outputComponentCount; ++component) {
+                const size_t index = i * outputComponentCount + component;
+                if(reductionOperation == Mean)
+                    reduced[index] /= static_cast<double>(counts[i]);
+                else if(reductionOperation == SumDividedByBinVolume && binVolume > 0)
+                    reduced[index] /= static_cast<double>(binVolume);
+            }
         }
 
         if(is1D && firstDerivative && binCountX > 1) {
             const FloatType spacing = (xAxisRangeEnd - xAxisRangeStart) / FloatType(binCountX);
             if(spacing > FloatType(0)) {
-                std::vector<double> derivative(binCountX, 0.0);
+                std::vector<double> derivative(binCountX * outputComponentCount, 0.0);
                 for(int i = 0; i < binCountX; ++i) {
                     int plus = i + 1;
                     int minus = i - 1;
@@ -311,30 +327,46 @@ Future<PipelineFlowState> SpatialBinningModifier::evaluateModifier(const Modifie
                         minus = periodicX ? (binCountX - 1) : 0;
                         if(!periodicX) denom = spacing;
                     }
-                    derivative[i] = (reduced[plus] - reduced[minus]) / denom;
+                    for(size_t component = 0; component < outputComponentCount; ++component) {
+                        derivative[i * outputComponentCount + component] =
+                            (reduced[plus * outputComponentCount + component] -
+                             reduced[minus * outputComponentCount + component]) / denom;
+                    }
                 }
                 reduced.swap(derivative);
             }
         }
 
         if(table) {
-            Property* yProperty = table->createProperty(DataBuffer::Initialized, outputPropertyName(inputProperty), Property::FloatDefault);
-            BufferWriteAccess<FloatType, access_mode::discard_write> yValues(yProperty);
-            for(int i = 0; i < binCountX; ++i)
-                yValues[i] = static_cast<FloatType>(reduced[i]);
+            Property* yProperty = table->createProperty(DataBuffer::Initialized,
+                                                        outputPropertyName(inputProperty, vectorComponent),
+                                                        Property::FloatDefault,
+                                                        outputComponentCount,
+                                                        outputComponentNames);
+            BufferWriteAccess<FloatType*, access_mode::discard_write> yValues(yProperty);
+            for(int i = 0; i < binCountX; ++i) {
+                for(size_t component = 0; component < outputComponentCount; ++component)
+                    yValues.set(i, component, static_cast<FloatType>(reduced[i * outputComponentCount + component]));
+            }
             table->setY(yProperty);
         }
         else if(grid) {
-            Property* binnedProperty = grid->createProperty(DataBuffer::Initialized, outputPropertyName(inputProperty), Property::FloatDefault);
-            BufferWriteAccess<FloatType, access_mode::discard_write> values(binnedProperty);
-            for(size_t i = 0; i < totalBinCount; ++i)
-                values[i] = static_cast<FloatType>(reduced[i]);
+            Property* binnedProperty = grid->createProperty(DataBuffer::Initialized,
+                                                            outputPropertyName(inputProperty, vectorComponent),
+                                                            Property::FloatDefault,
+                                                            outputComponentCount,
+                                                            outputComponentNames);
+            BufferWriteAccess<FloatType*, access_mode::discard_write> values(binnedProperty);
+            for(size_t i = 0; i < totalBinCount; ++i) {
+                for(size_t component = 0; component < outputComponentCount; ++component)
+                    values.set(i, component, static_cast<FloatType>(reduced[i * outputComponentCount + component]));
+            }
             if(VoxelGridVis* vis = grid->visElement<VoxelGridVis>())
-                vis->colorMapping()->setSourceProperty(PropertyReference(binnedProperty));
+                vis->colorMapping()->setSourceProperty(PropertyReference(binnedProperty, outputComponentCount > 1 ? 0 : -1));
         }
 
         QString statusText = SpatialBinningModifier::tr("Computed %1 over %2 spatial bins using %3.")
-            .arg(outputPropertyName(inputProperty))
+            .arg(outputPropertyName(inputProperty, vectorComponent))
             .arg(totalBinCount)
             .arg(reductionLabel(reductionOperation));
         if(is1D && firstDerivative)
