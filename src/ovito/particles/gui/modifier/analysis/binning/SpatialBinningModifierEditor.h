@@ -23,9 +23,12 @@
 #pragma once
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <QLabel>
+
+class QwtPlot;
+class QwtPlotCurve;
+class QwtPlotSpectrogram;
 
 namespace Ovito {
 
@@ -51,7 +54,9 @@ private:
     BooleanParameterUI* _firstDerivativeUI = nullptr;
     IntegerParameterUI* _binsYUI = nullptr;
     QLabel* _plotTitleLabel = nullptr;
-    DataTablePlotWidget* _plotWidget = nullptr;
+    QwtPlot* _plotWidget = nullptr;
+    std::vector<QwtPlotCurve*> _curves;
+    QwtPlotSpectrogram* _spectrogram = nullptr;
 };
 
 }  // namespace Ovito
