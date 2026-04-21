@@ -25,6 +25,8 @@
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/oo/CloneHelper.h>
+#include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include <ovito/stdobj/properties/Property.h>
@@ -37,6 +39,32 @@
 namespace Ovito {
 
 namespace {
+
+struct RunningAverageData {
+    size_t sampleCount = 0;
+    FloatType attributeSum = 0;
+    DataOORef<DataTable> referenceTable;
+    DataOORef<Property> referenceProperty;
+    DataOORef<Property> referenceIdentifiers;
+    DataOORef<SimulationCell> referenceCell;
+    QString elementDescriptionName;
+    std::vector<FloatType> sums;
+    AffineTransformation cellSum;
+    bool hasCellSum = false;
+};
+
+std::vector<std::vector<int>> buildFrameBatches(const std::vector<int>& frames, size_t batchSize)
+{
+    OVITO_ASSERT(batchSize > 0);
+
+    std::vector<std::vector<int>> batches;
+    batches.reserve((frames.size() + batchSize - 1) / batchSize);
+    for(size_t begin = 0; begin < frames.size(); begin += batchSize) {
+        const size_t end = std::min(begin + batchSize, frames.size());
+        batches.emplace_back(frames.begin() + static_cast<ptrdiff_t>(begin), frames.begin() + static_cast<ptrdiff_t>(end));
+    }
+    return batches;
+}
 
 bool isNumericDataType(int dataType)
 {
@@ -393,15 +421,6 @@ std::vector<int> TimeAveragingModifier::sampledFrames(const ModificationNode* mo
 ******************************************************************************/
 void TimeAveragingModifier::inputCachingHints(ModifierEvaluationRequest& request)
 {
-    if(request.modificationNode()->numberOfSourceFrames() > 0) {
-        const std::vector<int> frames = sampledFrames(request.modificationNode());
-        if(!frames.empty()) {
-            request.mutableCachingIntervals().add(TimeInterval(
-                request.modificationNode()->sourceFrameToAnimationTime(frames.front()),
-                request.modificationNode()->sourceFrameToAnimationTime(frames.back())));
-        }
-    }
-
     Modifier::inputCachingHints(request);
 }
 
@@ -449,42 +468,245 @@ Future<PipelineFlowState> TimeAveragingModifier::evaluateModifier(const Modifier
 Future<PipelineFlowState> TimeAveragingModifier::computeAverageData(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     const std::vector<int> frames = sampledFrames(request.modificationNode());
+    const std::vector<std::vector<int>> frameBatches = buildFrameBatches(frames, 32);
 
-    std::vector<SharedFuture<PipelineFlowState>> sampleFutures;
-    sampleFutures.reserve(frames.size());
-    for(const int frame : frames) {
-        PipelineEvaluationRequest frameRequest = request;
-        frameRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
-        sampleFutures.push_back(request.modificationNode()->evaluateInput(frameRequest).asFuture());
-    }
+    return for_each_sequential(
+            frameBatches,
+            DeferredObjectExecutor(this),
+            [request = ModifierEvaluationRequest(request)](const std::vector<int>& frameBatch, RunningAverageData&) mutable {
+                std::vector<SharedFuture<PipelineFlowState>> batchFutures;
+                batchFutures.reserve(frameBatch.size());
+                for(int frame : frameBatch) {
+                    ModifierEvaluationRequest frameRequest(request);
+                    frameRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
+                    batchFutures.push_back(request.modificationNode()->evaluateInput(frameRequest).asFuture());
+                }
+                return when_all_futures(std::move(batchFutures));
+            },
+            [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, RunningAverageData& accumulator) {
+                for(SharedFuture<PipelineFlowState>& future : futures) {
+                    this_task::throwIfCanceled();
+                    const PipelineFlowState& sampleState = future.result();
 
-    return when_all_futures(std::move(sampleFutures))
-        .then(ObjectExecutor(this), [this, request, state = std::move(state)](std::vector<SharedFuture<PipelineFlowState>> futures) mutable {
+                    switch(targetType()) {
+                    case Attribute: {
+                        if(attributeName().isEmpty())
+                            throw Exception(tr("No input attribute selected for time averaging."));
+
+                        const QVariant value = sampleState.getAttributeValue(attributeName());
+                        if(!value.isValid()) {
+                            throw Exception(tr("Global attribute '%1' is not available in one of the sampled trajectory frames.").arg(attributeName()));
+                        }
+                        accumulator.attributeSum += attributeValueToFloat(value, attributeName());
+                        break;
+                    }
+
+                    case Table: {
+                        if(!table())
+                            throw Exception(tr("No input data table selected for time averaging."));
+
+                        const DataTable* sampleTable = dynamic_object_cast<DataTable>(sampleState.getLeafObject(table()));
+                        if(!sampleTable) {
+                            throw Exception(tr("The selected data table '%1' is not available in one of the sampled trajectory frames.").arg(table().dataTitleOrPath()));
+                        }
+                        const Ovito::Property* sampleY = sampleTable->y();
+                        if(!sampleY) {
+                            throw Exception(tr("Data table '%1' has no Y-values in one of the sampled trajectory frames.").arg(table().dataTitleOrPath()));
+                        }
+                        if(!isNumericDataType(sampleY->dataType())) {
+                            throw Exception(tr("The Y-values of data table '%1' are not numeric and cannot be time-averaged.").arg(table().dataTitleOrPath()));
+                        }
+
+                        if(!accumulator.referenceTable) {
+                            accumulator.referenceTable = CloneHelper::cloneSingleObject(sampleTable, false);
+                            accumulator.sums.assign(sampleY->size() * sampleY->componentCount(), FloatType(0));
+                        }
+
+                        const Ovito::Property* referenceY = accumulator.referenceTable->y();
+                        if(sampleY->size() != referenceY->size() || sampleY->componentCount() != referenceY->componentCount()) {
+                            throw Exception(tr("Data table '%1' changes its size or number of data columns over time and cannot be averaged.").arg(table().dataTitleOrPath()));
+                        }
+                        if(sampleTable->x() || accumulator.referenceTable->x()) {
+                            if(!sampleTable->x() || !accumulator.referenceTable->x() || !sampleTable->x()->equals(*accumulator.referenceTable->x())) {
+                                throw Exception(tr("Data table '%1' changes its x-coordinates over time and cannot be averaged.").arg(table().dataTitleOrPath()));
+                            }
+                        }
+                        else {
+                            if(sampleTable->elementCount() != accumulator.referenceTable->elementCount()
+                                    || sampleTable->intervalStart() != accumulator.referenceTable->intervalStart()
+                                    || sampleTable->intervalEnd() != accumulator.referenceTable->intervalEnd()) {
+                                throw Exception(tr("Data table '%1' changes its x-interval over time and cannot be averaged.").arg(table().dataTitleOrPath()));
+                            }
+                        }
+
+                        accumulatePropertyValues(sampleY, accumulator.sums);
+                        break;
+                    }
+
+                    case Property: {
+                        if(!propertyContainer())
+                            throw Exception(tr("No input property container selected for time averaging."));
+                        if(!property())
+                            throw Exception(tr("No input property selected for time averaging."));
+                        if(!property().componentName().isEmpty()) {
+                            throw Exception(tr("Time averaging currently expects a full property, not an individual vector component."));
+                        }
+
+                        const PropertyContainer* sampleContainer = sampleState.getLeafObject(propertyContainer());
+                        if(!sampleContainer) {
+                            throw Exception(tr("The selected property container '%1' is not available in one of the sampled trajectory frames.").arg(propertyContainer().dataTitleOrPath()));
+                        }
+                        sampleContainer->verifyIntegrity();
+
+                        const Ovito::Property* sampleProperty = property().findInContainer(sampleContainer);
+                        if(!sampleProperty) {
+                            throw Exception(tr("Property '%1' is not available in one of the sampled trajectory frames.").arg(property().nameWithComponent()));
+                        }
+                        if(!isNumericDataType(sampleProperty->dataType())) {
+                            throw Exception(tr("Property '%1' is not numeric in one of the sampled trajectory frames.").arg(sampleProperty->name()));
+                        }
+                        if(sampleProperty->isTypedProperty() || sampleProperty->typeId() == Ovito::Property::GenericIdentifierProperty) {
+                            throw Exception(tr("Property '%1' is not supported by the current open-source time averaging implementation.").arg(sampleProperty->name()));
+                        }
+
+                        if(!accumulator.referenceProperty) {
+                            accumulator.referenceProperty = CloneHelper::cloneSingleObject(sampleProperty, false);
+                            accumulator.elementDescriptionName = sampleContainer->getOOMetaClass().elementDescriptionName();
+                            accumulator.sums.assign(sampleProperty->size() * sampleProperty->componentCount(), FloatType(0));
+                            const Ovito::Property* ids = identifierProperty(sampleContainer);
+                            if(ids)
+                                accumulator.referenceIdentifiers = CloneHelper::cloneSingleObject(ids, false);
+                        }
+
+                        const Ovito::Property* referenceProperty = accumulator.referenceProperty;
+                        if(sampleProperty->componentCount() != referenceProperty->componentCount()) {
+                            throw Exception(tr("Property '%1' changes its number of vector components over time and cannot be averaged.").arg(referenceProperty->name()));
+                        }
+
+                        BufferReadAccess<IdentifierIntType> referenceIds(accumulator.referenceIdentifiers);
+                        BufferReadAccess<IdentifierIntType> sampleIds(identifierProperty(sampleContainer));
+                        if(referenceIds) {
+                            if(!sampleIds) {
+                                throw Exception(tr("The identifier property of %1 is missing in one of the sampled trajectory frames. The current time averaging implementation requires stable element IDs when the element order changes.")
+                                    .arg(accumulator.elementDescriptionName));
+                            }
+
+                            if(identifierBuffersMatch(referenceIds, sampleIds)) {
+                                accumulatePropertyValues(sampleProperty, accumulator.sums);
+                            }
+                            else {
+                                const std::vector<size_t> mapping = buildIndexMapping(
+                                    referenceIds,
+                                    sampleIds,
+                                    accumulator.elementDescriptionName,
+                                    tr("reference"),
+                                    tr("sampled"));
+                                accumulatePropertyValues(sampleProperty, accumulator.sums, &mapping);
+                            }
+                        }
+                        else {
+                            if(sampleProperty->size() != referenceProperty->size()) {
+                                throw Exception(tr("Property '%1' changes the number of %2 over time. The current time averaging implementation requires a stable element count or a stable identifier property.")
+                                    .arg(referenceProperty->name())
+                                    .arg(accumulator.elementDescriptionName));
+                            }
+                            accumulatePropertyValues(sampleProperty, accumulator.sums);
+                        }
+                        break;
+                    }
+
+                    case Cell: {
+                        const SimulationCell* sampleCell = sampleState.getObject<SimulationCell>();
+                        if(!sampleCell)
+                            throw Exception(tr("The input trajectory does not provide a simulation cell that could be averaged."));
+
+                        if(!accumulator.referenceCell) {
+                            accumulator.referenceCell = CloneHelper::cloneSingleObject(sampleCell, false);
+                            accumulator.cellSum = sampleCell->cellMatrix();
+                            accumulator.hasCellSum = true;
+                        }
+                        else {
+                            if(sampleCell->pbcFlags() != accumulator.referenceCell->pbcFlags() || sampleCell->is2D() != accumulator.referenceCell->is2D()) {
+                                throw Exception(tr("The periodic boundary settings of the simulation cell change over time and cannot be averaged."));
+                            }
+                            accumulator.cellSum += sampleCell->cellMatrix();
+                        }
+                        break;
+                    }
+                    }
+
+                    accumulator.sampleCount++;
+                }
+            },
+            RunningAverageData{})
+        .then(ObjectExecutor(this), [this, request, state = std::move(state)](RunningAverageData accumulator) mutable {
             TimeAveragingModificationNode* modNode = dynamic_object_cast<TimeAveragingModificationNode>(request.modificationNode());
             if(!modNode)
                 return std::move(state);
 
-            std::vector<PipelineFlowState> sampleStates;
-            sampleStates.reserve(futures.size());
-            for(SharedFuture<PipelineFlowState>& future : futures) {
-                sampleStates.push_back(future.result());
-            }
-
             modNode->invalidateCachedAverage();
 
+            if(accumulator.sampleCount == 0)
+                throw Exception(tr("The selected averaging interval does not contain any sampled frames."));
+
             switch(targetType()) {
-            case Attribute:
-                computeAttributeAverage(modNode, request, sampleStates);
+            case Attribute: {
+                modNode->setAveragedAttributeValue(static_cast<double>(accumulator.attributeSum / accumulator.sampleCount));
                 break;
-            case Table:
-                computeTableAverage(modNode, request, sampleStates);
+            }
+            case Table: {
+                if(!accumulator.referenceTable)
+                    throw Exception(tr("No cached time-averaged data table is available."));
+
+                for(FloatType& value : accumulator.sums)
+                    value /= accumulator.sampleCount;
+
+                const Ovito::Property* referenceY = accumulator.referenceTable->y();
+                DataOORef<DataTable> averagedTable = std::move(accumulator.referenceTable);
+                averagedTable->setIdentifier(averagedTableId(averagedTable->identifier(), overwrite()));
+                averagedTable->setCreatedByNode(request.modificationNodeWeak());
+
+                PropertyPtr averagedY = referenceY->cloneWithoutData(referenceY->size(), DataBuffer::FloatDefault);
+                averagedY->setCreatedByNode(request.modificationNodeWeak());
+                writeFloatingPointProperty(averagedY, accumulator.sums);
+                averagedTable->setY(std::move(averagedY));
+
+                modNode->setAveragedTable(std::move(averagedTable));
                 break;
-            case Property:
-                computePropertyAverage(modNode, request, sampleStates);
+            }
+            case Property: {
+                if(!accumulator.referenceProperty)
+                    throw Exception(tr("No cached time-averaged property data is available."));
+
+                for(FloatType& value : accumulator.sums)
+                    value /= accumulator.sampleCount;
+
+                const int outputDataType = averagedPropertyDataType(accumulator.referenceProperty, overwrite());
+                const int outputTypeId = averagedPropertyTypeId(accumulator.referenceProperty, overwrite());
+                PropertyPtr averagedProperty = accumulator.referenceProperty->cloneWithoutData(accumulator.referenceProperty->size(), outputDataType);
+                averagedProperty->setTypeId(outputTypeId);
+                averagedProperty->setName(averagedPropertyName(accumulator.referenceProperty->name(), overwrite()));
+                averagedProperty->setCreatedByNode(request.modificationNodeWeak());
+                writeFloatingPointProperty(averagedProperty, accumulator.sums);
+
+                modNode->setAveragedProperty(std::move(averagedProperty));
+                if(accumulator.referenceIdentifiers)
+                    modNode->setReferenceIdentifiers(std::move(accumulator.referenceIdentifiers));
                 break;
-            case Cell:
-                computeCellAverage(modNode, request, sampleStates);
+            }
+            case Cell: {
+                if(!accumulator.referenceCell || !accumulator.hasCellSum)
+                    throw Exception(tr("No cached time-averaged simulation cell is available."));
+
+                DataOORef<SimulationCell> averagedCell = std::move(accumulator.referenceCell);
+                averagedCell->setCreatedByNode(request.modificationNodeWeak());
+                if(!overwrite())
+                    averagedCell->setIdentifier(QStringLiteral("simulation-cell[average]"));
+                averagedCell->setCellMatrix(accumulator.cellSum * (FloatType(1) / accumulator.sampleCount));
+
+                modNode->setAveragedCell(std::move(averagedCell));
                 break;
+            }
             }
 
             return applyCachedAverage(request, std::move(state));
