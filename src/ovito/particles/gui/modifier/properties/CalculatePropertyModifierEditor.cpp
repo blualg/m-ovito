@@ -45,6 +45,7 @@ void CalculatePropertyModifierEditor::createUI(const RolloutInsertionParameters&
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
+    layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
     auto* gridLayout = new QGridLayout();
     gridLayout->setContentsMargins(0, 0, 0, 0);
@@ -167,7 +168,19 @@ void CalculatePropertyModifierEditor::updateManualDirectionControls()
 
     const CalculatePropertyModifier* modifier = static_object_cast<CalculatePropertyModifier>(editObject());
     const bool visible = modifier && modifier->propertyType() == CalculatePropertyModifier::ManualMolecularDirection;
+    if(_manualDirectionWidget->isVisible() == visible)
+        return;
+
     _manualDirectionWidget->setVisible(visible);
+    _manualDirectionWidget->updateGeometry();
+
+    for(QWidget* widget = _manualDirectionWidget->parentWidget(); widget; widget = widget->parentWidget()) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 }  // namespace Ovito

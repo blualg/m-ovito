@@ -49,6 +49,7 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
+    layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
     auto* gridLayout = new QGridLayout();
     gridLayout->setContentsMargins(0, 0, 0, 0);
@@ -198,7 +199,20 @@ void MolecularOrientationModifierEditor::updateManualDirectionControls()
         return;
 
     const MolecularOrientationModifier* modifier = static_object_cast<MolecularOrientationModifier>(editObject());
-    _manualDirectionWidget->setVisible(modifier && modifier->directionMode() == MolecularOrientationModifier::ManualMolecularDirection);
+    const bool visible = modifier && modifier->directionMode() == MolecularOrientationModifier::ManualMolecularDirection;
+    if(_manualDirectionWidget->isVisible() == visible)
+        return;
+
+    _manualDirectionWidget->setVisible(visible);
+    _manualDirectionWidget->updateGeometry();
+
+    for(QWidget* widget = _manualDirectionWidget->parentWidget(); widget; widget = widget->parentWidget()) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 void MolecularOrientationModifierEditor::plotDistribution()
