@@ -28,11 +28,11 @@
 namespace Ovito {
 
 /**
- * \brief Calculates predefined derived particle properties.
+ * \brief Evaluates the orientation of molecules around a chosen reference atom type.
  */
-class OVITO_PARTICLES_EXPORT CalculatePropertyModifier : public Modifier
+class OVITO_PARTICLES_EXPORT MolecularOrientationModifier : public Modifier
 {
-    class CalculatePropertyModifierClass : public Modifier::OOMetaClass
+    class MolecularOrientationModifierClass : public Modifier::OOMetaClass
     {
     public:
         using Modifier::OOMetaClass::OOMetaClass;
@@ -40,32 +40,46 @@ class OVITO_PARTICLES_EXPORT CalculatePropertyModifier : public Modifier
         [[nodiscard]] virtual bool isApplicableTo(const DataCollection& input) const override;
     };
 
-    OVITO_CLASS_META(CalculatePropertyModifier, CalculatePropertyModifierClass)
+    OVITO_CLASS_META(MolecularOrientationModifier, MolecularOrientationModifierClass)
 
 public:
 
-    enum PropertyType
+    enum DirectionMode
     {
         DipoleDirection,
         ManualMolecularDirection
     };
-    Q_ENUM(PropertyType);
+    Q_ENUM(DirectionMode);
+
+    static constexpr QStringView TableIdentifier = u"molecular-orientation-distribution";
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
 private:
 
-    /// Predefined property recipe to evaluate.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(PropertyType{DipoleDirection}, propertyType, setPropertyType, PROPERTY_FIELD_MEMORIZE);
+    /// Chooses how the per-molecule orientation vector is constructed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(DirectionMode{DipoleDirection}, directionMode, setDirectionMode, PROPERTY_FIELD_MEMORIZE);
 
-    /// Source particle type used for the manual molecular direction mode.
+    /// Source particle type used for manual molecular directions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, fromTypeId, setFromTypeId, PROPERTY_FIELD_MEMORIZE);
 
-    /// Target particle type used for the manual molecular direction mode.
+    /// Target particle type used for manual molecular directions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, toTypeId, setToTypeId, PROPERTY_FIELD_MEMORIZE);
 
-    /// Restricts the calculation to molecules touched by the upstream particle selection.
+    /// Reference atom type used to define the radial direction.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, referenceTypeId, setReferenceTypeId, PROPERTY_FIELD_MEMORIZE);
+
+    /// Comma-separated list of anchor atom types.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, anchorTypes, setAnchorTypes, PROPERTY_FIELD_MEMORIZE);
+
+    /// Cutoff radius used to identify candidate reference atoms around each molecule.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+
+    /// Number of bins in the orientation-angle histogram.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{180}, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
+
+    /// Restricts the analysis to molecules touched by the upstream particle selection.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, onlySelectedParticles, setOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
 };
 

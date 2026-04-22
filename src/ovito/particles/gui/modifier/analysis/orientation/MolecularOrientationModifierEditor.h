@@ -23,17 +23,18 @@
 #pragma once
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 
 namespace Ovito {
 
 /**
- * A properties editor for the CalculatePropertyModifier class.
+ * A properties editor for the MolecularOrientationModifier class.
  */
-class CalculatePropertyModifierEditor : public PropertiesEditor
+class MolecularOrientationModifierEditor : public PropertiesEditor
 {
-    OVITO_CLASS(CalculatePropertyModifierEditor)
+    OVITO_CLASS(MolecularOrientationModifierEditor)
     Q_OBJECT
 
 protected:
@@ -43,11 +44,14 @@ protected:
 private Q_SLOTS:
     void updateTypeCombos();
     void updateManualDirectionControls();
+    void plotDistribution();
 
 private:
     QWidget* _manualDirectionWidget = nullptr;
+    VariantComboBoxParameterUI* _referenceTypeUI = nullptr;
     VariantComboBoxParameterUI* _fromTypeUI = nullptr;
     VariantComboBoxParameterUI* _toTypeUI = nullptr;
+    DataTablePlotWidget* _plotWidget = nullptr;
 };
 
 }  // namespace Ovito
