@@ -28,7 +28,7 @@
 namespace Ovito {
 
 /**
- * \brief Evaluates the orientation of molecules around a chosen reference atom type.
+ * \brief Evaluates the orientation of molecules around chosen reference atom types.
  */
 class OVITO_PARTICLES_EXPORT MolecularOrientationModifier : public Modifier
 {
@@ -67,8 +67,8 @@ private:
     /// Target particle type used for manual molecular directions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, toTypeId, setToTypeId, PROPERTY_FIELD_MEMORIZE);
 
-    /// Reference atom type used to define the radial direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, referenceTypeId, setReferenceTypeId, PROPERTY_FIELD_MEMORIZE);
+    /// Comma-separated list of reference atom types.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, referenceTypes, setReferenceTypes, PROPERTY_FIELD_MEMORIZE);
 
     /// Comma-separated list of anchor atom types.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, anchorTypes, setAnchorTypes, PROPERTY_FIELD_MEMORIZE);

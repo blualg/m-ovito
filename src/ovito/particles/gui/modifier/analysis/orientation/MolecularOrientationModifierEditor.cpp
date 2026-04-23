@@ -76,9 +76,12 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
 
     gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
 
-    _referenceTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceTypeId));
-    gridLayout->addWidget(new QLabel(tr("Orient around atom type")), 2, 0);
-    gridLayout->addWidget(_referenceTypeUI->comboBox(), 2, 1);
+    auto* referenceTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceTypes));
+    referenceTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
+    referenceTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the reference site. "
+                                    "A single type uses each matching atom as a reference. Multiple types use one COM per molecule."));
+    gridLayout->addWidget(new QLabel(tr("Orient around atom type(s)")), 2, 0);
+    gridLayout->addWidget(referenceTypesUI->textBox(), 2, 1);
 
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
@@ -122,14 +125,13 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
 
 void MolecularOrientationModifierEditor::updateTypeCombos()
 {
-    if(!_referenceTypeUI || !_fromTypeUI || !_toTypeUI)
+    if(!_fromTypeUI || !_toTypeUI)
         return;
 
     const Particles* particles = getPipelineInput().getObject<Particles>();
     const Property* typeProperty = particles ? particles->getProperty(Particles::TypeProperty) : nullptr;
 
     const MolecularOrientationModifier* modifier = static_object_cast<MolecularOrientationModifier>(editObject());
-    const int currentReferenceTypeId = modifier ? modifier->referenceTypeId() : 0;
     const int currentFromTypeId = modifier ? modifier->fromTypeId() : 0;
     const int currentToTypeId = modifier ? modifier->toTypeId() : 0;
 
@@ -141,7 +143,6 @@ void MolecularOrientationModifierEditor::updateTypeCombos()
         for(const ElementType* type : typeProperty->elementTypes())
             comboUI->comboBox()->addItem(type->nameOrNumericId(), QVariant::fromValue(type->numericId()));
     };
-    refillCombo(_referenceTypeUI);
     refillCombo(_fromTypeUI);
     refillCombo(_toTypeUI);
 
@@ -153,12 +154,9 @@ void MolecularOrientationModifierEditor::updateTypeCombos()
         return -1;
     };
 
-    int referenceIndex = findTypeIndex(_referenceTypeUI->comboBox(), currentReferenceTypeId);
     int fromIndex = findTypeIndex(_fromTypeUI->comboBox(), currentFromTypeId);
     int toIndex = findTypeIndex(_toTypeUI->comboBox(), currentToTypeId);
 
-    if(referenceIndex < 0 && _referenceTypeUI->comboBox()->count() > 0)
-        referenceIndex = 0;
     if(fromIndex < 0 && _fromTypeUI->comboBox()->count() > 0)
         fromIndex = 0;
     if(toIndex < 0 && _toTypeUI->comboBox()->count() > 1)
@@ -166,8 +164,6 @@ void MolecularOrientationModifierEditor::updateTypeCombos()
     else if(toIndex < 0 && _toTypeUI->comboBox()->count() > 0)
         toIndex = 0;
 
-    if(referenceIndex >= 0)
-        _referenceTypeUI->comboBox()->setCurrentIndex(referenceIndex);
     if(fromIndex >= 0)
         _fromTypeUI->comboBox()->setCurrentIndex(fromIndex);
     if(toIndex >= 0)
@@ -175,11 +171,6 @@ void MolecularOrientationModifierEditor::updateTypeCombos()
 
     MolecularOrientationModifier* mutableModifier = static_object_cast<MolecularOrientationModifier>(editObject());
     if(mutableModifier) {
-        if(referenceIndex >= 0) {
-            const int typeId = _referenceTypeUI->comboBox()->itemData(referenceIndex).toInt();
-            if(mutableModifier->referenceTypeId() != typeId)
-                mutableModifier->setReferenceTypeId(typeId);
-        }
         if(fromIndex >= 0) {
             const int typeId = _fromTypeUI->comboBox()->itemData(fromIndex).toInt();
             if(mutableModifier->fromTypeId() != typeId)
@@ -190,6 +181,8 @@ void MolecularOrientationModifierEditor::updateTypeCombos()
             if(mutableModifier->toTypeId() != typeId)
                 mutableModifier->setToTypeId(typeId);
         }
+        if(mutableModifier->referenceTypes().trimmed().isEmpty() && typeProperty && !typeProperty->elementTypes().empty())
+            mutableModifier->setReferenceTypes(typeProperty->elementTypes().front()->nameOrNumericId());
     }
 }
 

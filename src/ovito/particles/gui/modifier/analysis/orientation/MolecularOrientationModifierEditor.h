@@ -48,7 +48,6 @@ private Q_SLOTS:
 
 private:
     QWidget* _manualDirectionWidget = nullptr;
-    VariantComboBoxParameterUI* _referenceTypeUI = nullptr;
     VariantComboBoxParameterUI* _fromTypeUI = nullptr;
     VariantComboBoxParameterUI* _toTypeUI = nullptr;
     DataTablePlotWidget* _plotWidget = nullptr;

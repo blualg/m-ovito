@@ -53,6 +53,12 @@ struct ReferenceHit
     Vector3 referenceToAnchor = Vector3::Zero();
 };
 
+struct ReferenceSite
+{
+    IdentifierIntType moleculeId = 0;
+    Point3 position = Point3::Origin();
+};
+
 inline FloatType clampedAcos(FloatType value)
 {
     return std::acos(std::clamp(value, FloatType(-1), FloatType(1)));
@@ -70,14 +76,14 @@ QString directionModeLabel(MolecularOrientationModifier::DirectionMode direction
     return {};
 }
 
-std::vector<int> parseAnchorTypeIds(const QString& anchorTypesText, const Property* typeProperty)
+std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeProperty, const QString& roleDescription)
 {
     if(!typeProperty || !typeProperty->isTypedProperty())
         throw Exception(MolecularOrientationModifier::tr("This analysis requires a typed 'Particle Type' property with defined element types."));
 
-    const QString trimmedText = anchorTypesText.trimmed();
+    const QString trimmedText = typeListText.trimmed();
     if(trimmedText.isEmpty())
-        throw Exception(MolecularOrientationModifier::tr("Please enter at least one anchor atom type."));
+        throw Exception(MolecularOrientationModifier::tr("Please enter at least one %1.").arg(roleDescription));
 
     QHash<QString, int> nameToId;
     for(const ElementType* type : typeProperty->elementTypes()) {
@@ -86,7 +92,7 @@ std::vector<int> parseAnchorTypeIds(const QString& anchorTypesText, const Proper
         nameToId.insert(type->nameOrNumericId(), type->numericId());
     }
 
-    std::vector<int> anchorTypeIds;
+    std::vector<int> typeIds;
     const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
     for(QString token : tokens) {
         token = token.trimmed();
@@ -101,17 +107,18 @@ std::vector<int> parseAnchorTypeIds(const QString& anchorTypesText, const Proper
             bool ok = false;
             typeId = token.toInt(&ok);
             if(!ok || !typeProperty->elementType(typeId))
-                throw Exception(MolecularOrientationModifier::tr("Unknown anchor atom type '%1'. Use particle type names or numeric IDs separated by commas.").arg(token));
+                throw Exception(MolecularOrientationModifier::tr("Unknown %1 '%2'. Use particle type names or numeric IDs separated by commas.")
+                                    .arg(roleDescription, token));
         }
 
-        if(std::find(anchorTypeIds.begin(), anchorTypeIds.end(), typeId) == anchorTypeIds.end())
-            anchorTypeIds.push_back(typeId);
+        if(std::find(typeIds.begin(), typeIds.end(), typeId) == typeIds.end())
+            typeIds.push_back(typeId);
     }
 
-    if(anchorTypeIds.empty())
-        throw Exception(MolecularOrientationModifier::tr("Please enter at least one valid anchor atom type."));
+    if(typeIds.empty())
+        throw Exception(MolecularOrientationModifier::tr("Please enter at least one valid %1.").arg(roleDescription));
 
-    return anchorTypeIds;
+    return typeIds;
 }
 
 }  // namespace
@@ -124,7 +131,7 @@ OVITO_CLASSINFO(MolecularOrientationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, directionMode);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, fromTypeId);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, toTypeId);
-DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, referenceTypeId);
+DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, referenceTypes);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, anchorTypes);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, cutoff);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, numberOfBins);
@@ -132,8 +139,8 @@ DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, onlySelectedParticles);
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Molecule direction");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromTypeId, "Direction start atom type");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toTypeId, "Direction end atom type");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypeId, "Orient around atom type");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorTypes, "Molecule position atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypes, "Orient around atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorTypes, "Molecule site atom type(s)");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, numberOfBins, "Angle histogram bins");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, onlySelectedParticles, "Use only selected particles");
@@ -181,7 +188,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
     if(selectedDirectionMode == ManualMolecularDirection && fromTypeId() == toTypeId())
         throw Exception(tr("The manual molecular direction mode requires two different particle types."));
 
-    const std::vector<int> anchorTypeIds = parseAnchorTypeIds(anchorTypes(), particleTypeProperty);
+    const std::vector<int> referenceTypeIds = parseTypeIds(referenceTypes(), particleTypeProperty, tr("reference atom type"));
+    const std::vector<int> anchorTypeIds = parseTypeIds(anchorTypes(), particleTypeProperty, tr("molecule site atom type"));
     const FloatType cutoffRadius = cutoff();
     if(cutoffRadius <= 0)
         throw Exception(tr("The cutoff radius must be positive."));
@@ -197,7 +205,6 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
     const SimulationCell* cell = state.getObject<SimulationCell>();
     const int fromParticleType = fromTypeId();
     const int toParticleType = toTypeId();
-    const int referenceParticleType = referenceTypeId();
     const bool selectedOnly = onlySelectedParticles();
 
     return asyncLaunch([
@@ -213,7 +220,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             selectedDirectionMode,
             fromParticleType,
             toParticleType,
-            referenceParticleType,
+            referenceTypeIds,
             anchorTypeIds,
             cutoffRadius,
             histogramBinCount,
@@ -239,6 +246,23 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 group.anySelected = true;
         }
 
+        auto buildWrappedMoleculePositions = [&positions, cell](const MoleculeGroup& group, std::vector<Point3>& wrappedPositions) {
+            wrappedPositions.clear();
+            wrappedPositions.reserve(group.indices.size());
+            if(group.indices.empty())
+                return;
+
+            const Point3 referencePosition = positions[group.indices.front()];
+            wrappedPositions.push_back(referencePosition);
+            for(size_t atomListIndex = 1; atomListIndex < group.indices.size(); ++atomListIndex) {
+                const Point3 current = positions[group.indices[atomListIndex]];
+                Vector3 delta = current - referencePosition;
+                if(cell)
+                    delta = cell->wrapVector(delta);
+                wrappedPositions.push_back(referencePosition + delta);
+            }
+        };
+
         PropertyPtr angleProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
                                                         QStringLiteral("Molecular Orientation Angle"));
         PropertyPtr distanceProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
@@ -253,24 +277,73 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         std::fill(distanceAcc.begin(), distanceAcc.end(), std::numeric_limits<FloatType>::quiet_NaN());
         std::fill(overlapAcc.begin(), overlapAcc.end(), 0);
 
-        PropertyPtr referenceSelectionProperty =
-            Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::SelectionProperty);
-        {
-            BufferWriteAccess<SelectionIntType, access_mode::discard_write> referenceSelection(referenceSelectionProperty);
-            for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex)
-                referenceSelection[particleIndex] = (particleTypes[particleIndex] == referenceParticleType) ? 1 : 0;
+        std::vector<ReferenceSite> referenceSites;
+        referenceSites.reserve(positions.size());
+        std::vector<Point3> moleculePositions;
+        if(referenceTypeIds.size() == 1) {
+            const int referenceParticleType = referenceTypeIds.front();
+            for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex) {
+                if(particleTypes[particleIndex] != referenceParticleType)
+                    continue;
+                referenceSites.push_back(ReferenceSite{moleculeIds[particleIndex], positions[particleIndex]});
+            }
+        }
+        else {
+            for(const MoleculeGroup& group : molecules) {
+                buildWrappedMoleculePositions(group, moleculePositions);
+                if(moleculePositions.empty())
+                    continue;
+
+                const Point3 referencePosition = moleculePositions.front();
+                Vector3 weightedOffsetSum = Vector3::Zero();
+                FloatType massSum = FloatType(0);
+                size_t matchedCount = 0;
+                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
+                    const size_t particleIndex = group.indices[atomListIndex];
+                    if(std::find(referenceTypeIds.begin(), referenceTypeIds.end(), particleTypes[particleIndex]) == referenceTypeIds.end())
+                        continue;
+
+                    FloatType mass = FloatType(1);
+                    if(masses && masses[particleIndex] > FloatType(0))
+                        mass = masses[particleIndex];
+                    weightedOffsetSum += mass * (moleculePositions[atomListIndex] - referencePosition);
+                    massSum += mass;
+                    matchedCount++;
+                }
+                if(matchedCount == 0 || massSum <= FloatType(0))
+                    continue;
+
+                referenceSites.push_back(ReferenceSite{group.moleculeId, referencePosition + weightedOffsetSum / massSum});
+            }
         }
 
-        const SimulationCellData cellData = cell ? SimulationCellData(cell) : SimulationCellData(positions, false, cutoffRadius / 2);
+        if(referenceSites.empty())
+            throw Exception(tr("No reference sites matched the chosen reference atom type(s)."));
+
+        PropertyPtr referenceSitePositionsProperty =
+            Particles::OOClass().createStandardProperty(DataBuffer::Initialized, referenceSites.size(), Particles::PositionProperty);
+        {
+            BufferWriteAccess<Point3, access_mode::discard_write> referenceSitePositions(referenceSitePositionsProperty);
+            for(size_t siteIndex = 0; siteIndex < referenceSites.size(); ++siteIndex)
+                referenceSitePositions[siteIndex] = referenceSites[siteIndex].position;
+        }
+        PropertyPtr referenceSelectionProperty =
+            Particles::OOClass().createStandardProperty(DataBuffer::Initialized, referenceSites.size(), Particles::SelectionProperty);
+        {
+            BufferWriteAccess<SelectionIntType, access_mode::discard_write> referenceSelection(referenceSelectionProperty);
+            std::fill(referenceSelection.begin(), referenceSelection.end(), 1);
+        }
+
+        BufferReadAccess<Point3> referenceSitePositions(referenceSitePositionsProperty);
+        const SimulationCellData cellData = cell ? SimulationCellData(cell) : SimulationCellData(referenceSitePositions, false, cutoffRadius / 2);
         BufferReadAccess<SelectionIntType> referenceSelectionRead(referenceSelectionProperty);
-        CutoffNeighborFinder neighborFinder(cutoffRadius, positions, cellData, referenceSelectionRead);
+        CutoffNeighborFinder neighborFinder(cutoffRadius, referenceSitePositions, cellData, referenceSelectionRead);
 
         std::vector<int64_t> histogram(histogramBinCount, 0);
         const FloatType angleRangeStart = FloatType(0);
         const FloatType angleRangeEnd = FloatType(180);
         const FloatType binSize = (angleRangeEnd - angleRangeStart) / histogramBinCount;
 
-        std::vector<Point3> moleculePositions;
         size_t candidateMoleculeCount = 0;
         size_t analyzedMoleculeCount = 0;
         size_t missingDirectionCount = 0;
@@ -290,17 +363,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
 
             candidateMoleculeCount++;
 
-            moleculePositions.clear();
-            moleculePositions.reserve(group.indices.size());
-            const Point3 reference = positions[group.indices.front()];
-            moleculePositions.push_back(reference);
-            for(size_t atomListIndex = 1; atomListIndex < group.indices.size(); ++atomListIndex) {
-                const Point3 current = positions[group.indices[atomListIndex]];
-                Vector3 delta = current - reference;
-                if(cell)
-                    delta = cell->wrapVector(delta);
-                moleculePositions.push_back(reference + delta);
-            }
+            buildWrappedMoleculePositions(group, moleculePositions);
+            const Point3 reference = moleculePositions.front();
 
             Vector3 centerOffsetSum = Vector3::Zero();
             for(const Point3& position : moleculePositions)
@@ -372,9 +436,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             std::unordered_map<size_t, ReferenceHit> referenceHits;
             for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, anchorPoint); !neighborQuery.atEnd(); neighborQuery.next()) {
                 const size_t referenceIndex = neighborQuery.current();
-                if(referenceIndex >= particleCount)
+                if(referenceIndex >= referenceSites.size())
                     continue;
-                if(moleculeIds[referenceIndex] == group.moleculeId)
+                if(referenceSites[referenceIndex].moleculeId == group.moleculeId)
                     continue;
 
                 const FloatType distanceSquared = neighborQuery.distanceSquared();
@@ -429,9 +493,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             if(selectedDirectionMode == ManualMolecularDirection && missingDirectionCount == candidateMoleculeCount)
                 throw Exception(tr("No molecules contained both selected atom types for the manual molecular direction."));
             if(missingAnchorCount == candidateMoleculeCount)
-                throw Exception(tr("No molecules contained the requested anchor atom types."));
+                throw Exception(tr("No molecules contained the requested molecule site atom type(s)."));
             if(noReferenceCount == candidateMoleculeCount)
-                throw Exception(tr("No molecules had a reference atom of the chosen type within the cutoff radius."));
+                throw Exception(tr("No molecules had a reference site within the cutoff radius."));
             throw Exception(tr("No molecules satisfied the molecular orientation analysis criteria."));
         }
 
@@ -453,9 +517,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         if(overlapMoleculeCount > 0)
             statusText += tr(" %1 molecules had overlapping reference environments.").arg(overlapMoleculeCount);
         if(noReferenceCount > 0)
-            statusText += tr(" %1 molecules had no reference atom within the cutoff.").arg(noReferenceCount);
+            statusText += tr(" %1 molecules had no reference site within the cutoff.").arg(noReferenceCount);
         if(missingAnchorCount > 0)
-            statusText += tr(" %1 molecules were skipped because they lacked the requested anchor atoms.").arg(missingAnchorCount);
+            statusText += tr(" %1 molecules were skipped because they lacked the requested molecule site atoms.").arg(missingAnchorCount);
         if(missingDirectionCount > 0)
             statusText += tr(" %1 molecules were skipped because they lacked the requested direction atom types.").arg(missingDirectionCount);
         if(zeroDirectionCount > 0)
