@@ -57,8 +57,8 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
 
     auto* directionModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::directionMode));
     directionModeUI->comboBox()->addItem(tr("Dipole direction"), QVariant::fromValue((int)MolecularOrientationModifier::DipoleDirection));
-    directionModeUI->comboBox()->addItem(tr("Manual molecular direction"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
-    gridLayout->addWidget(new QLabel(tr("Direction mode")), 0, 0);
+    directionModeUI->comboBox()->addItem(tr("Atom-type direction"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
+    gridLayout->addWidget(new QLabel(tr("Molecule direction")), 0, 0);
     gridLayout->addWidget(directionModeUI->comboBox(), 0, 1);
 
     _manualDirectionWidget = new QWidget();
@@ -67,31 +67,31 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     manualLayout->setColumnStretch(1, 1);
 
     _fromTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::fromTypeId));
-    manualLayout->addWidget(new QLabel(tr("From atom type")), 0, 0);
+    manualLayout->addWidget(new QLabel(tr("Direction start atom type")), 0, 0);
     manualLayout->addWidget(_fromTypeUI->comboBox(), 0, 1);
 
     _toTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::toTypeId));
-    manualLayout->addWidget(new QLabel(tr("To atom type")), 1, 0);
+    manualLayout->addWidget(new QLabel(tr("Direction end atom type")), 1, 0);
     manualLayout->addWidget(_toTypeUI->comboBox(), 1, 1);
 
     gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
 
     _referenceTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceTypeId));
-    gridLayout->addWidget(new QLabel(tr("Reference atom type")), 2, 0);
+    gridLayout->addWidget(new QLabel(tr("Orient around atom type")), 2, 0);
     gridLayout->addWidget(_referenceTypeUI->comboBox(), 2, 1);
 
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     anchorTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the molecule anchor point."));
-    gridLayout->addWidget(new QLabel(tr("Anchor atom types")), 3, 0);
+    gridLayout->addWidget(new QLabel(tr("Molecule position atom type(s)")), 3, 0);
     gridLayout->addWidget(anchorTypesUI->textBox(), 3, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::cutoff));
-    gridLayout->addWidget(cutoffUI->label(), 4, 0);
+    gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 4, 0);
     gridLayout->addLayout(cutoffUI->createFieldLayout(), 4, 1);
 
     auto* numberOfBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::numberOfBins));
-    gridLayout->addWidget(numberOfBinsUI->label(), 5, 0);
+    gridLayout->addWidget(new QLabel(tr("Angle histogram bins")), 5, 0);
     gridLayout->addLayout(numberOfBinsUI->createFieldLayout(), 5, 1);
 
     auto* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::onlySelectedParticles));
