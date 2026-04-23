@@ -83,7 +83,7 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     anchorTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the molecule anchor point."));
-    gridLayout->addWidget(new QLabel(tr("Molecule position atom type(s)")), 3, 0);
+    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 3, 0);
     gridLayout->addWidget(anchorTypesUI->textBox(), 3, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::cutoff));
