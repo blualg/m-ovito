@@ -61,17 +61,20 @@ private:
     QCheckBox* _computeMSDCheckBox = nullptr;
     QCheckBox* _computeVACFCheckBox = nullptr;
     QCheckBox* _computeConductivityCheckBox = nullptr;
+    QCheckBox* _computeStronglyCorrelatedPairsCheckBox = nullptr;
     QCheckBox* _useOnlySelectedParticlesCheckBox = nullptr;
     QCheckBox* _selectAsMoleculesCheckBox = nullptr;
     QWidget* _msdSection = nullptr;
     QWidget* _vacfSection = nullptr;
     QWidget* _conductivitySection = nullptr;
     QWidget* _distinctIonCorrelationSection = nullptr;
+    QWidget* _stronglyCorrelatedPairsSection = nullptr;
     QWidget* _gkPreviewSection = nullptr;
     DataTablePlotWidget* _msdPlot = nullptr;
     DataTablePlotWidget* _vacfPlot = nullptr;
     DataTablePlotWidget* _conductivityPlot = nullptr;
     DataTablePlotWidget* _distinctIonCorrelationPlot = nullptr;
+    DataTablePlotWidget* _stronglyCorrelatedPairsPlot = nullptr;
     DataTablePlotWidget* _gkCorrelationPreviewPlot = nullptr;
     DataTablePlotWidget* _gkConductivityPreviewPlot = nullptr;
     QwtPlotMarker* _gkCorrelationStartMarker = nullptr;
@@ -81,6 +84,7 @@ private:
     QwtPlotMarker* _gkConductivityPlateauMarker = nullptr;
     QLabel* _summaryLabel = nullptr;
     bool _distinctIonCorrelationAvailable = false;
+    bool _stronglyCorrelatedPairsAvailable = false;
 };
 
 }   // End of namespace

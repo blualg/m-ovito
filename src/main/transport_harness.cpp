@@ -63,6 +63,7 @@ struct HarnessConfig {
     bool computeMSD = true;
     bool computeVACF = true;
     bool computeConductivity = true;
+    bool computeStronglyCorrelatedPairs = false;
     bool computePerType = true;
 };
 
@@ -94,7 +95,7 @@ void printUsage(const char* programName)
 {
     std::cerr
         << "Usage: " << programName << " --data-dir <directory> [--output <file>] [--temperature <K>] [--dt <value>]\n"
-        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--per-type on|off]\n"
+        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--strong-pairs on|off] [--per-type on|off]\n"
         << "Expected files inside <directory>: log.lammps, mol.data, mol.lammpstrj\n";
 }
 
@@ -145,6 +146,9 @@ HarnessConfig parseArguments(int argc, char** argv)
         }
         else if(arg == QStringLiteral("--conductivity")) {
             config.computeConductivity = parseOnOffOption(arg, requireValue("--conductivity"));
+        }
+        else if(arg == QStringLiteral("--strong-pairs")) {
+            config.computeStronglyCorrelatedPairs = parseOnOffOption(arg, requireValue("--strong-pairs"));
         }
         else if(arg == QStringLiteral("--per-type")) {
             config.computePerType = parseOnOffOption(arg, requireValue("--per-type"));
@@ -336,6 +340,7 @@ void runHarness(const HarnessConfig& config)
     modifier->setComputeMSD(config.computeMSD);
     modifier->setComputeVACF(config.computeVACF);
     modifier->setComputeConductivity(config.computeConductivity);
+    modifier->setComputeStronglyCorrelatedPairs(config.computeStronglyCorrelatedPairs);
     modifier->setComputePerType(config.computePerType);
     modifier->setUseOnlySelectedParticles(false);
     modifier->setDeltaT(config.deltaT);
@@ -371,6 +376,10 @@ void runHarness(const HarnessConfig& config)
            collectLineTable(state.data(), TransportModifier::DistinctIonCorrelationTableId);
        !distinctIonCorrelation.isEmpty())
         curves.insert(QStringLiteral("distinct_ion_correlation"), distinctIonCorrelation);
+    if(const QJsonObject stronglyCorrelatedPairs =
+           collectLineTable(state.data(), TransportModifier::StronglyCorrelatedPairsTableId);
+       !stronglyCorrelatedPairs.isEmpty())
+        curves.insert(QStringLiteral("strongly_correlated_pairs"), stronglyCorrelatedPairs);
     writeSummaryFile(config, summary, curves);
 
     std::cout << "Wrote OVITO transport summary to " << QDir::toNativeSeparators(config.outputPath).toStdString() << std::endl;

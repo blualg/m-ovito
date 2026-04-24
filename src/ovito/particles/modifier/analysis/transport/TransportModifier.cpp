@@ -37,11 +37,14 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <numeric>
+#include <random>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Ovito {
 
@@ -585,6 +588,11 @@ struct DistinctIonCorrelationCurves {
     std::vector<std::vector<double>> byGroup;
 };
 
+struct StronglyCorrelatedPairCurves {
+    static constexpr std::array<double, 3> Thresholds{{0.75, 0.8, 0.85}};
+    std::vector<std::vector<std::vector<double>>> byGroupAndThreshold;
+};
+
 struct PyLATGreenKuboCurves {
     std::vector<double> timesRaw;
     std::vector<double> timesSI;
@@ -1070,6 +1078,159 @@ DistinctIonCorrelationCurves computeDistinctIonCorrelationCurves(const PreparedD
             }
             if(count > 0)
                 curves.byGroup[groupIndex][lag] = sum / static_cast<double>(count);
+        }
+    }
+
+    return curves;
+}
+
+std::pair<size_t, size_t> pairIndicesFromLinearIndex(size_t elementCount, size_t linearPairIndex)
+{
+    OVITO_ASSERT(elementCount >= 2);
+    size_t first = 0;
+    size_t remainingInRow = elementCount - 1;
+    while(linearPairIndex >= remainingInRow) {
+        linearPairIndex -= remainingInRow;
+        ++first;
+        --remainingInRow;
+    }
+    return {first, first + 1 + linearPairIndex};
+}
+
+std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementCount, uint32_t seed)
+{
+    std::vector<std::pair<size_t, size_t>> pairs;
+    if(elementCount < 2)
+        return pairs;
+
+    constexpr size_t StrongPairSampleLimit = 1176;
+    const size_t pairCount = elementCount * (elementCount - 1) / 2;
+    const size_t sampleCount = std::min(pairCount, StrongPairSampleLimit);
+    pairs.reserve(sampleCount);
+
+    if(sampleCount == pairCount) {
+        for(size_t first = 0; first + 1 < elementCount; ++first) {
+            for(size_t second = first + 1; second < elementCount; ++second)
+                pairs.emplace_back(first, second);
+        }
+        return pairs;
+    }
+
+    std::mt19937 generator(seed);
+    std::uniform_int_distribution<size_t> distribution(0, pairCount - 1);
+    std::unordered_set<size_t> chosenPairIndices;
+    chosenPairIndices.reserve(sampleCount * 2);
+    while(chosenPairIndices.size() < sampleCount)
+        chosenPairIndices.insert(distribution(generator));
+
+    std::vector<size_t> sortedPairIndices(chosenPairIndices.begin(), chosenPairIndices.end());
+    std::sort(sortedPairIndices.begin(), sortedPairIndices.end());
+    for(size_t linearPairIndex : sortedPairIndices)
+        pairs.push_back(pairIndicesFromLinearIndex(elementCount, linearPairIndex));
+    return pairs;
+}
+
+StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedData& prepared)
+{
+    StronglyCorrelatedPairCurves curves;
+    const size_t frameCount = prepared.frames.size();
+    if(frameCount < 2 || prepared.groups.empty())
+        return curves;
+
+    const size_t numInit = std::max<size_t>(1, frameCount / 2);
+    const size_t lenMSD = frameCount - numInit;
+    if(lenMSD == 0)
+        return curves;
+    const size_t originStride = std::max<size_t>(1, numInit / 512);
+    std::vector<size_t> sampledOrigins;
+    sampledOrigins.reserve((numInit + originStride - 1) / originStride);
+    for(size_t origin = 0; origin < numInit; origin += originStride)
+        sampledOrigins.push_back(origin);
+    if(sampledOrigins.empty() || sampledOrigins.back() != numInit - 1)
+        sampledOrigins.push_back(numInit - 1);
+
+    const size_t groupCount = prepared.groups.size();
+    constexpr size_t thresholdCount = StronglyCorrelatedPairCurves::Thresholds.size();
+    curves.byGroupAndThreshold.assign(groupCount,
+                                      std::vector<std::vector<double>>(thresholdCount,
+                                                                       std::vector<double>(lenMSD, std::numeric_limits<double>::quiet_NaN())));
+    std::vector<std::vector<std::pair<size_t, size_t>>> sampledPairsByGroup;
+    sampledPairsByGroup.reserve(groupCount);
+    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+        sampledPairsByGroup.push_back(buildSampledDistinctPairs(prepared.groups[groupIndex].memberIndices.size(),
+                                                               static_cast<uint32_t>(0x5eed1234u + groupIndex)));
+    }
+
+    struct StrongPairPartial {
+        std::vector<std::vector<std::vector<size_t>>> hitsByGroupAndThreshold;
+        std::vector<std::vector<size_t>> validPairCountsByGroup;
+    };
+    std::vector<StrongPairPartial> partials;
+    parallelForChunks(sampledOrigins.size(), 16,
+        [&](size_t workerCount) {
+            partials.resize(workerCount);
+            for(StrongPairPartial& partial : partials) {
+                partial.hitsByGroupAndThreshold.assign(groupCount,
+                    std::vector<std::vector<size_t>>(thresholdCount, std::vector<size_t>(lenMSD, 0)));
+                partial.validPairCountsByGroup.assign(groupCount, std::vector<size_t>(lenMSD, 0));
+            }
+        },
+        [&](size_t workerIndex, size_t fromOriginIndex, size_t toOriginIndex) {
+            StrongPairPartial& partial = partials[workerIndex];
+            for(size_t originIndex = fromOriginIndex; originIndex < toOriginIndex; ++originIndex) {
+                this_task::throwIfCanceled();
+                const size_t origin = sampledOrigins[originIndex];
+                for(size_t lag = 0; lag < lenMSD; ++lag) {
+                    const size_t target = origin + lag;
+                    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+                        const auto& memberIndices = prepared.groups[groupIndex].memberIndices;
+                        const auto& sampledPairs = sampledPairsByGroup[groupIndex];
+                        if(memberIndices.size() < 2 || sampledPairs.empty())
+                            continue;
+
+                        std::vector<Vector3> unitDisplacements(memberIndices.size(), Vector3::Zero());
+                        std::vector<uint8_t> validDisplacementMask(memberIndices.size(), 0);
+                        for(size_t localIndex = 0; localIndex < memberIndices.size(); ++localIndex) {
+                            const size_t particleIndex = memberIndices[localIndex];
+                            const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
+                            const double displacementSquared = displacement.squaredLength();
+                            if(displacementSquared <= 0)
+                                continue;
+                            unitDisplacements[localIndex] = displacement * static_cast<FloatType>(1.0 / std::sqrt(displacementSquared));
+                            validDisplacementMask[localIndex] = 1;
+                        }
+
+                        for(const auto& [first, second] : sampledPairs) {
+                            if(!validDisplacementMask[first] || !validDisplacementMask[second])
+                                continue;
+
+                            const double cosineSimilarity = std::abs(unitDisplacements[first].dot(unitDisplacements[second]));
+                            partial.validPairCountsByGroup[groupIndex][lag] += 1;
+                            for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
+                                if(cosineSimilarity > StronglyCorrelatedPairCurves::Thresholds[thresholdIndex])
+                                    partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lag] += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+        for(size_t lag = 0; lag < lenMSD; ++lag) {
+            size_t validPairCount = 0;
+            std::array<size_t, thresholdCount> hits{};
+            for(const StrongPairPartial& partial : partials) {
+                validPairCount += partial.validPairCountsByGroup[groupIndex][lag];
+                for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex)
+                    hits[thresholdIndex] += partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lag];
+            }
+            if(validPairCount == 0)
+                continue;
+            for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
+                curves.byGroupAndThreshold[groupIndex][thresholdIndex][lag] =
+                    static_cast<double>(hits[thresholdIndex]) / static_cast<double>(validPairCount);
+            }
         }
     }
 
@@ -1842,6 +2003,7 @@ OVITO_CLASSINFO(TransportModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(TransportModifier, computeMSD);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeVACF);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeConductivity);
+DEFINE_PROPERTY_FIELD(TransportModifier, computeStronglyCorrelatedPairs);
 DEFINE_PROPERTY_FIELD(TransportModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(TransportModifier, selectAsMolecules);
 DEFINE_PROPERTY_FIELD(TransportModifier, computePerType);
@@ -1869,6 +2031,7 @@ DEFINE_PROPERTY_FIELD(TransportModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeMSD, "Compute MSD");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeVACF, "Compute VACF");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeConductivity, "Compute ionic conductivity");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, computeStronglyCorrelatedPairs, "Compute strongly correlated ion pairs");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, useOnlySelectedParticles, "Use only selected atoms");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, selectAsMolecules, "Select as molecules");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computePerType, "Compute per-type curves");
@@ -2075,8 +2238,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
                 PipelineFlowState state = std::move(computationResult.state);
 
-                if(!computeMSD() && !computeVACF() && !computeConductivity())
-                    throw Exception(tr("Enable at least one transport observable (MSD, VACF, or conductivity)."));
+                if(!computeMSD() && !computeVACF() && !computeConductivity() && !computeStronglyCorrelatedPairs())
+                    throw Exception(tr("Enable at least one transport observable (MSD, VACF, conductivity, or strongly correlated ion pairs)."));
                 if(deltaT() <= 0)
                     throw Exception(tr("The transport analysis requires a positive delta t value."));
                 if(temperature() <= 0 && computeConductivity())
@@ -2091,6 +2254,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const bool needMSDOutput = computeMSD();
                 const bool needVACFOutput = computeVACF();
                 const bool needConductivityOutput = computeConductivity();
+                const bool needStrongPairOutput = computeStronglyCorrelatedPairs();
+                const bool needPerTypeGroups = computePerType() || needStrongPairOutput;
                 const bool needVelocitySamples = needVACFOutput || needConductivityOutput;
                 const bool allowFiniteDifferenceVelocities = needVACFOutput;
 
@@ -2098,7 +2263,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 PreparedData prepared = prepareTransportData(sampleStates,
                                                             useOnlySelectedParticles(),
                                                             selectAsMolecules(),
-                                                            computePerType(),
+                                                            needPerTypeGroups,
                                                             needVelocitySamples,
                                                             allowFiniteDifferenceVelocities,
                                                             true,
@@ -2115,10 +2280,12 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const size_t particleCount = prepared.frames.front().positions.size();
                 const int dimensionality = prepared.dimensionality;
 
-            const PyLATMSDCurves pyLatMSD = (needMSDOutput || needConductivityOutput) ? computePyLATMSDCurves(prepared) : PyLATMSDCurves{};
+            const PyLATMSDCurves pyLatMSD = (needMSDOutput || needConductivityOutput || needStrongPairOutput) ? computePyLATMSDCurves(prepared) : PyLATMSDCurves{};
             const PyLATChargeTransportCurves pyLatChargeTransport = needConductivityOutput ? computePyLATChargeTransportCurves(prepared) : PyLATChargeTransportCurves{};
             const DistinctIonCorrelationCurves distinctIonCorrelation =
                 (computePerType() && (needMSDOutput || needConductivityOutput)) ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
+            const StronglyCorrelatedPairCurves stronglyCorrelatedPairs =
+                needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared) : StronglyCorrelatedPairCurves{};
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
             std::vector<double> msdTimesSI = pyLatMSD.timesSI;
@@ -2480,16 +2647,16 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 ? tr("Selected subset atoms (persisted across all sampled frames)")
                 : tr("All atoms");
 
-            QStringList msdComponentNames{aggregateCurveLabel};
-            std::vector<std::vector<double>> msdColumns{msdOverallTrimmed};
-            std::vector<std::vector<double>> msdColumnsSI{msdOverallSI};
-            for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
-                msdComponentNames.push_back(prepared.groups[groupIndex].name);
-                msdColumns.push_back(msdPerTypeTrimmed[groupIndex]);
-                msdColumnsSI.push_back(msdPerTypeSI[groupIndex]);
-            }
-
             if(computeMSD()) {
+                QStringList msdComponentNames{aggregateCurveLabel};
+                std::vector<std::vector<double>> msdColumns{msdOverallTrimmed};
+                std::vector<std::vector<double>> msdColumnsSI{msdOverallSI};
+                for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                    msdComponentNames.push_back(prepared.groups[groupIndex].name);
+                    msdColumns.push_back(msdPerTypeTrimmed[groupIndex]);
+                    msdColumnsSI.push_back(msdPerTypeSI[groupIndex]);
+                }
+
                 createLineTable(results, MSDTableId, tr("Mean squared displacement"), msdTimesRaw, msdColumns, msdComponentNames,
                                 tr("Time (%1)").arg(timeLabel), tr("MSD (%1)").arg(msdUnitLabel(lengthLabel)), createdByNode);
 
@@ -2622,6 +2789,31 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                     distinctCorrelationNames,
                                     tr("Time (%1)").arg(timeLabel),
                                     tr("Average cosine similarity"),
+                                    createdByNode);
+                }
+            }
+
+            if(needStrongPairOutput && !prepared.groups.empty() && !stronglyCorrelatedPairs.byGroupAndThreshold.empty()) {
+                QStringList strongPairNames;
+                std::vector<std::vector<double>> strongPairColumns;
+                for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                    if(std::abs(prepared.groups[groupIndex].representativeChargeRaw) <= std::numeric_limits<double>::epsilon())
+                        continue;
+                    if(prepared.groups[groupIndex].memberIndices.size() < 2)
+                        continue;
+                    for(size_t thresholdIndex = 0; thresholdIndex < StronglyCorrelatedPairCurves::Thresholds.size(); ++thresholdIndex) {
+                        strongPairNames.push_back(QStringLiteral("%1 |c_ij| > %2")
+                                                      .arg(prepared.groups[groupIndex].name)
+                                                      .arg(StronglyCorrelatedPairCurves::Thresholds[thresholdIndex], 0, 'f', 2));
+                        strongPairColumns.push_back(stronglyCorrelatedPairs.byGroupAndThreshold[groupIndex][thresholdIndex]);
+                    }
+                }
+                if(!strongPairColumns.empty()) {
+                    createLineTable(results, StronglyCorrelatedPairsTableId, tr("Strongly correlated ion pairs"), msdTimesRaw,
+                                    strongPairColumns,
+                                    strongPairNames,
+                                    tr("Time (%1)").arg(timeLabel),
+                                    tr("Fraction of strongly correlated pairs"),
                                     createdByNode);
                 }
             }

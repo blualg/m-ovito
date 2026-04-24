@@ -315,6 +315,9 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     analysisLayout->addWidget(_computeVACFCheckBox);
     _computeConductivityCheckBox = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeConductivity))->checkBox();
     analysisLayout->addWidget(_computeConductivityCheckBox);
+    _computeStronglyCorrelatedPairsCheckBox =
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeStronglyCorrelatedPairs))->checkBox();
+    analysisLayout->addWidget(_computeStronglyCorrelatedPairsCheckBox);
     analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computePerType))->checkBox());
     _useOnlySelectedParticlesCheckBox =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::useOnlySelectedParticles))->checkBox();
@@ -481,6 +484,17 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     distinctIonCorrelationLayout->addWidget(_distinctIonCorrelationPlot);
     layout->addWidget(_distinctIonCorrelationSection);
 
+    _stronglyCorrelatedPairsSection = new QWidget(rollout);
+    auto* stronglyCorrelatedPairsLayout = new QVBoxLayout(_stronglyCorrelatedPairsSection);
+    stronglyCorrelatedPairsLayout->setContentsMargins(0, 0, 0, 0);
+    stronglyCorrelatedPairsLayout->setSpacing(4);
+    _stronglyCorrelatedPairsPlot = new DataTablePlotWidget();
+    _stronglyCorrelatedPairsPlot->setMinimumHeight(180);
+    _stronglyCorrelatedPairsPlot->setMaximumHeight(180);
+    stronglyCorrelatedPairsLayout->addWidget(new QLabel(tr("Strongly correlated ion pairs:"), _stronglyCorrelatedPairsSection));
+    stronglyCorrelatedPairsLayout->addWidget(_stronglyCorrelatedPairsPlot);
+    layout->addWidget(_stronglyCorrelatedPairsSection);
+
     auto* gkPreviewBox = new QGroupBox(tr("Green-Kubo Preview"), rollout);
     _gkPreviewSection = gkPreviewBox;
     auto* gkPreviewLayout = new QVBoxLayout(gkPreviewBox);
@@ -531,6 +545,8 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
         connect(_computeVACFCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_computeConductivityCheckBox)
         connect(_computeConductivityCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+    if(_computeStronglyCorrelatedPairsCheckBox)
+        connect(_computeStronglyCorrelatedPairsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_useOnlySelectedParticlesCheckBox)
         connect(_useOnlySelectedParticlesCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_selectAsMoleculesCheckBox)
@@ -601,7 +617,10 @@ void TransportModifierEditor::updatePlots()
             _conductivityPlot->setTable(nullptr);
             if(_distinctIonCorrelationPlot)
                 _distinctIonCorrelationPlot->setTable(nullptr);
+            if(_stronglyCorrelatedPairsPlot)
+                _stronglyCorrelatedPairsPlot->setTable(nullptr);
             _distinctIonCorrelationAvailable = false;
+            _stronglyCorrelatedPairsAvailable = false;
             if(_gkCorrelationPreviewPlot)
                 _gkCorrelationPreviewPlot->setTable(nullptr);
             if(_gkConductivityPreviewPlot)
@@ -626,6 +645,11 @@ void TransportModifierEditor::updatePlots()
         _distinctIonCorrelationAvailable = (distinctIonCorrelationTable != nullptr);
         if(_distinctIonCorrelationPlot)
             _distinctIonCorrelationPlot->setTable(distinctIonCorrelationTable);
+        const DataTable* stronglyCorrelatedPairsTable =
+            state.getObjectBy<DataTable>(modificationNode(), TransportModifier::StronglyCorrelatedPairsTableId);
+        _stronglyCorrelatedPairsAvailable = (stronglyCorrelatedPairsTable != nullptr);
+        if(_stronglyCorrelatedPairsPlot)
+            _stronglyCorrelatedPairsPlot->setTable(stronglyCorrelatedPairsTable);
         updateGreenKuboPreview(state);
         updateControlStates();
     });
@@ -876,6 +900,8 @@ void TransportModifierEditor::updateControlStates()
     const bool computeMSD = _computeMSDCheckBox && _computeMSDCheckBox->isChecked();
     const bool computeVACF = _computeVACFCheckBox && _computeVACFCheckBox->isChecked();
     const bool computeConductivity = _computeConductivityCheckBox && _computeConductivityCheckBox->isChecked();
+    const bool computeStronglyCorrelatedPairs =
+        _computeStronglyCorrelatedPairsCheckBox && _computeStronglyCorrelatedPairsCheckBox->isChecked();
     const bool useOnlySelectedParticles = _useOnlySelectedParticlesCheckBox && _useOnlySelectedParticlesCheckBox->isChecked();
 
     if(_msdSection)
@@ -886,6 +912,8 @@ void TransportModifierEditor::updateControlStates()
         _conductivitySection->setVisible(computeConductivity);
     if(_distinctIonCorrelationSection)
         _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && modifier() && modifier()->computePerType() && (computeMSD || computeConductivity));
+    if(_stronglyCorrelatedPairsSection)
+        _stronglyCorrelatedPairsSection->setVisible(_stronglyCorrelatedPairsAvailable && computeStronglyCorrelatedPairs);
     if(_gkPreviewSection && !computeConductivity)
         _gkPreviewSection->setVisible(false);
 

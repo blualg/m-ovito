@@ -77,6 +77,7 @@ public:
     static constexpr QStringView ConductivityTableSIId = u"transport-conductivity-si";
     static constexpr QStringView ConductivityContributionsTableId = u"transport-conductivity-contributions";
     static constexpr QStringView DistinctIonCorrelationTableId = u"transport-distinct-ion-correlation";
+    static constexpr QStringView StronglyCorrelatedPairsTableId = u"transport-strongly-correlated-pairs";
 
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -97,6 +98,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeMSD, setComputeMSD, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeVACF, setComputeVACF, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeConductivity, setComputeConductivity, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeStronglyCorrelatedPairs, setComputeStronglyCorrelatedPairs, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, useOnlySelectedParticles, setUseOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, selectAsMolecules, setSelectAsMolecules, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computePerType, setComputePerType, PROPERTY_FIELD_MEMORIZE);
