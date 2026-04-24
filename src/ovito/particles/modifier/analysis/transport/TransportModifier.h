@@ -71,9 +71,11 @@ public:
     static constexpr QStringView DiffusionVACFTableId = u"transport-diffusion-vacf";
     static constexpr QStringView DiffusionVACFTableSIId = u"transport-diffusion-vacf-si";
     static constexpr QStringView ChargeDisplacementTableId = u"transport-charge-displacement";
+    static constexpr QStringView ChargeDisplacementContributionsTableId = u"transport-charge-displacement-contributions";
     static constexpr QStringView CurrentCorrelationTableId = u"transport-current-correlation";
     static constexpr QStringView ConductivityTableId = u"transport-conductivity";
     static constexpr QStringView ConductivityTableSIId = u"transport-conductivity-si";
+    static constexpr QStringView ConductivityContributionsTableId = u"transport-conductivity-contributions";
 
     void initializeObject(ObjectInitializationFlags flags);
 

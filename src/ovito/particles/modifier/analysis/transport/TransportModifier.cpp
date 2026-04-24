@@ -569,6 +569,10 @@ struct PyLATChargeTransportCurves {
     std::vector<double> timesSI;
     std::vector<double> correlatedChargeDisplacement;
     std::vector<double> nernstEinsteinNumerator;
+    std::vector<std::vector<double>> selfChargeDisplacementByGroup;
+    std::vector<std::vector<double>> distinctChargeDisplacementByGroup;
+    std::vector<std::vector<double>> crossChargeDisplacementByPair;
+    std::vector<std::pair<size_t, size_t>> crossGroupPairs;
 };
 
 struct PyLATGreenKuboCurves {
@@ -867,6 +871,15 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
     curves.correlatedChargeDisplacement.assign(lenMSD, 0.0);
     curves.nernstEinsteinNumerator.assign(lenMSD, 0.0);
 
+    const size_t groupCount = prepared.groups.size();
+    curves.selfChargeDisplacementByGroup.assign(groupCount, std::vector<double>(lenMSD, 0.0));
+    curves.distinctChargeDisplacementByGroup.assign(groupCount, std::vector<double>(lenMSD, 0.0));
+    for(size_t firstGroup = 0; firstGroup < groupCount; ++firstGroup) {
+        for(size_t secondGroup = firstGroup + 1; secondGroup < groupCount; ++secondGroup)
+            curves.crossGroupPairs.emplace_back(firstGroup, secondGroup);
+    }
+    curves.crossChargeDisplacementByPair.assign(curves.crossGroupPairs.size(), std::vector<double>(lenMSD, 0.0));
+
     for(size_t lag = 0; lag < lenMSD; ++lag) {
         this_task::throwIfCanceled();
         curves.timesRaw[lag] = prepared.frames[lag].timeRaw - prepared.frames.front().timeRaw;
@@ -877,6 +890,9 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
     struct ChargePartial {
         std::vector<double> correlated;
         std::vector<double> nernstEinstein;
+        std::vector<std::vector<double>> selfByGroup;
+        std::vector<std::vector<double>> distinctByGroup;
+        std::vector<std::vector<double>> crossByPair;
     };
     std::vector<ChargePartial> partials;
     parallelForChunks(numInit, 32,
@@ -885,6 +901,9 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
             for(ChargePartial& partial : partials) {
                 partial.correlated.assign(lenMSD, 0.0);
                 partial.nernstEinstein.assign(lenMSD, 0.0);
+                partial.selfByGroup.assign(groupCount, std::vector<double>(lenMSD, 0.0));
+                partial.distinctByGroup.assign(groupCount, std::vector<double>(lenMSD, 0.0));
+                partial.crossByPair.assign(curves.crossGroupPairs.size(), std::vector<double>(lenMSD, 0.0));
             }
         },
         [&](size_t workerIndex, size_t fromOrigin, size_t toOrigin) {
@@ -895,16 +914,36 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
                     const size_t target = origin + lag;
                     Vector3 collectiveChargeDisplacement = Vector3::Zero();
                     double chargeWeightedSelfDisplacement = 0.0;
+                    std::vector<Vector3> groupedChargeDisplacements(groupCount, Vector3::Zero());
+                    std::vector<double> groupedSelfChargeDisplacements(groupCount, 0.0);
 
                     for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex) {
                         const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
                         const double charge = prepared.chargesRaw[particleIndex];
                         collectiveChargeDisplacement += displacement * static_cast<FloatType>(charge);
-                        chargeWeightedSelfDisplacement += charge * charge * displacement.squaredLength();
+                        const double selfContribution = charge * charge * displacement.squaredLength();
+                        chargeWeightedSelfDisplacement += selfContribution;
+                    }
+
+                    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+                        for(size_t particleIndex : prepared.groups[groupIndex].memberIndices) {
+                            const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
+                            const double charge = prepared.chargesRaw[particleIndex];
+                            groupedChargeDisplacements[groupIndex] += displacement * static_cast<FloatType>(charge);
+                            groupedSelfChargeDisplacements[groupIndex] += charge * charge * displacement.squaredLength();
+                        }
                     }
 
                     partial.correlated[lag] += collectiveChargeDisplacement.squaredLength();
                     partial.nernstEinstein[lag] += chargeWeightedSelfDisplacement;
+                    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+                        partial.selfByGroup[groupIndex][lag] += groupedSelfChargeDisplacements[groupIndex];
+                        partial.distinctByGroup[groupIndex][lag] += groupedChargeDisplacements[groupIndex].squaredLength() - groupedSelfChargeDisplacements[groupIndex];
+                    }
+                    for(size_t pairIndex = 0; pairIndex < curves.crossGroupPairs.size(); ++pairIndex) {
+                        const auto [firstGroup, secondGroup] = curves.crossGroupPairs[pairIndex];
+                        partial.crossByPair[pairIndex][lag] += groupedChargeDisplacements[firstGroup].dot(groupedChargeDisplacements[secondGroup]);
+                    }
                 }
             }
         });
@@ -915,6 +954,16 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
             curves.correlatedChargeDisplacement[lag] += partial.correlated[lag];
             curves.nernstEinsteinNumerator[lag] += partial.nernstEinstein[lag];
         }
+        for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+            for(size_t lag = 0; lag < lenMSD; ++lag) {
+                curves.selfChargeDisplacementByGroup[groupIndex][lag] += partial.selfByGroup[groupIndex][lag];
+                curves.distinctChargeDisplacementByGroup[groupIndex][lag] += partial.distinctByGroup[groupIndex][lag];
+            }
+        }
+        for(size_t pairIndex = 0; pairIndex < curves.crossGroupPairs.size(); ++pairIndex) {
+            for(size_t lag = 0; lag < lenMSD; ++lag)
+                curves.crossChargeDisplacementByPair[pairIndex][lag] += partial.crossByPair[pairIndex][lag];
+        }
     }
 
     const double normalization = static_cast<double>(numInit);
@@ -922,6 +971,18 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
         value /= normalization;
     for(double& value : curves.nernstEinsteinNumerator)
         value /= normalization;
+    for(std::vector<double>& curve : curves.selfChargeDisplacementByGroup) {
+        for(double& value : curve)
+            value /= normalization;
+    }
+    for(std::vector<double>& curve : curves.distinctChargeDisplacementByGroup) {
+        for(double& value : curve)
+            value /= normalization;
+    }
+    for(std::vector<double>& curve : curves.crossChargeDisplacementByPair) {
+        for(double& value : curve)
+            value /= normalization;
+    }
 
     return curves;
 }
@@ -2222,6 +2283,10 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             const size_t conductivitySize = chargeDisplacementTrimmed.size();
             std::vector<double> conductivityCorrelatedAverageVolumeSI(conductivitySize, 0.0);
             std::vector<double> conductivityNernstEinsteinAverageVolumeSI(conductivitySize, 0.0);
+            QStringList einsteinContributionNames;
+            std::vector<std::vector<double>> chargeDisplacementContributionColumns;
+            std::vector<std::vector<double>> conductivityContributionColumnsRaw;
+            std::vector<std::vector<double>> conductivityContributionColumnsSI;
 
             const double chargeDisplacementScaleToSI = chargeScaleToSI * chargeScaleToSI * lengthScaleToSI * lengthScaleToSI;
             for(size_t i = 1; i < conductivitySize; ++i) {
@@ -2235,6 +2300,38 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 }
             }
 
+            if(needConductivityOutput && computePerType() && !prepared.groups.empty()) {
+                auto appendEinsteinContribution = [&](const QString& name, const std::vector<double>& numeratorCurve) {
+                    if(numeratorCurve.empty())
+                        return;
+
+                    einsteinContributionNames.push_back(name);
+                    chargeDisplacementContributionColumns.push_back(numeratorCurve);
+
+                    std::vector<double> conductivityCurveSI(numeratorCurve.size(), 0.0);
+                    for(size_t i = 1; i < numeratorCurve.size(); ++i) {
+                        if(msdTimesSI[i] <= 0 || prepared.fixedVolumeSI <= 0)
+                            continue;
+                        conductivityCurveSI[i] = (numeratorCurve[i] * chargeDisplacementScaleToSI) /
+                                                 (2.0 * dimensionality * BoltzmannConstant * temperature() * prepared.fixedVolumeSI * msdTimesSI[i]);
+                    }
+                    conductivityContributionColumnsSI.push_back(std::move(conductivityCurveSI));
+                };
+
+                for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                    appendEinsteinContribution(QStringLiteral("Self (%1)").arg(prepared.groups[groupIndex].name),
+                                               pyLatChargeTransport.selfChargeDisplacementByGroup[groupIndex]);
+                    appendEinsteinContribution(QStringLiteral("Distinct (%1)").arg(prepared.groups[groupIndex].name),
+                                               pyLatChargeTransport.distinctChargeDisplacementByGroup[groupIndex]);
+                }
+                for(size_t pairIndex = 0; pairIndex < pyLatChargeTransport.crossGroupPairs.size(); ++pairIndex) {
+                    const auto [firstGroup, secondGroup] = pyLatChargeTransport.crossGroupPairs[pairIndex];
+                    appendEinsteinContribution(QStringLiteral("Cross (%1, %2)")
+                                                   .arg(prepared.groups[firstGroup].name, prepared.groups[secondGroup].name),
+                                               pyLatChargeTransport.crossChargeDisplacementByPair[pairIndex]);
+                }
+            }
+
             const double conductivityScaleToSI = chargeScaleToSI * chargeScaleToSI /
                                                  (timeScaleToSI * std::pow(lengthScaleToSI, dimensionality - 2.0));
             std::vector<double> conductivityCorrelatedAverageVolumeRaw(conductivityCorrelatedAverageVolumeSI.size(), 0.0);
@@ -2244,6 +2341,13 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                        [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
                 std::ranges::transform(conductivityNernstEinsteinAverageVolumeSI, conductivityNernstEinsteinAverageVolumeRaw.begin(),
                                        [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
+                conductivityContributionColumnsRaw.reserve(conductivityContributionColumnsSI.size());
+                for(const std::vector<double>& curveSI : conductivityContributionColumnsSI) {
+                    std::vector<double> curveRaw(curveSI.size(), 0.0);
+                    std::ranges::transform(curveSI, curveRaw.begin(),
+                                           [conductivityScaleToSI](double value) { return value / conductivityScaleToSI; });
+                    conductivityContributionColumnsRaw.push_back(std::move(curveRaw));
+                }
             }
 
             const bool pyLatCompatibilityEnabled = true;
@@ -2360,6 +2464,15 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                 tr("Time (%1)").arg(timeLabel),
                                 tr("Charge-displacement (%1^2*%2^2)").arg(chargeLabel, lengthLabel),
                                 createdByNode);
+                if(!chargeDisplacementContributionColumns.empty()) {
+                    createLineTable(results, ChargeDisplacementContributionsTableId, tr("Charge displacement conductivity contributions"),
+                                    msdTimesRaw,
+                                    chargeDisplacementContributionColumns,
+                                    einsteinContributionNames,
+                                    tr("Time (%1)").arg(timeLabel),
+                                    tr("Charge-displacement (%1^2*%2^2)").arg(chargeLabel, lengthLabel),
+                                    createdByNode);
+                }
 
                 if(prepared.conductivityVelocityAnalysisAvailable && !currentCorrelationRaw.empty()) {
                     createLineTable(results, CurrentCorrelationTableId, tr("Current autocorrelation"), conductivityGKLagTimesRaw, {currentCorrelationRaw},
@@ -2391,6 +2504,14 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                 tr("Time (%1)").arg(timeLabel),
                                 tr("Conductivity (%1)").arg(conductivityRawUnitLabel(chargeLabel, timeLabel, lengthLabel, dimensionality)),
                                 createdByNode);
+                if(!conductivityContributionColumnsRaw.empty()) {
+                    createLineTable(results, ConductivityContributionsTableId, tr("Einstein conductivity contributions"), msdTimesRaw,
+                                    conductivityContributionColumnsRaw,
+                                    einsteinContributionNames,
+                                    tr("Time (%1)").arg(timeLabel),
+                                    tr("Conductivity (%1)").arg(conductivityRawUnitLabel(chargeLabel, timeLabel, lengthLabel, dimensionality)),
+                                    createdByNode);
+                }
             }
 
             double summaryDMSDRaw = std::numeric_limits<double>::quiet_NaN();

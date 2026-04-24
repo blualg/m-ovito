@@ -359,6 +359,14 @@ void runHarness(const HarnessConfig& config)
         curves.insert(QStringLiteral("current_autocorrelation"), currentCorrelation);
     if(const QJsonObject conductivity = collectLineTable(state.data(), TransportModifier::ConductivityTableId); !conductivity.isEmpty())
         curves.insert(QStringLiteral("ionic_conductivity"), conductivity);
+    if(const QJsonObject chargeDisplacementContributions =
+           collectLineTable(state.data(), TransportModifier::ChargeDisplacementContributionsTableId);
+       !chargeDisplacementContributions.isEmpty())
+        curves.insert(QStringLiteral("charge_displacement_contributions"), chargeDisplacementContributions);
+    if(const QJsonObject conductivityContributions =
+           collectLineTable(state.data(), TransportModifier::ConductivityContributionsTableId);
+       !conductivityContributions.isEmpty())
+        curves.insert(QStringLiteral("einstein_conductivity_contributions"), conductivityContributions);
     writeSummaryFile(config, summary, curves);
 
     std::cout << "Wrote OVITO transport summary to " << QDir::toNativeSeparators(config.outputPath).toStdString() << std::endl;
