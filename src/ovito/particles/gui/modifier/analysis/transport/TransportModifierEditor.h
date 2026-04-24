@@ -61,6 +61,7 @@ private:
     QCheckBox* _computeMSDCheckBox = nullptr;
     QCheckBox* _computeVACFCheckBox = nullptr;
     QCheckBox* _computeConductivityCheckBox = nullptr;
+    QCheckBox* _computeDistinctIonCorrelationCheckBox = nullptr;
     QCheckBox* _computeStronglyCorrelatedPairsCheckBox = nullptr;
     QCheckBox* _useOnlySelectedParticlesCheckBox = nullptr;
     QCheckBox* _selectAsMoleculesCheckBox = nullptr;

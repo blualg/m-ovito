@@ -98,6 +98,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeMSD, setComputeMSD, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeVACF, setComputeVACF, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeConductivity, setComputeConductivity, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeDistinctIonCorrelation, setComputeDistinctIonCorrelation, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeStronglyCorrelatedPairs, setComputeStronglyCorrelatedPairs, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1176}, strongPairSampleCount, setStrongPairSampleCount, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, strongPairFrameStep, setStrongPairFrameStep, PROPERTY_FIELD_MEMORIZE);

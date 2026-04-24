@@ -63,6 +63,7 @@ struct HarnessConfig {
     bool computeMSD = true;
     bool computeVACF = true;
     bool computeConductivity = true;
+    bool computeDistinctIonCorrelation = false;
     bool computeStronglyCorrelatedPairs = false;
     int strongPairSampleCount = 1176;
     int strongPairFrameStep = 1;
@@ -98,7 +99,7 @@ void printUsage(const char* programName)
 {
     std::cerr
         << "Usage: " << programName << " --data-dir <directory> [--output <file>] [--temperature <K>] [--dt <value>]\n"
-        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--strong-pairs on|off] [--strong-pair-k <count>]\n"
+        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--distinct-ion-correlation on|off] [--strong-pairs on|off] [--strong-pair-k <count>]\n"
         << "       [--strong-pair-step <frames>] [--strong-pair-thresholds <list>] [--per-type on|off]\n"
         << "Expected files inside <directory>: log.lammps, mol.data, mol.lammpstrj\n";
 }
@@ -150,6 +151,9 @@ HarnessConfig parseArguments(int argc, char** argv)
         }
         else if(arg == QStringLiteral("--conductivity")) {
             config.computeConductivity = parseOnOffOption(arg, requireValue("--conductivity"));
+        }
+        else if(arg == QStringLiteral("--distinct-ion-correlation")) {
+            config.computeDistinctIonCorrelation = parseOnOffOption(arg, requireValue("--distinct-ion-correlation"));
         }
         else if(arg == QStringLiteral("--strong-pairs")) {
             config.computeStronglyCorrelatedPairs = parseOnOffOption(arg, requireValue("--strong-pairs"));
@@ -359,6 +363,7 @@ void runHarness(const HarnessConfig& config)
     modifier->setComputeMSD(config.computeMSD);
     modifier->setComputeVACF(config.computeVACF);
     modifier->setComputeConductivity(config.computeConductivity);
+    modifier->setComputeDistinctIonCorrelation(config.computeDistinctIonCorrelation);
     modifier->setComputeStronglyCorrelatedPairs(config.computeStronglyCorrelatedPairs);
     modifier->setStrongPairSampleCount(config.strongPairSampleCount);
     modifier->setStrongPairFrameStep(config.strongPairFrameStep);

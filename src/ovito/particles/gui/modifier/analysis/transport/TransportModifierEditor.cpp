@@ -315,6 +315,9 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     analysisLayout->addWidget(_computeVACFCheckBox);
     _computeConductivityCheckBox = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeConductivity))->checkBox();
     analysisLayout->addWidget(_computeConductivityCheckBox);
+    _computeDistinctIonCorrelationCheckBox =
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeDistinctIonCorrelation))->checkBox();
+    analysisLayout->addWidget(_computeDistinctIonCorrelationCheckBox);
     _computeStronglyCorrelatedPairsCheckBox =
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::computeStronglyCorrelatedPairs))->checkBox();
     analysisLayout->addWidget(_computeStronglyCorrelatedPairsCheckBox);
@@ -566,6 +569,8 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
         connect(_computeVACFCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_computeConductivityCheckBox)
         connect(_computeConductivityCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+    if(_computeDistinctIonCorrelationCheckBox)
+        connect(_computeDistinctIonCorrelationCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_computeStronglyCorrelatedPairsCheckBox)
         connect(_computeStronglyCorrelatedPairsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_useOnlySelectedParticlesCheckBox)
@@ -921,6 +926,8 @@ void TransportModifierEditor::updateControlStates()
     const bool computeMSD = _computeMSDCheckBox && _computeMSDCheckBox->isChecked();
     const bool computeVACF = _computeVACFCheckBox && _computeVACFCheckBox->isChecked();
     const bool computeConductivity = _computeConductivityCheckBox && _computeConductivityCheckBox->isChecked();
+    const bool computeDistinctIonCorrelation =
+        _computeDistinctIonCorrelationCheckBox && _computeDistinctIonCorrelationCheckBox->isChecked();
     const bool computeStronglyCorrelatedPairs =
         _computeStronglyCorrelatedPairsCheckBox && _computeStronglyCorrelatedPairsCheckBox->isChecked();
     const bool useOnlySelectedParticles = _useOnlySelectedParticlesCheckBox && _useOnlySelectedParticlesCheckBox->isChecked();
@@ -934,7 +941,7 @@ void TransportModifierEditor::updateControlStates()
     if(_stronglyCorrelatedPairsSettingsSection)
         _stronglyCorrelatedPairsSettingsSection->setVisible(computeStronglyCorrelatedPairs);
     if(_distinctIonCorrelationSection)
-        _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && modifier() && modifier()->computePerType() && (computeMSD || computeConductivity));
+        _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && computeDistinctIonCorrelation);
     if(_stronglyCorrelatedPairsSection)
         _stronglyCorrelatedPairsSection->setVisible(_stronglyCorrelatedPairsAvailable && computeStronglyCorrelatedPairs);
     if(_gkPreviewSection && !computeConductivity)

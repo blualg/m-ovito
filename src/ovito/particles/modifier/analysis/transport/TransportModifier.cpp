@@ -2028,6 +2028,7 @@ OVITO_CLASSINFO(TransportModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(TransportModifier, computeMSD);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeVACF);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeConductivity);
+DEFINE_PROPERTY_FIELD(TransportModifier, computeDistinctIonCorrelation);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeStronglyCorrelatedPairs);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairSampleCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairFrameStep);
@@ -2059,6 +2060,7 @@ DEFINE_PROPERTY_FIELD(TransportModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeMSD, "Compute MSD");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeVACF, "Compute VACF");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeConductivity, "Compute ionic conductivity");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, computeDistinctIonCorrelation, "Compute distinct ion-ion correlation");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeStronglyCorrelatedPairs, "Compute strongly correlated ion pairs");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairSampleCount, "Pair sample count K");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairFrameStep, "Frame sampling step");
@@ -2271,8 +2273,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
                 PipelineFlowState state = std::move(computationResult.state);
 
-                if(!computeMSD() && !computeVACF() && !computeConductivity() && !computeStronglyCorrelatedPairs())
-                    throw Exception(tr("Enable at least one transport observable (MSD, VACF, conductivity, or strongly correlated ion pairs)."));
+                if(!computeMSD() && !computeVACF() && !computeConductivity() && !computeDistinctIonCorrelation() && !computeStronglyCorrelatedPairs())
+                    throw Exception(tr("Enable at least one transport observable (MSD, VACF, conductivity, distinct ion-ion correlation, or strongly correlated ion pairs)."));
                 if(deltaT() <= 0)
                     throw Exception(tr("The transport analysis requires a positive delta t value."));
                 if(temperature() <= 0 && computeConductivity())
@@ -2287,10 +2289,11 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const bool needMSDOutput = computeMSD();
                 const bool needVACFOutput = computeVACF();
                 const bool needConductivityOutput = computeConductivity();
+                const bool needDistinctIonCorrelationOutput = computeDistinctIonCorrelation();
                 const bool needStrongPairOutput = computeStronglyCorrelatedPairs();
                 const std::vector<double> strongPairThresholdsParsed =
                     needStrongPairOutput ? parseStrongPairThresholds(strongPairThresholds()) : std::vector<double>{};
-                const bool needPerTypeGroups = computePerType() || needStrongPairOutput;
+                const bool needPerTypeGroups = computePerType() || needDistinctIonCorrelationOutput || needStrongPairOutput;
                 const bool needVelocitySamples = needVACFOutput || needConductivityOutput;
                 const bool allowFiniteDifferenceVelocities = needVACFOutput;
 
@@ -2315,10 +2318,13 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const size_t particleCount = prepared.frames.front().positions.size();
                 const int dimensionality = prepared.dimensionality;
 
-            const PyLATMSDCurves pyLatMSD = (needMSDOutput || needConductivityOutput || needStrongPairOutput) ? computePyLATMSDCurves(prepared) : PyLATMSDCurves{};
+            const PyLATMSDCurves pyLatMSD =
+                (needMSDOutput || needConductivityOutput || needDistinctIonCorrelationOutput || needStrongPairOutput)
+                    ? computePyLATMSDCurves(prepared)
+                    : PyLATMSDCurves{};
             const PyLATChargeTransportCurves pyLatChargeTransport = needConductivityOutput ? computePyLATChargeTransportCurves(prepared) : PyLATChargeTransportCurves{};
             const DistinctIonCorrelationCurves distinctIonCorrelation =
-                (computePerType() && (needMSDOutput || needConductivityOutput)) ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
+                needDistinctIonCorrelationOutput ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
             const StronglyCorrelatedPairCurves stronglyCorrelatedPairs =
                 needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared,
                                                                            static_cast<size_t>(strongPairSampleCount()),
@@ -2811,7 +2817,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 }
             }
 
-            if(computePerType() && !prepared.groups.empty() && !distinctIonCorrelation.byGroup.empty()) {
+            if(needDistinctIonCorrelationOutput && !prepared.groups.empty() && !distinctIonCorrelation.byGroup.empty()) {
                 QStringList distinctCorrelationNames;
                 std::vector<std::vector<double>> distinctCorrelationColumns;
                 for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
