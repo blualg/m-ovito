@@ -557,6 +557,12 @@ struct PyLATConvergenceWindow {
     int endLag = 0;
 };
 
+struct EinsteinContributionSummary {
+    QString name;
+    double raw = std::numeric_limits<double>::quiet_NaN();
+    double si = std::numeric_limits<double>::quiet_NaN();
+};
+
 struct PyLATMSDCurves {
     std::vector<double> timesRaw;
     std::vector<double> timesSI;
@@ -2525,6 +2531,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             double summarySigmaNEVavgSI = std::numeric_limits<double>::quiet_NaN();
             double summarySigmaGKVavgRaw = std::numeric_limits<double>::quiet_NaN();
             double summarySigmaGKVavgSI = std::numeric_limits<double>::quiet_NaN();
+            std::vector<EinsteinContributionSummary> summaryEinsteinContributions;
             int pyLatMsdFitStartLag = 0;
             int pyLatGkFitStartLag = 0;
             int pyLatGkFitEndLag = 0;
@@ -2547,6 +2554,45 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                      (2.0 * dimensionality * BoltzmannConstant * temperature() * prepared.fixedVolumeSI);
                             if(conductivityScaleToSI > 0)
                                 summarySigmaCorrVavgRaw = summarySigmaCorrVavgSI / conductivityScaleToSI;
+                        }
+
+                        auto appendEinsteinContributionSummary = [&](const QString& name, const std::vector<double>& numeratorCurveRaw) {
+                            if(numeratorCurveRaw.empty() || numeratorCurveRaw.size() != msdTimesSI.size())
+                                return;
+
+                            std::vector<double> numeratorCurveSI(numeratorCurveRaw.size(), 0.0);
+                            std::ranges::transform(numeratorCurveRaw, numeratorCurveSI.begin(),
+                                                   [chargeDisplacementScaleToSI](double value) { return value * chargeDisplacementScaleToSI; });
+                            const double sigmaContributionSlopeSI = linearRegressionSlope(msdTimesSI, numeratorCurveSI, pyLatMsdFitStartLag);
+                            if(!std::isfinite(sigmaContributionSlopeSI))
+                                return;
+
+                            const double sigmaContributionSI = sigmaContributionSlopeSI /
+                                                               (2.0 * dimensionality * BoltzmannConstant * temperature() * prepared.fixedVolumeSI);
+                            if(!std::isfinite(sigmaContributionSI))
+                                return;
+
+                            EinsteinContributionSummary summary;
+                            summary.name = name;
+                            summary.si = sigmaContributionSI;
+                            if(conductivityScaleToSI > 0)
+                                summary.raw = sigmaContributionSI / conductivityScaleToSI;
+                            summaryEinsteinContributions.push_back(std::move(summary));
+                        };
+
+                        if(computePerType() && !prepared.groups.empty()) {
+                            for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                                appendEinsteinContributionSummary(QStringLiteral("Self (%1)").arg(prepared.groups[groupIndex].name),
+                                                                  pyLatChargeTransport.selfChargeDisplacementByGroup[groupIndex]);
+                                appendEinsteinContributionSummary(QStringLiteral("Distinct (%1)").arg(prepared.groups[groupIndex].name),
+                                                                  pyLatChargeTransport.distinctChargeDisplacementByGroup[groupIndex]);
+                            }
+                            for(size_t pairIndex = 0; pairIndex < pyLatChargeTransport.crossGroupPairs.size(); ++pairIndex) {
+                                const auto [firstGroup, secondGroup] = pyLatChargeTransport.crossGroupPairs[pairIndex];
+                                appendEinsteinContributionSummary(QStringLiteral("Cross (%1, %2)")
+                                                                      .arg(prepared.groups[firstGroup].name, prepared.groups[secondGroup].name),
+                                                                  pyLatChargeTransport.crossChargeDisplacementByPair[pairIndex]);
+                            }
                         }
                     }
 
@@ -2618,6 +2664,23 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             setSummaryAttribute(results, QStringLiteral("Transport.sigma_correlated_einstein_vavg"), summarySigmaCorrVavgSI, createdByNode);
             setSummaryAttribute(results, QStringLiteral("Transport.sigma_nernst_einstein_vavg_raw"), summarySigmaNEVavgRaw, createdByNode);
             setSummaryAttribute(results, QStringLiteral("Transport.sigma_nernst_einstein_vavg"), summarySigmaNEVavgSI, createdByNode);
+            results->setAttribute(QStringLiteral("Transport.einstein_contribution_count"),
+                                  static_cast<int>(summaryEinsteinContributions.size()),
+                                  createdByNode);
+            for(size_t contributionIndex = 0; contributionIndex < summaryEinsteinContributions.size(); ++contributionIndex) {
+                const EinsteinContributionSummary& contribution = summaryEinsteinContributions[contributionIndex];
+                results->setAttribute(QStringLiteral("Transport.einstein_contribution_%1_name").arg(contributionIndex),
+                                      contribution.name,
+                                      createdByNode);
+                setSummaryAttribute(results,
+                                    QStringLiteral("Transport.einstein_contribution_%1_raw").arg(contributionIndex),
+                                    contribution.raw,
+                                    createdByNode);
+                setSummaryAttribute(results,
+                                    QStringLiteral("Transport.einstein_contribution_%1_si").arg(contributionIndex),
+                                    contribution.si,
+                                    createdByNode);
+            }
 
             const double sigmaCorrelatedVavg = summarySigmaCorrVavgSI;
             const double sigmaNernstEinsteinVavg = summarySigmaNEVavgSI;

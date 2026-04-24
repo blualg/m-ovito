@@ -776,6 +776,7 @@ void TransportModifierEditor::updateSummary()
         const QVariant sigmaGkRaw = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.sigma_green_kubo_vavg_raw"));
         const QVariant sigmaGkSI = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.sigma_green_kubo_vavg"));
         const QVariant haven = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.haven_ratio_vavg"));
+        const int einsteinContributionCount = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.einstein_contribution_count")).toInt();
         const bool pyLatSelectedAtomsDirect = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_selected_atoms_direct")).toDouble() != 0.0;
         const int pyLatMsdFitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_msd_fit_start_lag")).toInt();
         const int pyLatGkFitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_start_lag")).toInt();
@@ -802,28 +803,49 @@ void TransportModifierEditor::updateSummary()
         if(pyLatGkFitStartLag > 0 && pyLatGkFitEndLag > pyLatGkFitStartLag)
             summaryNotes.push_back(tr("Green-Kubo plateau window: lag %1 to %2.").arg(pyLatGkFitStartLag).arg(pyLatGkFitEndLag - 1));
 
-        const QString summaryPrefix = summaryNotes.join(QLatin1Char(' '));
-        if(summaryPrefix.isEmpty()) {
-            applySummaryText(
-                tr("D(MSD, fitted): %1\nD(VACF, final integral): %2\nSigma correlated Einstein (fitted, V): %3\nSigma Nernst-Einstein (fitted D, V): %4\nSigma Green-Kubo (plateau, V): %5\nHaven ratio: %6")
-                    .arg(formatDualValue(dMsdRaw, diffusionRawUnit, dMsdSI, QStringLiteral("m^2/s")),
-                         formatDualValue(dVacfRaw, diffusionRawUnit, dVacfSI, QStringLiteral("m^2/s")),
-                         formatDualValue(sigmaCorrRaw, conductivityRawUnit, sigmaCorrSI, conductivitySIUnit),
-                         formatDualValue(sigmaNeRaw, conductivityRawUnit, sigmaNeSI, conductivitySIUnit),
-                         formatDualValue(sigmaGkRaw, conductivityRawUnit, sigmaGkSI, conductivitySIUnit),
-                         formatValue(haven)));
+        QStringList summaryLines;
+        if(!summaryNotes.empty()) {
+            summaryLines.push_back(summaryNotes.join(QLatin1Char(' ')));
+            summaryLines.push_back(QString{});
         }
-        else {
-            applySummaryText(
-                tr("%1\n\nD(MSD, fitted): %2\nD(VACF, final integral): %3\nSigma correlated Einstein (fitted, V): %4\nSigma Nernst-Einstein (fitted D, V): %5\nSigma Green-Kubo (plateau, V): %6\nHaven ratio: %7")
-                    .arg(summaryPrefix,
-                         formatDualValue(dMsdRaw, diffusionRawUnit, dMsdSI, QStringLiteral("m^2/s")),
-                         formatDualValue(dVacfRaw, diffusionRawUnit, dVacfSI, QStringLiteral("m^2/s")),
-                         formatDualValue(sigmaCorrRaw, conductivityRawUnit, sigmaCorrSI, conductivitySIUnit),
-                         formatDualValue(sigmaNeRaw, conductivityRawUnit, sigmaNeSI, conductivitySIUnit),
-                         formatDualValue(sigmaGkRaw, conductivityRawUnit, sigmaGkSI, conductivitySIUnit),
-                         formatValue(haven)));
+
+        summaryLines.push_back(tr("D(MSD, fitted): %1")
+                                   .arg(formatDualValue(dMsdRaw, diffusionRawUnit, dMsdSI, QStringLiteral("m^2/s"))));
+        summaryLines.push_back(tr("D(VACF, final integral): %1")
+                                   .arg(formatDualValue(dVacfRaw, diffusionRawUnit, dVacfSI, QStringLiteral("m^2/s"))));
+        summaryLines.push_back(tr("Sigma correlated Einstein (fitted, V): %1")
+                                   .arg(formatDualValue(sigmaCorrRaw, conductivityRawUnit, sigmaCorrSI, conductivitySIUnit)));
+        summaryLines.push_back(tr("Sigma Nernst-Einstein (fitted D, V): %1")
+                                   .arg(formatDualValue(sigmaNeRaw, conductivityRawUnit, sigmaNeSI, conductivitySIUnit)));
+        summaryLines.push_back(tr("Sigma Green-Kubo (plateau, V): %1")
+                                   .arg(formatDualValue(sigmaGkRaw, conductivityRawUnit, sigmaGkSI, conductivitySIUnit)));
+        summaryLines.push_back(tr("Haven ratio: %1").arg(formatValue(haven)));
+
+        QStringList contributionLines;
+        for(int contributionIndex = 0; contributionIndex < einsteinContributionCount; ++contributionIndex) {
+            const QVariant contributionName =
+                state.getAttributeValue(modificationNode(), QStringLiteral("Transport.einstein_contribution_%1_name").arg(contributionIndex));
+            const QVariant contributionRaw =
+                state.getAttributeValue(modificationNode(), QStringLiteral("Transport.einstein_contribution_%1_raw").arg(contributionIndex));
+            const QVariant contributionSI =
+                state.getAttributeValue(modificationNode(), QStringLiteral("Transport.einstein_contribution_%1_si").arg(contributionIndex));
+            if(!contributionName.isValid() || contributionName.toString().trimmed().isEmpty())
+                continue;
+            if(!contributionRaw.isValid() && !contributionSI.isValid())
+                continue;
+
+            contributionLines.push_back(tr("%1: %2")
+                                            .arg(contributionName.toString(),
+                                                 formatDualValue(contributionRaw, conductivityRawUnit, contributionSI, conductivitySIUnit)));
         }
+        if(!contributionLines.empty()) {
+            summaryLines.push_back(QString{});
+            summaryLines.push_back(tr("Einstein conductivity contributions:"));
+            summaryLines.append(contributionLines);
+        }
+
+        if(!summaryLines.empty())
+            applySummaryText(summaryLines.join(QLatin1Char('\n')));
     });
 }
 
