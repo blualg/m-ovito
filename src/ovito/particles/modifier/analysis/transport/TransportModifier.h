@@ -76,6 +76,7 @@ public:
     static constexpr QStringView ConductivityTableId = u"transport-conductivity";
     static constexpr QStringView ConductivityTableSIId = u"transport-conductivity-si";
     static constexpr QStringView ConductivityContributionsTableId = u"transport-conductivity-contributions";
+    static constexpr QStringView DistinctIonCorrelationTableId = u"transport-distinct-ion-correlation";
 
     void initializeObject(ObjectInitializationFlags flags);
 

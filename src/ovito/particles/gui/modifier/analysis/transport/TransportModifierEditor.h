@@ -66,10 +66,12 @@ private:
     QWidget* _msdSection = nullptr;
     QWidget* _vacfSection = nullptr;
     QWidget* _conductivitySection = nullptr;
+    QWidget* _distinctIonCorrelationSection = nullptr;
     QWidget* _gkPreviewSection = nullptr;
     DataTablePlotWidget* _msdPlot = nullptr;
     DataTablePlotWidget* _vacfPlot = nullptr;
     DataTablePlotWidget* _conductivityPlot = nullptr;
+    DataTablePlotWidget* _distinctIonCorrelationPlot = nullptr;
     DataTablePlotWidget* _gkCorrelationPreviewPlot = nullptr;
     DataTablePlotWidget* _gkConductivityPreviewPlot = nullptr;
     QwtPlotMarker* _gkCorrelationStartMarker = nullptr;
@@ -78,6 +80,7 @@ private:
     QwtPlotMarker* _gkConductivityEndMarker = nullptr;
     QwtPlotMarker* _gkConductivityPlateauMarker = nullptr;
     QLabel* _summaryLabel = nullptr;
+    bool _distinctIonCorrelationAvailable = false;
 };
 
 }   // End of namespace

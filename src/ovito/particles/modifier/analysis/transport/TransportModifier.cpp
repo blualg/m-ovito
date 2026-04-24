@@ -581,6 +581,10 @@ struct PyLATChargeTransportCurves {
     std::vector<std::pair<size_t, size_t>> crossGroupPairs;
 };
 
+struct DistinctIonCorrelationCurves {
+    std::vector<std::vector<double>> byGroup;
+};
+
 struct PyLATGreenKuboCurves {
     std::vector<double> timesRaw;
     std::vector<double> timesSI;
@@ -988,6 +992,85 @@ PyLATChargeTransportCurves computePyLATChargeTransportCurves(const PreparedData&
     for(std::vector<double>& curve : curves.crossChargeDisplacementByPair) {
         for(double& value : curve)
             value /= normalization;
+    }
+
+    return curves;
+}
+
+DistinctIonCorrelationCurves computeDistinctIonCorrelationCurves(const PreparedData& prepared)
+{
+    DistinctIonCorrelationCurves curves;
+    const size_t frameCount = prepared.frames.size();
+    if(frameCount < 2 || prepared.groups.empty())
+        return curves;
+
+    const size_t numInit = std::max<size_t>(1, frameCount / 2);
+    const size_t lenMSD = frameCount - numInit;
+    if(lenMSD == 0)
+        return curves;
+
+    const size_t groupCount = prepared.groups.size();
+    curves.byGroup.assign(groupCount, std::vector<double>(lenMSD, std::numeric_limits<double>::quiet_NaN()));
+
+    struct DistinctPartial {
+        std::vector<std::vector<double>> sumsByGroup;
+        std::vector<std::vector<size_t>> countsByGroup;
+    };
+    std::vector<DistinctPartial> partials;
+    parallelForChunks(numInit, 32,
+        [&](size_t workerCount) {
+            partials.resize(workerCount);
+            for(DistinctPartial& partial : partials) {
+                partial.sumsByGroup.assign(groupCount, std::vector<double>(lenMSD, 0.0));
+                partial.countsByGroup.assign(groupCount, std::vector<size_t>(lenMSD, 0));
+            }
+        },
+        [&](size_t workerIndex, size_t fromOrigin, size_t toOrigin) {
+            DistinctPartial& partial = partials[workerIndex];
+            for(size_t origin = fromOrigin; origin < toOrigin; ++origin) {
+                this_task::throwIfCanceled();
+                for(size_t lag = 0; lag < lenMSD; ++lag) {
+                    const size_t target = origin + lag;
+                    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+                        const auto& memberIndices = prepared.groups[groupIndex].memberIndices;
+                        if(memberIndices.size() < 2)
+                            continue;
+
+                        Vector3 summedDirections = Vector3::Zero();
+                        size_t validCount = 0;
+                        for(size_t particleIndex : memberIndices) {
+                            const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
+                            const double displacementSquared = displacement.squaredLength();
+                            if(displacementSquared <= 0)
+                                continue;
+                            summedDirections += displacement * static_cast<FloatType>(1.0 / std::sqrt(displacementSquared));
+                            ++validCount;
+                        }
+
+                        if(validCount < 2)
+                            continue;
+
+                        const double averageCosineSimilarity =
+                            (summedDirections.squaredLength() - static_cast<double>(validCount)) /
+                            (static_cast<double>(validCount) * static_cast<double>(validCount - 1));
+                        partial.sumsByGroup[groupIndex][lag] += averageCosineSimilarity;
+                        partial.countsByGroup[groupIndex][lag] += 1;
+                    }
+                }
+            }
+        });
+
+    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+        for(size_t lag = 0; lag < lenMSD; ++lag) {
+            double sum = 0.0;
+            size_t count = 0;
+            for(const DistinctPartial& partial : partials) {
+                sum += partial.sumsByGroup[groupIndex][lag];
+                count += partial.countsByGroup[groupIndex][lag];
+            }
+            if(count > 0)
+                curves.byGroup[groupIndex][lag] = sum / static_cast<double>(count);
+        }
     }
 
     return curves;
@@ -2034,6 +2117,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
             const PyLATMSDCurves pyLatMSD = (needMSDOutput || needConductivityOutput) ? computePyLATMSDCurves(prepared) : PyLATMSDCurves{};
             const PyLATChargeTransportCurves pyLatChargeTransport = needConductivityOutput ? computePyLATChargeTransportCurves(prepared) : PyLATChargeTransportCurves{};
+            const DistinctIonCorrelationCurves distinctIonCorrelation =
+                (computePerType() && (needMSDOutput || needConductivityOutput)) ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
             std::vector<double> msdTimesSI = pyLatMSD.timesSI;
@@ -2516,6 +2601,27 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                     einsteinContributionNames,
                                     tr("Time (%1)").arg(timeLabel),
                                     tr("Conductivity (%1)").arg(conductivityRawUnitLabel(chargeLabel, timeLabel, lengthLabel, dimensionality)),
+                                    createdByNode);
+                }
+            }
+
+            if(computePerType() && !prepared.groups.empty() && !distinctIonCorrelation.byGroup.empty()) {
+                QStringList distinctCorrelationNames;
+                std::vector<std::vector<double>> distinctCorrelationColumns;
+                for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
+                    if(std::abs(prepared.groups[groupIndex].representativeChargeRaw) <= std::numeric_limits<double>::epsilon())
+                        continue;
+                    if(prepared.groups[groupIndex].memberIndices.size() < 2)
+                        continue;
+                    distinctCorrelationNames.push_back(prepared.groups[groupIndex].name);
+                    distinctCorrelationColumns.push_back(distinctIonCorrelation.byGroup[groupIndex]);
+                }
+                if(!distinctCorrelationColumns.empty()) {
+                    createLineTable(results, DistinctIonCorrelationTableId, tr("Distinct ion-ion correlation"), msdTimesRaw,
+                                    distinctCorrelationColumns,
+                                    distinctCorrelationNames,
+                                    tr("Time (%1)").arg(timeLabel),
+                                    tr("Average cosine similarity"),
                                     createdByNode);
                 }
             }

@@ -470,6 +470,17 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     conductivityLayout->addWidget(_conductivityPlot);
     layout->addWidget(_conductivitySection);
 
+    _distinctIonCorrelationSection = new QWidget(rollout);
+    auto* distinctIonCorrelationLayout = new QVBoxLayout(_distinctIonCorrelationSection);
+    distinctIonCorrelationLayout->setContentsMargins(0, 0, 0, 0);
+    distinctIonCorrelationLayout->setSpacing(4);
+    _distinctIonCorrelationPlot = new DataTablePlotWidget();
+    _distinctIonCorrelationPlot->setMinimumHeight(180);
+    _distinctIonCorrelationPlot->setMaximumHeight(180);
+    distinctIonCorrelationLayout->addWidget(new QLabel(tr("Distinct ion-ion correlation:"), _distinctIonCorrelationSection));
+    distinctIonCorrelationLayout->addWidget(_distinctIonCorrelationPlot);
+    layout->addWidget(_distinctIonCorrelationSection);
+
     auto* gkPreviewBox = new QGroupBox(tr("Green-Kubo Preview"), rollout);
     _gkPreviewSection = gkPreviewBox;
     auto* gkPreviewLayout = new QVBoxLayout(gkPreviewBox);
@@ -588,6 +599,9 @@ void TransportModifierEditor::updatePlots()
             _msdPlot->setTable(nullptr);
             _vacfPlot->setTable(nullptr);
             _conductivityPlot->setTable(nullptr);
+            if(_distinctIonCorrelationPlot)
+                _distinctIonCorrelationPlot->setTable(nullptr);
+            _distinctIonCorrelationAvailable = false;
             if(_gkCorrelationPreviewPlot)
                 _gkCorrelationPreviewPlot->setTable(nullptr);
             if(_gkConductivityPreviewPlot)
@@ -607,6 +621,11 @@ void TransportModifierEditor::updatePlots()
         _msdPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::MSDTableId));
         _vacfPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::VACFTableId));
         _conductivityPlot->setTable(state.getObjectBy<DataTable>(modificationNode(), TransportModifier::ConductivityTableId));
+        const DataTable* distinctIonCorrelationTable =
+            state.getObjectBy<DataTable>(modificationNode(), TransportModifier::DistinctIonCorrelationTableId);
+        _distinctIonCorrelationAvailable = (distinctIonCorrelationTable != nullptr);
+        if(_distinctIonCorrelationPlot)
+            _distinctIonCorrelationPlot->setTable(distinctIonCorrelationTable);
         updateGreenKuboPreview(state);
         updateControlStates();
     });
@@ -865,6 +884,8 @@ void TransportModifierEditor::updateControlStates()
         _vacfSection->setVisible(computeVACF);
     if(_conductivitySection)
         _conductivitySection->setVisible(computeConductivity);
+    if(_distinctIonCorrelationSection)
+        _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && modifier() && modifier()->computePerType() && (computeMSD || computeConductivity));
     if(_gkPreviewSection && !computeConductivity)
         _gkPreviewSection->setVisible(false);
 
