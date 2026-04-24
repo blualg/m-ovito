@@ -335,6 +335,27 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     analysisLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::includeVACFCrossTerms))->checkBox());
     layout->addWidget(analysisBox);
 
+    auto* strongPairsBox = new QGroupBox(tr("Strongly correlated ion pairs"), rollout);
+    _stronglyCorrelatedPairsSettingsSection = strongPairsBox;
+    auto* strongPairsLayout = new QGridLayout(strongPairsBox);
+    strongPairsLayout->setContentsMargins(4, 4, 4, 4);
+    strongPairsLayout->setColumnStretch(1, 1);
+
+    IntegerParameterUI* strongPairSampleCountUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairSampleCount));
+    strongPairsLayout->addWidget(strongPairSampleCountUI->label(), 0, 0);
+    strongPairsLayout->addLayout(strongPairSampleCountUI->createFieldLayout(), 0, 1);
+
+    IntegerParameterUI* strongPairFrameStepUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairFrameStep));
+    strongPairsLayout->addWidget(strongPairFrameStepUI->label(), 1, 0);
+    strongPairsLayout->addLayout(strongPairFrameStepUI->createFieldLayout(), 1, 1);
+
+    StringParameterUI* strongPairThresholdsUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairThresholds));
+    strongPairThresholdsUI->lineEdit()->setPlaceholderText(tr("0.75, 0.80, 0.85"));
+    strongPairsLayout->addWidget(new QLabel(tr("Custom thresholds"), strongPairsBox), 2, 0);
+    strongPairsLayout->addWidget(strongPairThresholdsUI->textBox(), 2, 1);
+
+    layout->addWidget(strongPairsBox);
+
     auto* unitsBox = new QGroupBox(tr("Time And Units"), rollout);
     auto* unitsLayout = new QGridLayout(unitsBox);
     unitsLayout->setContentsMargins(4, 4, 4, 4);
@@ -910,6 +931,8 @@ void TransportModifierEditor::updateControlStates()
         _vacfSection->setVisible(computeVACF);
     if(_conductivitySection)
         _conductivitySection->setVisible(computeConductivity);
+    if(_stronglyCorrelatedPairsSettingsSection)
+        _stronglyCorrelatedPairsSettingsSection->setVisible(computeStronglyCorrelatedPairs);
     if(_distinctIonCorrelationSection)
         _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && modifier() && modifier()->computePerType() && (computeMSD || computeConductivity));
     if(_stronglyCorrelatedPairsSection)

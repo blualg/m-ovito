@@ -68,6 +68,7 @@ private:
     QWidget* _vacfSection = nullptr;
     QWidget* _conductivitySection = nullptr;
     QWidget* _distinctIonCorrelationSection = nullptr;
+    QWidget* _stronglyCorrelatedPairsSettingsSection = nullptr;
     QWidget* _stronglyCorrelatedPairsSection = nullptr;
     QWidget* _gkPreviewSection = nullptr;
     DataTablePlotWidget* _msdPlot = nullptr;

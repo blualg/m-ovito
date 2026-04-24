@@ -64,6 +64,9 @@ struct HarnessConfig {
     bool computeVACF = true;
     bool computeConductivity = true;
     bool computeStronglyCorrelatedPairs = false;
+    int strongPairSampleCount = 1176;
+    int strongPairFrameStep = 1;
+    QString strongPairThresholds = QStringLiteral("0.75, 0.80, 0.85");
     bool computePerType = true;
 };
 
@@ -95,7 +98,8 @@ void printUsage(const char* programName)
 {
     std::cerr
         << "Usage: " << programName << " --data-dir <directory> [--output <file>] [--temperature <K>] [--dt <value>]\n"
-        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--strong-pairs on|off] [--per-type on|off]\n"
+        << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--strong-pairs on|off] [--strong-pair-k <count>]\n"
+        << "       [--strong-pair-step <frames>] [--strong-pair-thresholds <list>] [--per-type on|off]\n"
         << "Expected files inside <directory>: log.lammps, mol.data, mol.lammpstrj\n";
 }
 
@@ -149,6 +153,21 @@ HarnessConfig parseArguments(int argc, char** argv)
         }
         else if(arg == QStringLiteral("--strong-pairs")) {
             config.computeStronglyCorrelatedPairs = parseOnOffOption(arg, requireValue("--strong-pairs"));
+        }
+        else if(arg == QStringLiteral("--strong-pair-k")) {
+            bool ok = false;
+            config.strongPairSampleCount = requireValue("--strong-pair-k").toInt(&ok);
+            if(!ok || config.strongPairSampleCount < 0)
+                throw std::runtime_error("Invalid integer value for --strong-pair-k");
+        }
+        else if(arg == QStringLiteral("--strong-pair-step")) {
+            bool ok = false;
+            config.strongPairFrameStep = requireValue("--strong-pair-step").toInt(&ok);
+            if(!ok || config.strongPairFrameStep < 1)
+                throw std::runtime_error("Invalid integer value for --strong-pair-step");
+        }
+        else if(arg == QStringLiteral("--strong-pair-thresholds")) {
+            config.strongPairThresholds = requireValue("--strong-pair-thresholds");
         }
         else if(arg == QStringLiteral("--per-type")) {
             config.computePerType = parseOnOffOption(arg, requireValue("--per-type"));
@@ -341,6 +360,9 @@ void runHarness(const HarnessConfig& config)
     modifier->setComputeVACF(config.computeVACF);
     modifier->setComputeConductivity(config.computeConductivity);
     modifier->setComputeStronglyCorrelatedPairs(config.computeStronglyCorrelatedPairs);
+    modifier->setStrongPairSampleCount(config.strongPairSampleCount);
+    modifier->setStrongPairFrameStep(config.strongPairFrameStep);
+    modifier->setStrongPairThresholds(config.strongPairThresholds);
     modifier->setComputePerType(config.computePerType);
     modifier->setUseOnlySelectedParticles(false);
     modifier->setDeltaT(config.deltaT);

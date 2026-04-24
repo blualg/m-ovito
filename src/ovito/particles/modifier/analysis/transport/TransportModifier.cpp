@@ -178,6 +178,27 @@ QString stripCommentAndTrim(const QString& line)
     return (commentIndex >= 0 ? line.left(commentIndex) : line).trimmed();
 }
 
+std::vector<double> parseStrongPairThresholds(const QString& thresholdText)
+{
+    const QStringList tokens = thresholdText.split(QRegularExpression(QStringLiteral("[,;\\s]+")), Qt::SkipEmptyParts);
+    if(tokens.empty())
+        throw Exception(TransportModifier::tr("Enter at least one strongly correlated-pair threshold."));
+
+    std::vector<double> thresholds;
+    thresholds.reserve(tokens.size());
+    for(const QString& token : tokens) {
+        bool ok = false;
+        const double threshold = token.toDouble(&ok);
+        if(!ok || !std::isfinite(threshold))
+            throw Exception(TransportModifier::tr("Invalid strongly correlated-pair threshold '%1'.").arg(token));
+        if(threshold <= 0.0 || threshold > 1.0)
+            throw Exception(TransportModifier::tr("Strongly correlated-pair thresholds must be in the range (0, 1]."));
+        if(std::ranges::none_of(thresholds, [&](double existing) { return std::abs(existing - threshold) < 1e-12; }))
+            thresholds.push_back(threshold);
+    }
+    return thresholds;
+}
+
 std::vector<ManualMoleculeTemplate> parseManualMoleculeTemplates(const QString& overrideText,
                                                                  const Property* typeProperty,
                                                                  const BufferReadAccess<int32_t>& typeValues)
@@ -589,7 +610,7 @@ struct DistinctIonCorrelationCurves {
 };
 
 struct StronglyCorrelatedPairCurves {
-    static constexpr std::array<double, 3> Thresholds{{0.75, 0.8, 0.85}};
+    std::vector<double> thresholds;
     std::vector<std::vector<std::vector<double>>> byGroupAndThreshold;
 };
 
@@ -1097,15 +1118,14 @@ std::pair<size_t, size_t> pairIndicesFromLinearIndex(size_t elementCount, size_t
     return {first, first + 1 + linearPairIndex};
 }
 
-std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementCount, uint32_t seed)
+std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementCount, size_t sampleLimit, uint32_t seed)
 {
     std::vector<std::pair<size_t, size_t>> pairs;
     if(elementCount < 2)
         return pairs;
 
-    constexpr size_t StrongPairSampleLimit = 1176;
     const size_t pairCount = elementCount * (elementCount - 1) / 2;
-    const size_t sampleCount = std::min(pairCount, StrongPairSampleLimit);
+    const size_t sampleCount = (sampleLimit == 0) ? pairCount : std::min(pairCount, sampleLimit);
     pairs.reserve(sampleCount);
 
     if(sampleCount == pairCount) {
@@ -1130,18 +1150,22 @@ std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementC
     return pairs;
 }
 
-StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedData& prepared)
+StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedData& prepared,
+                                                                 size_t pairSampleCount,
+                                                                 size_t frameSamplingStep,
+                                                                 const std::vector<double>& thresholds)
 {
     StronglyCorrelatedPairCurves curves;
     const size_t frameCount = prepared.frames.size();
-    if(frameCount < 2 || prepared.groups.empty())
+    if(frameCount < 2 || prepared.groups.empty() || thresholds.empty())
         return curves;
+    curves.thresholds = thresholds;
 
     const size_t numInit = std::max<size_t>(1, frameCount / 2);
     const size_t lenMSD = frameCount - numInit;
     if(lenMSD == 0)
         return curves;
-    const size_t originStride = std::max<size_t>(1, numInit / 512);
+    const size_t originStride = std::max<size_t>(1, frameSamplingStep);
     std::vector<size_t> sampledOrigins;
     sampledOrigins.reserve((numInit + originStride - 1) / originStride);
     for(size_t origin = 0; origin < numInit; origin += originStride)
@@ -1150,7 +1174,7 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
         sampledOrigins.push_back(numInit - 1);
 
     const size_t groupCount = prepared.groups.size();
-    constexpr size_t thresholdCount = StronglyCorrelatedPairCurves::Thresholds.size();
+    const size_t thresholdCount = thresholds.size();
     curves.byGroupAndThreshold.assign(groupCount,
                                       std::vector<std::vector<double>>(thresholdCount,
                                                                        std::vector<double>(lenMSD, std::numeric_limits<double>::quiet_NaN())));
@@ -1158,6 +1182,7 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
     sampledPairsByGroup.reserve(groupCount);
     for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
         sampledPairsByGroup.push_back(buildSampledDistinctPairs(prepared.groups[groupIndex].memberIndices.size(),
+                                                               pairSampleCount,
                                                                static_cast<uint32_t>(0x5eed1234u + groupIndex)));
     }
 
@@ -1207,7 +1232,7 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
                             const double cosineSimilarity = std::abs(unitDisplacements[first].dot(unitDisplacements[second]));
                             partial.validPairCountsByGroup[groupIndex][lag] += 1;
                             for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
-                                if(cosineSimilarity > StronglyCorrelatedPairCurves::Thresholds[thresholdIndex])
+                                if(cosineSimilarity > thresholds[thresholdIndex])
                                     partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lag] += 1;
                             }
                         }
@@ -1219,7 +1244,7 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
     for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
         for(size_t lag = 0; lag < lenMSD; ++lag) {
             size_t validPairCount = 0;
-            std::array<size_t, thresholdCount> hits{};
+            std::vector<size_t> hits(thresholdCount, 0);
             for(const StrongPairPartial& partial : partials) {
                 validPairCount += partial.validPairCountsByGroup[groupIndex][lag];
                 for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex)
@@ -2004,6 +2029,9 @@ DEFINE_PROPERTY_FIELD(TransportModifier, computeMSD);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeVACF);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeConductivity);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeStronglyCorrelatedPairs);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairSampleCount);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairFrameStep);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairThresholds);
 DEFINE_PROPERTY_FIELD(TransportModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(TransportModifier, selectAsMolecules);
 DEFINE_PROPERTY_FIELD(TransportModifier, computePerType);
@@ -2032,6 +2060,9 @@ SET_PROPERTY_FIELD_LABEL(TransportModifier, computeMSD, "Compute MSD");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeVACF, "Compute VACF");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeConductivity, "Compute ionic conductivity");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeStronglyCorrelatedPairs, "Compute strongly correlated ion pairs");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairSampleCount, "Pair sample count K");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairFrameStep, "Frame sampling step");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairThresholds, "Custom thresholds");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, useOnlySelectedParticles, "Use only selected atoms");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, selectAsMolecules, "Select as molecules");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computePerType, "Compute per-type curves");
@@ -2057,6 +2088,8 @@ SET_PROPERTY_FIELD_LABEL(TransportModifier, useManualTypeCharges, "Use manual ty
 SET_PROPERTY_FIELD_LABEL(TransportModifier, manualTypeCharges, "Manual type charges");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalStart, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalEnd, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairSampleCount, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairFrameStep, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, maxLag, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, summaryWindowStartLag, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
@@ -2255,6 +2288,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const bool needVACFOutput = computeVACF();
                 const bool needConductivityOutput = computeConductivity();
                 const bool needStrongPairOutput = computeStronglyCorrelatedPairs();
+                const std::vector<double> strongPairThresholdsParsed =
+                    needStrongPairOutput ? parseStrongPairThresholds(strongPairThresholds()) : std::vector<double>{};
                 const bool needPerTypeGroups = computePerType() || needStrongPairOutput;
                 const bool needVelocitySamples = needVACFOutput || needConductivityOutput;
                 const bool allowFiniteDifferenceVelocities = needVACFOutput;
@@ -2285,7 +2320,11 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             const DistinctIonCorrelationCurves distinctIonCorrelation =
                 (computePerType() && (needMSDOutput || needConductivityOutput)) ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
             const StronglyCorrelatedPairCurves stronglyCorrelatedPairs =
-                needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared) : StronglyCorrelatedPairCurves{};
+                needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared,
+                                                                           static_cast<size_t>(strongPairSampleCount()),
+                                                                           static_cast<size_t>(strongPairFrameStep()),
+                                                                           strongPairThresholdsParsed)
+                                     : StronglyCorrelatedPairCurves{};
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
             std::vector<double> msdTimesSI = pyLatMSD.timesSI;
@@ -2801,10 +2840,10 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                         continue;
                     if(prepared.groups[groupIndex].memberIndices.size() < 2)
                         continue;
-                    for(size_t thresholdIndex = 0; thresholdIndex < StronglyCorrelatedPairCurves::Thresholds.size(); ++thresholdIndex) {
+                    for(size_t thresholdIndex = 0; thresholdIndex < stronglyCorrelatedPairs.thresholds.size(); ++thresholdIndex) {
                         strongPairNames.push_back(QStringLiteral("%1 |c_ij| > %2")
                                                       .arg(prepared.groups[groupIndex].name)
-                                                      .arg(StronglyCorrelatedPairCurves::Thresholds[thresholdIndex], 0, 'f', 2));
+                                                      .arg(QString::number(stronglyCorrelatedPairs.thresholds[thresholdIndex], 'g', 4)));
                         strongPairColumns.push_back(stronglyCorrelatedPairs.byGroupAndThreshold[groupIndex][thresholdIndex]);
                     }
                 }
