@@ -618,8 +618,10 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
         connect(_computeStronglyCorrelatedPairsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_stronglyCorrelatedPairsSamplingModeCombo)
         connect(_stronglyCorrelatedPairsSamplingModeCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &TransportModifierEditor::updateControlStates);
-    if(_stronglyCorrelatedPairsDiscreteLagPointsCheckBox)
+    if(_stronglyCorrelatedPairsDiscreteLagPointsCheckBox) {
         connect(_stronglyCorrelatedPairsDiscreteLagPointsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+        connect(_stronglyCorrelatedPairsDiscreteLagPointsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updatePlots);
+    }
     if(_useOnlySelectedParticlesCheckBox)
         connect(_useOnlySelectedParticlesCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_selectAsMoleculesCheckBox)
@@ -721,8 +723,13 @@ void TransportModifierEditor::updatePlots()
         const DataTable* stronglyCorrelatedPairsTable =
             state.getObjectBy<DataTable>(modificationNode(), TransportModifier::StronglyCorrelatedPairsTableId);
         _stronglyCorrelatedPairsAvailable = (stronglyCorrelatedPairsTable != nullptr);
-        if(_stronglyCorrelatedPairsPlot)
+        if(_stronglyCorrelatedPairsPlot) {
+            if(const TransportModifier* mod = modifier(); mod && mod->strongPairDiscreteLagPoints())
+                _stronglyCorrelatedPairsPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+            else
+                _stronglyCorrelatedPairsPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
             _stronglyCorrelatedPairsPlot->setTable(stronglyCorrelatedPairsTable);
+        }
         updateGreenKuboPreview(state);
         updateControlStates();
     });
