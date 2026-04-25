@@ -70,6 +70,9 @@ struct HarnessConfig {
     int strongPairFrameStep = 1;
     QString strongPairThresholds = QStringLiteral("0.75, 0.80, 0.85");
     int strongPairRandomSeed = 12345;
+    bool strongPairDiscreteLagPoints = false;
+    int strongPairPointCount = 4;
+    int strongPairResampleCount = 8;
     bool computePerType = true;
 };
 
@@ -102,7 +105,8 @@ void printUsage(const char* programName)
     std::cerr
         << "Usage: " << programName << " --data-dir <directory> [--output <file>] [--temperature <K>] [--dt <value>]\n"
         << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--distinct-ion-correlation on|off] [--strong-pairs on|off] [--strong-pair-k <count>]\n"
-        << "       [--strong-pair-mode deterministic|random] [--strong-pair-seed <int>] [--strong-pair-step <frames>] [--strong-pair-thresholds <list>] [--per-type on|off]\n"
+        << "       [--strong-pair-mode deterministic|random] [--strong-pair-seed <int>] [--strong-pair-discrete on|off] [--strong-pair-points <count>] [--strong-pair-resamples <count>]\n"
+        << "       [--strong-pair-step <frames>] [--strong-pair-thresholds <list>] [--per-type on|off]\n"
         << "Expected files inside <directory>: log.lammps, mol.data, mol.lammpstrj\n";
 }
 
@@ -180,6 +184,21 @@ HarnessConfig parseArguments(int argc, char** argv)
             config.strongPairRandomSeed = requireValue("--strong-pair-seed").toInt(&ok);
             if(!ok || config.strongPairRandomSeed < 0)
                 throw std::runtime_error("Invalid integer value for --strong-pair-seed");
+        }
+        else if(arg == QStringLiteral("--strong-pair-discrete")) {
+            config.strongPairDiscreteLagPoints = parseOnOffOption(arg, requireValue("--strong-pair-discrete"));
+        }
+        else if(arg == QStringLiteral("--strong-pair-points")) {
+            bool ok = false;
+            config.strongPairPointCount = requireValue("--strong-pair-points").toInt(&ok);
+            if(!ok || config.strongPairPointCount < 1)
+                throw std::runtime_error("Invalid integer value for --strong-pair-points");
+        }
+        else if(arg == QStringLiteral("--strong-pair-resamples")) {
+            bool ok = false;
+            config.strongPairResampleCount = requireValue("--strong-pair-resamples").toInt(&ok);
+            if(!ok || config.strongPairResampleCount < 1)
+                throw std::runtime_error("Invalid integer value for --strong-pair-resamples");
         }
         else if(arg == QStringLiteral("--strong-pair-step")) {
             bool ok = false;
@@ -339,6 +358,24 @@ QJsonObject collectLineTable(const DataCollection* collection, const QStringView
     QJsonObject result;
     result.insert(QStringLiteral("time"), time);
     result.insert(QStringLiteral("components"), components);
+    if(const Property* errorProperty = table->getProperty(QStringLiteral("Error"));
+       errorProperty && errorProperty->size() == table->y()->size() && errorProperty->componentCount() == table->y()->componentCount()) {
+        BufferReadAccess<FloatType*> errorAcc(errorProperty);
+        std::vector<QJsonArray> errorArrays(errorAcc.componentCount());
+        for(size_t row = 0; row < errorAcc.size(); ++row) {
+            for(size_t component = 0; component < errorAcc.componentCount(); ++component)
+                errorArrays[component].append(toJsonValue(QVariant::fromValue(static_cast<double>(errorAcc.get(row, component)))));
+        }
+
+        QJsonObject errors;
+        for(size_t component = 0; component < errorAcc.componentCount(); ++component) {
+            const QString componentName = (component < static_cast<size_t>(componentNames.size()) && !componentNames[static_cast<int>(component)].isEmpty())
+                ? componentNames[static_cast<int>(component)]
+                : QStringLiteral("Component %1").arg(component + 1);
+            errors.insert(componentName, errorArrays[component]);
+        }
+        result.insert(QStringLiteral("errors"), errors);
+    }
     return result;
 }
 
@@ -387,6 +424,9 @@ void runHarness(const HarnessConfig& config)
     modifier->setStrongPairFrameStep(config.strongPairFrameStep);
     modifier->setStrongPairThresholds(config.strongPairThresholds);
     modifier->setStrongPairRandomSeed(config.strongPairRandomSeed);
+    modifier->setStrongPairDiscreteLagPoints(config.strongPairDiscreteLagPoints);
+    modifier->setStrongPairPointCount(config.strongPairPointCount);
+    modifier->setStrongPairResampleCount(config.strongPairResampleCount);
     modifier->setComputePerType(config.computePerType);
     modifier->setUseOnlySelectedParticles(false);
     modifier->setDeltaT(config.deltaT);

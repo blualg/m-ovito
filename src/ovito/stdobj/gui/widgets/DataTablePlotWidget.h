@@ -32,6 +32,7 @@
 #include <qwt/qwt_text.h>
 
 class QwtPlotCurve;
+class QwtPlotIntervalCurve;
 class QwtPlotLegendItem;
 class QwtPlotBarChart;
 class QwtPlotSpectroCurve;
@@ -124,6 +125,9 @@ private:
 
     /// The plot item(s) for standard line charts.
     std::vector<QwtPlotCurve*> _curves;
+
+    /// Optional plot item(s) for curve uncertainty/error bars.
+    std::vector<QwtPlotIntervalCurve*> _intervalCurves;
 
     /// The plot item(s) for scatter plots.
     std::vector<QwtPlotSpectroCurve*> _spectroCurves;

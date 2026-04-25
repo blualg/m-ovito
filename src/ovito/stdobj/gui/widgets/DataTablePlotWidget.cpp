@@ -25,6 +25,7 @@
 
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_curve.h>
+#include <qwt/qwt_plot_intervalcurve.h>
 #include <qwt/qwt_plot_spectrocurve.h>
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_plot_barchart.h>
@@ -35,6 +36,9 @@
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_panner.h>
 #include <qwt/qwt_painter.h>
+#include <qwt/qwt_interval_symbol.h>
+#include <qwt/qwt_samples.h>
+#include <qwt/qwt_symbol.h>
 
 #include <cmath>
 
@@ -171,6 +175,8 @@ void DataTablePlotWidget::updateDataPlot()
     if(plotMode != DataTable::Line && plotMode != DataTable::Histogram) {
         for(QwtPlotCurve* curve : _curves) delete curve;
         _curves.clear();
+        for(QwtPlotIntervalCurve* curve : _intervalCurves) delete curve;
+        _intervalCurves.clear();
     }
     if(plotMode != DataTable::Scatter) {
         for(QwtPlotSpectroCurve* curve : _spectroCurves) delete curve;
@@ -276,6 +282,25 @@ void DataTablePlotWidget::updateDataPlot()
             delete _curves.back();
             _curves.pop_back();
         }
+
+        const Property* errorProperty =
+            table() ? table()->getProperty(QStringLiteral("Error")) : nullptr;
+        const bool hasErrorBars =
+            errorProperty && errorProperty->size() == y->size() && errorProperty->componentCount() == y->componentCount();
+        if(hasErrorBars) {
+            while(_intervalCurves.size() < y->componentCount()) {
+                QwtPlotIntervalCurve* curve = new QwtPlotIntervalCurve();
+                curve->setStyle(QwtPlotIntervalCurve::NoCurve);
+                curve->setZ(0);
+                curve->attach(this);
+                _intervalCurves.push_back(curve);
+            }
+        }
+        while(_intervalCurves.size() > (hasErrorBars ? y->componentCount() : 0)) {
+            delete _intervalCurves.back();
+            _intervalCurves.pop_back();
+        }
+
         if(_curves.size() == 1 && y->componentNames().empty()) {
             _curves[0]->setBrush(QColor(255, 160, 100));
         }
@@ -311,9 +336,35 @@ void DataTablePlotWidget::updateDataPlot()
         }
 
         QVector<double> ycoords(y->size());
+        QVector<double> errorCoords(y->size());
         for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
             y->copyComponentTo(ycoords.begin(), cmpnt);
             _curves[cmpnt]->setSamples(filteredCurveSamples(xcoords, ycoords));
+            if(hasErrorBars) {
+                errorProperty->copyComponentTo(errorCoords.begin(), cmpnt);
+                QVector<QwtIntervalSample> errorSamples;
+                errorSamples.reserve(y->size());
+                for(int i = 0; i < xcoords.size(); ++i) {
+                    if(!isFinite(xcoords[i]) || !isFinite(ycoords[i]) || !isFinite(errorCoords[i]) || errorCoords[i] < 0)
+                        continue;
+                    errorSamples.push_back(QwtIntervalSample(xcoords[i], ycoords[i] - errorCoords[i], ycoords[i] + errorCoords[i]));
+                }
+                _intervalCurves[cmpnt]->setSamples(errorSamples);
+                _intervalCurves[cmpnt]->setPen(curveColors[cmpnt % std::size(curveColors)], 1);
+                auto* intervalSymbol = new QwtIntervalSymbol(QwtIntervalSymbol::Bar);
+                intervalSymbol->setPen(curveColors[cmpnt % std::size(curveColors)], 1);
+                intervalSymbol->setWidth(8);
+                _intervalCurves[cmpnt]->setSymbol(intervalSymbol);
+
+                auto* pointSymbol = new QwtSymbol(QwtSymbol::Ellipse);
+                pointSymbol->setPen(curveColors[cmpnt % std::size(curveColors)], 1);
+                pointSymbol->setBrush(curveColors[cmpnt % std::size(curveColors)]);
+                pointSymbol->setSize(5, 5);
+                _curves[cmpnt]->setSymbol(pointSymbol);
+            }
+            else {
+                _curves[cmpnt]->setSymbol(nullptr);
+            }
         }
     }
     else if(plotMode == DataTable::BarChart) {

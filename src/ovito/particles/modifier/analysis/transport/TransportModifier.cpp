@@ -43,6 +43,7 @@
 #include <map>
 #include <numeric>
 #include <random>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -491,7 +492,8 @@ DataTable* createLineTable(DataCollection* collection,
                            QStringList componentNames,
                            const QString& axisLabelX,
                            const QString& axisLabelY,
-                           const OOWeakRef<const PipelineNode>& createdByNode)
+                           const OOWeakRef<const PipelineNode>& createdByNode,
+                           const std::vector<std::vector<double>>* errorColumns = nullptr)
 {
     if(columns.empty() || xValues.empty())
         return nullptr;
@@ -501,6 +503,11 @@ DataTable* createLineTable(DataCollection* collection,
     OVITO_ASSERT(std::ranges::all_of(columns, [rowCount](const std::vector<double>& c) { return c.size() == rowCount; }));
     if(componentNames.size() != componentCount)
         componentNames.clear();
+    const QStringList errorComponentNames = componentNames;
+    if(errorColumns) {
+        OVITO_ASSERT(errorColumns->size() == columns.size());
+        OVITO_ASSERT(std::ranges::all_of(*errorColumns, [rowCount](const std::vector<double>& c) { return c.size() == rowCount; }));
+    }
 
     PropertyPtr y = DataTable::OOClass().createUserProperty(DataBuffer::Initialized,
                                                             rowCount,
@@ -532,6 +539,21 @@ DataTable* createLineTable(DataCollection* collection,
                                                            std::move(x));
     table->setAxisLabelX(axisLabelX);
     table->setAxisLabelY(axisLabelY);
+    if(errorColumns) {
+        PropertyPtr errorProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized,
+                                                                            rowCount,
+                                                                            Property::FloatDefault,
+                                                                            componentCount,
+                                                                            QStringLiteral("Error"),
+                                                                            0,
+                                                                            errorComponentNames);
+        BufferWriteAccess<FloatType*, access_mode::discard_write> errorAcc(errorProperty);
+        for(size_t i = 0; i < rowCount; ++i) {
+            for(int c = 0; c < componentCount; ++c)
+                errorAcc.set(i, c, static_cast<FloatType>((*errorColumns)[c][i]));
+        }
+        table->addProperty(std::move(errorProperty));
+    }
     return table;
 }
 
@@ -611,7 +633,9 @@ struct DistinctIonCorrelationCurves {
 
 struct StronglyCorrelatedPairCurves {
     std::vector<double> thresholds;
+    std::vector<size_t> lagIndices;
     std::vector<std::vector<std::vector<double>>> byGroupAndThreshold;
+    std::vector<std::vector<std::vector<double>>> stddevByGroupAndThreshold;
 };
 
 struct PyLATGreenKuboCurves {
@@ -1162,12 +1186,81 @@ std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementC
     return pairs;
 }
 
+std::vector<size_t> buildStrongPairLagIndices(size_t lenMSD, bool discreteLagPoints, size_t pointCount)
+{
+    if(lenMSD == 0)
+        return {};
+
+    if(!discreteLagPoints) {
+        std::vector<size_t> lagIndices(lenMSD);
+        std::iota(lagIndices.begin(), lagIndices.end(), size_t{0});
+        return lagIndices;
+    }
+
+    if(lenMSD == 1)
+        return {0};
+
+    const size_t maxLagIndex = lenMSD - 1;
+    if(pointCount == 0 || pointCount >= maxLagIndex) {
+        std::vector<size_t> lagIndices(maxLagIndex);
+        std::iota(lagIndices.begin(), lagIndices.end(), size_t{1});
+        return lagIndices;
+    }
+
+    std::set<size_t> chosenLagIndices{1, maxLagIndex};
+    const double logMin = std::log(1.0);
+    const double logMax = std::log(static_cast<double>(maxLagIndex));
+    for(size_t pointIndex = 0; pointIndex < pointCount; ++pointIndex) {
+        const double alpha = (pointCount == 1) ? 1.0 : static_cast<double>(pointIndex) / static_cast<double>(pointCount - 1);
+        const double lagValue = std::exp(logMin + alpha * (logMax - logMin));
+        const size_t lagIndex = std::clamp(static_cast<size_t>(std::llround(lagValue)), size_t{1}, maxLagIndex);
+        chosenLagIndices.insert(lagIndex);
+    }
+
+    for(size_t candidate = 1; chosenLagIndices.size() < pointCount && candidate <= maxLagIndex; ++candidate)
+        chosenLagIndices.insert(candidate);
+
+    return {chosenLagIndices.begin(), chosenLagIndices.end()};
+}
+
+uint32_t mixStrongPairSeed(uint32_t baseSeed, size_t groupIndex, size_t lagIndex, size_t resampleIndex)
+{
+    uint32_t mixed = baseSeed;
+    mixed ^= static_cast<uint32_t>(0x9e3779b9u * (groupIndex + 1));
+    mixed ^= static_cast<uint32_t>(0x7f4a7c15u * (lagIndex + 1));
+    mixed ^= static_cast<uint32_t>(0x85ebca6bu * (resampleIndex + 1));
+    return mixed;
+}
+
+double computeStandardDeviation(const std::vector<double>& values, double mean)
+{
+    if(values.size() < 2 || !std::isfinite(mean))
+        return 0.0;
+
+    double sumSquaredDeviations = 0.0;
+    size_t count = 0;
+    for(double value : values) {
+        if(!std::isfinite(value))
+            continue;
+        const double deviation = value - mean;
+        sumSquaredDeviations += deviation * deviation;
+        ++count;
+    }
+    if(count < 2)
+        return 0.0;
+
+    return std::sqrt(sumSquaredDeviations / static_cast<double>(count - 1));
+}
+
 StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedData& prepared,
                                                                  TransportModifier::StrongPairSamplingMode samplingMode,
                                                                  uint32_t randomSeed,
                                                                  size_t pairSampleCount,
                                                                  size_t frameSamplingStep,
-                                                                 const std::vector<double>& thresholds)
+                                                                 const std::vector<double>& thresholds,
+                                                                 bool discreteLagPoints,
+                                                                 size_t pointCount,
+                                                                 size_t resampleCount)
 {
     StronglyCorrelatedPairCurves curves;
     const size_t frameCount = prepared.frames.size();
@@ -1179,6 +1272,9 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
     const size_t lenMSD = frameCount - numInit;
     if(lenMSD == 0)
         return curves;
+    curves.lagIndices = buildStrongPairLagIndices(lenMSD, discreteLagPoints, pointCount);
+    if(curves.lagIndices.empty())
+        return curves;
     const size_t originStride = std::max<size_t>(1, frameSamplingStep);
     std::vector<size_t> sampledOrigins;
     sampledOrigins.reserve((numInit + originStride - 1) / originStride);
@@ -1189,87 +1285,167 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
 
     const size_t groupCount = prepared.groups.size();
     const size_t thresholdCount = thresholds.size();
+    const size_t lagCount = curves.lagIndices.size();
     curves.byGroupAndThreshold.assign(groupCount,
                                       std::vector<std::vector<double>>(thresholdCount,
-                                                                       std::vector<double>(lenMSD, std::numeric_limits<double>::quiet_NaN())));
-    std::vector<std::vector<std::pair<size_t, size_t>>> sampledPairsByGroup;
-    sampledPairsByGroup.reserve(groupCount);
-    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
-        sampledPairsByGroup.push_back(buildSampledDistinctPairs(prepared.groups[groupIndex].memberIndices.size(),
-                                                               pairSampleCount,
-                                                               samplingMode,
-                                                               randomSeed ^ static_cast<uint32_t>(0x9e3779b9u * (groupIndex + 1))));
-    }
+                                                                       std::vector<double>(lagCount, std::numeric_limits<double>::quiet_NaN())));
+    curves.stddevByGroupAndThreshold.assign(groupCount,
+                                            std::vector<std::vector<double>>(thresholdCount,
+                                                                             std::vector<double>(lagCount, std::numeric_limits<double>::quiet_NaN())));
 
-    struct StrongPairPartial {
-        std::vector<std::vector<std::vector<size_t>>> hitsByGroupAndThreshold;
-        std::vector<std::vector<size_t>> validPairCountsByGroup;
-    };
-    std::vector<StrongPairPartial> partials;
-    parallelForChunks(sampledOrigins.size(), 16,
-        [&](size_t workerCount) {
-            partials.resize(workerCount);
-            for(StrongPairPartial& partial : partials) {
-                partial.hitsByGroupAndThreshold.assign(groupCount,
-                    std::vector<std::vector<size_t>>(thresholdCount, std::vector<size_t>(lenMSD, 0)));
-                partial.validPairCountsByGroup.assign(groupCount, std::vector<size_t>(lenMSD, 0));
-            }
-        },
-        [&](size_t workerIndex, size_t fromOriginIndex, size_t toOriginIndex) {
-            StrongPairPartial& partial = partials[workerIndex];
-            for(size_t originIndex = fromOriginIndex; originIndex < toOriginIndex; ++originIndex) {
-                this_task::throwIfCanceled();
-                const size_t origin = sampledOrigins[originIndex];
-                for(size_t lag = 0; lag < lenMSD; ++lag) {
-                    const size_t target = origin + lag;
-                    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
-                        const auto& memberIndices = prepared.groups[groupIndex].memberIndices;
-                        const auto& sampledPairs = sampledPairsByGroup[groupIndex];
-                        if(memberIndices.size() < 2 || sampledPairs.empty())
-                            continue;
+    if(!discreteLagPoints) {
+        std::vector<std::vector<std::pair<size_t, size_t>>> sampledPairsByGroup;
+        sampledPairsByGroup.reserve(groupCount);
+        for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+            sampledPairsByGroup.push_back(buildSampledDistinctPairs(prepared.groups[groupIndex].memberIndices.size(),
+                                                                   pairSampleCount,
+                                                                   samplingMode,
+                                                                   mixStrongPairSeed(randomSeed, groupIndex, 0, 0)));
+        }
 
-                        std::vector<Vector3> unitDisplacements(memberIndices.size(), Vector3::Zero());
-                        std::vector<uint8_t> validDisplacementMask(memberIndices.size(), 0);
-                        for(size_t localIndex = 0; localIndex < memberIndices.size(); ++localIndex) {
-                            const size_t particleIndex = memberIndices[localIndex];
-                            const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
-                            const double displacementSquared = displacement.squaredLength();
-                            if(displacementSquared <= 0)
-                                continue;
-                            unitDisplacements[localIndex] = displacement * static_cast<FloatType>(1.0 / std::sqrt(displacementSquared));
-                            validDisplacementMask[localIndex] = 1;
-                        }
-
-                        for(const auto& [first, second] : sampledPairs) {
-                            if(!validDisplacementMask[first] || !validDisplacementMask[second])
+        struct StrongPairPartial {
+            std::vector<std::vector<std::vector<size_t>>> hitsByGroupAndThreshold;
+            std::vector<std::vector<size_t>> validPairCountsByGroup;
+        };
+        std::vector<StrongPairPartial> partials;
+        parallelForChunks(sampledOrigins.size(), 16,
+            [&](size_t workerCount) {
+                partials.resize(workerCount);
+                for(StrongPairPartial& partial : partials) {
+                    partial.hitsByGroupAndThreshold.assign(groupCount,
+                        std::vector<std::vector<size_t>>(thresholdCount, std::vector<size_t>(lagCount, 0)));
+                    partial.validPairCountsByGroup.assign(groupCount, std::vector<size_t>(lagCount, 0));
+                }
+            },
+            [&](size_t workerIndex, size_t fromOriginIndex, size_t toOriginIndex) {
+                StrongPairPartial& partial = partials[workerIndex];
+                for(size_t originIndex = fromOriginIndex; originIndex < toOriginIndex; ++originIndex) {
+                    this_task::throwIfCanceled();
+                    const size_t origin = sampledOrigins[originIndex];
+                    for(size_t lagPosition = 0; lagPosition < lagCount; ++lagPosition) {
+                        const size_t lag = curves.lagIndices[lagPosition];
+                        const size_t target = origin + lag;
+                        for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+                            const auto& memberIndices = prepared.groups[groupIndex].memberIndices;
+                            const auto& sampledPairs = sampledPairsByGroup[groupIndex];
+                            if(memberIndices.size() < 2 || sampledPairs.empty())
                                 continue;
 
-                            const double cosineSimilarity = std::abs(unitDisplacements[first].dot(unitDisplacements[second]));
-                            partial.validPairCountsByGroup[groupIndex][lag] += 1;
-                            for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
-                                if(cosineSimilarity > thresholds[thresholdIndex])
-                                    partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lag] += 1;
+                            std::vector<Vector3> unitDisplacements(memberIndices.size(), Vector3::Zero());
+                            std::vector<uint8_t> validDisplacementMask(memberIndices.size(), 0);
+                            for(size_t localIndex = 0; localIndex < memberIndices.size(); ++localIndex) {
+                                const size_t particleIndex = memberIndices[localIndex];
+                                const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
+                                const double displacementSquared = displacement.squaredLength();
+                                if(displacementSquared <= 0)
+                                    continue;
+                                unitDisplacements[localIndex] = displacement * static_cast<FloatType>(1.0 / std::sqrt(displacementSquared));
+                                validDisplacementMask[localIndex] = 1;
+                            }
+
+                            for(const auto& [first, second] : sampledPairs) {
+                                if(!validDisplacementMask[first] || !validDisplacementMask[second])
+                                    continue;
+
+                                const double cosineSimilarity = std::abs(unitDisplacements[first].dot(unitDisplacements[second]));
+                                partial.validPairCountsByGroup[groupIndex][lagPosition] += 1;
+                                for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
+                                    if(cosineSimilarity > thresholds[thresholdIndex])
+                                        partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lagPosition] += 1;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
 
-    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
-        for(size_t lag = 0; lag < lenMSD; ++lag) {
-            size_t validPairCount = 0;
-            std::vector<size_t> hits(thresholdCount, 0);
-            for(const StrongPairPartial& partial : partials) {
-                validPairCount += partial.validPairCountsByGroup[groupIndex][lag];
+        for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+            for(size_t lagPosition = 0; lagPosition < lagCount; ++lagPosition) {
+                size_t validPairCount = 0;
+                std::vector<size_t> hits(thresholdCount, 0);
+                for(const StrongPairPartial& partial : partials) {
+                    validPairCount += partial.validPairCountsByGroup[groupIndex][lagPosition];
+                    for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex)
+                        hits[thresholdIndex] += partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lagPosition];
+                }
+                if(validPairCount == 0)
+                    continue;
                 for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex)
-                    hits[thresholdIndex] += partial.hitsByGroupAndThreshold[groupIndex][thresholdIndex][lag];
+                    curves.byGroupAndThreshold[groupIndex][thresholdIndex][lagPosition] =
+                        static_cast<double>(hits[thresholdIndex]) / static_cast<double>(validPairCount);
             }
-            if(validPairCount == 0)
-                continue;
+        }
+
+        return curves;
+    }
+
+    const size_t effectiveResampleCount = std::max<size_t>(1, resampleCount);
+    for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
+        const auto& memberIndices = prepared.groups[groupIndex].memberIndices;
+        if(memberIndices.size() < 2)
+            continue;
+
+        for(size_t lagPosition = 0; lagPosition < lagCount; ++lagPosition) {
+            this_task::throwIfCanceled();
+            const size_t lag = curves.lagIndices[lagPosition];
+            std::vector<std::vector<double>> perThresholdFractions(thresholdCount);
+            for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex)
+                perThresholdFractions[thresholdIndex].reserve(effectiveResampleCount);
+
+            for(size_t resampleIndex = 0; resampleIndex < effectiveResampleCount; ++resampleIndex) {
+                const auto sampledPairs = buildSampledDistinctPairs(memberIndices.size(),
+                                                                    pairSampleCount,
+                                                                    samplingMode,
+                                                                    mixStrongPairSeed(randomSeed, groupIndex, lag, resampleIndex));
+                if(sampledPairs.empty())
+                    continue;
+
+                size_t validPairCount = 0;
+                std::vector<size_t> hits(thresholdCount, 0);
+                for(size_t origin : sampledOrigins) {
+                    this_task::throwIfCanceled();
+                    const size_t target = origin + lag;
+                    std::vector<Vector3> unitDisplacements(memberIndices.size(), Vector3::Zero());
+                    std::vector<uint8_t> validDisplacementMask(memberIndices.size(), 0);
+                    for(size_t localIndex = 0; localIndex < memberIndices.size(); ++localIndex) {
+                        const size_t particleIndex = memberIndices[localIndex];
+                        const Vector3 displacement = prepared.frames[target].positions[particleIndex] - prepared.frames[origin].positions[particleIndex];
+                        const double displacementSquared = displacement.squaredLength();
+                        if(displacementSquared <= 0)
+                            continue;
+                        unitDisplacements[localIndex] = displacement * static_cast<FloatType>(1.0 / std::sqrt(displacementSquared));
+                        validDisplacementMask[localIndex] = 1;
+                    }
+
+                    for(const auto& [first, second] : sampledPairs) {
+                        if(!validDisplacementMask[first] || !validDisplacementMask[second])
+                            continue;
+
+                        const double cosineSimilarity = std::abs(unitDisplacements[first].dot(unitDisplacements[second]));
+                        ++validPairCount;
+                        for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
+                            if(cosineSimilarity > thresholds[thresholdIndex])
+                                hits[thresholdIndex] += 1;
+                        }
+                    }
+                }
+
+                if(validPairCount == 0)
+                    continue;
+                for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
+                    perThresholdFractions[thresholdIndex].push_back(
+                        static_cast<double>(hits[thresholdIndex]) / static_cast<double>(validPairCount));
+                }
+            }
+
             for(size_t thresholdIndex = 0; thresholdIndex < thresholdCount; ++thresholdIndex) {
-                curves.byGroupAndThreshold[groupIndex][thresholdIndex][lag] =
-                    static_cast<double>(hits[thresholdIndex]) / static_cast<double>(validPairCount);
+                const auto& fractions = perThresholdFractions[thresholdIndex];
+                if(fractions.empty())
+                    continue;
+
+                const double mean = std::accumulate(fractions.begin(), fractions.end(), 0.0) / static_cast<double>(fractions.size());
+                curves.byGroupAndThreshold[groupIndex][thresholdIndex][lagPosition] = mean;
+                curves.stddevByGroupAndThreshold[groupIndex][thresholdIndex][lagPosition] = computeStandardDeviation(fractions, mean);
             }
         }
     }
@@ -2050,6 +2226,9 @@ DEFINE_PROPERTY_FIELD(TransportModifier, strongPairSampleCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairFrameStep);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairThresholds);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairRandomSeed);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairDiscreteLagPoints);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairPointCount);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairResampleCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(TransportModifier, selectAsMolecules);
 DEFINE_PROPERTY_FIELD(TransportModifier, computePerType);
@@ -2084,6 +2263,9 @@ SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairSampleCount, "Pair sample 
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairFrameStep, "Frame sampling step");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairThresholds, "Custom thresholds");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairRandomSeed, "Random seed");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairDiscreteLagPoints, "Use discrete lag points");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairPointCount, "Lag point count");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairResampleCount, "Resamples for error");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, useOnlySelectedParticles, "Use only selected atoms");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, selectAsMolecules, "Select as molecules");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computePerType, "Compute per-type curves");
@@ -2112,6 +2294,8 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalEnd, IntegerParame
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairSampleCount, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairFrameStep, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairRandomSeed, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairPointCount, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairResampleCount, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, maxLag, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, summaryWindowStartLag, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
@@ -2351,7 +2535,10 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                                            static_cast<uint32_t>(strongPairRandomSeed()),
                                                                            static_cast<size_t>(strongPairSampleCount()),
                                                                            static_cast<size_t>(strongPairFrameStep()),
-                                                                           strongPairThresholdsParsed)
+                                                                           strongPairThresholdsParsed,
+                                                                           strongPairDiscreteLagPoints(),
+                                                                           static_cast<size_t>(strongPairPointCount()),
+                                                                           static_cast<size_t>(strongPairResampleCount()))
                                      : StronglyCorrelatedPairCurves{};
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
@@ -2863,6 +3050,11 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             if(needStrongPairOutput && !prepared.groups.empty() && !stronglyCorrelatedPairs.byGroupAndThreshold.empty()) {
                 QStringList strongPairNames;
                 std::vector<std::vector<double>> strongPairColumns;
+                std::vector<std::vector<double>> strongPairErrorColumns;
+                std::vector<double> strongPairTimesRaw;
+                strongPairTimesRaw.reserve(stronglyCorrelatedPairs.lagIndices.size());
+                for(size_t lagIndex : stronglyCorrelatedPairs.lagIndices)
+                    strongPairTimesRaw.push_back(msdTimesRaw[lagIndex]);
                 for(size_t groupIndex = 0; groupIndex < prepared.groups.size(); ++groupIndex) {
                     if(std::abs(prepared.groups[groupIndex].representativeChargeRaw) <= std::numeric_limits<double>::epsilon())
                         continue;
@@ -2873,15 +3065,18 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                       .arg(prepared.groups[groupIndex].name)
                                                       .arg(QString::number(stronglyCorrelatedPairs.thresholds[thresholdIndex], 'g', 4)));
                         strongPairColumns.push_back(stronglyCorrelatedPairs.byGroupAndThreshold[groupIndex][thresholdIndex]);
+                        if(!stronglyCorrelatedPairs.stddevByGroupAndThreshold.empty())
+                            strongPairErrorColumns.push_back(stronglyCorrelatedPairs.stddevByGroupAndThreshold[groupIndex][thresholdIndex]);
                     }
                 }
                 if(!strongPairColumns.empty()) {
-                    createLineTable(results, StronglyCorrelatedPairsTableId, tr("Strongly correlated ion pairs"), msdTimesRaw,
+                    createLineTable(results, StronglyCorrelatedPairsTableId, tr("Strongly correlated ion pairs"), strongPairTimesRaw,
                                     strongPairColumns,
                                     strongPairNames,
                                     tr("Time (%1)").arg(timeLabel),
                                     tr("Fraction of strongly correlated pairs"),
-                                    createdByNode);
+                                    createdByNode,
+                                    strongPairErrorColumns.empty() ? nullptr : &strongPairErrorColumns);
                 }
             }
 
