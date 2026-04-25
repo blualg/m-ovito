@@ -68,6 +68,7 @@ private:
     QCheckBox* _selectAsMoleculesCheckBox = nullptr;
     QComboBox* _stronglyCorrelatedPairsSamplingModeCombo = nullptr;
     QCheckBox* _stronglyCorrelatedPairsDiscreteLagPointsCheckBox = nullptr;
+    QComboBox* _stronglyCorrelatedPairsLagSelectionModeCombo = nullptr;
     QWidget* _msdSection = nullptr;
     QWidget* _vacfSection = nullptr;
     QWidget* _conductivitySection = nullptr;
@@ -75,8 +76,12 @@ private:
     QWidget* _stronglyCorrelatedPairsSettingsSection = nullptr;
     QWidget* _stronglyCorrelatedPairsRandomSeedLabel = nullptr;
     QWidget* _stronglyCorrelatedPairsRandomSeedField = nullptr;
+    QWidget* _stronglyCorrelatedPairsLagSelectionModeLabel = nullptr;
+    QWidget* _stronglyCorrelatedPairsLagSelectionModeField = nullptr;
     QWidget* _stronglyCorrelatedPairsLagPointsLabel = nullptr;
     QWidget* _stronglyCorrelatedPairsLagPointsField = nullptr;
+    QWidget* _stronglyCorrelatedPairsPointCountLabel = nullptr;
+    QWidget* _stronglyCorrelatedPairsPointCountField = nullptr;
     QWidget* _stronglyCorrelatedPairsResampleCountLabel = nullptr;
     QWidget* _stronglyCorrelatedPairsResampleCountField = nullptr;
     QWidget* _stronglyCorrelatedPairsSection = nullptr;

@@ -1208,7 +1208,11 @@ std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementC
     return pairs;
 }
 
-std::vector<size_t> buildStrongPairLagIndices(const std::vector<double>& timesRaw, bool discreteLagPoints, const std::vector<double>& requestedLagPoints)
+std::vector<size_t> buildStrongPairLagIndices(const std::vector<double>& timesRaw,
+                                              bool discreteLagPoints,
+                                              TransportModifier::StrongPairLagSelectionMode lagSelectionMode,
+                                              const std::vector<double>& requestedLagPoints,
+                                              size_t pointCount)
 {
     if(timesRaw.empty())
         return {};
@@ -1217,6 +1221,33 @@ std::vector<size_t> buildStrongPairLagIndices(const std::vector<double>& timesRa
         std::vector<size_t> lagIndices(timesRaw.size());
         std::iota(lagIndices.begin(), lagIndices.end(), size_t{0});
         return lagIndices;
+    }
+
+    if(lagSelectionMode == TransportModifier::AutomaticLogLagSelection) {
+        if(timesRaw.size() == 1)
+            return {0};
+
+        const size_t maxLagIndex = timesRaw.size() - 1;
+        if(pointCount == 0 || pointCount >= maxLagIndex) {
+            std::vector<size_t> lagIndices(maxLagIndex);
+            std::iota(lagIndices.begin(), lagIndices.end(), size_t{1});
+            return lagIndices;
+        }
+
+        std::set<size_t> chosenLagIndices{1, maxLagIndex};
+        const double logMin = std::log(1.0);
+        const double logMax = std::log(static_cast<double>(maxLagIndex));
+        for(size_t pointIndex = 0; pointIndex < pointCount; ++pointIndex) {
+            const double alpha = (pointCount == 1) ? 1.0 : static_cast<double>(pointIndex) / static_cast<double>(pointCount - 1);
+            const double lagValue = std::exp(logMin + alpha * (logMax - logMin));
+            const size_t lagIndex = std::clamp(static_cast<size_t>(std::llround(lagValue)), size_t{1}, maxLagIndex);
+            chosenLagIndices.insert(lagIndex);
+        }
+
+        for(size_t candidate = 1; chosenLagIndices.size() < pointCount && candidate <= maxLagIndex; ++candidate)
+            chosenLagIndices.insert(candidate);
+
+        return {chosenLagIndices.begin(), chosenLagIndices.end()};
     }
 
     std::set<size_t> chosenLagIndices;
@@ -1277,7 +1308,9 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
                                                                  size_t frameSamplingStep,
                                                                  const std::vector<double>& thresholds,
                                                                  bool discreteLagPoints,
+                                                                 TransportModifier::StrongPairLagSelectionMode lagSelectionMode,
                                                                  const std::vector<double>& requestedLagPoints,
+                                                                 size_t pointCount,
                                                                  size_t resampleCount)
 {
     StronglyCorrelatedPairCurves curves;
@@ -1293,7 +1326,7 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
     std::vector<double> lagTimesRaw(lenMSD, 0.0);
     for(size_t lag = 0; lag < lenMSD; ++lag)
         lagTimesRaw[lag] = prepared.frames[lag].timeRaw - prepared.frames.front().timeRaw;
-    curves.lagIndices = buildStrongPairLagIndices(lagTimesRaw, discreteLagPoints, requestedLagPoints);
+    curves.lagIndices = buildStrongPairLagIndices(lagTimesRaw, discreteLagPoints, lagSelectionMode, requestedLagPoints, pointCount);
     if(curves.lagIndices.empty())
         return curves;
     const size_t originStride = std::max<size_t>(1, frameSamplingStep);
@@ -2248,7 +2281,9 @@ DEFINE_PROPERTY_FIELD(TransportModifier, strongPairFrameStep);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairThresholds);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairRandomSeed);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairDiscreteLagPoints);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairLagSelectionMode);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairLagPoints);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairPointCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairResampleCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(TransportModifier, selectAsMolecules);
@@ -2285,7 +2320,9 @@ SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairFrameStep, "Frame sampling
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairThresholds, "Custom thresholds");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairRandomSeed, "Random seed");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairDiscreteLagPoints, "Use discrete lag points");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairLagSelectionMode, "Lag selection");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairLagPoints, "Lag points");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairPointCount, "Lag point count");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairResampleCount, "Resamples for error");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, useOnlySelectedParticles, "Use only selected atoms");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, selectAsMolecules, "Select as molecules");
@@ -2315,6 +2352,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalEnd, IntegerParame
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairSampleCount, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairFrameStep, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairRandomSeed, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairPointCount, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairResampleCount, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, maxLag, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
@@ -2518,7 +2556,9 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const std::vector<double> strongPairThresholdsParsed =
                     needStrongPairOutput ? parseStrongPairThresholds(strongPairThresholds()) : std::vector<double>{};
                 const std::vector<double> strongPairLagPointsParsed =
-                    (needStrongPairOutput && strongPairDiscreteLagPoints()) ? parseStrongPairLagPoints(strongPairLagPoints()) : std::vector<double>{};
+                    (needStrongPairOutput && strongPairDiscreteLagPoints() && strongPairLagSelectionMode() == ManualLagSelection)
+                        ? parseStrongPairLagPoints(strongPairLagPoints())
+                        : std::vector<double>{};
                 const bool needPerTypeGroups = computePerType() || needDistinctIonCorrelationOutput || needStrongPairOutput;
                 const bool needVelocitySamples = needVACFOutput || needConductivityOutput;
                 const bool allowFiniteDifferenceVelocities = needVACFOutput;
@@ -2559,7 +2599,9 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                                            static_cast<size_t>(strongPairFrameStep()),
                                                                            strongPairThresholdsParsed,
                                                                            strongPairDiscreteLagPoints(),
+                                                                           strongPairLagSelectionMode(),
                                                                            strongPairLagPointsParsed,
+                                                                           static_cast<size_t>(strongPairPointCount()),
                                                                            static_cast<size_t>(strongPairResampleCount()))
                                      : StronglyCorrelatedPairCurves{};
 

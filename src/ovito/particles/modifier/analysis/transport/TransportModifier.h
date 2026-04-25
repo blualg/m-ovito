@@ -68,6 +68,12 @@ public:
     };
     Q_ENUM(StrongPairSamplingMode);
 
+    enum StrongPairLagSelectionMode {
+        ManualLagSelection = 0,
+        AutomaticLogLagSelection = 1
+    };
+    Q_ENUM(StrongPairLagSelectionMode);
+
     static constexpr QStringView MSDTableId = u"transport-msd";
     static constexpr QStringView MSDTableSIId = u"transport-msd-si";
     static constexpr QStringView VACFTableId = u"transport-vacf";
@@ -112,7 +118,9 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{QStringLiteral("0.75, 0.80, 0.85")}, strongPairThresholds, setStrongPairThresholds, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{12345}, strongPairRandomSeed, setStrongPairRandomSeed, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, strongPairDiscreteLagPoints, setStrongPairDiscreteLagPoints, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StrongPairLagSelectionMode{ManualLagSelection}, strongPairLagSelectionMode, setStrongPairLagSelectionMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{QStringLiteral("5, 50, 200, 500")}, strongPairLagPoints, setStrongPairLagPoints, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{4}, strongPairPointCount, setStrongPairPointCount, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{8}, strongPairResampleCount, setStrongPairResampleCount, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, useOnlySelectedParticles, setUseOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, selectAsMolecules, setSelectAsMolecules, PROPERTY_FIELD_MEMORIZE);
