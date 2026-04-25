@@ -62,6 +62,12 @@ public:
     };
     Q_ENUM(ChargeUnit);
 
+    enum StrongPairSamplingMode {
+        DeterministicPairSampling = 0,
+        RandomPairSampling = 1
+    };
+    Q_ENUM(StrongPairSamplingMode);
+
     static constexpr QStringView MSDTableId = u"transport-msd";
     static constexpr QStringView MSDTableSIId = u"transport-msd-si";
     static constexpr QStringView VACFTableId = u"transport-vacf";
@@ -100,9 +106,11 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computeConductivity, setComputeConductivity, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeDistinctIonCorrelation, setComputeDistinctIonCorrelation, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeStronglyCorrelatedPairs, setComputeStronglyCorrelatedPairs, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StrongPairSamplingMode{RandomPairSampling}, strongPairSamplingMode, setStrongPairSamplingMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1176}, strongPairSampleCount, setStrongPairSampleCount, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, strongPairFrameStep, setStrongPairFrameStep, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{QStringLiteral("0.75, 0.80, 0.85")}, strongPairThresholds, setStrongPairThresholds, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{12345}, strongPairRandomSeed, setStrongPairRandomSeed, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, useOnlySelectedParticles, setUseOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, selectAsMolecules, setSelectAsMolecules, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, computePerType, setComputePerType, PROPERTY_FIELD_MEMORIZE);

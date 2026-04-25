@@ -1118,7 +1118,10 @@ std::pair<size_t, size_t> pairIndicesFromLinearIndex(size_t elementCount, size_t
     return {first, first + 1 + linearPairIndex};
 }
 
-std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementCount, size_t sampleLimit, uint32_t seed)
+std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementCount,
+                                                                 size_t sampleLimit,
+                                                                 TransportModifier::StrongPairSamplingMode samplingMode,
+                                                                 uint32_t seed)
 {
     std::vector<std::pair<size_t, size_t>> pairs;
     if(elementCount < 2)
@@ -1132,6 +1135,15 @@ std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementC
         for(size_t first = 0; first + 1 < elementCount; ++first) {
             for(size_t second = first + 1; second < elementCount; ++second)
                 pairs.emplace_back(first, second);
+        }
+        return pairs;
+    }
+
+    if(samplingMode == TransportModifier::DeterministicPairSampling) {
+        for(size_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+            const size_t linearPairIndex =
+                std::min(pairCount - 1, ((2 * sampleIndex + 1) * pairCount) / (2 * sampleCount));
+            pairs.push_back(pairIndicesFromLinearIndex(elementCount, linearPairIndex));
         }
         return pairs;
     }
@@ -1151,6 +1163,8 @@ std::vector<std::pair<size_t, size_t>> buildSampledDistinctPairs(size_t elementC
 }
 
 StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedData& prepared,
+                                                                 TransportModifier::StrongPairSamplingMode samplingMode,
+                                                                 uint32_t randomSeed,
                                                                  size_t pairSampleCount,
                                                                  size_t frameSamplingStep,
                                                                  const std::vector<double>& thresholds)
@@ -1183,7 +1197,8 @@ StronglyCorrelatedPairCurves computeStronglyCorrelatedPairCurves(const PreparedD
     for(size_t groupIndex = 0; groupIndex < groupCount; ++groupIndex) {
         sampledPairsByGroup.push_back(buildSampledDistinctPairs(prepared.groups[groupIndex].memberIndices.size(),
                                                                pairSampleCount,
-                                                               static_cast<uint32_t>(0x5eed1234u + groupIndex)));
+                                                               samplingMode,
+                                                               randomSeed ^ static_cast<uint32_t>(0x9e3779b9u * (groupIndex + 1))));
     }
 
     struct StrongPairPartial {
@@ -2030,9 +2045,11 @@ DEFINE_PROPERTY_FIELD(TransportModifier, computeVACF);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeConductivity);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeDistinctIonCorrelation);
 DEFINE_PROPERTY_FIELD(TransportModifier, computeStronglyCorrelatedPairs);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairSamplingMode);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairSampleCount);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairFrameStep);
 DEFINE_PROPERTY_FIELD(TransportModifier, strongPairThresholds);
+DEFINE_PROPERTY_FIELD(TransportModifier, strongPairRandomSeed);
 DEFINE_PROPERTY_FIELD(TransportModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(TransportModifier, selectAsMolecules);
 DEFINE_PROPERTY_FIELD(TransportModifier, computePerType);
@@ -2062,9 +2079,11 @@ SET_PROPERTY_FIELD_LABEL(TransportModifier, computeVACF, "Compute VACF");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeConductivity, "Compute ionic conductivity");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeDistinctIonCorrelation, "Compute distinct ion-ion correlation");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computeStronglyCorrelatedPairs, "Compute strongly correlated ion pairs");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairSamplingMode, "Pair sampling mode");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairSampleCount, "Pair sample count K");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairFrameStep, "Frame sampling step");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairThresholds, "Custom thresholds");
+SET_PROPERTY_FIELD_LABEL(TransportModifier, strongPairRandomSeed, "Random seed");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, useOnlySelectedParticles, "Use only selected atoms");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, selectAsMolecules, "Select as molecules");
 SET_PROPERTY_FIELD_LABEL(TransportModifier, computePerType, "Compute per-type curves");
@@ -2092,6 +2111,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalStart, IntegerPara
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, intervalEnd, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairSampleCount, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairFrameStep, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, strongPairRandomSeed, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, maxLag, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TransportModifier, summaryWindowStartLag, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
@@ -2327,6 +2347,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 needDistinctIonCorrelationOutput ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
             const StronglyCorrelatedPairCurves stronglyCorrelatedPairs =
                 needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared,
+                                                                           strongPairSamplingMode(),
+                                                                           static_cast<uint32_t>(strongPairRandomSeed()),
                                                                            static_cast<size_t>(strongPairSampleCount()),
                                                                            static_cast<size_t>(strongPairFrameStep()),
                                                                            strongPairThresholdsParsed)

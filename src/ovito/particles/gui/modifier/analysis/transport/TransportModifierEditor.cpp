@@ -39,7 +39,9 @@
 #include <qwt/qwt_plot_marker.h>
 #include <qwt/qwt_scale_engine.h>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFontMetrics>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLayout>
 #include <QPointer>
@@ -344,18 +346,37 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     strongPairsLayout->setContentsMargins(4, 4, 4, 4);
     strongPairsLayout->setColumnStretch(1, 1);
 
+    VariantComboBoxParameterUI* strongPairSamplingModeUI =
+        createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairSamplingMode));
+    _stronglyCorrelatedPairsSamplingModeCombo = strongPairSamplingModeUI->comboBox();
+    _stronglyCorrelatedPairsSamplingModeCombo->addItem(tr("Random"),
+        QVariant::fromValue(static_cast<int>(TransportModifier::RandomPairSampling)));
+    _stronglyCorrelatedPairsSamplingModeCombo->addItem(tr("Deterministic"),
+        QVariant::fromValue(static_cast<int>(TransportModifier::DeterministicPairSampling)));
+    strongPairsLayout->addWidget(new QLabel(tr("Pair sampling mode"), strongPairsBox), 0, 0);
+    strongPairsLayout->addWidget(_stronglyCorrelatedPairsSamplingModeCombo, 0, 1);
+
     IntegerParameterUI* strongPairSampleCountUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairSampleCount));
-    strongPairsLayout->addWidget(strongPairSampleCountUI->label(), 0, 0);
-    strongPairsLayout->addLayout(strongPairSampleCountUI->createFieldLayout(), 0, 1);
+    strongPairsLayout->addWidget(strongPairSampleCountUI->label(), 1, 0);
+    strongPairsLayout->addLayout(strongPairSampleCountUI->createFieldLayout(), 1, 1);
 
     IntegerParameterUI* strongPairFrameStepUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairFrameStep));
-    strongPairsLayout->addWidget(strongPairFrameStepUI->label(), 1, 0);
-    strongPairsLayout->addLayout(strongPairFrameStepUI->createFieldLayout(), 1, 1);
+    strongPairsLayout->addWidget(strongPairFrameStepUI->label(), 2, 0);
+    strongPairsLayout->addLayout(strongPairFrameStepUI->createFieldLayout(), 2, 1);
+
+    IntegerParameterUI* strongPairRandomSeedUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairRandomSeed));
+    _stronglyCorrelatedPairsRandomSeedLabel = strongPairRandomSeedUI->label();
+    _stronglyCorrelatedPairsRandomSeedField = new QWidget(strongPairsBox);
+    auto* strongPairRandomSeedFieldLayout = new QHBoxLayout(_stronglyCorrelatedPairsRandomSeedField);
+    strongPairRandomSeedFieldLayout->setContentsMargins(0, 0, 0, 0);
+    strongPairRandomSeedFieldLayout->addLayout(strongPairRandomSeedUI->createFieldLayout());
+    strongPairsLayout->addWidget(_stronglyCorrelatedPairsRandomSeedLabel, 3, 0);
+    strongPairsLayout->addWidget(_stronglyCorrelatedPairsRandomSeedField, 3, 1);
 
     StringParameterUI* strongPairThresholdsUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairThresholds));
     strongPairThresholdsUI->lineEdit()->setPlaceholderText(tr("0.75, 0.80, 0.85"));
-    strongPairsLayout->addWidget(new QLabel(tr("Custom thresholds"), strongPairsBox), 2, 0);
-    strongPairsLayout->addWidget(strongPairThresholdsUI->textBox(), 2, 1);
+    strongPairsLayout->addWidget(new QLabel(tr("Custom thresholds"), strongPairsBox), 4, 0);
+    strongPairsLayout->addWidget(strongPairThresholdsUI->textBox(), 4, 1);
 
     layout->addWidget(strongPairsBox);
 
@@ -573,6 +594,8 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
         connect(_computeDistinctIonCorrelationCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_computeStronglyCorrelatedPairsCheckBox)
         connect(_computeStronglyCorrelatedPairsCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
+    if(_stronglyCorrelatedPairsSamplingModeCombo)
+        connect(_stronglyCorrelatedPairsSamplingModeCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &TransportModifierEditor::updateControlStates);
     if(_useOnlySelectedParticlesCheckBox)
         connect(_useOnlySelectedParticlesCheckBox, &QCheckBox::toggled, this, &TransportModifierEditor::updateControlStates);
     if(_selectAsMoleculesCheckBox)
@@ -931,6 +954,9 @@ void TransportModifierEditor::updateControlStates()
     const bool computeStronglyCorrelatedPairs =
         _computeStronglyCorrelatedPairsCheckBox && _computeStronglyCorrelatedPairsCheckBox->isChecked();
     const bool useOnlySelectedParticles = _useOnlySelectedParticlesCheckBox && _useOnlySelectedParticlesCheckBox->isChecked();
+    const bool useRandomStrongPairSampling =
+        _stronglyCorrelatedPairsSamplingModeCombo &&
+        _stronglyCorrelatedPairsSamplingModeCombo->currentData().toInt() == static_cast<int>(TransportModifier::RandomPairSampling);
 
     if(_msdSection)
         _msdSection->setVisible(computeMSD);
@@ -940,6 +966,10 @@ void TransportModifierEditor::updateControlStates()
         _conductivitySection->setVisible(computeConductivity);
     if(_stronglyCorrelatedPairsSettingsSection)
         _stronglyCorrelatedPairsSettingsSection->setVisible(computeStronglyCorrelatedPairs);
+    if(_stronglyCorrelatedPairsRandomSeedLabel)
+        _stronglyCorrelatedPairsRandomSeedLabel->setVisible(computeStronglyCorrelatedPairs && useRandomStrongPairSampling);
+    if(_stronglyCorrelatedPairsRandomSeedField)
+        _stronglyCorrelatedPairsRandomSeedField->setVisible(computeStronglyCorrelatedPairs && useRandomStrongPairSampling);
     if(_distinctIonCorrelationSection)
         _distinctIonCorrelationSection->setVisible(_distinctIonCorrelationAvailable && computeDistinctIonCorrelation);
     if(_stronglyCorrelatedPairsSection)

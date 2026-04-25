@@ -28,6 +28,7 @@
 
 class QLabel;
 class QCheckBox;
+class QComboBox;
 class QPushButton;
 class QWidget;
 class QwtPlotMarker;
@@ -65,11 +66,14 @@ private:
     QCheckBox* _computeStronglyCorrelatedPairsCheckBox = nullptr;
     QCheckBox* _useOnlySelectedParticlesCheckBox = nullptr;
     QCheckBox* _selectAsMoleculesCheckBox = nullptr;
+    QComboBox* _stronglyCorrelatedPairsSamplingModeCombo = nullptr;
     QWidget* _msdSection = nullptr;
     QWidget* _vacfSection = nullptr;
     QWidget* _conductivitySection = nullptr;
     QWidget* _distinctIonCorrelationSection = nullptr;
     QWidget* _stronglyCorrelatedPairsSettingsSection = nullptr;
+    QWidget* _stronglyCorrelatedPairsRandomSeedLabel = nullptr;
+    QWidget* _stronglyCorrelatedPairsRandomSeedField = nullptr;
     QWidget* _stronglyCorrelatedPairsSection = nullptr;
     QWidget* _gkPreviewSection = nullptr;
     DataTablePlotWidget* _msdPlot = nullptr;
