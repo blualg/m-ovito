@@ -32,6 +32,7 @@
 #include <qwt/qwt_plot_legenditem.h>
 #include <qwt/qwt_plot_layout.h>
 #include <qwt/qwt_scale_widget.h>
+#include <qwt/qwt_scale_engine.h>
 #include <qwt/qwt_plot_zoomer.h>
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_panner.h>
@@ -118,6 +119,20 @@ DataTablePlotWidget::DataTablePlotWidget(QWidget* parent) : QwtPlot(parent)
 }
 
 /******************************************************************************
+* Controls whether the x-axis uses a logarithmic scale.
+******************************************************************************/
+void DataTablePlotWidget::setXAxisLogarithmic(bool on)
+{
+    if(_xAxisLogarithmic == on)
+        return;
+
+    _xAxisLogarithmic = on;
+    setAxisScaleEngine(QwtPlot::xBottom, on ? static_cast<QwtScaleEngine*>(new QwtLogScaleEngine())
+                                            : static_cast<QwtScaleEngine*>(new QwtLinearScaleEngine()));
+    updateDataPlot();
+}
+
+/******************************************************************************
 * Sets the data table to be plotted.
 ******************************************************************************/
 void DataTablePlotWidget::setTable(DataOORef<const DataTable> table, bool forceUpdate)
@@ -151,6 +166,8 @@ void DataTablePlotWidget::updateDataPlot()
     setAxisTitle(QwtPlot::yLeft, QString{});
     setAxisMaxMinor(QwtPlot::xBottom, 5);
     setAxisMaxMajor(QwtPlot::xBottom, 8);
+    setAxisScaleEngine(QwtPlot::xBottom, _xAxisLogarithmic ? static_cast<QwtScaleEngine*>(new QwtLogScaleEngine())
+                                                           : static_cast<QwtScaleEngine*>(new QwtLinearScaleEngine()));
     plotLayout()->setCanvasMargin(4);
 
     // Determine the current plotting mode.

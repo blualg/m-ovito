@@ -724,10 +724,7 @@ void TransportModifierEditor::updatePlots()
             state.getObjectBy<DataTable>(modificationNode(), TransportModifier::StronglyCorrelatedPairsTableId);
         _stronglyCorrelatedPairsAvailable = (stronglyCorrelatedPairsTable != nullptr);
         if(_stronglyCorrelatedPairsPlot) {
-            if(const TransportModifier* mod = modifier(); mod && mod->strongPairDiscreteLagPoints())
-                _stronglyCorrelatedPairsPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-            else
-                _stronglyCorrelatedPairsPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+            _stronglyCorrelatedPairsPlot->setXAxisLogarithmic(modifier() && modifier()->strongPairDiscreteLagPoints());
             _stronglyCorrelatedPairsPlot->setTable(stronglyCorrelatedPairsTable);
         }
         updateGreenKuboPreview(state);

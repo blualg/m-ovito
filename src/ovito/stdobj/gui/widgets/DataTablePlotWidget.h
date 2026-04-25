@@ -82,6 +82,9 @@ public:
         }
     }
 
+    void setXAxisLogarithmic(bool on);
+    bool xAxisLogarithmic() const { return _xAxisLogarithmic; }
+
 private Q_SLOTS:
 
     /// Regenerates the plot.
@@ -155,6 +158,9 @@ private:
 
     /// Flags controlling the automatic range of plot axes.
     std::array<bool, QwtPlot::axisCnt> _axisAutoscaleEnabled{{true, true, true, true}};
+
+    /// Controls whether the x-axis should use a logarithmic scale.
+    bool _xAxisLogarithmic = false;
 };
 
 }   // End of namespace
