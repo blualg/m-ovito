@@ -75,8 +75,8 @@ private:
     QWidget* _stronglyCorrelatedPairsSettingsSection = nullptr;
     QWidget* _stronglyCorrelatedPairsRandomSeedLabel = nullptr;
     QWidget* _stronglyCorrelatedPairsRandomSeedField = nullptr;
-    QWidget* _stronglyCorrelatedPairsPointCountLabel = nullptr;
-    QWidget* _stronglyCorrelatedPairsPointCountField = nullptr;
+    QWidget* _stronglyCorrelatedPairsLagPointsLabel = nullptr;
+    QWidget* _stronglyCorrelatedPairsLagPointsField = nullptr;
     QWidget* _stronglyCorrelatedPairsResampleCountLabel = nullptr;
     QWidget* _stronglyCorrelatedPairsResampleCountField = nullptr;
     QWidget* _stronglyCorrelatedPairsSection = nullptr;

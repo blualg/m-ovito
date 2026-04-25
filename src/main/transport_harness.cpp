@@ -71,7 +71,7 @@ struct HarnessConfig {
     QString strongPairThresholds = QStringLiteral("0.75, 0.80, 0.85");
     int strongPairRandomSeed = 12345;
     bool strongPairDiscreteLagPoints = false;
-    int strongPairPointCount = 4;
+    QString strongPairLagPoints = QStringLiteral("5, 50, 200, 500");
     int strongPairResampleCount = 8;
     bool computePerType = true;
 };
@@ -105,7 +105,7 @@ void printUsage(const char* programName)
     std::cerr
         << "Usage: " << programName << " --data-dir <directory> [--output <file>] [--temperature <K>] [--dt <value>]\n"
         << "       [--msd on|off] [--vacf on|off] [--conductivity on|off] [--distinct-ion-correlation on|off] [--strong-pairs on|off] [--strong-pair-k <count>]\n"
-        << "       [--strong-pair-mode deterministic|random] [--strong-pair-seed <int>] [--strong-pair-discrete on|off] [--strong-pair-points <count>] [--strong-pair-resamples <count>]\n"
+        << "       [--strong-pair-mode deterministic|random] [--strong-pair-seed <int>] [--strong-pair-discrete on|off] [--strong-pair-lags <list>] [--strong-pair-resamples <count>]\n"
         << "       [--strong-pair-step <frames>] [--strong-pair-thresholds <list>] [--per-type on|off]\n"
         << "Expected files inside <directory>: log.lammps, mol.data, mol.lammpstrj\n";
 }
@@ -188,11 +188,8 @@ HarnessConfig parseArguments(int argc, char** argv)
         else if(arg == QStringLiteral("--strong-pair-discrete")) {
             config.strongPairDiscreteLagPoints = parseOnOffOption(arg, requireValue("--strong-pair-discrete"));
         }
-        else if(arg == QStringLiteral("--strong-pair-points")) {
-            bool ok = false;
-            config.strongPairPointCount = requireValue("--strong-pair-points").toInt(&ok);
-            if(!ok || config.strongPairPointCount < 1)
-                throw std::runtime_error("Invalid integer value for --strong-pair-points");
+        else if(arg == QStringLiteral("--strong-pair-lags")) {
+            config.strongPairLagPoints = requireValue("--strong-pair-lags");
         }
         else if(arg == QStringLiteral("--strong-pair-resamples")) {
             bool ok = false;
@@ -425,7 +422,7 @@ void runHarness(const HarnessConfig& config)
     modifier->setStrongPairThresholds(config.strongPairThresholds);
     modifier->setStrongPairRandomSeed(config.strongPairRandomSeed);
     modifier->setStrongPairDiscreteLagPoints(config.strongPairDiscreteLagPoints);
-    modifier->setStrongPairPointCount(config.strongPairPointCount);
+    modifier->setStrongPairLagPoints(config.strongPairLagPoints);
     modifier->setStrongPairResampleCount(config.strongPairResampleCount);
     modifier->setComputePerType(config.computePerType);
     modifier->setUseOnlySelectedParticles(false);

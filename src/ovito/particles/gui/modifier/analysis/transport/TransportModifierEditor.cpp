@@ -377,14 +377,15 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
         createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairDiscreteLagPoints))->checkBox();
     strongPairsLayout->addWidget(_stronglyCorrelatedPairsDiscreteLagPointsCheckBox, 4, 0, 1, 2);
 
-    IntegerParameterUI* strongPairPointCountUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairPointCount));
-    _stronglyCorrelatedPairsPointCountLabel = strongPairPointCountUI->label();
-    _stronglyCorrelatedPairsPointCountField = new QWidget(strongPairsBox);
-    auto* strongPairPointCountFieldLayout = new QHBoxLayout(_stronglyCorrelatedPairsPointCountField);
-    strongPairPointCountFieldLayout->setContentsMargins(0, 0, 0, 0);
-    strongPairPointCountFieldLayout->addLayout(strongPairPointCountUI->createFieldLayout());
-    strongPairsLayout->addWidget(_stronglyCorrelatedPairsPointCountLabel, 5, 0);
-    strongPairsLayout->addWidget(_stronglyCorrelatedPairsPointCountField, 5, 1);
+    StringParameterUI* strongPairLagPointsUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairLagPoints));
+    strongPairLagPointsUI->lineEdit()->setPlaceholderText(tr("5, 50, 200, 500"));
+    _stronglyCorrelatedPairsLagPointsLabel = new QLabel(tr("Lag points"), strongPairsBox);
+    _stronglyCorrelatedPairsLagPointsField = new QWidget(strongPairsBox);
+    auto* strongPairLagPointsFieldLayout = new QHBoxLayout(_stronglyCorrelatedPairsLagPointsField);
+    strongPairLagPointsFieldLayout->setContentsMargins(0, 0, 0, 0);
+    strongPairLagPointsFieldLayout->addWidget(strongPairLagPointsUI->textBox());
+    strongPairsLayout->addWidget(_stronglyCorrelatedPairsLagPointsLabel, 5, 0);
+    strongPairsLayout->addWidget(_stronglyCorrelatedPairsLagPointsField, 5, 1);
 
     IntegerParameterUI* strongPairResampleCountUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(TransportModifier::strongPairResampleCount));
     _stronglyCorrelatedPairsResampleCountLabel = strongPairResampleCountUI->label();
@@ -1000,10 +1001,10 @@ void TransportModifierEditor::updateControlStates()
         _stronglyCorrelatedPairsRandomSeedLabel->setVisible(computeStronglyCorrelatedPairs && useRandomStrongPairSampling);
     if(_stronglyCorrelatedPairsRandomSeedField)
         _stronglyCorrelatedPairsRandomSeedField->setVisible(computeStronglyCorrelatedPairs && useRandomStrongPairSampling);
-    if(_stronglyCorrelatedPairsPointCountLabel)
-        _stronglyCorrelatedPairsPointCountLabel->setVisible(computeStronglyCorrelatedPairs && useDiscreteStrongPairLagPoints);
-    if(_stronglyCorrelatedPairsPointCountField)
-        _stronglyCorrelatedPairsPointCountField->setVisible(computeStronglyCorrelatedPairs && useDiscreteStrongPairLagPoints);
+    if(_stronglyCorrelatedPairsLagPointsLabel)
+        _stronglyCorrelatedPairsLagPointsLabel->setVisible(computeStronglyCorrelatedPairs && useDiscreteStrongPairLagPoints);
+    if(_stronglyCorrelatedPairsLagPointsField)
+        _stronglyCorrelatedPairsLagPointsField->setVisible(computeStronglyCorrelatedPairs && useDiscreteStrongPairLagPoints);
     if(_stronglyCorrelatedPairsResampleCountLabel)
         _stronglyCorrelatedPairsResampleCountLabel->setVisible(computeStronglyCorrelatedPairs && useDiscreteStrongPairLagPoints);
     if(_stronglyCorrelatedPairsResampleCountField)
