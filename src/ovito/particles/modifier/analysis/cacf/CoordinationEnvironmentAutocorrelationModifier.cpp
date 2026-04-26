@@ -391,6 +391,8 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
     if(indicatorContext.mode == CoordinationEnvironmentAutocorrelationModifier::Overall)
         return true;
 
+    // The interchain indicator is event-based: it should only activate when the shell
+    // actually changes and that change satisfies the requested hopping criterion.
     if(initialShell.size() == laggedShell.size() && std::equal(initialShell.begin(), initialShell.end(), laggedShell.begin()))
         return false;
 
