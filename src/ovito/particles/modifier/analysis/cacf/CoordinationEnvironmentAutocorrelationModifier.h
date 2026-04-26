@@ -41,6 +41,15 @@ class OVITO_PARTICLES_EXPORT CoordinationEnvironmentAutocorrelationModifier : pu
 
 public:
 
+    enum IndicatorMode
+    {
+        NoIndicator = 0,
+        OverallShellChange = 1,
+        InterchainDifferentChain = 2,
+        InterchainSameChainBondPath = 3
+    };
+    Q_ENUM(IndicatorMode);
+
     static QString correlationTableId() { return QStringLiteral("coordination-environment-autocorrelation"); }
 
     void initializeObject(ObjectInitializationFlags flags);
@@ -63,6 +72,8 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, centralTypes, setCentralTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, shellTypes, setShellTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(IndicatorMode{NoIndicator}, indicatorMode, setIndicatorMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{3}, sameChainBondPathDistance, setSameChainBondPathDistance, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);

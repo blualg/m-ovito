@@ -24,12 +24,12 @@
 #include <ovito/particles/modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifier.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
-#include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <QPointer>
@@ -88,6 +88,29 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
     FloatParameterUI* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::cutoff));
     shellLayout->addWidget(cutoffUI->label(), 2, 0);
     shellLayout->addLayout(cutoffUI->createFieldLayout(), 2, 1);
+
+    VariantComboBoxParameterUI* indicatorModeUI = createParamUI<VariantComboBoxParameterUI>(
+        PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::indicatorMode));
+    indicatorModeUI->comboBox()->addItem(tr("None (standard CACF)"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::NoIndicator));
+    indicatorModeUI->comboBox()->addItem(tr("Overall shell change"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::OverallShellChange));
+    indicatorModeUI->comboBox()->addItem(tr("Interchain hop (different chain)"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain));
+    indicatorModeUI->comboBox()->addItem(tr("Interchain hop (same chain bond path)"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath));
+    shellLayout->addWidget(new QLabel(tr("Indicator function"), shellBox), 3, 0);
+    shellLayout->addWidget(indicatorModeUI->comboBox(), 3, 1);
+
+    _sameChainDistanceWidget = new QWidget(shellBox);
+    auto* sameChainLayout = new QGridLayout(_sameChainDistanceWidget);
+    sameChainLayout->setContentsMargins(0, 0, 0, 0);
+    sameChainLayout->setColumnStretch(1, 1);
+    IntegerParameterUI* sameChainDistanceUI = createParamUI<IntegerParameterUI>(
+        PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::sameChainBondPathDistance));
+    sameChainLayout->addWidget(sameChainDistanceUI->label(), 0, 0);
+    sameChainLayout->addLayout(sameChainDistanceUI->createFieldLayout(), 0, 1);
+    shellLayout->addWidget(_sameChainDistanceWidget, 4, 0, 1, 2);
 
     layout->addWidget(shellBox);
 
@@ -148,7 +171,12 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationEnvironmentAutocorrelationModifierEditor::updatePlot);
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary);
+    connect(this, &PropertiesEditor::contentsChanged, this, &CoordinationEnvironmentAutocorrelationModifierEditor::updateIndicatorControls);
+    connect(this, &PropertiesEditor::contentsReplaced, this, &CoordinationEnvironmentAutocorrelationModifierEditor::updateIndicatorControls);
+    connect(indicatorModeUI->comboBox(), qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &CoordinationEnvironmentAutocorrelationModifierEditor::updateIndicatorControls);
 
+    updateIndicatorControls();
     updatePlot();
     updateSummary();
 }
@@ -243,6 +271,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
         const QString centralTypes = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.central_types")).toString();
         const QString shellTypes = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.shell_types")).toString();
         const QVariant cutoff = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.cutoff"));
+        const QString indicatorMode = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.indicator_mode")).toString();
+        const QVariant sameChainDistance = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.same_chain_bond_path_distance"));
         const QVariant frameCount = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.sampled_frame_count"));
         const QVariant centralCount = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.central_atom_count"));
         const QVariant averageShellSize = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.average_shell_size"));
@@ -254,6 +284,10 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
             lines << tr("Central atom type(s): %1\nShell atom type(s): %2").arg(centralTypes, shellTypes);
         if(cutoff.isValid())
             lines << tr("Distance cutoff: %1").arg(cutoff.toDouble(), 0, 'g', 6);
+        if(!indicatorMode.isEmpty())
+            lines << tr("Indicator function: %1").arg(indicatorMode);
+        if(sameChainDistance.isValid())
+            lines << tr("Minimum bond-path distance N: %1").arg(sameChainDistance.toInt());
         if(frameCount.isValid())
             lines << tr("Sampled frames: %1").arg(frameCount.toInt());
         if(centralCount.isValid())
@@ -268,6 +302,30 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
         _summaryLabel->setText(lines.join(QStringLiteral("\n\n")));
         refreshSummaryGeometry();
     });
+}
+
+/******************************************************************************
+* Shows or hides the same-chain distance control for the chosen indicator mode.
+******************************************************************************/
+void CoordinationEnvironmentAutocorrelationModifierEditor::updateIndicatorControls()
+{
+    if(!_sameChainDistanceWidget)
+        return;
+
+    const CoordinationEnvironmentAutocorrelationModifier* mod = modifier();
+    const bool visible = mod && mod->indicatorMode() == CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath;
+    if(_sameChainDistanceWidget->isVisible() == visible)
+        return;
+
+    _sameChainDistanceWidget->setVisible(visible);
+    _sameChainDistanceWidget->updateGeometry();
+    for(QWidget* widget = _sameChainDistanceWidget->parentWidget(); widget; widget = widget->parentWidget()) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 /******************************************************************************
