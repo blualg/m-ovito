@@ -391,10 +391,11 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
     if(indicatorContext.mode == CoordinationEnvironmentAutocorrelationModifier::Overall)
         return true;
 
-    // The interchain indicator is event-based: it should only activate when the shell
-    // actually changes and that change satisfies the requested hopping criterion.
+    // For the paper-style interchain CACF, the indicator acts as a persistence gate:
+    // it stays 1 while the shell is unchanged or has only undergone local/nonqualifying
+    // changes, and drops to 0 once a qualifying interchain-type decorrelation event occurs.
     if(initialShell.size() == laggedShell.size() && std::equal(initialShell.begin(), initialShell.end(), laggedShell.begin()))
-        return false;
+        return true;
 
     std::vector<IdentifierIntType> leavingMembers;
     std::vector<IdentifierIntType> enteringMembers;
@@ -402,13 +403,13 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
 
     switch(indicatorContext.mode) {
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain:
-        return differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
-            || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom);
+        return !(differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
+                 || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom));
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath:
-        return differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
-            || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom)
-            || sameChainBondPathIndicatorMatches(leavingMembers, initialShell, indicatorContext)
-            || sameChainBondPathIndicatorMatches(enteringMembers, laggedShell, indicatorContext);
+        return !(differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
+                 || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom)
+                 || sameChainBondPathIndicatorMatches(leavingMembers, initialShell, indicatorContext)
+                 || sameChainBondPathIndicatorMatches(enteringMembers, laggedShell, indicatorContext));
     case CoordinationEnvironmentAutocorrelationModifier::Overall:
         break;
     }
