@@ -76,12 +76,12 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
     shellLayout->setVerticalSpacing(4);
 
     StringParameterUI* centralTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::centralTypes));
-    centralTypesUI->lineEdit()->setPlaceholderText(tr("e.g. Li"));
+    centralTypesUI->lineEdit()->setPlaceholderText(tr("e.g. Li,Na or 1,2"));
     shellLayout->addWidget(new QLabel(tr("Central atom type(s)"), shellBox), 0, 0);
     shellLayout->addWidget(centralTypesUI->textBox(), 0, 1);
 
     StringParameterUI* shellTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::shellTypes));
-    shellTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O"));
+    shellTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
     shellLayout->addWidget(new QLabel(tr("Shell atom type(s)"), shellBox), 1, 0);
     shellLayout->addWidget(shellTypesUI->textBox(), 1, 1);
 
