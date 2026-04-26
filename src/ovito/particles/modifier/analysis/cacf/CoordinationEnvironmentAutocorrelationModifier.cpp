@@ -63,7 +63,7 @@ struct CoordinationAccumulator {
 
 struct IndicatorContext {
     CoordinationEnvironmentAutocorrelationModifier::IndicatorMode mode =
-        CoordinationEnvironmentAutocorrelationModifier::OverallShellChange;
+        CoordinationEnvironmentAutocorrelationModifier::Overall;
     int sameChainBondPathDistance = 3;
     std::unordered_map<IdentifierIntType, IdentifierIntType> moleculeByAtom;
     std::unordered_map<IdentifierIntType, std::vector<IdentifierIntType>> bondNeighborsByAtom;
@@ -209,8 +209,8 @@ DataTable* createLineTable(DataCollection* collection,
 QString indicatorModeLabel(CoordinationEnvironmentAutocorrelationModifier::IndicatorMode mode)
 {
     switch(mode) {
-    case CoordinationEnvironmentAutocorrelationModifier::OverallShellChange:
-        return CoordinationEnvironmentAutocorrelationModifier::tr("Overall shell change");
+    case CoordinationEnvironmentAutocorrelationModifier::Overall:
+        return CoordinationEnvironmentAutocorrelationModifier::tr("Overall");
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain:
         return CoordinationEnvironmentAutocorrelationModifier::tr("Interchain hopping (different chain)");
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath:
@@ -388,11 +388,11 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
                       const std::vector<IdentifierIntType>& laggedShell,
                       const IndicatorContext& indicatorContext)
 {
+    if(indicatorContext.mode == CoordinationEnvironmentAutocorrelationModifier::Overall)
+        return true;
+
     if(initialShell.size() == laggedShell.size() && std::equal(initialShell.begin(), initialShell.end(), laggedShell.begin()))
         return false;
-
-    if(indicatorContext.mode == CoordinationEnvironmentAutocorrelationModifier::OverallShellChange)
-        return true;
 
     std::vector<IdentifierIntType> leavingMembers;
     std::vector<IdentifierIntType> enteringMembers;
@@ -407,7 +407,7 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
             || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom)
             || sameChainBondPathIndicatorMatches(leavingMembers, initialShell, indicatorContext)
             || sameChainBondPathIndicatorMatches(enteringMembers, laggedShell, indicatorContext);
-    case CoordinationEnvironmentAutocorrelationModifier::OverallShellChange:
+    case CoordinationEnvironmentAutocorrelationModifier::Overall:
         break;
     }
     return false;

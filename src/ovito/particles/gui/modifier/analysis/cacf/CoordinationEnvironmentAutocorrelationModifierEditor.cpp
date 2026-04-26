@@ -91,8 +91,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
 
     VariantComboBoxParameterUI* indicatorModeUI = createParamUI<VariantComboBoxParameterUI>(
         PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::indicatorMode));
-    indicatorModeUI->comboBox()->addItem(tr("Overall shell change"),
-                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::OverallShellChange));
+    indicatorModeUI->comboBox()->addItem(tr("Overall"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::Overall));
     indicatorModeUI->comboBox()->addItem(tr("Interchain hopping (different chain)"),
                                          QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain));
     indicatorModeUI->comboBox()->addItem(tr("Interchain hopping (different chain+same chain bond path)"),
