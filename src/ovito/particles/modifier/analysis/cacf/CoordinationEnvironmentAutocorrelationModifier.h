@@ -43,10 +43,9 @@ public:
 
     enum IndicatorMode
     {
-        NoIndicator = 0,
-        OverallShellChange = 1,
-        InterchainDifferentChain = 2,
-        InterchainSameChainBondPath = 3
+        OverallShellChange = 0,
+        InterchainDifferentChain = 1,
+        InterchainDifferentChainOrSameChainBondPath = 2
     };
     Q_ENUM(IndicatorMode);
 
@@ -72,7 +71,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, centralTypes, setCentralTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, shellTypes, setShellTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(IndicatorMode{NoIndicator}, indicatorMode, setIndicatorMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(IndicatorMode{OverallShellChange}, indicatorMode, setIndicatorMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{3}, sameChainBondPathDistance, setSameChainBondPathDistance, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);

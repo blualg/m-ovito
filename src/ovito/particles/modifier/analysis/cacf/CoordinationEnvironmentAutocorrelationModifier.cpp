@@ -63,7 +63,7 @@ struct CoordinationAccumulator {
 
 struct IndicatorContext {
     CoordinationEnvironmentAutocorrelationModifier::IndicatorMode mode =
-        CoordinationEnvironmentAutocorrelationModifier::NoIndicator;
+        CoordinationEnvironmentAutocorrelationModifier::OverallShellChange;
     int sameChainBondPathDistance = 3;
     std::unordered_map<IdentifierIntType, IdentifierIntType> moleculeByAtom;
     std::unordered_map<IdentifierIntType, std::vector<IdentifierIntType>> bondNeighborsByAtom;
@@ -209,14 +209,12 @@ DataTable* createLineTable(DataCollection* collection,
 QString indicatorModeLabel(CoordinationEnvironmentAutocorrelationModifier::IndicatorMode mode)
 {
     switch(mode) {
-    case CoordinationEnvironmentAutocorrelationModifier::NoIndicator:
-        return CoordinationEnvironmentAutocorrelationModifier::tr("None (standard CACF)");
     case CoordinationEnvironmentAutocorrelationModifier::OverallShellChange:
         return CoordinationEnvironmentAutocorrelationModifier::tr("Overall shell change");
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain:
-        return CoordinationEnvironmentAutocorrelationModifier::tr("Interchain hop (different chain)");
-    case CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath:
-        return CoordinationEnvironmentAutocorrelationModifier::tr("Interchain hop (same chain bond path)");
+        return CoordinationEnvironmentAutocorrelationModifier::tr("Interchain hopping (different chain)");
+    case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath:
+        return CoordinationEnvironmentAutocorrelationModifier::tr("Interchain hopping (different chain+same chain bond path)");
     }
     OVITO_ASSERT(false);
     return {};
@@ -390,9 +388,6 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
                       const std::vector<IdentifierIntType>& laggedShell,
                       const IndicatorContext& indicatorContext)
 {
-    if(indicatorContext.mode == CoordinationEnvironmentAutocorrelationModifier::NoIndicator)
-        return true;
-
     if(initialShell.size() == laggedShell.size() && std::equal(initialShell.begin(), initialShell.end(), laggedShell.begin()))
         return false;
 
@@ -407,10 +402,11 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
     case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain:
         return differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
             || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom);
-    case CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath:
-        return sameChainBondPathIndicatorMatches(leavingMembers, initialShell, indicatorContext)
+    case CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath:
+        return differentChainIndicatorMatches(leavingMembers, initialShell, indicatorContext.moleculeByAtom)
+            || differentChainIndicatorMatches(enteringMembers, laggedShell, indicatorContext.moleculeByAtom)
+            || sameChainBondPathIndicatorMatches(leavingMembers, initialShell, indicatorContext)
             || sameChainBondPathIndicatorMatches(enteringMembers, laggedShell, indicatorContext);
-    case CoordinationEnvironmentAutocorrelationModifier::NoIndicator:
     case CoordinationEnvironmentAutocorrelationModifier::OverallShellChange:
         break;
     }
@@ -715,10 +711,10 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
     IndicatorContext indicatorContext;
     indicatorContext.mode = selectedIndicatorMode;
     indicatorContext.sameChainBondPathDistance = sameChainBondPathDistance();
-    if(selectedIndicatorMode == InterchainDifferentChain || selectedIndicatorMode == InterchainSameChainBondPath) {
+    if(selectedIndicatorMode == InterchainDifferentChain || selectedIndicatorMode == InterchainDifferentChainOrSameChainBondPath) {
         BufferReadAccess<IdentifierIntType> identifiers = particles->getProperty(Particles::IdentifierProperty);
         indicatorContext.moleculeByAtom = buildMoleculeMap(particles, identifiers);
-        if(selectedIndicatorMode == InterchainSameChainBondPath)
+        if(selectedIndicatorMode == InterchainDifferentChainOrSameChainBondPath)
             indicatorContext.bondNeighborsByAtom = buildBondGraph(particles, identifiers);
     }
 
@@ -804,7 +800,7 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
             computationResult.results->setAttribute(QStringLiteral("CACF.shell_types"), self->shellTypes(), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.cutoff"), static_cast<double>(self->cutoff()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.indicator_mode"), indicatorModeLabel(self->indicatorMode()), createdByNode);
-            if(self->indicatorMode() == InterchainSameChainBondPath)
+            if(self->indicatorMode() == InterchainDifferentChainOrSameChainBondPath)
                 computationResult.results->setAttribute(QStringLiteral("CACF.same_chain_bond_path_distance"), static_cast<double>(self->sameChainBondPathDistance()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.central_atom_count"), averageCentralAtoms, createdByNode);

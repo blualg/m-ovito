@@ -91,14 +91,12 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
 
     VariantComboBoxParameterUI* indicatorModeUI = createParamUI<VariantComboBoxParameterUI>(
         PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::indicatorMode));
-    indicatorModeUI->comboBox()->addItem(tr("None (standard CACF)"),
-                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::NoIndicator));
     indicatorModeUI->comboBox()->addItem(tr("Overall shell change"),
                                          QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::OverallShellChange));
-    indicatorModeUI->comboBox()->addItem(tr("Interchain hop (different chain)"),
+    indicatorModeUI->comboBox()->addItem(tr("Interchain hopping (different chain)"),
                                          QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain));
-    indicatorModeUI->comboBox()->addItem(tr("Interchain hop (same chain bond path)"),
-                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath));
+    indicatorModeUI->comboBox()->addItem(tr("Interchain hopping (different chain+same chain bond path)"),
+                                         QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath));
     shellLayout->addWidget(new QLabel(tr("Indicator function"), shellBox), 3, 0);
     shellLayout->addWidget(indicatorModeUI->comboBox(), 3, 1);
 
@@ -313,7 +311,7 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateIndicatorContro
         return;
 
     const CoordinationEnvironmentAutocorrelationModifier* mod = modifier();
-    const bool visible = mod && mod->indicatorMode() == CoordinationEnvironmentAutocorrelationModifier::InterchainSameChainBondPath;
+    const bool visible = mod && mod->indicatorMode() == CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath;
     if(_sameChainDistanceWidget->isVisible() == visible)
         return;
 
