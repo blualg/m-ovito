@@ -41,8 +41,16 @@ class OVITO_PARTICLES_EXPORT HydrogenBondAnalysisModifier : public Modifier
 
 public:
 
+    enum DefinitionMode
+    {
+        FixedGeometry = 0,
+        PMFDerived = 1
+    };
+    Q_ENUM(DefinitionMode);
+
     static QString countTableId() { return QStringLiteral("hydrogen-bond-counts"); }
     static QString observationTableId() { return QStringLiteral("hydrogen-bond-observations"); }
+    static QString pmfTableId() { return QStringLiteral("hydrogen-bond-pmf"); }
 
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -65,8 +73,12 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, hydrogenTypes, setHydrogenTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, acceptorTypes, setAcceptorTypes, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, donorHydrogenCutoff, setDonorHydrogenCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(DefinitionMode{FixedGeometry}, definitionMode, setDefinitionMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.0}, donorAcceptorCutoff, setDonorAcceptorCutoff, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{150}, angleCutoff, setAngleCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{5.0}, pmfDistanceMaximum, setPmfDistanceMaximum, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{80}, pmfDistanceBins, setPmfDistanceBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{72}, pmfAngleBins, setPmfAngleBins, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);

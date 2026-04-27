@@ -34,6 +34,7 @@
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
+#include "HydrogenBondAnalysisModifier.h"
 #include "HydrogenBondKineticsModifier.h"
 
 #include <QHash>
@@ -211,6 +212,16 @@ std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeP
     return typeIds;
 }
 
+QString canonicalizeTypeList(QString typeListText)
+{
+    QStringList tokens = typeListText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
+    for(QString& token : tokens)
+        token = token.trimmed();
+    tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const QString& token) { return token.isEmpty(); }), tokens.end());
+    std::sort(tokens.begin(), tokens.end());
+    return tokens.join(QStringLiteral(","));
+}
+
 PropertyPtr createTypeSelectionProperty(const BufferReadAccess<int>& particleTypes, const std::unordered_set<int>& allowedTypes)
 {
     PropertyPtr selectionProperty =
@@ -256,6 +267,88 @@ QString definitionModeLabel(HydrogenBondKineticsModifier::DefinitionMode mode)
     }
     OVITO_ASSERT(false);
     return {};
+}
+
+PmfDefinition loadUpstreamPmfDefinition(const PipelineFlowState& state,
+                                        const QString& donorTypes,
+                                        const QString& hydrogenTypes,
+                                        const QString& acceptorTypes,
+                                        FloatType donorHydrogenCutoff)
+{
+    const DataTable* pmfTable = state.data()
+        ? static_object_cast<DataTable>(state.data()->getLeafObject(DataTable::OOClass(), HydrogenBondAnalysisModifier::pmfTableId()))
+        : nullptr;
+    if(!pmfTable)
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "PMF-derived hydrogen-bond kinetics requires an upstream 'Hydrogen bond analysis' modifier in PMF-derived mode. "
+            "Run that analysis first so the PMF basin and vicinity boundary are available in the pipeline state."));
+
+    const QVariant distanceMaximumVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
+    const QVariant distanceBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_distance_bins"));
+    const QVariant angleBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_angle_bins"));
+    const QVariant boundaryVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
+    const QVariant vicinityVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_vicinity_cutoff"));
+    const QVariant basinBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_basin_bin_count"));
+    const QVariant populatedBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_populated_bin_count"));
+
+    if(!distanceMaximumVariant.isValid() || !distanceBinsVariant.isValid() || !angleBinsVariant.isValid() || !vicinityVariant.isValid())
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "The upstream 'Hydrogen bond analysis' result does not provide the PMF-derived basin metadata required by hydrogen-bond kinetics."));
+
+    const QString upstreamDonors = canonicalizeTypeList(state.getAttributeValue(QStringLiteral("HydrogenBonds.donor_types")).toString());
+    const QString upstreamHydrogens = canonicalizeTypeList(state.getAttributeValue(QStringLiteral("HydrogenBonds.hydrogen_types")).toString());
+    const QString upstreamAcceptors = canonicalizeTypeList(state.getAttributeValue(QStringLiteral("HydrogenBonds.acceptor_types")).toString());
+    if(canonicalizeTypeList(donorTypes) != upstreamDonors
+       || canonicalizeTypeList(hydrogenTypes) != upstreamHydrogens
+       || canonicalizeTypeList(acceptorTypes) != upstreamAcceptors) {
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "The particle types configured for 'Hydrogen bond kinetics' do not match the upstream PMF-derived 'Hydrogen bond analysis'. "
+            "Use the same donor, hydrogen, and acceptor atom types in both modifiers."));
+    }
+
+    const QVariant upstreamDonorHydrogenCutoff = state.getAttributeValue(QStringLiteral("HydrogenBonds.donor_hydrogen_cutoff"));
+    if(upstreamDonorHydrogenCutoff.isValid()
+       && std::abs(upstreamDonorHydrogenCutoff.toDouble() - static_cast<double>(donorHydrogenCutoff)) > 1e-6) {
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "The donor-hydrogen cutoff in 'Hydrogen bond kinetics' does not match the upstream PMF-derived 'Hydrogen bond analysis'. "
+            "Use the same donor-hydrogen cutoff in both modifiers."));
+    }
+
+    const Property* countProperty = pmfTable->getProperty(QStringLiteral("Count"));
+    const Property* freeEnergyProperty = pmfTable->getProperty(QStringLiteral("Free energy"));
+    const Property* basinProperty = pmfTable->getProperty(QStringLiteral("In HB basin"));
+    if(!countProperty || !freeEnergyProperty || !basinProperty)
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "The upstream hydrogen-bond PMF table is missing one or more required columns ('Count', 'Free energy', 'In HB basin')."));
+
+    PmfDefinition pmf;
+    pmf.distanceMaximum = distanceMaximumVariant.toDouble();
+    pmf.distanceBins = std::max(1, distanceBinsVariant.toInt());
+    pmf.angleBins = std::max(1, angleBinsVariant.toInt());
+    pmf.boundaryFreeEnergy = boundaryVariant.toDouble();
+    pmf.vicinityCutoff = vicinityVariant.toDouble();
+    pmf.basinBinCount = static_cast<size_t>(std::max(0LL, basinBinsVariant.toLongLong()));
+    pmf.populatedBinCount = static_cast<size_t>(std::max(0LL, populatedBinsVariant.toLongLong()));
+
+    const size_t expectedSize = static_cast<size_t>(pmf.distanceBins) * static_cast<size_t>(pmf.angleBins);
+    if(pmfTable->elementCount() != expectedSize)
+        throw Exception(HydrogenBondKineticsModifier::tr(
+            "The upstream hydrogen-bond PMF table size does not match its reported PMF bin counts."));
+
+    BufferReadAccess<int64_t> counts(countProperty);
+    BufferReadAccess<FloatType> freeEnergy(freeEnergyProperty);
+    BufferReadAccess<int64_t> basin(basinProperty);
+
+    pmf.counts.resize(expectedSize);
+    pmf.freeEnergy.resize(expectedSize);
+    pmf.inBasin.resize(expectedSize);
+    for(size_t i = 0; i < expectedSize; ++i) {
+        pmf.counts[i] = counts[i];
+        pmf.freeEnergy[i] = static_cast<double>(freeEnergy[i]);
+        pmf.inBasin[i] = basin[i] != 0 ? 1 : 0;
+    }
+
+    return pmf;
 }
 
 QString donorHydrogenPairingModeLabel(bool useBondTopology)
@@ -959,21 +1052,24 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
     const std::vector<int> acceptorTypeIds = parseTypeIds(acceptorTypes(), particleTypeProperty, tr("acceptor atom type"));
     if(donorHydrogenCutoff() <= 0)
         throw Exception(tr("The donor-hydrogen cutoff must be positive."));
-    if(donorAcceptorCutoff() <= 0)
-        throw Exception(tr("The HB donor-acceptor cutoff must be positive."));
-    if(vicinityCutoff() <= 0)
-        throw Exception(tr("The vicinity donor-acceptor cutoff must be positive."));
-    if(angleCutoff() <= 0 || angleCutoff() > 180)
-        throw Exception(tr("The D-H-A minimum angle must be in the range (0, 180]."));
-    if(pmfDistanceMaximum() <= 0)
-        throw Exception(tr("The PMF distance maximum must be positive."));
+    if(definitionMode() == FixedGeometry) {
+        if(donorAcceptorCutoff() <= 0)
+            throw Exception(tr("The HB donor-acceptor cutoff must be positive."));
+        if(vicinityCutoff() <= 0)
+            throw Exception(tr("The vicinity donor-acceptor cutoff must be positive."));
+        if(angleCutoff() <= 0 || angleCutoff() > 180)
+            throw Exception(tr("The D-H-A minimum angle must be in the range (0, 180]."));
+    }
 
     const std::unordered_set<int> donorTypeSet(donorTypeIds.begin(), donorTypeIds.end());
     const std::unordered_set<int> hydrogenTypeSet(hydrogenTypeIds.begin(), hydrogenTypeIds.end());
     const std::unordered_set<int> acceptorTypeSet(acceptorTypeIds.begin(), acceptorTypeIds.end());
     const bool useBondTopology = particles->bonds() && particles->bonds()->getProperty(Bonds::TopologyProperty);
+    const PmfDefinition upstreamPmf = definitionMode() == PMFDerived
+        ? loadUpstreamPmfDefinition(state, donorTypes(), hydrogenTypes(), acceptorTypes(), donorHydrogenCutoff())
+        : PmfDefinition{};
     const double donorAcceptorSearchCutoff = definitionMode() == PMFDerived
-        ? static_cast<double>(pmfDistanceMaximum())
+        ? upstreamPmf.distanceMaximum
         : std::max(static_cast<double>(donorAcceptorCutoff()), static_cast<double>(vicinityCutoff()));
 
     const std::vector<int> frames = sampledFrames(request.modificationNode());
@@ -1027,7 +1123,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
             },
             std::move(accumulator))
         .then(DeferredObjectExecutor(this),
-              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology, upstreamPmf](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
         OORef<HydrogenBondKineticsModifier> self(this);
         const int completedRunRequestId = runRequestId();
 
@@ -1037,6 +1133,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                             frames,
                             accumulator = std::move(accumulator),
                             useBondTopology,
+                            upstreamPmf,
                             completedRunRequestId,
                             cacheGenerationId]() mutable {
             HydrogenBondKineticsComputationResult computationResult{std::move(state)};
@@ -1069,15 +1166,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                     "No donor-hydrogen-acceptor triplets were found within the chosen donor-acceptor search range."));
 
             const double fixedMaximumTheta = 180.0 - static_cast<double>(self->angleCutoff());
-            PmfDefinition pmf;
-            const PmfDefinition* pmfPtr = nullptr;
-            if(self->definitionMode() == PMFDerived) {
-                pmf = buildPmfDefinition(accumulator,
-                                         static_cast<double>(self->pmfDistanceMaximum()),
-                                         std::max(4, self->pmfDistanceBins()),
-                                         std::max(4, self->pmfAngleBins()));
-                pmfPtr = &pmf;
-            }
+            const PmfDefinition* pmfPtr = self->definitionMode() == PMFDerived ? &upstreamPmf : nullptr;
 
             std::vector<FrameState> states;
             states.reserve(accumulator.snapshots.size());
@@ -1110,9 +1199,6 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                                       HydrogenBondKineticsModifier::tr("Conditional probability"),
                                       createdByNode);
 
-            if(self->definitionMode() == PMFDerived)
-                createPmfTable(computationResult.results, HydrogenBondKineticsModifier::pmfTableId(), pmf, createdByNode);
-
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.donor_types"), self->donorTypes(), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.hydrogen_types"), self->hydrogenTypes(), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.acceptor_types"), self->acceptorTypes(), createdByNode);
@@ -1134,13 +1220,13 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.vicinity_cutoff"), static_cast<double>(self->vicinityCutoff()), createdByNode);
             }
             else {
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_maximum"), static_cast<double>(self->pmfDistanceMaximum()), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_bins"), static_cast<double>(self->pmfDistanceBins()), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_angle_bins"), static_cast<double>(self->pmfAngleBins()), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_boundary_free_energy"), pmf.boundaryFreeEnergy, createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_vicinity_cutoff"), pmf.vicinityCutoff, createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_basin_bin_count"), static_cast<double>(pmf.basinBinCount), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_populated_bin_count"), static_cast<double>(pmf.populatedBinCount), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_maximum"), upstreamPmf.distanceMaximum, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_bins"), static_cast<double>(upstreamPmf.distanceBins), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_angle_bins"), static_cast<double>(upstreamPmf.angleBins), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_boundary_free_energy"), upstreamPmf.boundaryFreeEnergy, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_vicinity_cutoff"), upstreamPmf.vicinityCutoff, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_basin_bin_count"), static_cast<double>(upstreamPmf.basinBinCount), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_populated_bin_count"), static_cast<double>(upstreamPmf.populatedBinCount), createdByNode);
             }
 
             QStringList warnings;
@@ -1155,7 +1241,8 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
             }
             if(self->definitionMode() == PMFDerived) {
                 warnings << HydrogenBondKineticsModifier::tr(
-                    "The PMF-derived mode estimates a free-energy-like surface from the observed triplet geometry distribution and uses the largest connected-basin area jump to define the HB basin boundary automatically.");
+                    "The PMF-derived mode uses the upstream 'Hydrogen bond analysis' PMF basin and derived vicinity boundary. "
+                    "Re-run that modifier if you change the PMF resolution or particle-type definitions.");
             }
             computationResult.warningText = warnings.join(QLatin1Char('\n'));
             computationResult.completedRunRequestId = completedRunRequestId;

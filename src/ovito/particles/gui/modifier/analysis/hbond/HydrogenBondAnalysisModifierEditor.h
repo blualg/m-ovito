@@ -44,6 +44,7 @@ private Q_SLOTS:
     void runAnalysis();
     void updatePlot();
     void updateSummary();
+    void updateDefinitionControls();
 
 private:
 
@@ -53,6 +54,8 @@ private:
     QPointer<QPushButton> _runButton;
     QPointer<DataTablePlotWidget> _plot;
     QPointer<QLabel> _summaryLabel;
+    QPointer<QWidget> _fixedCriteriaWidget;
+    QPointer<QWidget> _pmfCriteriaWidget;
 };
 
 }  // namespace Ovito

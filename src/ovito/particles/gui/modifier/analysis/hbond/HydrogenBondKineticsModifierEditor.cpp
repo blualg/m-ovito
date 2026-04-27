@@ -99,7 +99,7 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     VariantComboBoxParameterUI* definitionModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::definitionMode));
     definitionModeUI->comboBox()->addItem(tr("Fixed geometry"),
                                           QVariant::fromValue((int)HydrogenBondKineticsModifier::FixedGeometry));
-    definitionModeUI->comboBox()->addItem(tr("PMF-derived"),
+    definitionModeUI->comboBox()->addItem(tr("PMF-derived (from Hydrogen bond analysis)"),
                                           QVariant::fromValue((int)HydrogenBondKineticsModifier::PMFDerived));
     definitionLayout->addWidget(new QLabel(tr("Hydrogen-bond definition"), definitionBox), 0, 0);
     definitionLayout->addWidget(definitionModeUI->comboBox(), 0, 1);
@@ -130,17 +130,10 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     pmfLayout->setColumnStretch(1, 1);
     pmfLayout->setVerticalSpacing(4);
 
-    FloatParameterUI* pmfDistanceMaximumUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::pmfDistanceMaximum));
-    pmfLayout->addWidget(pmfDistanceMaximumUI->label(), 0, 0);
-    pmfLayout->addLayout(pmfDistanceMaximumUI->createFieldLayout(), 0, 1);
-
-    IntegerParameterUI* pmfDistanceBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::pmfDistanceBins));
-    pmfLayout->addWidget(pmfDistanceBinsUI->label(), 1, 0);
-    pmfLayout->addLayout(pmfDistanceBinsUI->createFieldLayout(), 1, 1);
-
-    IntegerParameterUI* pmfAngleBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::pmfAngleBins));
-    pmfLayout->addWidget(pmfAngleBinsUI->label(), 2, 0);
-    pmfLayout->addLayout(pmfAngleBinsUI->createFieldLayout(), 2, 1);
+    auto* pmfInfoLabel = new QLabel(tr(
+        "Uses the PMF basin and vicinity boundary from an upstream 'Hydrogen bond analysis' modifier in PMF-derived mode."), _pmfCriteriaWidget);
+    pmfInfoLabel->setWordWrap(true);
+    pmfLayout->addWidget(pmfInfoLabel, 0, 0, 1, 2);
 
     definitionLayout->addWidget(_pmfCriteriaWidget, 2, 0, 1, 2);
 

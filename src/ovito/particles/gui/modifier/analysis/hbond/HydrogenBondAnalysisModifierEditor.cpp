@@ -29,6 +29,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <QPointer>
@@ -101,13 +102,49 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     criteriaLayout->addWidget(donorHydrogenCutoffUI->label(), 0, 0);
     criteriaLayout->addLayout(donorHydrogenCutoffUI->createFieldLayout(), 0, 1);
 
+    VariantComboBoxParameterUI* definitionModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::definitionMode));
+    definitionModeUI->comboBox()->addItem(tr("Fixed geometry"),
+                                          QVariant::fromValue((int)HydrogenBondAnalysisModifier::FixedGeometry));
+    definitionModeUI->comboBox()->addItem(tr("PMF-derived"),
+                                          QVariant::fromValue((int)HydrogenBondAnalysisModifier::PMFDerived));
+    criteriaLayout->addWidget(new QLabel(tr("Hydrogen-bond definition"), criteriaBox), 1, 0);
+    criteriaLayout->addWidget(definitionModeUI->comboBox(), 1, 1);
+
+    _fixedCriteriaWidget = new QWidget(criteriaBox);
+    auto* fixedLayout = new QGridLayout(_fixedCriteriaWidget);
+    fixedLayout->setContentsMargins(0, 0, 0, 0);
+    fixedLayout->setColumnStretch(1, 1);
+    fixedLayout->setVerticalSpacing(4);
+
     FloatParameterUI* donorAcceptorCutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::donorAcceptorCutoff));
-    criteriaLayout->addWidget(donorAcceptorCutoffUI->label(), 1, 0);
-    criteriaLayout->addLayout(donorAcceptorCutoffUI->createFieldLayout(), 1, 1);
+    fixedLayout->addWidget(donorAcceptorCutoffUI->label(), 0, 0);
+    fixedLayout->addLayout(donorAcceptorCutoffUI->createFieldLayout(), 0, 1);
 
     FloatParameterUI* angleCutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::angleCutoff));
-    criteriaLayout->addWidget(angleCutoffUI->label(), 2, 0);
-    criteriaLayout->addLayout(angleCutoffUI->createFieldLayout(), 2, 1);
+    fixedLayout->addWidget(angleCutoffUI->label(), 1, 0);
+    fixedLayout->addLayout(angleCutoffUI->createFieldLayout(), 1, 1);
+
+    criteriaLayout->addWidget(_fixedCriteriaWidget, 2, 0, 1, 2);
+
+    _pmfCriteriaWidget = new QWidget(criteriaBox);
+    auto* pmfLayout = new QGridLayout(_pmfCriteriaWidget);
+    pmfLayout->setContentsMargins(0, 0, 0, 0);
+    pmfLayout->setColumnStretch(1, 1);
+    pmfLayout->setVerticalSpacing(4);
+
+    FloatParameterUI* pmfDistanceMaximumUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfDistanceMaximum));
+    pmfLayout->addWidget(pmfDistanceMaximumUI->label(), 0, 0);
+    pmfLayout->addLayout(pmfDistanceMaximumUI->createFieldLayout(), 0, 1);
+
+    IntegerParameterUI* pmfDistanceBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfDistanceBins));
+    pmfLayout->addWidget(pmfDistanceBinsUI->label(), 1, 0);
+    pmfLayout->addLayout(pmfDistanceBinsUI->createFieldLayout(), 1, 1);
+
+    IntegerParameterUI* pmfAngleBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfAngleBins));
+    pmfLayout->addWidget(pmfAngleBinsUI->label(), 2, 0);
+    pmfLayout->addLayout(pmfAngleBinsUI->createFieldLayout(), 2, 1);
+
+    criteriaLayout->addWidget(_pmfCriteriaWidget, 3, 0, 1, 2);
 
     layout->addWidget(criteriaBox);
 
@@ -164,7 +201,12 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HydrogenBondAnalysisModifierEditor::updatePlot);
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HydrogenBondAnalysisModifierEditor::updateSummary);
+    connect(this, &PropertiesEditor::contentsChanged, this, &HydrogenBondAnalysisModifierEditor::updateDefinitionControls);
+    connect(this, &PropertiesEditor::contentsReplaced, this, &HydrogenBondAnalysisModifierEditor::updateDefinitionControls);
+    connect(definitionModeUI->comboBox(), qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &HydrogenBondAnalysisModifierEditor::updateDefinitionControls);
 
+    updateDefinitionControls();
     updatePlot();
     updateSummary();
 }
@@ -259,10 +301,15 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         const QString donors = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_types")).toString();
         const QString hydrogens = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hydrogen_types")).toString();
         const QString acceptors = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.acceptor_types")).toString();
+        const QString definitionMode = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.definition_mode")).toString();
         const QString pairingMode = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_hydrogen_pairing_mode")).toString();
         const QVariant donorHydrogenCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_hydrogen_cutoff"));
-        const QVariant donorAcceptorCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_acceptor_cutoff"));
-        const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.angle_cutoff"));
+        const QVariant donorAcceptorCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_donor_acceptor_cutoff"));
+        const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_dha_minimum_angle"));
+        const QVariant pmfDistanceMaximum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
+        const QVariant pmfBoundary = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
+        const QVariant pmfVicinity = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_vicinity_cutoff"));
+        const QVariant pmfBasinBins = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_basin_bin_count"));
         const QVariant sampledFrameCount = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.sampled_frame_count"));
         const QVariant totalObservations = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.total_observations"));
         const QVariant averageCount = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.average_count"));
@@ -271,6 +318,8 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         QStringList lines;
         if(!donors.isEmpty() || !hydrogens.isEmpty() || !acceptors.isEmpty())
             lines << tr("Donor atom type(s): %1\nHydrogen atom type(s): %2\nAcceptor atom type(s): %3").arg(donors, hydrogens, acceptors);
+        if(!definitionMode.isEmpty())
+            lines << tr("Hydrogen-bond definition: %1").arg(definitionMode);
         if(!pairingMode.isEmpty())
             lines << tr("Donor-hydrogen pairing mode: %1").arg(pairingMode);
         if(donorHydrogenCutoff.isValid())
@@ -279,6 +328,14 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
             lines << tr("Donor-acceptor cutoff: %1").arg(donorAcceptorCutoff.toDouble(), 0, 'g', 6);
         if(angleCutoff.isValid())
             lines << tr("D-H-A angle cutoff: %1").arg(angleCutoff.toDouble(), 0, 'g', 6);
+        if(pmfDistanceMaximum.isValid())
+            lines << tr("PMF distance maximum: %1").arg(pmfDistanceMaximum.toDouble(), 0, 'g', 6);
+        if(pmfBoundary.isValid())
+            lines << tr("PMF basin boundary free energy: %1").arg(pmfBoundary.toDouble(), 0, 'f', 4);
+        if(pmfVicinity.isValid())
+            lines << tr("Derived vicinity cutoff: %1").arg(pmfVicinity.toDouble(), 0, 'f', 4);
+        if(pmfBasinBins.isValid())
+            lines << tr("PMF basin bins: %1").arg(pmfBasinBins.toLongLong());
         if(sampledFrameCount.isValid())
             lines << tr("Sampled frames: %1").arg(sampledFrameCount.toInt());
         if(totalObservations.isValid())
@@ -291,6 +348,34 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         _summaryLabel->setText(lines.join(QStringLiteral("\n\n")));
         refreshSummaryGeometry();
     });
+}
+
+void HydrogenBondAnalysisModifierEditor::updateDefinitionControls()
+{
+    const HydrogenBondAnalysisModifier* mod = modifier();
+    if(!mod)
+        return;
+
+    const bool fixedVisible = mod->definitionMode() == HydrogenBondAnalysisModifier::FixedGeometry;
+    const bool pmfVisible = mod->definitionMode() == HydrogenBondAnalysisModifier::PMFDerived;
+
+    if(_fixedCriteriaWidget)
+        _fixedCriteriaWidget->setVisible(fixedVisible);
+    if(_pmfCriteriaWidget)
+        _pmfCriteriaWidget->setVisible(pmfVisible);
+
+    for(QWidget* widget : { _fixedCriteriaWidget.data(), _pmfCriteriaWidget.data() }) {
+        if(!widget)
+            continue;
+        widget->updateGeometry();
+        for(QWidget* parent = widget->parentWidget(); parent; parent = parent->parentWidget()) {
+            if(QLayout* layout = parent->layout()) {
+                layout->invalidate();
+                layout->activate();
+            }
+            parent->updateGeometry();
+        }
+    }
 }
 
 /******************************************************************************
