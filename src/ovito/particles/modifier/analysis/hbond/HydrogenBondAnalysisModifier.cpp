@@ -762,7 +762,7 @@ SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, acceptorTypes, "Acceptor 
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorHydrogenCutoff, "Donor-hydrogen cutoff");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, definitionMode, "Hydrogen-bond definition");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorAcceptorCutoff, "HB donor-acceptor cutoff");
-SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, angleCutoff, "D-H-A minimum angle");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, angleCutoff, "HB theta maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceMaximum, "PMF distance maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceBins, "PMF distance bins");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfAngleBins, "PMF angle bins");
@@ -902,8 +902,8 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
     if(definitionMode() == FixedGeometry) {
         if(donorAcceptorCutoff() <= 0)
             throw Exception(tr("The HB donor-acceptor cutoff must be positive."));
-        if(angleCutoff() <= 0 || angleCutoff() > 180)
-            throw Exception(tr("The D-H-A minimum angle must be in the range (0, 180]."));
+        if(angleCutoff() < 0 || angleCutoff() > 180)
+            throw Exception(tr("The HB theta maximum must be in the range [0, 180]."));
     }
     else {
         if(pmfDistanceMaximum() <= 0)
@@ -1010,7 +1010,7 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 throw Exception(HydrogenBondAnalysisModifier::tr(
                     "No donor-hydrogen-acceptor triplets were found within the chosen donor-acceptor search range."));
 
-            const double fixedMaximumTheta = 180.0 - static_cast<double>(self->angleCutoff());
+            const double fixedMaximumTheta = static_cast<double>(self->angleCutoff());
             PmfDefinition pmf;
             const PmfDefinition* pmfPtr = nullptr;
             if(self->definitionMode() == PMFDerived) {
@@ -1078,7 +1078,7 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_hydrogen_pairing_mode"), donorHydrogenPairingModeLabel(useBondTopology), createdByNode);
             if(self->definitionMode() == FixedGeometry) {
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hb_donor_acceptor_cutoff"), static_cast<double>(self->donorAcceptorCutoff()), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hb_dha_minimum_angle"), static_cast<double>(self->angleCutoff()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hb_theta_maximum"), static_cast<double>(self->angleCutoff()), createdByNode);
             }
             else {
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_maximum"), static_cast<double>(self->pmfDistanceMaximum()), createdByNode);

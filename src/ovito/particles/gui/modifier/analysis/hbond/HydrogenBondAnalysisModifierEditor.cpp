@@ -629,7 +629,7 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         const QString pairingMode = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_hydrogen_pairing_mode")).toString();
         const QVariant donorHydrogenCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.donor_hydrogen_cutoff"));
         const QVariant donorAcceptorCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_donor_acceptor_cutoff"));
-        const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_dha_minimum_angle"));
+        const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_theta_maximum"));
         const QVariant pmfDistanceMaximum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
         const QVariant pmfBoundary = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
         const QVariant pmfVicinity = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_vicinity_cutoff"));
@@ -651,7 +651,7 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         if(donorAcceptorCutoff.isValid())
             lines << tr("Donor-acceptor cutoff: %1").arg(donorAcceptorCutoff.toDouble(), 0, 'g', 6);
         if(angleCutoff.isValid())
-            lines << tr("D-H-A angle cutoff: %1").arg(angleCutoff.toDouble(), 0, 'g', 6);
+            lines << tr("HB theta maximum: %1").arg(angleCutoff.toDouble(), 0, 'g', 6);
         if(pmfDistanceMaximum.isValid())
             lines << tr("PMF distance maximum: %1").arg(pmfDistanceMaximum.toDouble(), 0, 'g', 6);
         if(pmfBoundary.isValid())

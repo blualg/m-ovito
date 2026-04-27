@@ -307,6 +307,15 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
             lines << tr("Hydrogen-bond definition: %1").arg(definitionMode);
         if(!pairingMode.isEmpty())
             lines << tr("Donor-hydrogen pairing mode: %1").arg(pairingMode);
+        const QVariant donorAcceptorCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.hb_donor_acceptor_cutoff"));
+        const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.hb_theta_maximum"));
+        const QVariant vicinityCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.vicinity_cutoff"));
+        if(donorAcceptorCutoff.isValid())
+            lines << tr("Donor-acceptor cutoff: %1").arg(donorAcceptorCutoff.toDouble(), 0, 'g', 6);
+        if(angleCutoff.isValid())
+            lines << tr("HB theta maximum: %1").arg(angleCutoff.toDouble(), 0, 'g', 6);
+        if(vicinityCutoff.isValid())
+            lines << tr("Vicinity donor-acceptor cutoff: %1").arg(vicinityCutoff.toDouble(), 0, 'g', 6);
         if(sampledFrameCount.isValid())
             lines << tr("Sampled frames: %1").arg(sampledFrameCount.toInt());
         if(totalCandidateTriplets.isValid())

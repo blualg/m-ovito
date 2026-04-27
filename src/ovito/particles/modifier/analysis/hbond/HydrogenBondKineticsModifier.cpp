@@ -911,7 +911,7 @@ SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, acceptorTypes, "Acceptor 
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, donorHydrogenCutoff, "Donor-hydrogen cutoff");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, definitionMode, "Hydrogen-bond definition");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, donorAcceptorCutoff, "HB donor-acceptor cutoff");
-SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, angleCutoff, "D-H-A minimum angle");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, angleCutoff, "HB theta maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, vicinityCutoff, "Vicinity donor-acceptor cutoff");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, pmfDistanceMaximum, "PMF distance maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondKineticsModifier, pmfDistanceBins, "PMF distance bins");
@@ -1057,8 +1057,8 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
             throw Exception(tr("The HB donor-acceptor cutoff must be positive."));
         if(vicinityCutoff() <= 0)
             throw Exception(tr("The vicinity donor-acceptor cutoff must be positive."));
-        if(angleCutoff() <= 0 || angleCutoff() > 180)
-            throw Exception(tr("The D-H-A minimum angle must be in the range (0, 180]."));
+        if(angleCutoff() < 0 || angleCutoff() > 180)
+            throw Exception(tr("The HB theta maximum must be in the range [0, 180]."));
     }
 
     const std::unordered_set<int> donorTypeSet(donorTypeIds.begin(), donorTypeIds.end());
@@ -1165,7 +1165,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                 throw Exception(HydrogenBondKineticsModifier::tr(
                     "No donor-hydrogen-acceptor triplets were found within the chosen donor-acceptor search range."));
 
-            const double fixedMaximumTheta = 180.0 - static_cast<double>(self->angleCutoff());
+            const double fixedMaximumTheta = static_cast<double>(self->angleCutoff());
             const PmfDefinition* pmfPtr = self->definitionMode() == PMFDerived ? &upstreamPmf : nullptr;
 
             std::vector<FrameState> states;
@@ -1216,7 +1216,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.initial_triplet_samples"), curves.sampleCounts.front(), createdByNode);
             if(self->definitionMode() == FixedGeometry) {
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.hb_donor_acceptor_cutoff"), static_cast<double>(self->donorAcceptorCutoff()), createdByNode);
-                computationResult.results->setAttribute(QStringLiteral("HBKinetics.hb_dha_minimum_angle"), static_cast<double>(self->angleCutoff()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.hb_theta_maximum"), static_cast<double>(self->angleCutoff()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.vicinity_cutoff"), static_cast<double>(self->vicinityCutoff()), createdByNode);
             }
             else {
