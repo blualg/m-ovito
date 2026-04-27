@@ -38,9 +38,11 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_plot_layout.h>
 #include <qwt/qwt_plot_marker.h>
+#include <qwt/qwt_plot_shapeitem.h>
 #include <qwt/qwt_plot_spectrogram.h>
 #include <qwt/qwt_scale_widget.h>
 #include <qwt/qwt_text.h>
+#include <QPainterPath>
 #include <QPointer>
 #include <QVector>
 #include <array>
@@ -79,6 +81,78 @@ double invalidAwareMaximum(double a, double b)
     if(!isFinite(b))
         return a;
     return std::max(a, b);
+}
+
+struct BasinBoundaryOverlay {
+    QPainterPath path;
+    QPointF labelPoint = {};
+    bool hasLabelPoint = false;
+};
+
+BasinBoundaryOverlay buildBasinBoundaryOverlay(double distanceMaximum,
+                                               int distanceBins,
+                                               int angleBins,
+                                               const BufferReadAccess<int64_t>& inBasin)
+{
+    BasinBoundaryOverlay overlay;
+    if(distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= 0)
+        return overlay;
+
+    const double distanceBinWidth = distanceMaximum / static_cast<double>(distanceBins);
+    const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
+
+    double topmostLabelY = -std::numeric_limits<double>::infinity();
+    double centeredLabelDistance = 0.0;
+    const double distanceCenter = 0.5 * distanceMaximum;
+
+    for(int distanceBin = 0; distanceBin < distanceBins; ++distanceBin) {
+        const double x0 = static_cast<double>(distanceBin) * distanceBinWidth;
+        const double x1 = static_cast<double>(distanceBin + 1) * distanceBinWidth;
+        for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
+            const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
+                                     + static_cast<size_t>(angleBin);
+            if(!inBasin[linearIndex])
+                continue;
+
+            const double y0 = static_cast<double>(angleBin) * angleBinWidth;
+            const double y1 = static_cast<double>(angleBin + 1) * angleBinWidth;
+            const auto addSegment = [&](double sx0, double sy0, double sx1, double sy1) {
+                overlay.path.moveTo(sx0, sy0);
+                overlay.path.lineTo(sx1, sy1);
+                const double segmentMidY = 0.5 * (sy0 + sy1);
+                const double segmentMidX = 0.5 * (sx0 + sx1);
+                const double distanceFromCenter = std::abs(segmentMidX - distanceCenter);
+                if(!overlay.hasLabelPoint
+                   || segmentMidY > topmostLabelY
+                   || (std::abs(segmentMidY - topmostLabelY) < 1e-9 && distanceFromCenter < centeredLabelDistance)) {
+                    overlay.labelPoint = QPointF(segmentMidX, segmentMidY);
+                    overlay.hasLabelPoint = true;
+                    topmostLabelY = segmentMidY;
+                    centeredLabelDistance = distanceFromCenter;
+                }
+            };
+
+            const bool leftOutside = (distanceBin == 0)
+                || !inBasin[static_cast<size_t>(distanceBin - 1) * static_cast<size_t>(angleBins) + static_cast<size_t>(angleBin)];
+            const bool rightOutside = (distanceBin == distanceBins - 1)
+                || !inBasin[static_cast<size_t>(distanceBin + 1) * static_cast<size_t>(angleBins) + static_cast<size_t>(angleBin)];
+            const bool bottomOutside = (angleBin == 0)
+                || !inBasin[static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins) + static_cast<size_t>(angleBin - 1)];
+            const bool topOutside = (angleBin == angleBins - 1)
+                || !inBasin[static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins) + static_cast<size_t>(angleBin + 1)];
+
+            if(leftOutside)
+                addSegment(x0, y0, x0, y1);
+            if(rightOutside)
+                addSegment(x1, y0, x1, y1);
+            if(bottomOutside)
+                addSegment(x0, y0, x1, y0);
+            if(topOutside)
+                addSegment(x0, y1, x1, y1);
+        }
+    }
+
+    return overlay;
 }
 
 }
@@ -121,6 +195,11 @@ public:
         _spectrogram->setColorMap(createPmfColorMap());
         _spectrogram->attach(this);
 
+        _boundaryShape = new QwtPlotShapeItem();
+        _boundaryShape->setBrush(Qt::NoBrush);
+        _boundaryShape->setPen(QPen(Qt::black, 1.5));
+        _boundaryShape->attach(this);
+
         _boundaryMarker = new QwtPlotMarker();
         _boundaryMarker->setLineStyle(QwtPlotMarker::NoLine);
         _boundaryMarker->setLabelAlignment(Qt::AlignLeft | Qt::AlignBottom);
@@ -133,6 +212,7 @@ public:
         _spectrogram->setData(nullptr);
         _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
         _spectrogram->setContourLevels(QList<double>());
+        _boundaryShape->setShape(QPainterPath());
         _boundaryMarker->setVisible(false);
         axisWidget(QwtAxis::YRight)->setColorBarEnabled(false);
         setAxisVisible(QwtAxis::YRight, false);
@@ -160,15 +240,25 @@ public:
 
         double zMin = std::numeric_limits<double>::infinity();
         double zMax = -std::numeric_limits<double>::infinity();
+        int minDistanceBin = distanceBins;
+        int maxDistanceBin = -1;
+        int minAngleBin = angleBins;
+        int maxAngleBin = -1;
         for(size_t index = 0; index < freeEnergy.size(); ++index) {
             const double value = freeEnergy[index];
             if(!isFinite(value))
                 continue;
             zMin = std::min(zMin, value);
             zMax = std::max(zMax, value);
+            const int distanceBin = static_cast<int>(index / static_cast<size_t>(angleBins));
+            const int angleBin = static_cast<int>(index % static_cast<size_t>(angleBins));
+            minDistanceBin = std::min(minDistanceBin, distanceBin);
+            maxDistanceBin = std::max(maxDistanceBin, distanceBin);
+            minAngleBin = std::min(minAngleBin, angleBin);
+            maxAngleBin = std::max(maxAngleBin, angleBin);
         }
 
-        if(!isFinite(zMin) || !isFinite(zMax)) {
+        if(!isFinite(zMin) || !isFinite(zMax) || maxDistanceBin < minDistanceBin || maxAngleBin < minAngleBin) {
             clearPlot();
             return;
         }
@@ -177,6 +267,8 @@ public:
         if(!(zMax > zMin))
             zMax = zMin + 1.0;
 
+        const double distanceBinWidth = distanceMaximum / static_cast<double>(distanceBins);
+        const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
         QVector<double> values;
         values.resize(distanceBins * angleBins);
         for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
@@ -201,72 +293,40 @@ public:
         axisWidget(QwtAxis::YRight)->setColorMap(QwtInterval(zMin, zMax), createPmfColorMap());
         setAxisVisible(QwtAxis::YRight, true);
         setAxisScale(QwtAxis::YRight, zMin, zMax);
-        setAxisScale(QwtAxis::XBottom, 0.0, distanceMaximum);
-        setAxisScale(QwtAxis::YLeft, 0.0, 180.0);
+        const double viewXMin = std::max(0.0, static_cast<double>(minDistanceBin) * distanceBinWidth - 0.5 * distanceBinWidth);
+        const double viewXMax = std::min(distanceMaximum, static_cast<double>(maxDistanceBin + 1) * distanceBinWidth + 0.5 * distanceBinWidth);
+        const double viewYMin = std::max(0.0, static_cast<double>(minAngleBin) * angleBinWidth - 0.5 * angleBinWidth);
+        const double viewYMax = std::min(180.0, static_cast<double>(maxAngleBin + 1) * angleBinWidth + 0.5 * angleBinWidth);
+        setAxisScale(QwtAxis::XBottom, viewXMin, viewXMax);
+        setAxisScale(QwtAxis::YLeft, viewYMin, viewYMax);
 
         if(isFinite(boundaryFreeEnergy)) {
-            QList<double> contourLevels;
-            contourLevels << boundaryFreeEnergy;
-            _spectrogram->setContourLevels(contourLevels);
-            _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
+            _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
+            _spectrogram->setContourLevels(QList<double>());
 
-            const double distanceBinWidth = distanceMaximum / static_cast<double>(distanceBins);
-            const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
-            int labelDistanceBin = -1;
-            int labelAngleBin = -1;
-            for(int distanceBin = distanceBins - 1; distanceBin >= 0 && labelDistanceBin < 0; --distanceBin) {
-                int bestAngleBin = -1;
-                for(int angleBin = angleBins - 1; angleBin >= 0; --angleBin) {
-                    const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
-                                             + static_cast<size_t>(angleBin);
-                    if(!inBasin[linearIndex])
-                        continue;
-
-                    bool touchesOutside = (distanceBin == 0 || distanceBin == distanceBins - 1 || angleBin == 0 || angleBin == angleBins - 1);
-                    if(!touchesOutside) {
-                        const size_t leftIndex = static_cast<size_t>(distanceBin - 1) * static_cast<size_t>(angleBins)
-                                               + static_cast<size_t>(angleBin);
-                        const size_t rightIndex = static_cast<size_t>(distanceBin + 1) * static_cast<size_t>(angleBins)
-                                                + static_cast<size_t>(angleBin);
-                        const size_t downIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
-                                               + static_cast<size_t>(angleBin - 1);
-                        const size_t upIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
-                                             + static_cast<size_t>(angleBin + 1);
-                        touchesOutside = !inBasin[leftIndex] || !inBasin[rightIndex] || !inBasin[downIndex] || !inBasin[upIndex];
-                    }
-
-                    if(touchesOutside) {
-                        bestAngleBin = angleBin;
-                        break;
-                    }
-                }
-
-                if(bestAngleBin >= 0) {
-                    labelDistanceBin = distanceBin;
-                    labelAngleBin = bestAngleBin;
-                }
-            }
-
-            if(labelDistanceBin >= 0 && labelAngleBin >= 0) {
-                const double labelDistance = (static_cast<double>(labelDistanceBin) + 0.5) * distanceBinWidth;
-                const double labelTheta = (static_cast<double>(labelAngleBin) + 0.5) * angleBinWidth;
+            const BasinBoundaryOverlay overlay =
+                buildBasinBoundaryOverlay(distanceMaximum, distanceBins, angleBins, inBasin);
+            _boundaryShape->setShape(overlay.path);
+            if(overlay.hasLabelPoint) {
                 QwtText label(QString::number(boundaryFreeEnergy, 'g', 4));
                 label.setColor(Qt::black);
                 label.setBackgroundBrush(QBrush(QColor(255, 255, 255, 230)));
                 label.setBorderPen(QPen(QColor(160, 160, 160)));
                 label.setBorderRadius(4.0);
                 label.setPaintAttribute(QwtText::PaintBackground, true);
-                _boundaryMarker->setValue(labelDistance, labelTheta);
+                _boundaryMarker->setValue(overlay.labelPoint);
                 _boundaryMarker->setLabel(label);
                 _boundaryMarker->setVisible(true);
             }
             else {
                 _boundaryMarker->setVisible(false);
+                _boundaryShape->setShape(QPainterPath());
             }
         }
         else {
             _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
             _spectrogram->setContourLevels(QList<double>());
+            _boundaryShape->setShape(QPainterPath());
             _boundaryMarker->setVisible(false);
         }
 
@@ -276,6 +336,7 @@ public:
 private:
 
     QwtPlotSpectrogram* _spectrogram = nullptr;
+    QwtPlotShapeItem* _boundaryShape = nullptr;
     QwtPlotMarker* _boundaryMarker = nullptr;
 };
 
