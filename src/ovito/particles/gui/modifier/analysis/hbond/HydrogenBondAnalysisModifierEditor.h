@@ -29,6 +29,7 @@
 namespace Ovito {
 
 class HydrogenBondAnalysisModifier;
+class HydrogenBondPmfPlotWidget;
 
 class HydrogenBondAnalysisModifierEditor : public PropertiesEditor
 {
@@ -53,6 +54,7 @@ private:
 
     QPointer<QPushButton> _runButton;
     QPointer<DataTablePlotWidget> _plot;
+    QPointer<HydrogenBondPmfPlotWidget> _pmfPlot;
     QPointer<QLabel> _summaryLabel;
     QPointer<QWidget> _fixedCriteriaWidget;
     QPointer<QWidget> _pmfCriteriaWidget;

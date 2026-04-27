@@ -32,7 +32,19 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
+#include <qwt/qwt_color_map.h>
+#include <qwt/qwt_interval.h>
+#include <qwt/qwt_matrix_raster_data.h>
+#include <qwt/qwt_plot_grid.h>
+#include <qwt/qwt_plot_layout.h>
+#include <qwt/qwt_plot_marker.h>
+#include <qwt/qwt_plot_spectrogram.h>
+#include <qwt/qwt_scale_widget.h>
+#include <qwt/qwt_text.h>
 #include <QPointer>
+#include <QVector>
+#include <array>
+#include <cmath>
 #include "HydrogenBondAnalysisModifierEditor.h"
 
 namespace Ovito {
@@ -45,7 +57,227 @@ bool hydrogenBondAnalysisIsIdle(const HydrogenBondAnalysisModifier* modifier, co
     return modifier && hbNode && !hbNode->hasCachedResults() && modifier->runRequestId() <= hbNode->completedRunRequestId();
 }
 
+bool isFinite(double value)
+{
+    return std::isfinite(value);
 }
+
+QwtLinearColorMap* createPmfColorMap()
+{
+    auto* colorMap = new QwtLinearColorMap(QColor(74, 56, 177), QColor(255, 234, 67));
+    colorMap->addColorStop(0.20, QColor(115, 84, 213));
+    colorMap->addColorStop(0.45, QColor(67, 194, 245));
+    colorMap->addColorStop(0.70, QColor(34, 190, 167));
+    colorMap->addColorStop(0.88, QColor(167, 225, 73));
+    return colorMap;
+}
+
+double invalidAwareMaximum(double a, double b)
+{
+    if(!isFinite(a))
+        return b;
+    if(!isFinite(b))
+        return a;
+    return std::max(a, b);
+}
+
+}
+
+class HydrogenBondPmfPlotWidget : public QwtPlot
+{
+public:
+
+    explicit HydrogenBondPmfPlotWidget(QWidget* parent = nullptr) : QwtPlot(parent)
+    {
+        setCanvasBackground(Qt::white);
+        plotLayout()->setAlignCanvasToScales(true);
+
+        auto* plotGrid = new QwtPlotGrid();
+        plotGrid->setPen(Qt::gray, 0, Qt::DotLine);
+        plotGrid->attach(this);
+        plotGrid->setZ(0);
+
+        QFont scaleFont(fontInfo().family(), 8);
+        QFont titleFont(fontInfo().family(), 8, QFont::Bold);
+        for(int axisId = 0; axisId < QwtPlot::axisCnt; ++axisId) {
+            axisWidget(axisId)->setFont(scaleFont);
+            QwtText axisText = axisWidget(axisId)->title();
+            axisText.setFont(titleFont);
+            axisWidget(axisId)->setTitle(axisText);
+        }
+
+        setTitle(tr("PMF(r, theta)"));
+        setAxisTitle(QwtAxis::XBottom, tr("r (A)"));
+        setAxisTitle(QwtAxis::YLeft, tr("theta (degrees)"));
+        setAxisTitle(QwtAxis::YRight, tr("kcal/mol"));
+        setAxisVisible(QwtAxis::XTop, false);
+        setAxisVisible(QwtAxis::YRight, false);
+
+        _spectrogram = new QwtPlotSpectrogram();
+        _spectrogram->setRenderThreadCount(0);
+        _spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
+        _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
+        _spectrogram->setDefaultContourPen(QPen(Qt::black, 1.5));
+        _spectrogram->setColorMap(createPmfColorMap());
+        _spectrogram->attach(this);
+
+        _boundaryMarker = new QwtPlotMarker();
+        _boundaryMarker->setLineStyle(QwtPlotMarker::NoLine);
+        _boundaryMarker->setLabelAlignment(Qt::AlignLeft | Qt::AlignBottom);
+        _boundaryMarker->attach(this);
+        _boundaryMarker->setVisible(false);
+    }
+
+    void clearPlot()
+    {
+        _spectrogram->setData(nullptr);
+        _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
+        _spectrogram->setContourLevels(QList<double>());
+        _boundaryMarker->setVisible(false);
+        axisWidget(QwtAxis::YRight)->setColorBarEnabled(false);
+        setAxisVisible(QwtAxis::YRight, false);
+        replot();
+    }
+
+    void setPmfTable(DataOORef<const DataTable> table,
+                     double distanceMaximum,
+                     int distanceBins,
+                     int angleBins,
+                     double boundaryFreeEnergy)
+    {
+        if(!table || distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= 0) {
+            clearPlot();
+            return;
+        }
+
+        BufferReadAccess<FloatType> freeEnergy(table->getProperty(QStringLiteral("Free energy")));
+        BufferReadAccess<int64_t> inBasin(table->getProperty(QStringLiteral("In HB basin")));
+        if(!freeEnergy || !inBasin || freeEnergy.size() != static_cast<size_t>(distanceBins * angleBins)
+           || inBasin.size() != freeEnergy.size()) {
+            clearPlot();
+            return;
+        }
+
+        double zMin = std::numeric_limits<double>::infinity();
+        double zMax = -std::numeric_limits<double>::infinity();
+        for(size_t index = 0; index < freeEnergy.size(); ++index) {
+            const double value = freeEnergy[index];
+            if(!isFinite(value))
+                continue;
+            zMin = std::min(zMin, value);
+            zMax = std::max(zMax, value);
+        }
+
+        if(!isFinite(zMin) || !isFinite(zMax)) {
+            clearPlot();
+            return;
+        }
+
+        zMax = invalidAwareMaximum(zMax, boundaryFreeEnergy);
+        if(!(zMax > zMin))
+            zMax = zMin + 1.0;
+
+        QVector<double> values;
+        values.resize(distanceBins * angleBins);
+        for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
+            for(int distanceBin = 0; distanceBin < distanceBins; ++distanceBin) {
+                const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
+                                         + static_cast<size_t>(angleBin);
+                const int matrixIndex = angleBin * distanceBins + distanceBin;
+                values[matrixIndex] = isFinite(freeEnergy[linearIndex]) ? freeEnergy[linearIndex] : zMax;
+            }
+        }
+
+        auto* rasterData = new QwtMatrixRasterData();
+        rasterData->setResampleMode(QwtMatrixRasterData::NearestNeighbour);
+        rasterData->setInterval(Qt::XAxis, QwtInterval(0.0, distanceMaximum));
+        rasterData->setInterval(Qt::YAxis, QwtInterval(0.0, 180.0));
+        rasterData->setInterval(Qt::ZAxis, QwtInterval(zMin, zMax));
+        rasterData->setValueMatrix(values, distanceBins);
+        _spectrogram->setData(rasterData);
+
+        axisWidget(QwtAxis::YRight)->setColorBarEnabled(true);
+        axisWidget(QwtAxis::YRight)->setColorBarWidth(14);
+        axisWidget(QwtAxis::YRight)->setColorMap(QwtInterval(zMin, zMax), createPmfColorMap());
+        setAxisVisible(QwtAxis::YRight, true);
+        setAxisScale(QwtAxis::YRight, zMin, zMax);
+        setAxisScale(QwtAxis::XBottom, 0.0, distanceMaximum);
+        setAxisScale(QwtAxis::YLeft, 0.0, 180.0);
+
+        if(isFinite(boundaryFreeEnergy)) {
+            QList<double> contourLevels;
+            contourLevels << boundaryFreeEnergy;
+            _spectrogram->setContourLevels(contourLevels);
+            _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
+
+            const double distanceBinWidth = distanceMaximum / static_cast<double>(distanceBins);
+            const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
+            int labelDistanceBin = -1;
+            int labelAngleBin = -1;
+            for(int distanceBin = distanceBins - 1; distanceBin >= 0 && labelDistanceBin < 0; --distanceBin) {
+                int bestAngleBin = -1;
+                for(int angleBin = angleBins - 1; angleBin >= 0; --angleBin) {
+                    const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
+                                             + static_cast<size_t>(angleBin);
+                    if(!inBasin[linearIndex])
+                        continue;
+
+                    bool touchesOutside = (distanceBin == 0 || distanceBin == distanceBins - 1 || angleBin == 0 || angleBin == angleBins - 1);
+                    if(!touchesOutside) {
+                        const size_t leftIndex = static_cast<size_t>(distanceBin - 1) * static_cast<size_t>(angleBins)
+                                               + static_cast<size_t>(angleBin);
+                        const size_t rightIndex = static_cast<size_t>(distanceBin + 1) * static_cast<size_t>(angleBins)
+                                                + static_cast<size_t>(angleBin);
+                        const size_t downIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
+                                               + static_cast<size_t>(angleBin - 1);
+                        const size_t upIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins)
+                                             + static_cast<size_t>(angleBin + 1);
+                        touchesOutside = !inBasin[leftIndex] || !inBasin[rightIndex] || !inBasin[downIndex] || !inBasin[upIndex];
+                    }
+
+                    if(touchesOutside) {
+                        bestAngleBin = angleBin;
+                        break;
+                    }
+                }
+
+                if(bestAngleBin >= 0) {
+                    labelDistanceBin = distanceBin;
+                    labelAngleBin = bestAngleBin;
+                }
+            }
+
+            if(labelDistanceBin >= 0 && labelAngleBin >= 0) {
+                const double labelDistance = (static_cast<double>(labelDistanceBin) + 0.5) * distanceBinWidth;
+                const double labelTheta = (static_cast<double>(labelAngleBin) + 0.5) * angleBinWidth;
+                QwtText label(QString::number(boundaryFreeEnergy, 'g', 4));
+                label.setColor(Qt::black);
+                label.setBackgroundBrush(QBrush(QColor(255, 255, 255, 230)));
+                label.setBorderPen(QPen(QColor(160, 160, 160)));
+                label.setBorderRadius(4.0);
+                label.setPaintAttribute(QwtText::PaintBackground, true);
+                _boundaryMarker->setValue(labelDistance, labelTheta);
+                _boundaryMarker->setLabel(label);
+                _boundaryMarker->setVisible(true);
+            }
+            else {
+                _boundaryMarker->setVisible(false);
+            }
+        }
+        else {
+            _spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, false);
+            _spectrogram->setContourLevels(QList<double>());
+            _boundaryMarker->setVisible(false);
+        }
+
+        replot();
+    }
+
+private:
+
+    QwtPlotSpectrogram* _spectrogram = nullptr;
+    QwtPlotMarker* _boundaryMarker = nullptr;
+};
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(HydrogenBondAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(HydrogenBondAnalysisModifier, HydrogenBondAnalysisModifierEditor);
@@ -196,6 +428,11 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     _plot->setMaximumHeight(220);
     layout->addWidget(_plot);
 
+    _pmfPlot = new HydrogenBondPmfPlotWidget(rollout);
+    _pmfPlot->setMinimumHeight(320);
+    _pmfPlot->setMaximumHeight(320);
+    layout->addWidget(_pmfPlot);
+
     layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
@@ -273,11 +510,37 @@ void HydrogenBondAnalysisModifierEditor::updatePlot()
             return;
         if(hydrogenBondAnalysisIsIdle(modifier(), modificationNode())) {
             _plot->setTable(nullptr);
+            if(_pmfPlot)
+                _pmfPlot->clearPlot();
             return;
         }
-        _plot->setTable(getPipelineOutput().getObjectBy<DataTable>(
+        const PipelineFlowState& state = getPipelineOutput();
+        _plot->setTable(state.getObjectBy<DataTable>(
             modificationNode(),
             HydrogenBondAnalysisModifier::countTableId()));
+
+        if(_pmfPlot) {
+            if(modifier() && modifier()->definitionMode() == HydrogenBondAnalysisModifier::PMFDerived) {
+                const QVariant distanceMaximumAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
+                const QVariant distanceBinsAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_bins"));
+                const QVariant angleBinsAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_angle_bins"));
+                const QVariant boundaryAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
+
+                _pmfPlot->setPmfTable(
+                    state.getObjectBy<DataTable>(modificationNode(), HydrogenBondAnalysisModifier::pmfTableId()),
+                    distanceMaximumAttr.isValid() ? distanceMaximumAttr.toDouble() : 0.0,
+                    distanceBinsAttr.isValid() ? distanceBinsAttr.toInt() : 0,
+                    angleBinsAttr.isValid() ? angleBinsAttr.toInt() : 0,
+                    boundaryAttr.isValid() ? boundaryAttr.toDouble() : std::numeric_limits<double>::quiet_NaN());
+            }
+            else {
+                _pmfPlot->clearPlot();
+            }
+        }
     });
 }
 
@@ -363,8 +626,15 @@ void HydrogenBondAnalysisModifierEditor::updateDefinitionControls()
         _fixedCriteriaWidget->setVisible(fixedVisible);
     if(_pmfCriteriaWidget)
         _pmfCriteriaWidget->setVisible(pmfVisible);
+    if(_pmfPlot)
+        _pmfPlot->setVisible(pmfVisible);
 
-    for(QWidget* widget : { _fixedCriteriaWidget.data(), _pmfCriteriaWidget.data() }) {
+    const std::array<QWidget*, 3> widgets = {
+        _fixedCriteriaWidget.data(),
+        _pmfCriteriaWidget.data(),
+        static_cast<QWidget*>(_pmfPlot.data())
+    };
+    for(QWidget* widget : widgets) {
         if(!widget)
             continue;
         widget->updateGeometry();
