@@ -47,6 +47,7 @@ SET(SourceFiles
     modifier/analysis/rdf/RadialDistributionFunctionModifier.cpp
     modifier/analysis/pdf/ProbabilityDistributionFunctionModifier.cpp
     modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifier.cpp
+    modifier/analysis/hbond/HydrogenBondAnalysisModifier.cpp
     modifier/analysis/orientation/MolecularOrientationModifier.cpp
     modifier/analysis/binning/SpatialBinningModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
