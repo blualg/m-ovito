@@ -40,6 +40,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/pdf/ProbabilityDistributionFunctionModifierEditor.cpp
         modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifierEditor.cpp
         modifier/analysis/hbond/HydrogenBondAnalysisModifierEditor.cpp
+        modifier/analysis/hbond/HydrogenBondKineticsModifierEditor.cpp
         modifier/analysis/orientation/MolecularOrientationModifierEditor.cpp
         modifier/analysis/binning/SpatialBinningModifierEditor.cpp
         modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
