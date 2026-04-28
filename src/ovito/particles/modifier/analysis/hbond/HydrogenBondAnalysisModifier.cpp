@@ -101,6 +101,8 @@ struct HydrogenBondAccumulator {
 struct PmfDefinition {
     double distanceMinimum = 0.0;
     double distanceMaximum = 0.0;
+    double thetaMinimum = 0.0;
+    double thetaMaximum = 180.0;
     int distanceBins = 0;
     int angleBins = 0;
     double boundaryFreeEnergy = 0.0;
@@ -344,7 +346,7 @@ DataTable* createPmfTable(DataCollection* collection,
     BufferWriteAccess<int64_t, access_mode::discard_write> basinAcc(basinProperty);
 
     const double distanceBinWidth = (pmf.distanceMaximum - pmf.distanceMinimum) / static_cast<double>(pmf.distanceBins);
-    const double angleBinWidth = 180.0 / static_cast<double>(pmf.angleBins);
+    const double angleBinWidth = (pmf.thetaMaximum - pmf.thetaMinimum) / static_cast<double>(pmf.angleBins);
     size_t row = 0;
     for(int distanceBin = 0; distanceBin < pmf.distanceBins; ++distanceBin) {
         const double distanceCenter = pmf.distanceMinimum + (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
@@ -352,7 +354,7 @@ DataTable* createPmfTable(DataCollection* collection,
             const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(pmf.angleBins)
                                      + static_cast<size_t>(angleBin);
             distanceAcc[row] = static_cast<FloatType>(distanceCenter);
-            thetaAcc[row] = static_cast<FloatType>((static_cast<double>(angleBin) + 0.5) * angleBinWidth);
+            thetaAcc[row] = static_cast<FloatType>(pmf.thetaMinimum + (static_cast<double>(angleBin) + 0.5) * angleBinWidth);
             countAcc[row] = pmf.counts[linearIndex];
             pmfAcc[row] = std::isfinite(pmf.freeEnergy[linearIndex])
                 ? static_cast<FloatType>(pmf.freeEnergy[linearIndex])
@@ -577,6 +579,8 @@ std::vector<int> connectedComponentAtThreshold(const std::vector<double>& freeEn
 PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
                                  double distanceMinimum,
                                  double distanceMaximum,
+                                 double thetaMinimum,
+                                 double thetaMaximum,
                                  int distanceBins,
                                  int angleBins)
 {
@@ -584,12 +588,20 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
         throw Exception(HydrogenBondAnalysisModifier::tr("The PMF distance minimum must be non-negative."));
     if(distanceMaximum <= distanceMinimum)
         throw Exception(HydrogenBondAnalysisModifier::tr("The PMF distance maximum must be greater than the PMF distance minimum."));
+    if(thetaMinimum < 0.0 || thetaMinimum > 180.0)
+        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta minimum must be in the range [0, 180]."));
+    if(thetaMaximum < 0.0 || thetaMaximum > 180.0)
+        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta maximum must be in the range [0, 180]."));
+    if(thetaMaximum <= thetaMinimum)
+        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta maximum must be greater than the PMF theta minimum."));
     if(distanceBins < 4 || angleBins < 4)
         throw Exception(HydrogenBondAnalysisModifier::tr("PMF bin counts must be at least 4 in each dimension."));
 
     PmfDefinition pmf;
     pmf.distanceMinimum = distanceMinimum;
     pmf.distanceMaximum = distanceMaximum;
+    pmf.thetaMinimum = thetaMinimum;
+    pmf.thetaMaximum = thetaMaximum;
     pmf.distanceBins = distanceBins;
     pmf.angleBins = angleBins;
     pmf.counts.assign(static_cast<size_t>(distanceBins) * static_cast<size_t>(angleBins), 0);
@@ -597,14 +609,15 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
     pmf.inBasin.assign(pmf.counts.size(), 0);
 
     const double distanceBinWidth = (distanceMaximum - distanceMinimum) / static_cast<double>(distanceBins);
-    const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
+    const double angleBinWidth = (thetaMaximum - thetaMinimum) / static_cast<double>(angleBins);
 
     for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
         for(const CandidateTripletSample& sample : snapshot.candidates) {
-            if(sample.distance < distanceMinimum || sample.distance > distanceMaximum)
+            if(sample.distance < distanceMinimum || sample.distance > distanceMaximum
+               || sample.theta < thetaMinimum || sample.theta > thetaMaximum)
                 continue;
             const int distanceBin = clampedBinIndex(sample.distance, distanceMinimum, distanceMaximum, distanceBins);
-            const int angleBin = clampedBinIndex(sample.theta, 0.0, 180.0, angleBins);
+            const int angleBin = clampedBinIndex(sample.theta, thetaMinimum, thetaMaximum, angleBins);
             if(distanceBin < 0 || angleBin < 0)
                 continue;
             pmf.counts[pmfLinearIndex(distanceBin, angleBin, angleBins)]++;
@@ -621,7 +634,7 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
             if(count <= 0)
                 continue;
 
-            const double thetaRadians = qDegreesToRadians((static_cast<double>(angleBin) + 0.5) * angleBinWidth);
+            const double thetaRadians = qDegreesToRadians(thetaMinimum + (static_cast<double>(angleBin) + 0.5) * angleBinWidth);
             const double jacobian = std::max(distanceCenter * distanceCenter * std::max(std::sin(thetaRadians), 1e-6), 1e-12);
             const double reducedProbability = static_cast<double>(count) / jacobian;
             const double freeEnergy = -std::log(reducedProbability);
@@ -697,10 +710,11 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
 
 bool pmfTripletIsHydrogenBonded(const CandidateTripletSample& sample, const PmfDefinition& pmf)
 {
-    if(sample.distance < pmf.distanceMinimum || sample.distance > pmf.distanceMaximum)
+    if(sample.distance < pmf.distanceMinimum || sample.distance > pmf.distanceMaximum
+       || sample.theta < pmf.thetaMinimum || sample.theta > pmf.thetaMaximum)
         return false;
     const int distanceBin = clampedBinIndex(sample.distance, pmf.distanceMinimum, pmf.distanceMaximum, pmf.distanceBins);
-    const int angleBin = clampedBinIndex(sample.theta, 0.0, 180.0, pmf.angleBins);
+    const int angleBin = clampedBinIndex(sample.theta, pmf.thetaMinimum, pmf.thetaMaximum, pmf.angleBins);
     if(distanceBin < 0 || angleBin < 0)
         return false;
     return pmf.inBasin[pmfLinearIndex(distanceBin, angleBin, pmf.angleBins)] != 0;
@@ -755,6 +769,8 @@ DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorAcceptorCutoff);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, angleCutoff);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceMinimum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceMaximum);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfThetaMinimum);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfThetaMaximum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceBins);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfAngleBins);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, useCustomFrameInterval);
@@ -771,6 +787,8 @@ SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorAcceptorCutoff, "HB 
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, angleCutoff, "HB theta maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceMinimum, "PMF distance minimum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceMaximum, "PMF distance maximum");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfThetaMinimum, "PMF theta minimum");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfThetaMaximum, "PMF theta maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceBins, "PMF distance bins");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfAngleBins, "PMF angle bins");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, useCustomFrameInterval, "Restrict analysis interval");
@@ -782,6 +800,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, donorAcceptor
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, angleCutoff, FloatParameterUnit, 0, 180);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfDistanceMinimum, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfDistanceMaximum, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfThetaMinimum, FloatParameterUnit, 0, 180);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfThetaMaximum, FloatParameterUnit, 0, 180);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfDistanceBins, IntegerParameterUnit, 4, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfAngleBins, IntegerParameterUnit, 4, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, intervalStart, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
@@ -920,6 +940,12 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             throw Exception(tr("The PMF distance maximum must be positive."));
         if(pmfDistanceMaximum() <= pmfDistanceMinimum())
             throw Exception(tr("The PMF distance maximum must be greater than the PMF distance minimum."));
+        if(pmfThetaMinimum() < 0 || pmfThetaMinimum() > 180)
+            throw Exception(tr("The PMF theta minimum must be in the range [0, 180]."));
+        if(pmfThetaMaximum() < 0 || pmfThetaMaximum() > 180)
+            throw Exception(tr("The PMF theta maximum must be in the range [0, 180]."));
+        if(pmfThetaMaximum() <= pmfThetaMinimum())
+            throw Exception(tr("The PMF theta maximum must be greater than the PMF theta minimum."));
     }
 
     const std::unordered_set<int> donorTypeSet(donorTypeIds.begin(), donorTypeIds.end());
@@ -1029,6 +1055,8 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 pmf = buildPmfDefinition(accumulator,
                                          static_cast<double>(self->pmfDistanceMinimum()),
                                          static_cast<double>(self->pmfDistanceMaximum()),
+                                         static_cast<double>(self->pmfThetaMinimum()),
+                                         static_cast<double>(self->pmfThetaMaximum()),
                                          std::max(4, self->pmfDistanceBins()),
                                          std::max(4, self->pmfAngleBins()));
                 pmfPtr = &pmf;
@@ -1096,6 +1124,8 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             else {
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_minimum"), static_cast<double>(self->pmfDistanceMinimum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_maximum"), static_cast<double>(self->pmfDistanceMaximum()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_theta_minimum"), static_cast<double>(self->pmfThetaMinimum()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_theta_maximum"), static_cast<double>(self->pmfThetaMaximum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_bins"), static_cast<double>(self->pmfDistanceBins()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_angle_bins"), static_cast<double>(self->pmfAngleBins()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"), pmf.boundaryFreeEnergy, createdByNode);

@@ -91,16 +91,18 @@ struct BasinBoundaryOverlay {
 
 BasinBoundaryOverlay buildBasinBoundaryOverlay(double distanceMinimum,
                                                double distanceMaximum,
+                                               double thetaMinimum,
+                                               double thetaMaximum,
                                                int distanceBins,
                                                int angleBins,
                                                const BufferReadAccess<int64_t>& inBasin)
 {
     BasinBoundaryOverlay overlay;
-    if(distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= distanceMinimum)
+    if(distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= distanceMinimum || thetaMaximum <= thetaMinimum)
         return overlay;
 
     const double distanceBinWidth = (distanceMaximum - distanceMinimum) / static_cast<double>(distanceBins);
-    const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
+    const double angleBinWidth = (thetaMaximum - thetaMinimum) / static_cast<double>(angleBins);
 
     double topmostLabelY = -std::numeric_limits<double>::infinity();
     double centeredLabelDistance = 0.0;
@@ -115,8 +117,8 @@ BasinBoundaryOverlay buildBasinBoundaryOverlay(double distanceMinimum,
             if(!inBasin[linearIndex])
                 continue;
 
-            const double y0 = static_cast<double>(angleBin) * angleBinWidth;
-            const double y1 = static_cast<double>(angleBin + 1) * angleBinWidth;
+            const double y0 = thetaMinimum + static_cast<double>(angleBin) * angleBinWidth;
+            const double y1 = thetaMinimum + static_cast<double>(angleBin + 1) * angleBinWidth;
             const auto addSegment = [&](double sx0, double sy0, double sx1, double sy1) {
                 overlay.path.moveTo(sx0, sy0);
                 overlay.path.lineTo(sx1, sy1);
@@ -223,11 +225,13 @@ public:
     void setPmfTable(DataOORef<const DataTable> table,
                      double distanceMinimum,
                      double distanceMaximum,
+                     double thetaMinimum,
+                     double thetaMaximum,
                      int distanceBins,
                      int angleBins,
                      double boundaryFreeEnergy)
     {
-        if(!table || distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= distanceMinimum) {
+        if(!table || distanceBins <= 0 || angleBins <= 0 || distanceMaximum <= distanceMinimum || thetaMaximum <= thetaMinimum) {
             clearPlot();
             return;
         }
@@ -270,7 +274,7 @@ public:
             zMax = zMin + 1.0;
 
         const double distanceBinWidth = (distanceMaximum - distanceMinimum) / static_cast<double>(distanceBins);
-        const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
+        const double angleBinWidth = (thetaMaximum - thetaMinimum) / static_cast<double>(angleBins);
         QVector<double> values;
         values.resize(distanceBins * angleBins);
         for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
@@ -285,7 +289,7 @@ public:
         auto* rasterData = new QwtMatrixRasterData();
         rasterData->setResampleMode(QwtMatrixRasterData::NearestNeighbour);
         rasterData->setInterval(Qt::XAxis, QwtInterval(distanceMinimum, distanceMaximum));
-        rasterData->setInterval(Qt::YAxis, QwtInterval(0.0, 180.0));
+        rasterData->setInterval(Qt::YAxis, QwtInterval(thetaMinimum, thetaMaximum));
         rasterData->setInterval(Qt::ZAxis, QwtInterval(zMin, zMax));
         rasterData->setValueMatrix(values, distanceBins);
         _spectrogram->setData(rasterData);
@@ -297,8 +301,8 @@ public:
         setAxisScale(QwtAxis::YRight, zMin, zMax);
         const double viewXMin = std::max(distanceMinimum, distanceMinimum + static_cast<double>(minDistanceBin) * distanceBinWidth - 0.5 * distanceBinWidth);
         const double viewXMax = std::min(distanceMaximum, distanceMinimum + static_cast<double>(maxDistanceBin + 1) * distanceBinWidth + 0.5 * distanceBinWidth);
-        const double viewYMin = std::max(0.0, static_cast<double>(minAngleBin) * angleBinWidth - 0.5 * angleBinWidth);
-        const double viewYMax = std::min(180.0, static_cast<double>(maxAngleBin + 1) * angleBinWidth + 0.5 * angleBinWidth);
+        const double viewYMin = std::max(thetaMinimum, thetaMinimum + static_cast<double>(minAngleBin) * angleBinWidth - 0.5 * angleBinWidth);
+        const double viewYMax = std::min(thetaMaximum, thetaMinimum + static_cast<double>(maxAngleBin + 1) * angleBinWidth + 0.5 * angleBinWidth);
         setAxisScale(QwtAxis::XBottom, viewXMin, viewXMax);
         setAxisScale(QwtAxis::YLeft, viewYMin, viewYMax);
 
@@ -307,7 +311,7 @@ public:
             _spectrogram->setContourLevels(QList<double>());
 
             const BasinBoundaryOverlay overlay =
-                buildBasinBoundaryOverlay(distanceMinimum, distanceMaximum, distanceBins, angleBins, inBasin);
+                buildBasinBoundaryOverlay(distanceMinimum, distanceMaximum, thetaMinimum, thetaMaximum, distanceBins, angleBins, inBasin);
             _boundaryShape->setShape(overlay.path);
             if(overlay.hasLabelPoint) {
                 QwtText label(QString::number(boundaryFreeEnergy, 'g', 4));
@@ -435,13 +439,21 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     pmfLayout->addWidget(pmfDistanceMaximumUI->label(), 1, 0);
     pmfLayout->addLayout(pmfDistanceMaximumUI->createFieldLayout(), 1, 1);
 
+    FloatParameterUI* pmfThetaMinimumUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfThetaMinimum));
+    pmfLayout->addWidget(pmfThetaMinimumUI->label(), 2, 0);
+    pmfLayout->addLayout(pmfThetaMinimumUI->createFieldLayout(), 2, 1);
+
+    FloatParameterUI* pmfThetaMaximumUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfThetaMaximum));
+    pmfLayout->addWidget(pmfThetaMaximumUI->label(), 3, 0);
+    pmfLayout->addLayout(pmfThetaMaximumUI->createFieldLayout(), 3, 1);
+
     IntegerParameterUI* pmfDistanceBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfDistanceBins));
-    pmfLayout->addWidget(pmfDistanceBinsUI->label(), 2, 0);
-    pmfLayout->addLayout(pmfDistanceBinsUI->createFieldLayout(), 2, 1);
+    pmfLayout->addWidget(pmfDistanceBinsUI->label(), 4, 0);
+    pmfLayout->addLayout(pmfDistanceBinsUI->createFieldLayout(), 4, 1);
 
     IntegerParameterUI* pmfAngleBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::pmfAngleBins));
-    pmfLayout->addWidget(pmfAngleBinsUI->label(), 3, 0);
-    pmfLayout->addLayout(pmfAngleBinsUI->createFieldLayout(), 3, 1);
+    pmfLayout->addWidget(pmfAngleBinsUI->label(), 5, 0);
+    pmfLayout->addLayout(pmfAngleBinsUI->createFieldLayout(), 5, 1);
 
     criteriaLayout->addWidget(_pmfCriteriaWidget, 3, 0, 1, 2);
 
@@ -594,6 +606,10 @@ void HydrogenBondAnalysisModifierEditor::updatePlot()
                     state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_minimum"));
                 const QVariant distanceBinsAttr =
                     state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_bins"));
+                const QVariant thetaMinimumAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_theta_minimum"));
+                const QVariant thetaMaximumAttr =
+                    state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_theta_maximum"));
                 const QVariant angleBinsAttr =
                     state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_angle_bins"));
                 const QVariant boundaryAttr =
@@ -603,6 +619,8 @@ void HydrogenBondAnalysisModifierEditor::updatePlot()
                     state.getObjectBy<DataTable>(modificationNode(), HydrogenBondAnalysisModifier::pmfTableId()),
                     distanceMinimumAttr.isValid() ? distanceMinimumAttr.toDouble() : 0.0,
                     distanceMaximumAttr.isValid() ? distanceMaximumAttr.toDouble() : 0.0,
+                    thetaMinimumAttr.isValid() ? thetaMinimumAttr.toDouble() : 0.0,
+                    thetaMaximumAttr.isValid() ? thetaMaximumAttr.toDouble() : 180.0,
                     distanceBinsAttr.isValid() ? distanceBinsAttr.toInt() : 0,
                     angleBinsAttr.isValid() ? angleBinsAttr.toInt() : 0,
                     boundaryAttr.isValid() ? boundaryAttr.toDouble() : std::numeric_limits<double>::quiet_NaN());
@@ -641,6 +659,8 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
         const QVariant angleCutoff = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.hb_theta_maximum"));
         const QVariant pmfDistanceMinimum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_minimum"));
         const QVariant pmfDistanceMaximum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
+        const QVariant pmfThetaMinimum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_theta_minimum"));
+        const QVariant pmfThetaMaximum = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_theta_maximum"));
         const QVariant pmfBoundary = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
         const QVariant pmfVicinity = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_vicinity_cutoff"));
         const QVariant pmfBasinBins = state.getAttributeValue(modificationNode(), QStringLiteral("HydrogenBonds.pmf_basin_bin_count"));
@@ -666,6 +686,10 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
             lines << tr("PMF distance minimum: %1").arg(pmfDistanceMinimum.toDouble(), 0, 'g', 6);
         if(pmfDistanceMaximum.isValid())
             lines << tr("PMF distance maximum: %1").arg(pmfDistanceMaximum.toDouble(), 0, 'g', 6);
+        if(pmfThetaMinimum.isValid())
+            lines << tr("PMF theta minimum: %1").arg(pmfThetaMinimum.toDouble(), 0, 'g', 6);
+        if(pmfThetaMaximum.isValid())
+            lines << tr("PMF theta maximum: %1").arg(pmfThetaMaximum.toDouble(), 0, 'g', 6);
         if(pmfBoundary.isValid())
             lines << tr("PMF basin boundary free energy: %1").arg(pmfBoundary.toDouble(), 0, 'f', 4);
         if(pmfVicinity.isValid())
