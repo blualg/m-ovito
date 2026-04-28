@@ -296,6 +296,7 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
         const QVariant finalC = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.final_C"));
         const QVariant finalN = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.final_n"));
         const QVariant finalCPlusN = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.final_C_plus_n"));
+        const QVariant pmfDistanceMinimum = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_distance_minimum"));
         const QVariant pmfBoundary = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_boundary_free_energy"));
         const QVariant pmfVicinity = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_vicinity_cutoff"));
         const QVariant pmfBasinBinCount = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_basin_bin_count"));
@@ -324,6 +325,8 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
             lines << tr("Initial hydrogen-bond triplet samples: %1").arg(initialTripletSamples.toLongLong());
         if(maximumLag.isValid())
             lines << tr("Maximum lag: %1").arg(maximumLag.toInt());
+        if(pmfDistanceMinimum.isValid())
+            lines << tr("PMF distance minimum: %1").arg(pmfDistanceMinimum.toDouble(), 0, 'g', 6);
         if(pmfBoundary.isValid())
             lines << tr("PMF basin boundary free energy: %1").arg(pmfBoundary.toDouble(), 0, 'f', 4);
         if(pmfVicinity.isValid())

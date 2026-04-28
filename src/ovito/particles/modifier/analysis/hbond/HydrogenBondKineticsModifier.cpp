@@ -123,6 +123,7 @@ struct FrameState {
 };
 
 struct PmfDefinition {
+    double distanceMinimum = 0.0;
     double distanceMaximum = 0.0;
     int distanceBins = 0;
     int angleBins = 0;
@@ -284,6 +285,7 @@ PmfDefinition loadUpstreamPmfDefinition(const PipelineFlowState& state,
             "Run that analysis first so the PMF basin and vicinity boundary are available in the pipeline state."));
 
     const QVariant distanceMaximumVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_distance_maximum"));
+    const QVariant distanceMinimumVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_distance_minimum"));
     const QVariant distanceBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_distance_bins"));
     const QVariant angleBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_angle_bins"));
     const QVariant boundaryVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"));
@@ -291,7 +293,8 @@ PmfDefinition loadUpstreamPmfDefinition(const PipelineFlowState& state,
     const QVariant basinBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_basin_bin_count"));
     const QVariant populatedBinsVariant = state.getAttributeValue(QStringLiteral("HydrogenBonds.pmf_populated_bin_count"));
 
-    if(!distanceMaximumVariant.isValid() || !distanceBinsVariant.isValid() || !angleBinsVariant.isValid() || !vicinityVariant.isValid())
+    if(!distanceMinimumVariant.isValid() || !distanceMaximumVariant.isValid() || !distanceBinsVariant.isValid()
+       || !angleBinsVariant.isValid() || !vicinityVariant.isValid())
         throw Exception(HydrogenBondKineticsModifier::tr(
             "The upstream 'Hydrogen bond analysis' result does not provide the PMF-derived basin metadata required by hydrogen-bond kinetics."));
 
@@ -322,6 +325,7 @@ PmfDefinition loadUpstreamPmfDefinition(const PipelineFlowState& state,
             "The upstream hydrogen-bond PMF table is missing one or more required columns ('Count', 'Free energy', 'In HB basin')."));
 
     PmfDefinition pmf;
+    pmf.distanceMinimum = distanceMinimumVariant.toDouble();
     pmf.distanceMaximum = distanceMaximumVariant.toDouble();
     pmf.distanceBins = std::max(1, distanceBinsVariant.toInt());
     pmf.angleBins = std::max(1, angleBinsVariant.toInt());
@@ -434,11 +438,11 @@ DataTable* createPmfTable(DataCollection* collection,
     BufferWriteAccess<FloatType, access_mode::discard_write> pmfAcc(pmfProperty);
     BufferWriteAccess<int64_t, access_mode::discard_write> basinAcc(basinProperty);
 
-    const double distanceBinWidth = pmf.distanceMaximum / static_cast<double>(pmf.distanceBins);
+    const double distanceBinWidth = (pmf.distanceMaximum - pmf.distanceMinimum) / static_cast<double>(pmf.distanceBins);
     const double angleBinWidth = 180.0 / static_cast<double>(pmf.angleBins);
     size_t row = 0;
     for(int distanceBin = 0; distanceBin < pmf.distanceBins; ++distanceBin) {
-        const double distanceCenter = (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
+        const double distanceCenter = pmf.distanceMinimum + (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
         for(int angleBin = 0; angleBin < pmf.angleBins; ++angleBin, ++row) {
             const size_t linearIndex = static_cast<size_t>(distanceBin) * static_cast<size_t>(pmf.angleBins)
                                      + static_cast<size_t>(angleBin);
@@ -611,13 +615,16 @@ size_t pmfLinearIndex(int distanceBin, int angleBin, int angleBins)
     return static_cast<size_t>(distanceBin) * static_cast<size_t>(angleBins) + static_cast<size_t>(angleBin);
 }
 
-int clampedBinIndex(double value, double upperBound, int binCount)
+int clampedBinIndex(double value, double lowerBound, double upperBound, int binCount)
 {
-    if(!(value >= 0.0))
+    if(!(value >= lowerBound))
         return -1;
-    if(value > upperBound)
+    if(value > upperBound || !(upperBound > lowerBound))
         return -1;
-    int binIndex = static_cast<int>(std::floor((value / upperBound) * static_cast<double>(binCount)));
+    const double normalized = std::clamp((value - lowerBound) / (upperBound - lowerBound),
+                                         0.0,
+                                         1.0 - std::numeric_limits<double>::epsilon());
+    int binIndex = static_cast<int>(std::floor(normalized * static_cast<double>(binCount)));
     if(binIndex >= binCount)
         binIndex = binCount - 1;
     return binIndex;
@@ -668,16 +675,20 @@ std::vector<int> connectedComponentAtThreshold(const std::vector<double>& freeEn
 }
 
 PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
+                                 double distanceMinimum,
                                  double distanceMaximum,
                                  int distanceBins,
                                  int angleBins)
 {
-    if(distanceMaximum <= 0.0)
-        throw Exception(HydrogenBondKineticsModifier::tr("The PMF distance maximum must be positive."));
+    if(distanceMinimum < 0.0)
+        throw Exception(HydrogenBondKineticsModifier::tr("The PMF distance minimum must be non-negative."));
+    if(distanceMaximum <= distanceMinimum)
+        throw Exception(HydrogenBondKineticsModifier::tr("The PMF distance maximum must be greater than the PMF distance minimum."));
     if(distanceBins < 4 || angleBins < 4)
         throw Exception(HydrogenBondKineticsModifier::tr("PMF bin counts must be at least 4 in each dimension."));
 
     PmfDefinition pmf;
+    pmf.distanceMinimum = distanceMinimum;
     pmf.distanceMaximum = distanceMaximum;
     pmf.distanceBins = distanceBins;
     pmf.angleBins = angleBins;
@@ -685,15 +696,15 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
     pmf.freeEnergy.assign(pmf.counts.size(), std::numeric_limits<double>::infinity());
     pmf.inBasin.assign(pmf.counts.size(), 0);
 
-    const double distanceBinWidth = distanceMaximum / static_cast<double>(distanceBins);
+    const double distanceBinWidth = (distanceMaximum - distanceMinimum) / static_cast<double>(distanceBins);
     const double angleBinWidth = 180.0 / static_cast<double>(angleBins);
 
     for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
         for(const CandidateTripletSample& sample : snapshot.candidates) {
-            if(sample.distance > distanceMaximum)
+            if(sample.distance < distanceMinimum || sample.distance > distanceMaximum)
                 continue;
-            const int distanceBin = clampedBinIndex(sample.distance, distanceMaximum, distanceBins);
-            const int angleBin = clampedBinIndex(sample.theta, 180.0, angleBins);
+            const int distanceBin = clampedBinIndex(sample.distance, distanceMinimum, distanceMaximum, distanceBins);
+            const int angleBin = clampedBinIndex(sample.theta, 0.0, 180.0, angleBins);
             if(distanceBin < 0 || angleBin < 0)
                 continue;
             pmf.counts[pmfLinearIndex(distanceBin, angleBin, angleBins)]++;
@@ -703,7 +714,7 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
     double minimumFreeEnergy = std::numeric_limits<double>::infinity();
     int minimumIndex = -1;
     for(int distanceBin = 0; distanceBin < distanceBins; ++distanceBin) {
-        const double distanceCenter = (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
+        const double distanceCenter = distanceMinimum + (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
         for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
             const size_t linearIndex = pmfLinearIndex(distanceBin, angleBin, angleBins);
             const int64_t count = pmf.counts[linearIndex];
@@ -725,7 +736,7 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
 
     if(minimumIndex < 0)
         throw Exception(HydrogenBondKineticsModifier::tr(
-            "The PMF-derived hydrogen-bond definition found no donor-hydrogen-acceptor triplets within the PMF distance maximum."));
+            "The PMF-derived hydrogen-bond definition found no donor-hydrogen-acceptor triplets within the PMF distance interval."));
 
     for(double& value : pmf.freeEnergy) {
         if(std::isfinite(value))
@@ -786,10 +797,10 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
 
 bool pmfTripletIsHydrogenBonded(const CandidateTripletSample& sample, const PmfDefinition& pmf)
 {
-    if(sample.distance > pmf.distanceMaximum)
+    if(sample.distance < pmf.distanceMinimum || sample.distance > pmf.distanceMaximum)
         return false;
-    const int distanceBin = clampedBinIndex(sample.distance, pmf.distanceMaximum, pmf.distanceBins);
-    const int angleBin = clampedBinIndex(sample.theta, 180.0, pmf.angleBins);
+    const int distanceBin = clampedBinIndex(sample.distance, pmf.distanceMinimum, pmf.distanceMaximum, pmf.distanceBins);
+    const int angleBin = clampedBinIndex(sample.theta, 0.0, 180.0, pmf.angleBins);
     if(distanceBin < 0 || angleBin < 0)
         return false;
     return pmf.inBasin[pmfLinearIndex(distanceBin, angleBin, pmf.angleBins)] != 0;
@@ -1220,6 +1231,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.vicinity_cutoff"), static_cast<double>(self->vicinityCutoff()), createdByNode);
             }
             else {
+                computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_minimum"), upstreamPmf.distanceMinimum, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_maximum"), upstreamPmf.distanceMaximum, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_distance_bins"), static_cast<double>(upstreamPmf.distanceBins), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HBKinetics.pmf_angle_bins"), static_cast<double>(upstreamPmf.angleBins), createdByNode);
