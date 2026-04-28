@@ -30,6 +30,7 @@
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/particles/gui/util/ParticleSelectorPopupEditor.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <qwt/qwt_color_map.h>
@@ -376,30 +377,36 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 
     StringParameterUI* donorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::donorTypes));
     donorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
-    participantLayout->addWidget(new QLabel(tr("Donor atom type(s)"), participantBox), 0, 0);
-    participantLayout->addWidget(donorTypesUI->textBox(), 0, 1);
     StringParameterUI* donorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::donorExpression));
-    donorExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
-    participantLayout->addWidget(new QLabel(tr("Donor expression"), participantBox), 1, 0);
-    participantLayout->addWidget(donorExpressionUI->textBox(), 1, 1);
+    participantLayout->addWidget(new QLabel(tr("Donor atom type(s)"), participantBox), 0, 0);
+    participantLayout->addWidget(createSelectorPopupRow(
+        participantBox,
+        donorTypesUI->textBox(),
+        donorExpressionUI,
+        tr("Donor expression override"),
+        tr("Use this expression instead of the donor atom types. Leave it empty to use the type field again.")), 0, 1);
 
     StringParameterUI* hydrogenTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::hydrogenTypes));
     hydrogenTypesUI->lineEdit()->setPlaceholderText(tr("e.g. H or 1"));
-    participantLayout->addWidget(new QLabel(tr("Hydrogen atom type(s)"), participantBox), 2, 0);
-    participantLayout->addWidget(hydrogenTypesUI->textBox(), 2, 1);
     StringParameterUI* hydrogenExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::hydrogenExpression));
-    hydrogenExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
-    participantLayout->addWidget(new QLabel(tr("Hydrogen expression"), participantBox), 3, 0);
-    participantLayout->addWidget(hydrogenExpressionUI->textBox(), 3, 1);
+    participantLayout->addWidget(new QLabel(tr("Hydrogen atom type(s)"), participantBox), 1, 0);
+    participantLayout->addWidget(createSelectorPopupRow(
+        participantBox,
+        hydrogenTypesUI->textBox(),
+        hydrogenExpressionUI,
+        tr("Hydrogen expression override"),
+        tr("Use this expression instead of the hydrogen atom types. Leave it empty to use the type field again.")), 1, 1);
 
     StringParameterUI* acceptorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::acceptorTypes));
     acceptorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
-    participantLayout->addWidget(new QLabel(tr("Acceptor atom type(s)"), participantBox), 4, 0);
-    participantLayout->addWidget(acceptorTypesUI->textBox(), 4, 1);
     StringParameterUI* acceptorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondAnalysisModifier::acceptorExpression));
-    acceptorExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
-    participantLayout->addWidget(new QLabel(tr("Acceptor expression"), participantBox), 5, 0);
-    participantLayout->addWidget(acceptorExpressionUI->textBox(), 5, 1);
+    participantLayout->addWidget(new QLabel(tr("Acceptor atom type(s)"), participantBox), 2, 0);
+    participantLayout->addWidget(createSelectorPopupRow(
+        participantBox,
+        acceptorTypesUI->textBox(),
+        acceptorExpressionUI,
+        tr("Acceptor expression override"),
+        tr("Use this expression instead of the acceptor atom types. Leave it empty to use the type field again.")), 2, 1);
 
     layout->addWidget(participantBox);
 
