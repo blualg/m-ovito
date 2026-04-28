@@ -56,9 +56,10 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     gridLayout->setColumnStretch(1, 1);
 
     auto* directionModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::directionMode));
-    directionModeUI->comboBox()->addItem(tr("Dipole direction"), QVariant::fromValue((int)MolecularOrientationModifier::DipoleDirection));
-    directionModeUI->comboBox()->addItem(tr("Atom-type direction"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
-    gridLayout->addWidget(new QLabel(tr("Molecule direction")), 0, 0);
+    directionModeUI->comboBox()->addItem(tr("Dipole vector"), QVariant::fromValue((int)MolecularOrientationModifier::DipoleDirection));
+    directionModeUI->comboBox()->addItem(tr("Atom-type centroid vector"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
+    directionModeUI->comboBox()->addItem(tr("Matching pair vector"), QVariant::fromValue((int)MolecularOrientationModifier::MatchingPairVector));
+    gridLayout->addWidget(new QLabel(tr("Descriptor")), 0, 0);
     gridLayout->addWidget(directionModeUI->comboBox(), 0, 1);
 
     _manualDirectionWidget = new QWidget();
@@ -102,6 +103,11 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
 
     layout->addLayout(gridLayout);
     layout->addSpacing(8);
+    auto* descriptorNote = new QLabel(tr("A descriptor-particle container is written for downstream histogram and correlation analysis. "
+                                         "Use its selection property to restrict downstream modifiers to entries inside the reference shell."));
+    descriptorNote->setWordWrap(true);
+    layout->addWidget(descriptorNote);
+    layout->addSpacing(6);
     layout->addWidget(new QLabel(tr("Orientation angle distribution:")));
 
     _plotWidget = new DataTablePlotWidget();
@@ -192,7 +198,7 @@ void MolecularOrientationModifierEditor::updateManualDirectionControls()
         return;
 
     const MolecularOrientationModifier* modifier = static_object_cast<MolecularOrientationModifier>(editObject());
-    const bool visible = modifier && modifier->directionMode() == MolecularOrientationModifier::ManualMolecularDirection;
+    const bool visible = modifier && modifier->directionMode() != MolecularOrientationModifier::DipoleDirection;
     if(_manualDirectionWidget->isVisible() == visible)
         return;
 

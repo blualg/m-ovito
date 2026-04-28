@@ -34,6 +34,7 @@
 #include <QtMath>
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <unordered_map>
 
 namespace Ovito {
@@ -59,6 +60,19 @@ struct ReferenceSite
     Point3 position = Point3::Origin();
 };
 
+struct DescriptorRecord
+{
+    IdentifierIntType moleculeId = 0;
+    Point3 position = Point3::Origin();
+    Vector3 vector = Vector3::Zero();
+    FloatType magnitude = 0;
+    FloatType angleDegrees = std::numeric_limits<FloatType>::quiet_NaN();
+    FloatType cosineToReference = std::numeric_limits<FloatType>::quiet_NaN();
+    FloatType distanceToReference = std::numeric_limits<FloatType>::quiet_NaN();
+    int32_t overlapCount = 0;
+    bool inReferenceShell = false;
+};
+
 inline FloatType clampedAcos(FloatType value)
 {
     return std::acos(std::clamp(value, FloatType(-1), FloatType(1)));
@@ -68,9 +82,11 @@ QString directionModeLabel(MolecularOrientationModifier::DirectionMode direction
 {
     switch(directionMode) {
     case MolecularOrientationModifier::DipoleDirection:
-        return MolecularOrientationModifier::tr("dipole direction");
+        return MolecularOrientationModifier::tr("dipole vector");
     case MolecularOrientationModifier::ManualMolecularDirection:
-        return MolecularOrientationModifier::tr("manual molecular direction");
+        return MolecularOrientationModifier::tr("atom-type centroid vector");
+    case MolecularOrientationModifier::MatchingPairVector:
+        return MolecularOrientationModifier::tr("matching pair vector");
     }
     OVITO_ASSERT(false);
     return {};
@@ -126,7 +142,7 @@ std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeP
 IMPLEMENT_CREATABLE_OVITO_CLASS(MolecularOrientationModifier);
 OVITO_CLASSINFO(MolecularOrientationModifier, "DisplayName", "Molecular orientation around atoms");
 OVITO_CLASSINFO(MolecularOrientationModifier, "Description",
-                "Measure how molecular orientation vectors align relative to the nearest reference atom of a chosen type.");
+                "Generate molecule- or pair-based orientation descriptors around reference atoms and measure their angular distribution.");
 OVITO_CLASSINFO(MolecularOrientationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, directionMode);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, fromTypeId);
@@ -136,7 +152,7 @@ DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, anchorTypes);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, cutoff);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, onlySelectedParticles);
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Molecule direction");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Descriptor");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromTypeId, "Direction start atom type");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toTypeId, "Direction end atom type");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypes, "Orient around atom type(s)");
@@ -186,7 +202,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         throw Exception(tr("The option 'Use only selected particles' requires a particle selection."));
 
     if(selectedDirectionMode == ManualMolecularDirection && fromTypeId() == toTypeId())
-        throw Exception(tr("The manual molecular direction mode requires two different particle types."));
+        throw Exception(tr("The atom-type centroid vector mode requires two different particle types."));
 
     const std::vector<int> referenceTypeIds = parseTypeIds(referenceTypes(), particleTypeProperty, tr("reference atom type"));
     const std::vector<int> anchorTypeIds = parseTypeIds(anchorTypes(), particleTypeProperty, tr("molecule site atom type"));
@@ -225,7 +241,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             cutoffRadius,
             histogramBinCount,
             selectedOnly,
-            table]() mutable
+            table,
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         std::unordered_map<IdentifierIntType, size_t> groupLookup;
         groupLookup.reserve(positions.size());
@@ -257,25 +274,32 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             for(size_t atomListIndex = 1; atomListIndex < group.indices.size(); ++atomListIndex) {
                 const Point3 current = positions[group.indices[atomListIndex]];
                 Vector3 delta = current - referencePosition;
-                if(cell)
-                    delta = cell->wrapVector(delta);
-                wrappedPositions.push_back(referencePosition + delta);
-            }
+            if(cell)
+                delta = cell->wrapVector(delta);
+            wrappedPositions.push_back(referencePosition + delta);
+        }
         };
 
-        PropertyPtr angleProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
-                                                        QStringLiteral("Molecular Orientation Angle"));
-        PropertyPtr distanceProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
-                                                           QStringLiteral("Distance To Nearest Reference"));
-        PropertyPtr overlapProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::Int32, 1,
-                                                          QStringLiteral("Reference Overlap Count"));
-
-        BufferWriteAccess<FloatType, access_mode::discard_write> angleAcc(angleProperty);
-        BufferWriteAccess<FloatType, access_mode::discard_write> distanceAcc(distanceProperty);
-        BufferWriteAccess<int32_t, access_mode::discard_write> overlapAcc(overlapProperty);
-        std::fill(angleAcc.begin(), angleAcc.end(), std::numeric_limits<FloatType>::quiet_NaN());
-        std::fill(distanceAcc.begin(), distanceAcc.end(), std::numeric_limits<FloatType>::quiet_NaN());
-        std::fill(overlapAcc.begin(), overlapAcc.end(), 0);
+        PropertyPtr legacyAngleProperty;
+        PropertyPtr legacyDistanceProperty;
+        PropertyPtr legacyOverlapProperty;
+        std::optional<BufferWriteAccess<FloatType, access_mode::discard_write>> legacyAngleAcc;
+        std::optional<BufferWriteAccess<FloatType, access_mode::discard_write>> legacyDistanceAcc;
+        std::optional<BufferWriteAccess<int32_t, access_mode::discard_write>> legacyOverlapAcc;
+        if(selectedDirectionMode != MatchingPairVector) {
+            legacyAngleProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
+                                                      QStringLiteral("Molecular Orientation Angle"));
+            legacyDistanceProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1,
+                                                         QStringLiteral("Distance To Nearest Reference"));
+            legacyOverlapProperty = PropertyPtr::create(DataBuffer::Initialized, particleCount, Property::Int32, 1,
+                                                        QStringLiteral("Reference Overlap Count"));
+            legacyAngleAcc.emplace(legacyAngleProperty);
+            legacyDistanceAcc.emplace(legacyDistanceProperty);
+            legacyOverlapAcc.emplace(legacyOverlapProperty);
+            std::fill(legacyAngleAcc->begin(), legacyAngleAcc->end(), std::numeric_limits<FloatType>::quiet_NaN());
+            std::fill(legacyDistanceAcc->begin(), legacyDistanceAcc->end(), std::numeric_limits<FloatType>::quiet_NaN());
+            std::fill(legacyOverlapAcc->begin(), legacyOverlapAcc->end(), 0);
+        }
 
         std::vector<ReferenceSite> referenceSites;
         referenceSites.reserve(positions.size());
@@ -343,13 +367,16 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         const FloatType angleRangeStart = FloatType(0);
         const FloatType angleRangeEnd = FloatType(180);
         const FloatType binSize = (angleRangeEnd - angleRangeStart) / histogramBinCount;
+        std::vector<DescriptorRecord> descriptorRecords;
+        descriptorRecords.reserve(molecules.size());
 
         size_t candidateMoleculeCount = 0;
-        size_t analyzedMoleculeCount = 0;
+        size_t generatedDescriptorCount = 0;
+        size_t histogramSampleCount = 0;
         size_t missingDirectionCount = 0;
         size_t missingAnchorCount = 0;
         size_t noReferenceCount = 0;
-        size_t overlapMoleculeCount = 0;
+        size_t overlapDescriptorCount = 0;
         size_t zeroDirectionCount = 0;
         size_t zeroRadialCount = 0;
 
@@ -370,47 +397,6 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             for(const Point3& position : moleculePositions)
                 centerOffsetSum += (position - reference);
             const Point3 moleculeCenter = reference + centerOffsetSum / static_cast<FloatType>(moleculePositions.size());
-
-            Vector3 orientationVector = Vector3::Zero();
-            switch(selectedDirectionMode) {
-            case DipoleDirection:
-                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex)
-                    orientationVector += charges[group.indices[atomListIndex]] * (moleculePositions[atomListIndex] - moleculeCenter);
-                break;
-            case ManualMolecularDirection: {
-                Vector3 fromCentroidOffset = Vector3::Zero();
-                Vector3 toCentroidOffset = Vector3::Zero();
-                size_t fromCount = 0;
-                size_t toCount = 0;
-                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
-                    const size_t particleIndex = group.indices[atomListIndex];
-                    const Point3& position = moleculePositions[atomListIndex];
-                    if(particleTypes[particleIndex] == fromParticleType) {
-                        fromCentroidOffset += (position - reference);
-                        fromCount++;
-                    }
-                    if(particleTypes[particleIndex] == toParticleType) {
-                        toCentroidOffset += (position - reference);
-                        toCount++;
-                    }
-                }
-                if(fromCount == 0 || toCount == 0) {
-                    missingDirectionCount++;
-                    continue;
-                }
-                const Point3 fromCentroid = reference + fromCentroidOffset / static_cast<FloatType>(fromCount);
-                const Point3 toCentroid = reference + toCentroidOffset / static_cast<FloatType>(toCount);
-                orientationVector = toCentroid - fromCentroid;
-                break;
-            }
-            }
-
-            const FloatType directionMagnitude = orientationVector.length();
-            if(directionMagnitude <= FloatType(0)) {
-                zeroDirectionCount++;
-                continue;
-            }
-            const Vector3 orientationDirection = orientationVector / directionMagnitude;
 
             Vector3 anchorWeightedOffsetSum = Vector3::Zero();
             FloatType anchorMassSum = FloatType(0);
@@ -450,83 +436,251 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 }
             }
 
-            if(referenceHits.empty()) {
+            const bool inReferenceShell = !referenceHits.empty();
+            FloatType nearestDistance = std::numeric_limits<FloatType>::quiet_NaN();
+            Vector3 radialVector = Vector3::Zero();
+            FloatType radialMagnitude = FloatType(0);
+            int32_t overlapCount = 0;
+            if(inReferenceShell) {
+                auto nearestIter = std::min_element(referenceHits.begin(), referenceHits.end(),
+                                                    [](const auto& left, const auto& right) {
+                                                        return left.second.distanceSquared < right.second.distanceSquared;
+                                                    });
+                OVITO_ASSERT(nearestIter != referenceHits.end());
+                nearestDistance = std::sqrt(nearestIter->second.distanceSquared);
+                radialVector = nearestIter->second.referenceToAnchor;
+                radialMagnitude = radialVector.length();
+                overlapCount = static_cast<int32_t>(referenceHits.size());
+                if(radialMagnitude <= FloatType(0))
+                    zeroRadialCount++;
+            }
+            else {
                 noReferenceCount++;
-                continue;
             }
 
-            auto nearestIter = std::min_element(referenceHits.begin(), referenceHits.end(),
-                                                [](const auto& left, const auto& right) {
-                                                    return left.second.distanceSquared < right.second.distanceSquared;
-                                                });
-            OVITO_ASSERT(nearestIter != referenceHits.end());
-            const FloatType nearestDistance = std::sqrt(nearestIter->second.distanceSquared);
-            const Vector3 radialVector = nearestIter->second.referenceToAnchor;
-            const FloatType radialMagnitude = radialVector.length();
-            if(radialMagnitude <= FloatType(0)) {
-                zeroRadialCount++;
-                continue;
+            std::vector<std::pair<Vector3, FloatType>> descriptorVectors;
+            switch(selectedDirectionMode) {
+            case DipoleDirection: {
+                Vector3 dipoleVector = Vector3::Zero();
+                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex)
+                    dipoleVector += charges[group.indices[atomListIndex]] * (moleculePositions[atomListIndex] - moleculeCenter);
+                const FloatType magnitude = dipoleVector.length();
+                if(magnitude <= FloatType(0)) {
+                    zeroDirectionCount++;
+                    continue;
+                }
+                descriptorVectors.emplace_back(dipoleVector / magnitude, magnitude);
+                break;
+            }
+            case ManualMolecularDirection: {
+                Vector3 fromCentroidOffset = Vector3::Zero();
+                Vector3 toCentroidOffset = Vector3::Zero();
+                size_t fromCount = 0;
+                size_t toCount = 0;
+                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
+                    const size_t particleIndex = group.indices[atomListIndex];
+                    const Point3& position = moleculePositions[atomListIndex];
+                    if(particleTypes[particleIndex] == fromParticleType) {
+                        fromCentroidOffset += (position - reference);
+                        fromCount++;
+                    }
+                    if(particleTypes[particleIndex] == toParticleType) {
+                        toCentroidOffset += (position - reference);
+                        toCount++;
+                    }
+                }
+                if(fromCount == 0 || toCount == 0) {
+                    missingDirectionCount++;
+                    continue;
+                }
+                const Vector3 directionVector = (toCentroidOffset / static_cast<FloatType>(toCount)) -
+                                                (fromCentroidOffset / static_cast<FloatType>(fromCount));
+                const FloatType magnitude = directionVector.length();
+                if(magnitude <= FloatType(0)) {
+                    zeroDirectionCount++;
+                    continue;
+                }
+                descriptorVectors.emplace_back(directionVector / magnitude, magnitude);
+                break;
+            }
+            case MatchingPairVector: {
+                std::vector<size_t> fromIndices;
+                std::vector<size_t> toIndices;
+                for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
+                    const size_t particleIndex = group.indices[atomListIndex];
+                    if(particleTypes[particleIndex] == fromParticleType)
+                        fromIndices.push_back(atomListIndex);
+                    if(particleTypes[particleIndex] == toParticleType)
+                        toIndices.push_back(atomListIndex);
+                }
+                if(fromParticleType == toParticleType) {
+                    if(fromIndices.size() < 2) {
+                        missingDirectionCount++;
+                        continue;
+                    }
+                    for(size_t i = 0; i < fromIndices.size(); ++i) {
+                        for(size_t j = i + 1; j < fromIndices.size(); ++j) {
+                            const Vector3 pairVector = moleculePositions[fromIndices[j]] - moleculePositions[fromIndices[i]];
+                            const FloatType magnitude = pairVector.length();
+                            if(magnitude <= FloatType(0)) {
+                                zeroDirectionCount++;
+                                continue;
+                            }
+                            descriptorVectors.emplace_back(pairVector / magnitude, magnitude);
+                        }
+                    }
+                }
+                else {
+                    if(fromIndices.empty() || toIndices.empty()) {
+                        missingDirectionCount++;
+                        continue;
+                    }
+                    for(size_t fromIndex : fromIndices) {
+                        for(size_t toIndex : toIndices) {
+                            const Vector3 pairVector = moleculePositions[toIndex] - moleculePositions[fromIndex];
+                            const FloatType magnitude = pairVector.length();
+                            if(magnitude <= FloatType(0)) {
+                                zeroDirectionCount++;
+                                continue;
+                            }
+                            descriptorVectors.emplace_back(pairVector / magnitude, magnitude);
+                        }
+                    }
+                }
+                if(descriptorVectors.empty()) {
+                    missingDirectionCount++;
+                    continue;
+                }
+                break;
+            }
             }
 
-            const FloatType orientationAngle =
-                qRadiansToDegrees(clampedAcos(orientationDirection.dot(radialVector / radialMagnitude)));
-            size_t binIndex = static_cast<size_t>((orientationAngle - angleRangeStart) / binSize);
-            if(binIndex >= static_cast<size_t>(histogramBinCount))
-                binIndex = static_cast<size_t>(histogramBinCount - 1);
-            histogram[binIndex]++;
+            FloatType legacyAngle = std::numeric_limits<FloatType>::quiet_NaN();
+            for(const auto& [descriptorVector, descriptorMagnitude] : descriptorVectors) {
+                DescriptorRecord record;
+                record.moleculeId = group.moleculeId;
+                record.position = anchorPoint;
+                record.vector = descriptorVector;
+                record.magnitude = descriptorMagnitude;
+                record.distanceToReference = nearestDistance;
+                record.overlapCount = overlapCount;
+                record.inReferenceShell = inReferenceShell;
 
-            const int32_t overlapCount = static_cast<int32_t>(referenceHits.size());
-            if(overlapCount > 1)
-                overlapMoleculeCount++;
+                if(inReferenceShell && radialMagnitude > FloatType(0)) {
+                    record.cosineToReference = descriptorVector.dot(radialVector / radialMagnitude);
+                    record.angleDegrees = qRadiansToDegrees(clampedAcos(record.cosineToReference));
+                    size_t binIndex = static_cast<size_t>((record.angleDegrees - angleRangeStart) / binSize);
+                    if(binIndex >= static_cast<size_t>(histogramBinCount))
+                        binIndex = static_cast<size_t>(histogramBinCount - 1);
+                    histogram[binIndex]++;
+                    histogramSampleCount++;
+                    legacyAngle = record.angleDegrees;
+                }
 
-            for(size_t particleIndex : group.indices) {
-                angleAcc[particleIndex] = orientationAngle;
-                distanceAcc[particleIndex] = nearestDistance;
-                overlapAcc[particleIndex] = overlapCount;
+                if(record.inReferenceShell && record.overlapCount > 1)
+                    overlapDescriptorCount++;
+
+                descriptorRecords.push_back(record);
+                generatedDescriptorCount++;
             }
-            analyzedMoleculeCount++;
+
+            if(legacyAngleAcc && legacyDistanceAcc && legacyOverlapAcc) {
+                for(size_t particleIndex : group.indices) {
+                    (*legacyAngleAcc)[particleIndex] = legacyAngle;
+                    (*legacyDistanceAcc)[particleIndex] = nearestDistance;
+                    (*legacyOverlapAcc)[particleIndex] = overlapCount;
+                }
+            }
         }
 
         if(selectedOnly && candidateMoleculeCount == 0)
             throw Exception(tr("No molecules were selected. Any selected atom promotes the whole molecule into this analysis."));
-        if(analyzedMoleculeCount == 0) {
+        if(descriptorRecords.empty()) {
             if(selectedDirectionMode == ManualMolecularDirection && missingDirectionCount == candidateMoleculeCount)
-                throw Exception(tr("No molecules contained both selected atom types for the manual molecular direction."));
+                throw Exception(tr("No molecules contained both selected atom types for the atom-type centroid vector."));
+            if(selectedDirectionMode == MatchingPairVector && missingDirectionCount == candidateMoleculeCount)
+                throw Exception(tr("No molecules contained any matching atom pairs for the chosen particle types."));
             if(missingAnchorCount == candidateMoleculeCount)
                 throw Exception(tr("No molecules contained the requested molecule site atom type(s)."));
-            if(noReferenceCount == candidateMoleculeCount)
-                throw Exception(tr("No molecules had a reference site within the cutoff radius."));
-            throw Exception(tr("No molecules satisfied the molecular orientation analysis criteria."));
+            throw Exception(tr("No molecules satisfied the descriptor-generation criteria."));
         }
 
         table->setElementCount(histogramBinCount);
         Property* pdfValues = table->createProperty(DataBuffer::Initialized, QStringLiteral("PDF"), Property::FloatDefault);
         BufferWriteAccess<FloatType, access_mode::discard_write> pdf(pdfValues);
-        for(int binIndex = 0; binIndex < histogramBinCount; ++binIndex)
-            pdf[binIndex] = static_cast<FloatType>(histogram[binIndex]) / (static_cast<FloatType>(analyzedMoleculeCount) * binSize);
+        for(int binIndex = 0; binIndex < histogramBinCount; ++binIndex) {
+            if(histogramSampleCount != 0)
+                pdf[binIndex] = static_cast<FloatType>(histogram[binIndex]) / (static_cast<FloatType>(histogramSampleCount) * binSize);
+            else
+                pdf[binIndex] = FloatType(0);
+        }
         table->setY(pdfValues);
 
-        Particles* outputParticles = state.expectMutableObject<Particles>();
-        outputParticles->createProperty(std::move(angleProperty));
-        outputParticles->createProperty(std::move(distanceProperty));
-        outputParticles->createProperty(std::move(overlapProperty));
+        Particles* descriptorParticles =
+            state.createObject<Particles>(DescriptorIdentifier, createdByNode, ObjectInitializationFlag::DontCreateVisElement);
+        descriptorParticles->setElementCount(descriptorRecords.size());
+        BufferWriteAccess<Point3, access_mode::discard_write> descriptorPositions(
+            descriptorParticles->createProperty(DataBuffer::Initialized, Particles::PositionProperty));
+        BufferWriteAccess<IdentifierIntType, access_mode::discard_write> descriptorIds(
+            descriptorParticles->createProperty(DataBuffer::Initialized, Particles::IdentifierProperty));
+        BufferWriteAccess<IdentifierIntType, access_mode::discard_write> descriptorMoleculeIds(
+            descriptorParticles->createProperty(DataBuffer::Initialized, Particles::MoleculeProperty));
+        BufferWriteAccess<SelectionIntType, access_mode::discard_write> descriptorSelection(
+            descriptorParticles->createProperty(DataBuffer::Initialized, Particles::SelectionProperty));
+        BufferWriteAccess<Vector3, access_mode::discard_write> descriptorVectorsAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Descriptor Vector"), Property::FloatDefault, 3));
+        BufferWriteAccess<FloatType, access_mode::discard_write> descriptorMagnitudeAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Descriptor Magnitude"), Property::FloatDefault));
+        BufferWriteAccess<FloatType, access_mode::discard_write> descriptorAngleAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Orientation Angle To Reference"), Property::FloatDefault));
+        BufferWriteAccess<FloatType, access_mode::discard_write> descriptorCosineAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Orientation Cosine To Reference"), Property::FloatDefault));
+        BufferWriteAccess<FloatType, access_mode::discard_write> descriptorDistanceAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Distance To Nearest Reference"), Property::FloatDefault));
+        BufferWriteAccess<int32_t, access_mode::discard_write> descriptorOverlapAcc(
+            descriptorParticles->createProperty(DataBuffer::Initialized, QStringLiteral("Reference Overlap Count"), Property::Int32));
 
-        QString statusText = tr("Analyzed %1 molecules using %2.")
-                                 .arg(analyzedMoleculeCount)
+        for(size_t recordIndex = 0; recordIndex < descriptorRecords.size(); ++recordIndex) {
+            const DescriptorRecord& record = descriptorRecords[recordIndex];
+            descriptorPositions[recordIndex] = record.position;
+            descriptorIds[recordIndex] = static_cast<IdentifierIntType>(recordIndex + 1);
+            descriptorMoleculeIds[recordIndex] = record.moleculeId;
+            descriptorSelection[recordIndex] = record.inReferenceShell ? 1 : 0;
+            descriptorVectorsAcc[recordIndex] = record.vector;
+            descriptorMagnitudeAcc[recordIndex] = record.magnitude;
+            descriptorAngleAcc[recordIndex] = record.angleDegrees;
+            descriptorCosineAcc[recordIndex] = record.cosineToReference;
+            descriptorDistanceAcc[recordIndex] = record.distanceToReference;
+            descriptorOverlapAcc[recordIndex] = record.overlapCount;
+        }
+
+        if(legacyAngleProperty) {
+            Particles* outputParticles = state.expectMutableObject<Particles>();
+            outputParticles->createProperty(std::move(legacyAngleProperty));
+            outputParticles->createProperty(std::move(legacyDistanceProperty));
+            outputParticles->createProperty(std::move(legacyOverlapProperty));
+        }
+
+        QString statusText = tr("Generated %1 descriptor entries from %2 molecules using %3.")
+                                 .arg(generatedDescriptorCount)
+                                 .arg(candidateMoleculeCount)
                                  .arg(directionModeLabel(selectedDirectionMode));
-        if(overlapMoleculeCount > 0)
-            statusText += tr(" %1 molecules had overlapping reference environments.").arg(overlapMoleculeCount);
+        statusText += tr(" %1 entries are inside the reference shell.").arg(histogramSampleCount);
+        if(overlapDescriptorCount > 0)
+            statusText += tr(" %1 descriptor entries had overlapping reference environments.").arg(overlapDescriptorCount);
         if(noReferenceCount > 0)
             statusText += tr(" %1 molecules had no reference site within the cutoff.").arg(noReferenceCount);
         if(missingAnchorCount > 0)
             statusText += tr(" %1 molecules were skipped because they lacked the requested molecule site atoms.").arg(missingAnchorCount);
         if(missingDirectionCount > 0)
-            statusText += tr(" %1 molecules were skipped because they lacked the requested direction atom types.").arg(missingDirectionCount);
+            statusText += tr(" %1 molecules were skipped because they lacked the requested descriptor atoms.").arg(missingDirectionCount);
         if(zeroDirectionCount > 0)
-            statusText += tr(" %1 molecules had zero direction magnitude.").arg(zeroDirectionCount);
+            statusText += tr(" %1 descriptor vectors had zero magnitude.").arg(zeroDirectionCount);
         if(zeroRadialCount > 0)
-            statusText += tr(" %1 molecules had zero reference distance.").arg(zeroRadialCount);
-        state.setStatus(PipelineStatus(statusText, static_cast<qlonglong>(analyzedMoleculeCount)));
+            statusText += tr(" %1 descriptor entries had zero reference distance.").arg(zeroRadialCount);
+        if(histogramSampleCount == 0)
+            statusText += tr(" No descriptor entry currently lies inside the reference shell.");
+        state.setStatus(PipelineStatus(statusText, static_cast<qlonglong>(generatedDescriptorCount)));
         return std::move(state);
     });
 }

@@ -47,11 +47,13 @@ public:
     enum DirectionMode
     {
         DipoleDirection,
-        ManualMolecularDirection
+        ManualMolecularDirection,
+        MatchingPairVector
     };
     Q_ENUM(DirectionMode);
 
     static constexpr QStringView TableIdentifier = u"molecular-orientation-distribution";
+    static constexpr QStringView DescriptorIdentifier = u"molecular-orientation-descriptors";
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
