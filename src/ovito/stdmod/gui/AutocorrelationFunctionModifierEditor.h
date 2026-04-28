@@ -30,6 +30,7 @@ namespace Ovito {
 class CustomParameterUI;
 class AutocorrelationFunctionModifier;
 class DataTablePlotWidget;
+class PropertyReferenceParameterUI;
 
 class AutocorrelationFunctionModifierEditor : public PropertiesEditor
 {
@@ -53,9 +54,14 @@ private:
     void populateAttributeList(const QString& currentValue);
     AutocorrelationFunctionModifier* modifier() const;
 
+    QPointer<QLabel> _targetTypeLabel;
+    QPointer<QComboBox> _targetTypeCombo;
     QPointer<QStackedWidget> _targetStack;
+    QPointer<QStackedWidget> _modeOptionsStack;
     QPointer<QComboBox> _attributeCombo;
     QPointer<CustomParameterUI> _attributeUI;
+    QPointer<PropertyReferenceParameterUI> _propertyUI;
+    QPointer<QLabel> _propertyNoteLabel;
     QPointer<QPushButton> _runButton;
     QPointer<DataTablePlotWidget> _plot;
     QPointer<QLabel> _summaryLabel;

@@ -32,8 +32,10 @@
 
 #include <QtMath>
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 
 namespace Ovito {
@@ -61,6 +63,7 @@ struct ReferenceSite
 
 struct DescriptorRecord
 {
+    IdentifierIntType identifier = 0;
     IdentifierIntType moleculeId = 0;
     Point3 position = Point3::Origin();
     Vector3 vector = Vector3::Zero();
@@ -75,6 +78,26 @@ struct DescriptorRecord
 inline FloatType clampedAcos(FloatType value)
 {
     return std::acos(std::clamp(value, FloatType(-1), FloatType(1)));
+}
+
+using UnsignedIdType = std::make_unsigned_t<IdentifierIntType>;
+
+inline IdentifierIntType makeHashedDescriptorId(std::initializer_list<IdentifierIntType> values)
+{
+    auto mix = [](UnsignedIdType value) {
+        value += 0x9e3779b97f4a7c15ull;
+        value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ull;
+        value = (value ^ (value >> 27)) * 0x94d049bb133111ebull;
+        return value ^ (value >> 31);
+    };
+
+    UnsignedIdType hash = 0x123456789abcdef0ull;
+    for(IdentifierIntType value : values)
+        hash ^= mix(static_cast<UnsignedIdType>(value)) + 0x9e3779b97f4a7c15ull + (hash << 6) + (hash >> 2);
+
+    if(hash == 0)
+        hash = 1;
+    return static_cast<IdentifierIntType>(hash);
 }
 
 QString directionModeLabel(MolecularOrientationModifier::DirectionMode directionMode)
@@ -145,6 +168,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
     BufferReadAccess<IdentifierIntType> moleculeIds = particles->getProperty(Particles::MoleculeProperty);
     if(!moleculeIds)
         throw Exception(tr("This analysis requires the particle property 'Molecule Identifier'. Load molecular topology first."));
+    BufferReadAccess<IdentifierIntType> particleIds = particles->getProperty(Particles::IdentifierProperty);
 
     BufferReadAccess<int32_t> particleTypes = particles->getProperty(Particles::TypeProperty);
     if(!particleTypes)
@@ -189,6 +213,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             state = std::move(state),
             positions = std::move(positions),
             moleculeIds = std::move(moleculeIds),
+            particleIds = std::move(particleIds),
             particleTypes = std::move(particleTypes),
             charges = std::move(charges),
             masses = std::move(masses),
@@ -388,6 +413,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         size_t overlapDescriptorCount = 0;
         size_t zeroDirectionCount = 0;
         size_t zeroRadialCount = 0;
+        const bool usedFallbackDescriptorIds = !particleIds;
 
         for(const MoleculeGroup& group : molecules) {
             this_task::throwIfCanceled();
@@ -468,6 +494,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             }
 
             std::vector<std::pair<Vector3, FloatType>> descriptorVectors;
+            std::vector<IdentifierIntType> descriptorIdsForGroup;
+            const IdentifierIntType fallbackGroupId = particleIds ? particleIds[group.indices.front()]
+                                                                  : static_cast<IdentifierIntType>(group.indices.front() + 1);
             switch(selectedDirectionMode) {
             case DipoleDirection: {
                 Vector3 dipoleVector = Vector3::Zero();
@@ -479,6 +508,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                     continue;
                 }
                 descriptorVectors.emplace_back(dipoleVector / magnitude, magnitude);
+                descriptorIdsForGroup.push_back(group.moleculeId != 0
+                                                   ? group.moleculeId
+                                                   : makeHashedDescriptorId({fallbackGroupId, 1}));
                 break;
             }
             case ManualMolecularDirection: {
@@ -510,6 +542,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                     continue;
                 }
                 descriptorVectors.emplace_back(directionVector / magnitude, magnitude);
+                descriptorIdsForGroup.push_back(group.moleculeId != 0
+                                                   ? group.moleculeId
+                                                   : makeHashedDescriptorId({fallbackGroupId, 1}));
                 break;
             }
             case MatchingPairVector: {
@@ -529,13 +564,24 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                     }
                     for(size_t i = 0; i < fromIndices.size(); ++i) {
                         for(size_t j = i + 1; j < fromIndices.size(); ++j) {
-                            const Vector3 pairVector = moleculePositions[fromIndices[j]] - moleculePositions[fromIndices[i]];
+                            size_t firstIndex = fromIndices[i];
+                            size_t secondIndex = fromIndices[j];
+                            IdentifierIntType firstId = particleIds ? particleIds[group.indices[firstIndex]]
+                                                                    : static_cast<IdentifierIntType>(group.indices[firstIndex] + 1);
+                            IdentifierIntType secondId = particleIds ? particleIds[group.indices[secondIndex]]
+                                                                     : static_cast<IdentifierIntType>(group.indices[secondIndex] + 1);
+                            if(firstId > secondId) {
+                                std::swap(firstIndex, secondIndex);
+                                std::swap(firstId, secondId);
+                            }
+                            const Vector3 pairVector = moleculePositions[secondIndex] - moleculePositions[firstIndex];
                             const FloatType magnitude = pairVector.length();
                             if(magnitude <= FloatType(0)) {
                                 zeroDirectionCount++;
                                 continue;
                             }
                             descriptorVectors.emplace_back(pairVector / magnitude, magnitude);
+                            descriptorIdsForGroup.push_back(makeHashedDescriptorId({group.moleculeId, firstId, secondId}));
                         }
                     }
                 }
@@ -546,6 +592,10 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                     }
                     for(size_t fromIndex : fromIndices) {
                         for(size_t toIndex : toIndices) {
+                            const IdentifierIntType fromId = particleIds ? particleIds[group.indices[fromIndex]]
+                                                                         : static_cast<IdentifierIntType>(group.indices[fromIndex] + 1);
+                            const IdentifierIntType toId = particleIds ? particleIds[group.indices[toIndex]]
+                                                                       : static_cast<IdentifierIntType>(group.indices[toIndex] + 1);
                             const Vector3 pairVector = moleculePositions[toIndex] - moleculePositions[fromIndex];
                             const FloatType magnitude = pairVector.length();
                             if(magnitude <= FloatType(0)) {
@@ -553,6 +603,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                                 continue;
                             }
                             descriptorVectors.emplace_back(pairVector / magnitude, magnitude);
+                            descriptorIdsForGroup.push_back(makeHashedDescriptorId({group.moleculeId, fromId, toId}));
                         }
                     }
                 }
@@ -565,8 +616,10 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             }
 
             FloatType legacyAngle = std::numeric_limits<FloatType>::quiet_NaN();
-            for(const auto& [descriptorVector, descriptorMagnitude] : descriptorVectors) {
+            for(size_t descriptorIndex = 0; descriptorIndex < descriptorVectors.size(); ++descriptorIndex) {
+                const auto& [descriptorVector, descriptorMagnitude] = descriptorVectors[descriptorIndex];
                 DescriptorRecord record;
+                record.identifier = descriptorIdsForGroup[descriptorIndex];
                 record.moleculeId = group.moleculeId;
                 record.position = anchorPoint;
                 record.vector = descriptorVector;
@@ -652,7 +705,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         for(size_t recordIndex = 0; recordIndex < descriptorRecords.size(); ++recordIndex) {
             const DescriptorRecord& record = descriptorRecords[recordIndex];
             descriptorPositions[recordIndex] = record.position;
-            descriptorIds[recordIndex] = static_cast<IdentifierIntType>(recordIndex + 1);
+            descriptorIds[recordIndex] = record.identifier;
             descriptorMoleculeIds[recordIndex] = record.moleculeId;
             descriptorSelection[recordIndex] = record.inReferenceShell ? 1 : 0;
             descriptorVectorsAcc[recordIndex] = record.vector;
@@ -687,6 +740,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             statusText += tr(" %1 descriptor vectors had zero magnitude.").arg(zeroDirectionCount);
         if(zeroRadialCount > 0)
             statusText += tr(" %1 descriptor entries had zero reference distance.").arg(zeroRadialCount);
+        if(usedFallbackDescriptorIds)
+            statusText += tr(" Descriptor identifiers fall back to particle ordering because the input lacks 'Particle Identifier'.");
         if(histogramSampleCount == 0)
             statusText += tr(" No descriptor entry currently lies inside the reference shell.");
         state.setStatus(PipelineStatus(statusText, static_cast<qlonglong>(generatedDescriptorCount)));
