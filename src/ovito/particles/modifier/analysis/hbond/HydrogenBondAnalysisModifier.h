@@ -70,8 +70,11 @@ private:
     PipelineFlowState applyCachedResults(const ModifierEvaluationRequest& request, PipelineFlowState state) const;
 
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, donorTypes, setDonorTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, donorExpression, setDonorExpression, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, hydrogenTypes, setHydrogenTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, hydrogenExpression, setHydrogenExpression, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, acceptorTypes, setAcceptorTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, acceptorExpression, setAcceptorExpression, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, donorHydrogenCutoff, setDonorHydrogenCutoff, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(DefinitionMode{FixedGeometry}, definitionMode, setDefinitionMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.0}, donorAcceptorCutoff, setDonorAcceptorCutoff, PROPERTY_FIELD_MEMORIZE);

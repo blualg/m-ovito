@@ -69,7 +69,9 @@ private:
     PipelineFlowState applyCachedResults(const ModifierEvaluationRequest& request, PipelineFlowState state) const;
 
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, centralTypes, setCentralTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, centralExpression, setCentralExpression, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, shellTypes, setShellTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, shellExpression, setShellExpression, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(IndicatorMode{Overall}, indicatorMode, setIndicatorMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{3}, sameChainBondPathDistance, setSameChainBondPathDistance, PROPERTY_FIELD_MEMORIZE);

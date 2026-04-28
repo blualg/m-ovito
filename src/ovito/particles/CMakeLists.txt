@@ -114,6 +114,7 @@ SET(SourceFiles
     util/CutoffNeighborFinder.cpp
     util/PTMNeighborFinder.cpp
     util/ParticleExpressionEvaluator.cpp
+    util/ParticleSelectionHelper.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)

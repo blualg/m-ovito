@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
+#include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -35,8 +36,6 @@
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "HydrogenBondAnalysisModifier.h"
 
-#include <QHash>
-#include <QRegularExpression>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -133,64 +132,6 @@ std::vector<std::vector<int>> buildFrameBatches(const std::vector<int>& frames, 
         batches.emplace_back(frames.begin() + static_cast<ptrdiff_t>(begin), frames.begin() + static_cast<ptrdiff_t>(end));
     }
     return batches;
-}
-
-std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeProperty, const QString& roleDescription)
-{
-    if(!typeProperty || !typeProperty->isTypedProperty())
-        throw Exception(HydrogenBondAnalysisModifier::tr(
-            "Hydrogen bond analysis requires a typed 'Particle Type' property with defined element types."));
-
-    const QString trimmedText = typeListText.trimmed();
-    if(trimmedText.isEmpty())
-        throw Exception(HydrogenBondAnalysisModifier::tr("Please enter at least one %1.").arg(roleDescription));
-
-    QHash<QString, int> nameToId;
-    for(const ElementType* type : typeProperty->elementTypes()) {
-        if(!type->name().isEmpty())
-            nameToId.insert(type->name(), type->numericId());
-        nameToId.insert(type->nameOrNumericId(), type->numericId());
-    }
-
-    std::vector<int> typeIds;
-    const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
-    for(QString token : tokens) {
-        token = token.trimmed();
-        if(token.isEmpty())
-            continue;
-
-        int typeId = 0;
-        if(nameToId.contains(token)) {
-            typeId = nameToId.value(token);
-        }
-        else {
-            bool ok = false;
-            typeId = token.toInt(&ok);
-            if(!ok || !typeProperty->elementType(typeId)) {
-                throw Exception(HydrogenBondAnalysisModifier::tr(
-                    "Unknown %1 '%2'. Use particle type names or numeric IDs separated by commas.")
-                    .arg(roleDescription, token));
-            }
-        }
-
-        if(std::find(typeIds.begin(), typeIds.end(), typeId) == typeIds.end())
-            typeIds.push_back(typeId);
-    }
-
-    if(typeIds.empty())
-        throw Exception(HydrogenBondAnalysisModifier::tr("Please enter at least one valid %1.").arg(roleDescription));
-
-    return typeIds;
-}
-
-PropertyPtr createTypeSelectionProperty(const BufferReadAccess<int>& particleTypes, const std::unordered_set<int>& allowedTypes)
-{
-    PropertyPtr selectionProperty =
-        Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleTypes.size(), Particles::SelectionProperty);
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selection(selectionProperty);
-    for(size_t particleIndex = 0; particleIndex < particleTypes.size(); ++particleIndex)
-        selection[particleIndex] = allowedTypes.find(particleTypes[particleIndex]) != allowedTypes.end() ? 1 : 0;
-    return selectionProperty;
 }
 
 inline FloatType clampedAcos(FloatType value)
@@ -368,9 +309,8 @@ DataTable* createPmfTable(DataCollection* collection,
 
 std::vector<DonorHydrogenPair> collectBondedDonorHydrogenPairs(const Particles* particles,
                                                                const BufferReadAccess<Point3>& positions,
-                                                               const BufferReadAccess<int>& particleTypes,
-                                                               const std::unordered_set<int>& donorTypes,
-                                                               const std::unordered_set<int>& hydrogenTypes,
+                                                               const std::vector<uint8_t>& donorMask,
+                                                               const std::vector<uint8_t>& hydrogenMask,
                                                                const SimulationCellData* cell)
 {
     std::vector<DonorHydrogenPair> pairs;
@@ -391,10 +331,10 @@ std::vector<DonorHydrogenPair> collectBondedDonorHydrogenPairs(const Particles* 
         if(index1 >= positions.size() || index2 >= positions.size())
             continue;
 
-        const bool index1IsDonor = donorTypes.find(particleTypes[index1]) != donorTypes.end();
-        const bool index2IsDonor = donorTypes.find(particleTypes[index2]) != donorTypes.end();
-        const bool index1IsHydrogen = hydrogenTypes.find(particleTypes[index1]) != hydrogenTypes.end();
-        const bool index2IsHydrogen = hydrogenTypes.find(particleTypes[index2]) != hydrogenTypes.end();
+        const bool index1IsDonor = donorMask[index1] != 0;
+        const bool index2IsDonor = donorMask[index2] != 0;
+        const bool index1IsHydrogen = hydrogenMask[index1] != 0;
+        const bool index2IsHydrogen = hydrogenMask[index2] != 0;
 
         const Vector3I* bondShift = periodicImages ? &periodicImages[bondIndex] : nullptr;
         if(index1IsDonor && index2IsHydrogen) {
@@ -410,19 +350,18 @@ std::vector<DonorHydrogenPair> collectBondedDonorHydrogenPairs(const Particles* 
 }
 
 std::vector<DonorHydrogenPair> collectGeometricDonorHydrogenPairs(const BufferReadAccess<Point3>& positions,
-                                                                  const BufferReadAccess<int>& particleTypes,
-                                                                  const std::unordered_set<int>& donorTypes,
-                                                                  const std::unordered_set<int>& hydrogenTypes,
+                                                                  const std::vector<uint8_t>& donorMask,
+                                                                  const std::vector<uint8_t>& hydrogenMask,
                                                                   const SimulationCellData& cellData,
                                                                   FloatType cutoff)
 {
-    PropertyPtr hydrogenSelectionProperty = createTypeSelectionProperty(particleTypes, hydrogenTypes);
+    PropertyPtr hydrogenSelectionProperty = createSelectionPropertyFromMask(hydrogenMask);
     BufferReadAccess<SelectionIntType> hydrogenSelection(hydrogenSelectionProperty);
     CutoffNeighborFinder hydrogenFinder(cutoff, positions, cellData, hydrogenSelection);
 
     std::vector<DonorHydrogenPair> pairs;
     for(size_t donorIndex = 0; donorIndex < positions.size(); ++donorIndex) {
-        if(donorTypes.find(particleTypes[donorIndex]) == donorTypes.end())
+        if(!donorMask[donorIndex])
             continue;
 
         for(CutoffNeighborFinder::Query query(hydrogenFinder, donorIndex); !query.atEnd(); query.next()) {
@@ -438,9 +377,12 @@ std::vector<DonorHydrogenPair> collectGeometricDonorHydrogenPairs(const BufferRe
 
 FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
                                        int sourceFrame,
-                                       const std::unordered_set<int>& donorTypes,
-                                       const std::unordered_set<int>& hydrogenTypes,
-                                       const std::unordered_set<int>& acceptorTypes,
+                                       const QString& donorTypes,
+                                       const QString& donorExpression,
+                                       const QString& hydrogenTypes,
+                                       const QString& hydrogenExpression,
+                                       const QString& acceptorTypes,
+                                       const QString& acceptorExpression,
                                        FloatType donorHydrogenCutoff,
                                        FloatType donorAcceptorSearchCutoff,
                                        bool useBondTopology)
@@ -449,7 +391,8 @@ FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
     particles->verifyIntegrity();
 
     BufferReadAccess<Point3> positions = particles->expectProperty(Particles::PositionProperty);
-    BufferReadAccess<int> particleTypes = particles->expectProperty(Particles::TypeProperty);
+    BufferReadAccess<int32_t> particleTypes = particles->getProperty(Particles::TypeProperty);
+    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
     BufferReadAccess<IdentifierIntType> identifiers = particles->getProperty(Particles::IdentifierProperty);
     const SimulationCell* simCellObject = state.getObject<SimulationCell>();
     const SimulationCellData cellData = simCellObject
@@ -461,22 +404,38 @@ FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
     result.frame = sourceFrame;
     result.usedParticleIndices = !identifiers;
 
-    for(size_t particleIndex = 0; particleIndex < particleTypes.size(); ++particleIndex) {
-        result.donorCount += donorTypes.find(particleTypes[particleIndex]) != donorTypes.end();
-        result.hydrogenCount += hydrogenTypes.find(particleTypes[particleIndex]) != hydrogenTypes.end();
-        result.acceptorCount += acceptorTypes.find(particleTypes[particleIndex]) != acceptorTypes.end();
-    }
+    result.donorCount = 0;
+    std::vector<uint8_t> donorMask = evaluateParticleSelector(
+        state, particles, particleTypeProperty, particleTypes,
+        donorTypes, donorExpression,
+        HydrogenBondAnalysisModifier::tr("donor atom selector"),
+        HydrogenBondAnalysisModifier::tr("Hydrogen bond analysis"),
+        &result.donorCount);
+    result.hydrogenCount = 0;
+    std::vector<uint8_t> hydrogenMask = evaluateParticleSelector(
+        state, particles, particleTypeProperty, particleTypes,
+        hydrogenTypes, hydrogenExpression,
+        HydrogenBondAnalysisModifier::tr("hydrogen atom selector"),
+        HydrogenBondAnalysisModifier::tr("Hydrogen bond analysis"),
+        &result.hydrogenCount);
+    result.acceptorCount = 0;
+    std::vector<uint8_t> acceptorMask = evaluateParticleSelector(
+        state, particles, particleTypeProperty, particleTypes,
+        acceptorTypes, acceptorExpression,
+        HydrogenBondAnalysisModifier::tr("acceptor atom selector"),
+        HydrogenBondAnalysisModifier::tr("Hydrogen bond analysis"),
+        &result.acceptorCount);
 
     const auto particleId = [&](size_t particleIndex) -> IdentifierIntType {
         return identifiers ? identifiers[particleIndex] : static_cast<IdentifierIntType>(particleIndex + 1);
     };
 
     std::vector<DonorHydrogenPair> donorHydrogenPairs = useBondTopology
-        ? collectBondedDonorHydrogenPairs(particles, positions, particleTypes, donorTypes, hydrogenTypes, cellDataPtr)
-        : collectGeometricDonorHydrogenPairs(positions, particleTypes, donorTypes, hydrogenTypes, cellData, donorHydrogenCutoff);
+        ? collectBondedDonorHydrogenPairs(particles, positions, donorMask, hydrogenMask, cellDataPtr)
+        : collectGeometricDonorHydrogenPairs(positions, donorMask, hydrogenMask, cellData, donorHydrogenCutoff);
     result.donorHydrogenPairCount = donorHydrogenPairs.size();
 
-    PropertyPtr acceptorSelectionProperty = createTypeSelectionProperty(particleTypes, acceptorTypes);
+    PropertyPtr acceptorSelectionProperty = createSelectionPropertyFromMask(acceptorMask);
     BufferReadAccess<SelectionIntType> acceptorSelection(acceptorSelectionProperty);
     CutoffNeighborFinder acceptorFinder(donorAcceptorSearchCutoff, positions, cellData, acceptorSelection);
 
@@ -761,8 +720,11 @@ OVITO_CLASSINFO(HydrogenBondAnalysisModifier, "Description",
                 "Analyze hydrogen bonds over a trajectory using either fixed geometry or a PMF-derived basin definition.");
 OVITO_CLASSINFO(HydrogenBondAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorTypes);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorExpression);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, hydrogenTypes);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, hydrogenExpression);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, acceptorTypes);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, acceptorExpression);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorHydrogenCutoff);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, definitionMode);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorAcceptorCutoff);
@@ -779,8 +741,11 @@ DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, intervalEnd);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, samplingFrequency);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorTypes, "Donor atom type(s)");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorExpression, "Donor expression");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, hydrogenTypes, "Hydrogen atom type(s)");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, hydrogenExpression, "Hydrogen expression");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, acceptorTypes, "Acceptor atom type(s)");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, acceptorExpression, "Acceptor expression");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorHydrogenCutoff, "Donor-hydrogen cutoff");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, definitionMode, "Hydrogen-bond definition");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorAcceptorCutoff, "HB donor-acceptor cutoff");
@@ -827,9 +792,9 @@ void HydrogenBondAnalysisModifier::initializeObject(ObjectInitializationFlags fl
 
 QVariant HydrogenBondAnalysisModifier::getPipelineEditorShortInfo(Scene*, ModificationNode*) const
 {
-    const QString donors = donorTypes().trimmed();
-    const QString hydrogens = hydrogenTypes().trimmed();
-    const QString acceptors = acceptorTypes().trimmed();
+    const QString donors = donorExpression().trimmed().isEmpty() ? donorTypes().trimmed() : donorExpression().trimmed();
+    const QString hydrogens = hydrogenExpression().trimmed().isEmpty() ? hydrogenTypes().trimmed() : hydrogenExpression().trimmed();
+    const QString acceptors = acceptorExpression().trimmed().isEmpty() ? acceptorTypes().trimmed() : acceptorExpression().trimmed();
     if(donors.isEmpty() || hydrogens.isEmpty() || acceptors.isEmpty())
         return {};
     return tr("D: %1, H: %2, A: %3").arg(donors, hydrogens, acceptors);
@@ -922,9 +887,23 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
 {
     const Particles* particles = state.expectObject<Particles>();
     const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
-    const std::vector<int> donorTypeIds = parseTypeIds(donorTypes(), particleTypeProperty, tr("donor atom type"));
-    const std::vector<int> hydrogenTypeIds = parseTypeIds(hydrogenTypes(), particleTypeProperty, tr("hydrogen atom type"));
-    const std::vector<int> acceptorTypeIds = parseTypeIds(acceptorTypes(), particleTypeProperty, tr("acceptor atom type"));
+    BufferReadAccess<int32_t> particleTypes = particles->getProperty(Particles::TypeProperty);
+    size_t initialMatchCount = 0;
+    evaluateParticleSelector(state, particles, particleTypeProperty, particleTypes,
+                             donorTypes(), donorExpression(),
+                             tr("donor atom selector"),
+                             tr("Hydrogen bond analysis"),
+                             &initialMatchCount);
+    evaluateParticleSelector(state, particles, particleTypeProperty, particleTypes,
+                             hydrogenTypes(), hydrogenExpression(),
+                             tr("hydrogen atom selector"),
+                             tr("Hydrogen bond analysis"),
+                             &initialMatchCount);
+    evaluateParticleSelector(state, particles, particleTypeProperty, particleTypes,
+                             acceptorTypes(), acceptorExpression(),
+                             tr("acceptor atom selector"),
+                             tr("Hydrogen bond analysis"),
+                             &initialMatchCount);
     if(donorHydrogenCutoff() <= 0)
         throw Exception(tr("The donor-hydrogen cutoff must be positive."));
     if(definitionMode() == FixedGeometry) {
@@ -947,10 +926,6 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
         if(pmfThetaMaximum() <= pmfThetaMinimum())
             throw Exception(tr("The PMF theta maximum must be greater than the PMF theta minimum."));
     }
-
-    const std::unordered_set<int> donorTypeSet(donorTypeIds.begin(), donorTypeIds.end());
-    const std::unordered_set<int> hydrogenTypeSet(hydrogenTypeIds.begin(), hydrogenTypeIds.end());
-    const std::unordered_set<int> acceptorTypeSet(acceptorTypeIds.begin(), acceptorTypeIds.end());
     const bool useBondTopology = particles->bonds() && particles->bonds()->getProperty(Bonds::TopologyProperty);
     const double donorAcceptorSearchCutoff = definitionMode() == PMFDerived
         ? static_cast<double>(pmfDistanceMaximum())
@@ -978,9 +953,12 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [donorTypeSet,
-             hydrogenTypeSet,
-             acceptorTypeSet,
+            [donorTypes = donorTypes(),
+             donorExpression = donorExpression(),
+             hydrogenTypes = hydrogenTypes(),
+             hydrogenExpression = hydrogenExpression(),
+             acceptorTypes = acceptorTypes(),
+             acceptorExpression = acceptorExpression(),
              donorHydrogenCutoff = donorHydrogenCutoff(),
              donorAcceptorSearchCutoff,
              useBondTopology](const std::vector<int>& frameBatch,
@@ -990,9 +968,12 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                     this_task::throwIfCanceled();
                     FrameHydrogenBondSnapshot snapshot = analyzeFrame(batchFutures[i].result(),
                                                                      frameBatch[i],
-                                                                     donorTypeSet,
-                                                                     hydrogenTypeSet,
-                                                                     acceptorTypeSet,
+                                                                     donorTypes,
+                                                                     donorExpression,
+                                                                     hydrogenTypes,
+                                                                     hydrogenExpression,
+                                                                     acceptorTypes,
+                                                                     acceptorExpression,
                                                                      donorHydrogenCutoff,
                                                                      static_cast<FloatType>(donorAcceptorSearchCutoff),
                                                                      useBondTopology);
@@ -1030,19 +1011,19 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 throw Exception(HydrogenBondAnalysisModifier::tr("Hydrogen bond analysis did not sample any trajectory frames."));
             if(accumulator.totalDonorAtoms == 0)
                 throw Exception(HydrogenBondAnalysisModifier::tr(
-                    "No particles matched the selected donor atom type(s) in the sampled trajectory interval."));
+                    "No particles matched the selected donor atom selector in the sampled trajectory interval."));
             if(accumulator.totalHydrogenAtoms == 0)
                 throw Exception(HydrogenBondAnalysisModifier::tr(
-                    "No particles matched the selected hydrogen atom type(s) in the sampled trajectory interval."));
+                    "No particles matched the selected hydrogen atom selector in the sampled trajectory interval."));
             if(accumulator.totalAcceptorAtoms == 0)
                 throw Exception(HydrogenBondAnalysisModifier::tr(
-                    "No particles matched the selected acceptor atom type(s) in the sampled trajectory interval."));
+                    "No particles matched the selected acceptor atom selector in the sampled trajectory interval."));
             if(accumulator.totalDonorHydrogenPairs == 0) {
                 throw Exception(useBondTopology
                     ? HydrogenBondAnalysisModifier::tr(
-                        "No donor-hydrogen pairs were found in the bond topology for the selected donor and hydrogen atom type(s).")
+                        "No donor-hydrogen pairs were found in the bond topology for the selected donor and hydrogen atom selectors.")
                     : HydrogenBondAnalysisModifier::tr(
-                        "No donor-hydrogen pairs were found within the donor-hydrogen cutoff. Increase the cutoff or adjust the atom types."));
+                        "No donor-hydrogen pairs were found within the donor-hydrogen cutoff. Increase the cutoff or adjust the donor/hydrogen selectors."));
             }
             if(accumulator.totalCandidateTriplets == 0)
                 throw Exception(HydrogenBondAnalysisModifier::tr(
@@ -1107,8 +1088,14 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             const double maxCount = counts.empty() ? 0.0 : *std::max_element(counts.begin(), counts.end());
 
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_types"), self->donorTypes(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_expression"), self->donorExpression(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_selector"), canonicalizeParticleSelector(self->donorTypes(), self->donorExpression()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hydrogen_types"), self->hydrogenTypes(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hydrogen_expression"), self->hydrogenExpression(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hydrogen_selector"), canonicalizeParticleSelector(self->hydrogenTypes(), self->hydrogenExpression()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.acceptor_types"), self->acceptorTypes(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.acceptor_expression"), self->acceptorExpression(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.acceptor_selector"), canonicalizeParticleSelector(self->acceptorTypes(), self->acceptorExpression()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.definition_mode"), definitionModeLabel(self->definitionMode()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_hydrogen_cutoff"), static_cast<double>(self->donorHydrogenCutoff()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.sampled_frame_count"), sampledFrameCount, createdByNode);

@@ -70,36 +70,53 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     _fromTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::fromTypeId));
     manualLayout->addWidget(new QLabel(tr("Direction start atom type")), 0, 0);
     manualLayout->addWidget(_fromTypeUI->comboBox(), 0, 1);
+    auto* fromExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::fromExpression));
+    fromExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    manualLayout->addWidget(new QLabel(tr("Direction start expression")), 1, 0);
+    manualLayout->addWidget(fromExpressionUI->textBox(), 1, 1);
 
     _toTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::toTypeId));
-    manualLayout->addWidget(new QLabel(tr("Direction end atom type")), 1, 0);
-    manualLayout->addWidget(_toTypeUI->comboBox(), 1, 1);
+    manualLayout->addWidget(new QLabel(tr("Direction end atom type")), 2, 0);
+    manualLayout->addWidget(_toTypeUI->comboBox(), 2, 1);
+    auto* toExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::toExpression));
+    toExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    manualLayout->addWidget(new QLabel(tr("Direction end expression")), 3, 0);
+    manualLayout->addWidget(toExpressionUI->textBox(), 3, 1);
 
     gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
 
     auto* referenceTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceTypes));
     referenceTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     referenceTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the reference site. "
-                                    "A single type uses each matching atom as a reference. Multiple types use one COM per molecule."));
+                                    "A single type uses each matching atom as a reference. Multiple types use one COM per molecule unless an expression override is provided."));
     gridLayout->addWidget(new QLabel(tr("Orient around atom type(s)")), 2, 0);
     gridLayout->addWidget(referenceTypesUI->textBox(), 2, 1);
+    auto* referenceExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceExpression));
+    referenceExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    gridLayout->addWidget(new QLabel(tr("Reference expression")), 3, 0);
+    gridLayout->addWidget(referenceExpressionUI->textBox(), 3, 1);
 
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
-    anchorTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the molecule anchor point."));
-    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 3, 0);
-    gridLayout->addWidget(anchorTypesUI->textBox(), 3, 1);
+    anchorTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the molecule anchor point. "
+                                 "If multiple atoms match, their center of mass is used."));
+    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 4, 0);
+    gridLayout->addWidget(anchorTypesUI->textBox(), 4, 1);
+    auto* anchorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorExpression));
+    anchorExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    gridLayout->addWidget(new QLabel(tr("Molecule site expression")), 5, 0);
+    gridLayout->addWidget(anchorExpressionUI->textBox(), 5, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::cutoff));
-    gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 4, 0);
-    gridLayout->addLayout(cutoffUI->createFieldLayout(), 4, 1);
+    gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 6, 0);
+    gridLayout->addLayout(cutoffUI->createFieldLayout(), 6, 1);
 
     auto* numberOfBinsUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::numberOfBins));
-    gridLayout->addWidget(new QLabel(tr("Angle histogram bins")), 5, 0);
-    gridLayout->addLayout(numberOfBinsUI->createFieldLayout(), 5, 1);
+    gridLayout->addWidget(new QLabel(tr("Angle histogram bins")), 7, 0);
+    gridLayout->addLayout(numberOfBinsUI->createFieldLayout(), 7, 1);
 
     auto* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::onlySelectedParticles));
-    gridLayout->addWidget(onlySelectedUI->checkBox(), 6, 0, 1, 2);
+    gridLayout->addWidget(onlySelectedUI->checkBox(), 8, 0, 1, 2);
 
     layout->addLayout(gridLayout);
     layout->addSpacing(8);

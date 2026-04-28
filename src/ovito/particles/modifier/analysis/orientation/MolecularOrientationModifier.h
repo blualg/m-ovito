@@ -65,15 +65,19 @@ private:
 
     /// Source particle type used for manual molecular directions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, fromTypeId, setFromTypeId, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, fromExpression, setFromExpression, PROPERTY_FIELD_MEMORIZE);
 
     /// Target particle type used for manual molecular directions.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, toTypeId, setToTypeId, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, toExpression, setToExpression, PROPERTY_FIELD_MEMORIZE);
 
     /// Comma-separated list of reference atom types.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, referenceTypes, setReferenceTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, referenceExpression, setReferenceExpression, PROPERTY_FIELD_MEMORIZE);
 
     /// Comma-separated list of anchor atom types.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, anchorTypes, setAnchorTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString{}, anchorExpression, setAnchorExpression, PROPERTY_FIELD_MEMORIZE);
 
     /// Cutoff radius used to identify candidate reference atoms around each molecule.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);

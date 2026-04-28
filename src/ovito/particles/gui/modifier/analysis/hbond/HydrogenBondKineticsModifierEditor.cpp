@@ -73,20 +73,32 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     donorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
     participantLayout->addWidget(new QLabel(tr("Donor atom type(s)"), participantBox), 0, 0);
     participantLayout->addWidget(donorTypesUI->textBox(), 0, 1);
+    StringParameterUI* donorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::donorExpression));
+    donorExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    participantLayout->addWidget(new QLabel(tr("Donor expression"), participantBox), 1, 0);
+    participantLayout->addWidget(donorExpressionUI->textBox(), 1, 1);
 
     StringParameterUI* hydrogenTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::hydrogenTypes));
     hydrogenTypesUI->lineEdit()->setPlaceholderText(tr("e.g. H or 1"));
-    participantLayout->addWidget(new QLabel(tr("Hydrogen atom type(s)"), participantBox), 1, 0);
-    participantLayout->addWidget(hydrogenTypesUI->textBox(), 1, 1);
+    participantLayout->addWidget(new QLabel(tr("Hydrogen atom type(s)"), participantBox), 2, 0);
+    participantLayout->addWidget(hydrogenTypesUI->textBox(), 2, 1);
+    StringParameterUI* hydrogenExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::hydrogenExpression));
+    hydrogenExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    participantLayout->addWidget(new QLabel(tr("Hydrogen expression"), participantBox), 3, 0);
+    participantLayout->addWidget(hydrogenExpressionUI->textBox(), 3, 1);
 
     StringParameterUI* acceptorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::acceptorTypes));
     acceptorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
-    participantLayout->addWidget(new QLabel(tr("Acceptor atom type(s)"), participantBox), 2, 0);
-    participantLayout->addWidget(acceptorTypesUI->textBox(), 2, 1);
+    participantLayout->addWidget(new QLabel(tr("Acceptor atom type(s)"), participantBox), 4, 0);
+    participantLayout->addWidget(acceptorTypesUI->textBox(), 4, 1);
+    StringParameterUI* acceptorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::acceptorExpression));
+    acceptorExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    participantLayout->addWidget(new QLabel(tr("Acceptor expression"), participantBox), 5, 0);
+    participantLayout->addWidget(acceptorExpressionUI->textBox(), 5, 1);
 
     FloatParameterUI* donorHydrogenCutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HydrogenBondKineticsModifier::donorHydrogenCutoff));
-    participantLayout->addWidget(donorHydrogenCutoffUI->label(), 3, 0);
-    participantLayout->addLayout(donorHydrogenCutoffUI->createFieldLayout(), 3, 1);
+    participantLayout->addWidget(donorHydrogenCutoffUI->label(), 6, 0);
+    participantLayout->addLayout(donorHydrogenCutoffUI->createFieldLayout(), 6, 1);
 
     layout->addWidget(participantBox);
 
@@ -284,9 +296,24 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
         }
 
         const PipelineFlowState& state = getPipelineOutput();
-        const QString donors = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.donor_types")).toString();
-        const QString hydrogens = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.hydrogen_types")).toString();
-        const QString acceptors = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.acceptor_types")).toString();
+        const QString donors = [&]() {
+            const QString expression = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.donor_expression")).toString().trimmed();
+            return expression.isEmpty()
+                ? state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.donor_types")).toString()
+                : expression;
+        }();
+        const QString hydrogens = [&]() {
+            const QString expression = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.hydrogen_expression")).toString().trimmed();
+            return expression.isEmpty()
+                ? state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.hydrogen_types")).toString()
+                : expression;
+        }();
+        const QString acceptors = [&]() {
+            const QString expression = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.acceptor_expression")).toString().trimmed();
+            return expression.isEmpty()
+                ? state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.acceptor_types")).toString()
+                : expression;
+        }();
         const QString definitionMode = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.definition_mode")).toString();
         const QString pairingMode = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.donor_hydrogen_pairing_mode")).toString();
         const QVariant sampledFrameCount = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.sampled_frame_count"));
@@ -305,7 +332,7 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
 
         QStringList lines;
         if(!donors.isEmpty() || !hydrogens.isEmpty() || !acceptors.isEmpty())
-            lines << tr("Donor atom type(s): %1\nHydrogen atom type(s): %2\nAcceptor atom type(s): %3").arg(donors, hydrogens, acceptors);
+            lines << tr("Donor selector: %1\nHydrogen selector: %2\nAcceptor selector: %3").arg(donors, hydrogens, acceptors);
         if(!definitionMode.isEmpty())
             lines << tr("Hydrogen-bond definition: %1").arg(definitionMode);
         if(!pairingMode.isEmpty())

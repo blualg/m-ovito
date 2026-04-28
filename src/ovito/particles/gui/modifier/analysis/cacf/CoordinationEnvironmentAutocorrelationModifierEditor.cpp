@@ -79,15 +79,23 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
     centralTypesUI->lineEdit()->setPlaceholderText(tr("e.g. Li,Na or 1,2"));
     shellLayout->addWidget(new QLabel(tr("Central atom type(s)"), shellBox), 0, 0);
     shellLayout->addWidget(centralTypesUI->textBox(), 0, 1);
+    StringParameterUI* centralExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::centralExpression));
+    centralExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    shellLayout->addWidget(new QLabel(tr("Central expression"), shellBox), 1, 0);
+    shellLayout->addWidget(centralExpressionUI->textBox(), 1, 1);
 
     StringParameterUI* shellTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::shellTypes));
     shellTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,N or 5,8"));
-    shellLayout->addWidget(new QLabel(tr("Shell atom type(s)"), shellBox), 1, 0);
-    shellLayout->addWidget(shellTypesUI->textBox(), 1, 1);
+    shellLayout->addWidget(new QLabel(tr("Shell atom type(s)"), shellBox), 2, 0);
+    shellLayout->addWidget(shellTypesUI->textBox(), 2, 1);
+    StringParameterUI* shellExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::shellExpression));
+    shellExpressionUI->lineEdit()->setPlaceholderText(tr("optional expression override"));
+    shellLayout->addWidget(new QLabel(tr("Shell expression"), shellBox), 3, 0);
+    shellLayout->addWidget(shellExpressionUI->textBox(), 3, 1);
 
     FloatParameterUI* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::cutoff));
-    shellLayout->addWidget(cutoffUI->label(), 2, 0);
-    shellLayout->addLayout(cutoffUI->createFieldLayout(), 2, 1);
+    shellLayout->addWidget(cutoffUI->label(), 4, 0);
+    shellLayout->addLayout(cutoffUI->createFieldLayout(), 4, 1);
 
     VariantComboBoxParameterUI* indicatorModeUI = createParamUI<VariantComboBoxParameterUI>(
         PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::indicatorMode));
@@ -97,8 +105,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
                                          QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChain));
     indicatorModeUI->comboBox()->addItem(tr("Interchain hopping (different chain+same chain bond path)"),
                                          QVariant::fromValue((int)CoordinationEnvironmentAutocorrelationModifier::InterchainDifferentChainOrSameChainBondPath));
-    shellLayout->addWidget(new QLabel(tr("Indicator function"), shellBox), 3, 0);
-    shellLayout->addWidget(indicatorModeUI->comboBox(), 3, 1);
+    shellLayout->addWidget(new QLabel(tr("Indicator function"), shellBox), 5, 0);
+    shellLayout->addWidget(indicatorModeUI->comboBox(), 5, 1);
 
     _sameChainDistanceWidget = new QWidget(shellBox);
     auto* sameChainLayout = new QGridLayout(_sameChainDistanceWidget);
@@ -108,7 +116,7 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
         PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier::sameChainBondPathDistance));
     sameChainLayout->addWidget(sameChainDistanceUI->label(), 0, 0);
     sameChainLayout->addLayout(sameChainDistanceUI->createFieldLayout(), 0, 1);
-    shellLayout->addWidget(_sameChainDistanceWidget, 4, 0, 1, 2);
+    shellLayout->addWidget(_sameChainDistanceWidget, 6, 0, 1, 2);
 
     layout->addWidget(shellBox);
 
@@ -266,8 +274,18 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
         }
 
         const PipelineFlowState& state = getPipelineOutput();
-        const QString centralTypes = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.central_types")).toString();
-        const QString shellTypes = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.shell_types")).toString();
+        const QString centralTypes = [&]() {
+            const QString expression = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.central_expression")).toString().trimmed();
+            return expression.isEmpty()
+                ? state.getAttributeValue(modificationNode(), QStringLiteral("CACF.central_types")).toString()
+                : expression;
+        }();
+        const QString shellTypes = [&]() {
+            const QString expression = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.shell_expression")).toString().trimmed();
+            return expression.isEmpty()
+                ? state.getAttributeValue(modificationNode(), QStringLiteral("CACF.shell_types")).toString()
+                : expression;
+        }();
         const QVariant cutoff = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.cutoff"));
         const QString indicatorMode = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.indicator_mode")).toString();
         const QVariant sameChainDistance = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.same_chain_bond_path_distance"));
@@ -279,7 +297,7 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
 
         QStringList lines;
         if(!centralTypes.isEmpty() || !shellTypes.isEmpty())
-            lines << tr("Central atom type(s): %1\nShell atom type(s): %2").arg(centralTypes, shellTypes);
+            lines << tr("Central selector: %1\nShell selector: %2").arg(centralTypes, shellTypes);
         if(cutoff.isValid())
             lines << tr("Distance cutoff: %1").arg(cutoff.toDouble(), 0, 'g', 6);
         if(!indicatorMode.isEmpty())

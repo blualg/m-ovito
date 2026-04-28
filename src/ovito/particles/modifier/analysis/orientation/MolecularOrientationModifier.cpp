@@ -23,14 +23,13 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
+#include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "MolecularOrientationModifier.h"
 
-#include <QHash>
-#include <QRegularExpression>
 #include <QtMath>
 #include <algorithm>
 #include <limits>
@@ -92,51 +91,6 @@ QString directionModeLabel(MolecularOrientationModifier::DirectionMode direction
     return {};
 }
 
-std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeProperty, const QString& roleDescription)
-{
-    if(!typeProperty || !typeProperty->isTypedProperty())
-        throw Exception(MolecularOrientationModifier::tr("This analysis requires a typed 'Particle Type' property with defined element types."));
-
-    const QString trimmedText = typeListText.trimmed();
-    if(trimmedText.isEmpty())
-        throw Exception(MolecularOrientationModifier::tr("Please enter at least one %1.").arg(roleDescription));
-
-    QHash<QString, int> nameToId;
-    for(const ElementType* type : typeProperty->elementTypes()) {
-        if(!type->name().isEmpty())
-            nameToId.insert(type->name(), type->numericId());
-        nameToId.insert(type->nameOrNumericId(), type->numericId());
-    }
-
-    std::vector<int> typeIds;
-    const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
-    for(QString token : tokens) {
-        token = token.trimmed();
-        if(token.isEmpty())
-            continue;
-
-        int typeId = 0;
-        if(nameToId.contains(token)) {
-            typeId = nameToId.value(token);
-        }
-        else {
-            bool ok = false;
-            typeId = token.toInt(&ok);
-            if(!ok || !typeProperty->elementType(typeId))
-                throw Exception(MolecularOrientationModifier::tr("Unknown %1 '%2'. Use particle type names or numeric IDs separated by commas.")
-                                    .arg(roleDescription, token));
-        }
-
-        if(std::find(typeIds.begin(), typeIds.end(), typeId) == typeIds.end())
-            typeIds.push_back(typeId);
-    }
-
-    if(typeIds.empty())
-        throw Exception(MolecularOrientationModifier::tr("Please enter at least one valid %1.").arg(roleDescription));
-
-    return typeIds;
-}
-
 }  // namespace
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(MolecularOrientationModifier);
@@ -146,17 +100,25 @@ OVITO_CLASSINFO(MolecularOrientationModifier, "Description",
 OVITO_CLASSINFO(MolecularOrientationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, directionMode);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, fromTypeId);
+DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, fromExpression);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, toTypeId);
+DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, toExpression);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, referenceTypes);
+DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, referenceExpression);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, anchorTypes);
+DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, anchorExpression);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, cutoff);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, onlySelectedParticles);
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Descriptor");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromTypeId, "Direction start atom type");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromExpression, "Direction start expression");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toTypeId, "Direction end atom type");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toExpression, "Direction end expression");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypes, "Orient around atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceExpression, "Reference expression");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorTypes, "Molecule site atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorExpression, "Molecule site expression");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, numberOfBins, "Angle histogram bins");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, onlySelectedParticles, "Use only selected particles");
@@ -204,8 +166,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
     if(selectedDirectionMode == ManualMolecularDirection && fromTypeId() == toTypeId())
         throw Exception(tr("The atom-type centroid vector mode requires two different particle types."));
 
-    const std::vector<int> referenceTypeIds = parseTypeIds(referenceTypes(), particleTypeProperty, tr("reference atom type"));
-    const std::vector<int> anchorTypeIds = parseTypeIds(anchorTypes(), particleTypeProperty, tr("molecule site atom type"));
+    const bool referenceUsesPerParticleSites = !referenceExpression().trimmed().isEmpty()
+        || parseParticleTypeIds(referenceTypes(), particleTypeProperty, tr("reference atom type"), tr("Molecular orientation analysis")).size() == 1;
     const FloatType cutoffRadius = cutoff();
     if(cutoffRadius <= 0)
         throw Exception(tr("The cutoff radius must be positive."));
@@ -236,14 +198,22 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             selectedDirectionMode,
             fromParticleType,
             toParticleType,
-            referenceTypeIds,
-            anchorTypeIds,
+            fromExpression = fromExpression(),
+            toExpression = toExpression(),
+            referenceTypes = referenceTypes(),
+            referenceExpression = referenceExpression(),
+            anchorTypes = anchorTypes(),
+            anchorExpression = anchorExpression(),
+            referenceUsesPerParticleSites,
             cutoffRadius,
             histogramBinCount,
             selectedOnly,
             table,
             createdByNode = request.modificationNodeWeak()]() mutable
     {
+        const Particles* particles = state.expectObject<Particles>();
+        const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
+
         std::unordered_map<IdentifierIntType, size_t> groupLookup;
         groupLookup.reserve(positions.size());
         std::vector<MoleculeGroup> molecules;
@@ -274,10 +244,10 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             for(size_t atomListIndex = 1; atomListIndex < group.indices.size(); ++atomListIndex) {
                 const Point3 current = positions[group.indices[atomListIndex]];
                 Vector3 delta = current - referencePosition;
-            if(cell)
-                delta = cell->wrapVector(delta);
-            wrappedPositions.push_back(referencePosition + delta);
-        }
+                if(cell)
+                    delta = cell->wrapVector(delta);
+                wrappedPositions.push_back(referencePosition + delta);
+            }
         };
 
         PropertyPtr legacyAngleProperty;
@@ -301,13 +271,53 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             std::fill(legacyOverlapAcc->begin(), legacyOverlapAcc->end(), 0);
         }
 
+        size_t referenceMatchCount = 0;
+        std::vector<uint8_t> referenceMask = evaluateParticleSelector(
+            state, particles, particleTypeProperty, particleTypes,
+            referenceTypes, referenceExpression,
+            tr("reference atom selector"),
+            tr("Molecular orientation analysis"),
+            &referenceMatchCount);
+        size_t anchorMatchCount = 0;
+        std::vector<uint8_t> anchorMask = evaluateParticleSelector(
+            state, particles, particleTypeProperty, particleTypes,
+            anchorTypes, anchorExpression,
+            tr("molecule site selector"),
+            tr("Molecular orientation analysis"),
+            &anchorMatchCount);
+        size_t fromMatchCount = 0;
+        const std::vector<uint8_t> fromMask = selectedDirectionMode != DipoleDirection
+            ? evaluateParticleSelector(
+                state, particles, particleTypeProperty, particleTypes,
+                QString::number(fromParticleType), fromExpression,
+                tr("direction start selector"),
+                tr("Molecular orientation analysis"),
+                &fromMatchCount)
+            : std::vector<uint8_t>();
+        size_t toMatchCount = 0;
+        const std::vector<uint8_t> toMask = selectedDirectionMode != DipoleDirection
+            ? evaluateParticleSelector(
+                state, particles, particleTypeProperty, particleTypes,
+                QString::number(toParticleType), toExpression,
+                tr("direction end selector"),
+                tr("Molecular orientation analysis"),
+                &toMatchCount)
+            : std::vector<uint8_t>();
+        if(referenceMatchCount == 0)
+            throw Exception(tr("No particles matched the reference selector."));
+        if(anchorMatchCount == 0)
+            throw Exception(tr("No particles matched the molecule site selector."));
+        if(selectedDirectionMode != DipoleDirection && fromMatchCount == 0)
+            throw Exception(tr("No particles matched the direction start selector."));
+        if(selectedDirectionMode != DipoleDirection && toMatchCount == 0)
+            throw Exception(tr("No particles matched the direction end selector."));
+
         std::vector<ReferenceSite> referenceSites;
         referenceSites.reserve(positions.size());
         std::vector<Point3> moleculePositions;
-        if(referenceTypeIds.size() == 1) {
-            const int referenceParticleType = referenceTypeIds.front();
+        if(referenceUsesPerParticleSites) {
             for(size_t particleIndex = 0; particleIndex < particleCount; ++particleIndex) {
-                if(particleTypes[particleIndex] != referenceParticleType)
+                if(!referenceMask[particleIndex])
                     continue;
                 referenceSites.push_back(ReferenceSite{moleculeIds[particleIndex], positions[particleIndex]});
             }
@@ -324,7 +334,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 size_t matchedCount = 0;
                 for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
                     const size_t particleIndex = group.indices[atomListIndex];
-                    if(std::find(referenceTypeIds.begin(), referenceTypeIds.end(), particleTypes[particleIndex]) == referenceTypeIds.end())
+                    if(!referenceMask[particleIndex])
                         continue;
 
                     FloatType mass = FloatType(1);
@@ -340,9 +350,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 referenceSites.push_back(ReferenceSite{group.moleculeId, referencePosition + weightedOffsetSum / massSum});
             }
         }
-
         if(referenceSites.empty())
-            throw Exception(tr("No reference sites matched the chosen reference atom type(s)."));
+            throw Exception(tr("No reference sites matched the chosen selector."));
 
         PropertyPtr referenceSitePositionsProperty =
             Particles::OOClass().createStandardProperty(DataBuffer::Initialized, referenceSites.size(), Particles::PositionProperty);
@@ -403,7 +412,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             size_t anchorCount = 0;
             for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
                 const size_t particleIndex = group.indices[atomListIndex];
-                if(std::find(anchorTypeIds.begin(), anchorTypeIds.end(), particleTypes[particleIndex]) == anchorTypeIds.end())
+                if(!anchorMask[particleIndex])
                     continue;
 
                 FloatType mass = FloatType(1);
@@ -480,11 +489,11 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
                     const size_t particleIndex = group.indices[atomListIndex];
                     const Point3& position = moleculePositions[atomListIndex];
-                    if(particleTypes[particleIndex] == fromParticleType) {
+                    if(fromMask[particleIndex]) {
                         fromCentroidOffset += (position - reference);
                         fromCount++;
                     }
-                    if(particleTypes[particleIndex] == toParticleType) {
+                    if(toMask[particleIndex]) {
                         toCentroidOffset += (position - reference);
                         toCount++;
                     }
@@ -508,9 +517,9 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 std::vector<size_t> toIndices;
                 for(size_t atomListIndex = 0; atomListIndex < group.indices.size(); ++atomListIndex) {
                     const size_t particleIndex = group.indices[atomListIndex];
-                    if(particleTypes[particleIndex] == fromParticleType)
+                    if(fromMask[particleIndex])
                         fromIndices.push_back(atomListIndex);
-                    if(particleTypes[particleIndex] == toParticleType)
+                    if(toMask[particleIndex])
                         toIndices.push_back(atomListIndex);
                 }
                 if(fromParticleType == toParticleType) {

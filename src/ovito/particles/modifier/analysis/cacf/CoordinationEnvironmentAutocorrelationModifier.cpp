@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
+#include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
@@ -34,8 +35,6 @@
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "CoordinationEnvironmentAutocorrelationModifier.h"
 
-#include <QHash>
-#include <QRegularExpression>
 #include <algorithm>
 #include <limits>
 #include <queue>
@@ -93,54 +92,6 @@ std::vector<std::vector<int>> buildFrameBatches(const std::vector<int>& frames, 
         batches.emplace_back(frames.begin() + static_cast<ptrdiff_t>(begin), frames.begin() + static_cast<ptrdiff_t>(end));
     }
     return batches;
-}
-
-std::vector<int> parseTypeIds(const QString& typeListText, const Property* typeProperty, const QString& roleDescription)
-{
-    if(!typeProperty || !typeProperty->isTypedProperty())
-        throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr(
-            "CACF requires a typed 'Particle Type' property with defined element types."));
-
-    const QString trimmedText = typeListText.trimmed();
-    if(trimmedText.isEmpty())
-        throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr("Please enter at least one %1.").arg(roleDescription));
-
-    QHash<QString, int> nameToId;
-    for(const ElementType* type : typeProperty->elementTypes()) {
-        if(!type->name().isEmpty())
-            nameToId.insert(type->name(), type->numericId());
-        nameToId.insert(type->nameOrNumericId(), type->numericId());
-    }
-
-    std::vector<int> typeIds;
-    const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
-    for(QString token : tokens) {
-        token = token.trimmed();
-        if(token.isEmpty())
-            continue;
-
-        int typeId = 0;
-        if(nameToId.contains(token)) {
-            typeId = nameToId.value(token);
-        }
-        else {
-            bool ok = false;
-            typeId = token.toInt(&ok);
-            if(!ok || !typeProperty->elementType(typeId)) {
-                throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr(
-                    "Unknown %1 '%2'. Use particle type names or numeric IDs separated by commas.")
-                    .arg(roleDescription, token));
-            }
-        }
-
-        if(std::find(typeIds.begin(), typeIds.end(), typeId) == typeIds.end())
-            typeIds.push_back(typeId);
-    }
-
-    if(typeIds.empty())
-        throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr("Please enter at least one valid %1.").arg(roleDescription));
-
-    return typeIds;
 }
 
 size_t setIntersectionCount(const std::vector<IdentifierIntType>& a, const std::vector<IdentifierIntType>& b)
@@ -418,8 +369,10 @@ bool indicatorMatches(const std::vector<IdentifierIntType>& initialShell,
 
 void appendSnapshot(CoordinationAccumulator& accumulator,
                     const PipelineFlowState& sampleState,
-                    const std::unordered_set<int>& centralTypeIds,
-                    const std::unordered_set<int>& shellTypeIds,
+                    const QString& centralTypes,
+                    const QString& centralExpression,
+                    const QString& shellTypes,
+                    const QString& shellExpression,
                     FloatType cutoffRadius)
 {
     const Particles* particles = sampleState.expectObject<Particles>();
@@ -427,8 +380,24 @@ void appendSnapshot(CoordinationAccumulator& accumulator,
 
     BufferReadAccess<Point3> positions = particles->expectProperty(Particles::PositionProperty);
     BufferReadAccess<int32_t> particleTypes = particles->expectProperty(Particles::TypeProperty);
+    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
     BufferReadAccess<IdentifierIntType> identifiers = particles->getProperty(Particles::IdentifierProperty);
     accumulator.usedParticleIndices = accumulator.usedParticleIndices || !identifiers;
+
+    size_t centralMatchCount = 0;
+    const std::vector<uint8_t> centralMask = evaluateParticleSelector(
+        sampleState, particles, particleTypeProperty, particleTypes,
+        centralTypes, centralExpression,
+        CoordinationEnvironmentAutocorrelationModifier::tr("central atom selector"),
+        CoordinationEnvironmentAutocorrelationModifier::tr("CACF"),
+        &centralMatchCount);
+    size_t shellMatchCount = 0;
+    const std::vector<uint8_t> shellMask = evaluateParticleSelector(
+        sampleState, particles, particleTypeProperty, particleTypes,
+        shellTypes, shellExpression,
+        CoordinationEnvironmentAutocorrelationModifier::tr("shell atom selector"),
+        CoordinationEnvironmentAutocorrelationModifier::tr("CACF"),
+        &shellMatchCount);
 
     const SimulationCell* cell = sampleState.getObject<SimulationCell>();
     const SimulationCellData cellData = cell ? SimulationCellData(cell) : SimulationCellData(positions, false, cutoffRadius / 2);
@@ -439,7 +408,7 @@ void appendSnapshot(CoordinationAccumulator& accumulator,
     snapshot.shellMembers.reserve(positions.size());
 
     for(size_t particleIndex = 0; particleIndex < positions.size(); ++particleIndex) {
-        if(centralTypeIds.find(particleTypes[particleIndex]) == centralTypeIds.end())
+        if(!centralMask[particleIndex])
             continue;
 
         const IdentifierIntType centralKey = identifiers ? identifiers[particleIndex]
@@ -452,7 +421,7 @@ void appendSnapshot(CoordinationAccumulator& accumulator,
             const size_t neighborIndex = neighQuery.current();
             if(neighborIndex == particleIndex)
                 continue;
-            if(shellTypeIds.find(particleTypes[neighborIndex]) == shellTypeIds.end())
+            if(!shellMask[neighborIndex])
                 continue;
             shellMembers.push_back(identifiers ? identifiers[neighborIndex]
                                                : static_cast<IdentifierIntType>(neighborIndex));
@@ -535,7 +504,9 @@ OVITO_CLASSINFO(CoordinationEnvironmentAutocorrelationModifier, "Description",
                 "Compute the coordination environment autocorrelation function (CACF) for a chosen central atom shell.");
 OVITO_CLASSINFO(CoordinationEnvironmentAutocorrelationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, centralTypes);
+DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, centralExpression);
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, shellTypes);
+DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, shellExpression);
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, indicatorMode);
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, sameChainBondPathDistance);
@@ -546,7 +517,9 @@ DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, samplingFr
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, maxLag);
 DEFINE_PROPERTY_FIELD(CoordinationEnvironmentAutocorrelationModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, centralTypes, "Central atom type(s)");
+SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, centralExpression, "Central expression");
 SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, shellTypes, "Shell atom type(s)");
+SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, shellExpression, "Shell expression");
 SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, indicatorMode, "Indicator function");
 SET_PROPERTY_FIELD_LABEL(CoordinationEnvironmentAutocorrelationModifier, sameChainBondPathDistance, "Minimum bond-path distance N");
@@ -590,8 +563,8 @@ void CoordinationEnvironmentAutocorrelationModifier::initializeObject(ObjectInit
  ******************************************************************************/
 QVariant CoordinationEnvironmentAutocorrelationModifier::getPipelineEditorShortInfo(Scene*, ModificationNode*) const
 {
-    const QString central = centralTypes().trimmed();
-    const QString shell = shellTypes().trimmed();
+    const QString central = centralExpression().trimmed().isEmpty() ? centralTypes().trimmed() : centralExpression().trimmed();
+    const QString shell = shellExpression().trimmed().isEmpty() ? shellTypes().trimmed() : shellExpression().trimmed();
     if(central.isEmpty() || shell.isEmpty())
         return {};
     return tr("%1 around %2").arg(shell, central);
@@ -701,14 +674,9 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                                                                                                   PipelineFlowState&& state)
 {
     const Particles* particles = state.expectObject<Particles>();
-    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
-    const std::vector<int> centralTypeIds = parseTypeIds(centralTypes(), particleTypeProperty, tr("central atom type"));
-    const std::vector<int> shellTypeIds = parseTypeIds(shellTypes(), particleTypeProperty, tr("shell atom type"));
     if(cutoff() <= 0)
         throw Exception(tr("The distance cutoff must be positive."));
 
-    const std::unordered_set<int> centralTypeSet(centralTypeIds.begin(), centralTypeIds.end());
-    const std::unordered_set<int> shellTypeSet(shellTypeIds.begin(), shellTypeIds.end());
     const IndicatorMode selectedIndicatorMode = indicatorMode();
 
     IndicatorContext indicatorContext;
@@ -743,12 +711,16 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [centralTypeSet, shellTypeSet, cutoffRadius = cutoff()](const std::vector<int>&,
-                                                                    std::vector<SharedFuture<PipelineFlowState>> batchFutures,
-                                                                    CoordinationAccumulator& accumulator) {
+            [centralTypes = centralTypes(),
+             centralExpression = centralExpression(),
+             shellTypes = shellTypes(),
+             shellExpression = shellExpression(),
+             cutoffRadius = cutoff()](const std::vector<int>&,
+                                      std::vector<SharedFuture<PipelineFlowState>> batchFutures,
+                                      CoordinationAccumulator& accumulator) {
                 for(SharedFuture<PipelineFlowState>& future : batchFutures) {
                     this_task::throwIfCanceled();
-                    appendSnapshot(accumulator, future.result(), centralTypeSet, shellTypeSet, cutoffRadius);
+                    appendSnapshot(accumulator, future.result(), centralTypes, centralExpression, shellTypes, shellExpression, cutoffRadius);
                 }
             },
             std::move(accumulator))
@@ -776,10 +748,10 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                 throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr("CACF analysis did not collect any trajectory snapshots."));
             if(accumulator.totalCentralAtoms == 0)
                 throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr(
-                    "No particles matched the selected central atom type(s) in the sampled trajectory interval."));
+                    "No particles matched the central selector in the sampled trajectory interval."));
             if(accumulator.totalNonEmptyShells == 0)
                 throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr(
-                    "No central atoms had any shell atoms of the selected type(s) within the cutoff. Increase the cutoff or adjust the atom types."));
+                    "No central atoms had any shell atoms matching the shell selector within the cutoff. Increase the cutoff or adjust the selector."));
 
             const CacfCurves curves = computeCacfCurves(accumulator, frames, self->maxLag(), indicatorContext);
 
@@ -800,7 +772,11 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                 : 0.0;
 
             computationResult.results->setAttribute(QStringLiteral("CACF.central_types"), self->centralTypes(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("CACF.central_expression"), self->centralExpression(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("CACF.central_selector"), canonicalizeParticleSelector(self->centralTypes(), self->centralExpression()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.shell_types"), self->shellTypes(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("CACF.shell_expression"), self->shellExpression(), createdByNode);
+            computationResult.results->setAttribute(QStringLiteral("CACF.shell_selector"), canonicalizeParticleSelector(self->shellTypes(), self->shellExpression()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.cutoff"), static_cast<double>(self->cutoff()), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("CACF.indicator_mode"), indicatorModeLabel(self->indicatorMode()), createdByNode);
             if(self->indicatorMode() == InterchainDifferentChainOrSameChainBondPath)
