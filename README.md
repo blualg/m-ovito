@@ -57,11 +57,9 @@ GitHub citation metadata for this repository is provided in [CITATION.cff](./CIT
 
 ## Building
 
-OVITO build documentation:
+Repo-local build documentation:
 
-- [https://www.ovito.org/docs/current/development.php](https://www.ovito.org/docs/current/development.php)
-
-This local source tree also contains Windows-specific build notes in [UPSTREAM_BASELINE.md](./UPSTREAM_BASELINE.md).
+- [BUILDING.md](./BUILDING.md)
 
 ## Attribution
 
