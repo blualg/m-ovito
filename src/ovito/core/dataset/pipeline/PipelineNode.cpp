@@ -55,8 +55,23 @@ void PipelineNode::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Returns a list of pipelines that contain this node.
-******************************************************************************/
+ * Cancels active evaluations associated with this pipeline node.
+ ******************************************************************************/
+void PipelineNode::cancelActiveEvaluations(bool includeUpstream)
+{
+    pipelineCache().cancelActiveEvaluations(true);
+
+    if(includeUpstream) {
+        if(const ModificationNode* modNode = dynamic_object_cast<ModificationNode>(this)) {
+            if(PipelineNode* upstream = modNode->input())
+                upstream->cancelActiveEvaluations(true);
+        }
+    }
+}
+
+/******************************************************************************
+ * Returns a list of pipelines that contain this node.
+ ******************************************************************************/
 QSet<Pipeline*> PipelineNode::pipelines(bool onlyScenePipelines) const
 {
     QSet<Pipeline*> pipelinesList;

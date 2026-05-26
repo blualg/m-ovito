@@ -97,6 +97,9 @@ public:
     /// Returns the internal output data cache of this pipeline node.
     PipelineCache& pipelineCache() { return _pipelineCache; }
 
+    /// Cancels active evaluations associated with this pipeline node and, optionally, its upstream inputs.
+    virtual void cancelActiveEvaluations(bool includeUpstream = true);
+
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }

@@ -57,6 +57,9 @@ public:
     /// Invalidates the cached results from an interactive pipeline evaluation.
     void invalidateInteractiveState();
 
+    /// Cancels any active evaluations currently owned by this cache.
+    void cancelActiveEvaluations(bool clearInteractiveState = false);
+
     /// Marks the contents of the cache as outdated and throws away data that is no longer needed.
     void invalidate(TimeInterval keepInterval = TimeInterval::empty());
 

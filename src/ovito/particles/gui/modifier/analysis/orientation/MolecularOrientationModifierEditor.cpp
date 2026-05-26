@@ -45,7 +45,7 @@ SET_OVITO_OBJECT_EDITOR(MolecularOrientationModifier, MolecularOrientationModifi
  ******************************************************************************/
 void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-    QWidget* rollout = createRollout(tr("Molecular orientation around atoms"), rolloutParams, "");
+    QWidget* rollout = createRollout(tr("Angular distribution"), rolloutParams, "");
 
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4, 4, 4, 4);
@@ -134,7 +134,7 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     descriptorNote->setWordWrap(true);
     layout->addWidget(descriptorNote);
     layout->addSpacing(6);
-    layout->addWidget(new QLabel(tr("Orientation angle distribution:")));
+    layout->addWidget(new QLabel(tr("Angular distribution:")));
 
     _plotWidget = new DataTablePlotWidget();
     _plotWidget->setMinimumHeight(200);

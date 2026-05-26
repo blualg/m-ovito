@@ -150,6 +150,10 @@ private:
 
     /// Controls whether the averaged output should overwrite the original quantity.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, overwrite, setOverwrite);
+
+    /// Monotonically increasing request counter used to trigger explicit averaging runs.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, runRequestId, setRunRequestId,
+        PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 };
 
 /**
@@ -194,6 +198,14 @@ private:
 
     /// Cached averaged scalar attribute value.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QVariant{}, averagedAttributeValue, setAveragedAttributeValue,
+        PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
+
+    /// The latest explicit run request that completed, even if it produced no cache due to cancellation/error.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, completedRunRequestId, setCompletedRunRequestId,
+        PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
+
+    /// Bumps whenever the upstream input or modifier settings invalidate the cached average.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, cacheGenerationId, setCacheGenerationId,
         PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
 };
 

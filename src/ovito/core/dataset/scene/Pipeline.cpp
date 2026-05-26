@@ -71,6 +71,16 @@ void Pipeline::preEvaluationCheck(const PipelineEvaluationRequest& request) cons
 }
 
 /******************************************************************************
+ * Cancels active evaluations associated with this pipeline.
+ ******************************************************************************/
+void Pipeline::cancelActiveEvaluations()
+{
+    _pipelineCache.cancelActiveEvaluations(true);
+    if(head())
+        head()->cancelActiveEvaluations(true);
+}
+
+/******************************************************************************
 * Invalidates the data pipeline cache of the object node.
 ******************************************************************************/
 void Pipeline::invalidatePipelineCache(TimeInterval keepInterval)

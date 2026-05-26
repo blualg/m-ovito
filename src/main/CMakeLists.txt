@@ -83,6 +83,16 @@ ENDIF()
 # Set name of executable.
 SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
 
+IF(WIN32 AND OVITO_ACTIVE_PYTHON_RUNTIME_DLL)
+    ADD_CUSTOM_COMMAND(TARGET Ovito POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OVITO_ACTIVE_PYTHON_RUNTIME_DLL}" "$<TARGET_FILE_DIR:Ovito>/python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll"
+        COMMENT "Syncing embedded Python runtime for Ovito")
+    IF(OVITO_ACTIVE_PYTHON3_DLL)
+        ADD_CUSTOM_COMMAND(TARGET Ovito POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OVITO_ACTIVE_PYTHON3_DLL}" "$<TARGET_FILE_DIR:Ovito>/python3.dll")
+    ENDIF()
+ENDIF()
+
 # Small developer utility for headless transport regression checks against
 # external references such as PyLAT on local Windows builds.
 IF(WIN32)
@@ -102,6 +112,169 @@ IF(WIN32)
             ADD_DEPENDENCIES(OvitoTransportHarness ${plugin})
         ELSE()
             TARGET_LINK_LIBRARIES(OvitoTransportHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoPythonModifierHarness python_modifier_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoPythonModifierHarness PRIVATE
+        Core
+        Gui
+        Particles
+        PyScript
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoPythonModifierHarness)
+    SET_TARGET_PROPERTIES(OvitoPythonModifierHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_python_modifier_harness")
+    IF(OVITO_ACTIVE_PYTHON_RUNTIME_DLL)
+        ADD_CUSTOM_COMMAND(TARGET OvitoPythonModifierHarness POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OVITO_ACTIVE_PYTHON_RUNTIME_DLL}" "$<TARGET_FILE_DIR:OvitoPythonModifierHarness>/python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll"
+            COMMENT "Syncing embedded Python runtime for the Python modifier harness")
+        IF(OVITO_ACTIVE_PYTHON3_DLL)
+            ADD_CUSTOM_COMMAND(TARGET OvitoPythonModifierHarness POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OVITO_ACTIVE_PYTHON3_DLL}" "$<TARGET_FILE_DIR:OvitoPythonModifierHarness>/python3.dll")
+        ENDIF()
+    ENDIF()
+
+    ADD_EXECUTABLE(OvitoInterfacialHarness interfacial_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoInterfacialHarness PRIVATE
+        Core
+        Gui
+        Particles
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoInterfacialHarness)
+    SET_TARGET_PROPERTIES(OvitoInterfacialHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_interfacial_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoInterfacialHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoInterfacialHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoWillardChandlerHarness willard_chandler_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoWillardChandlerHarness PRIVATE
+        Core
+        Gui
+        Particles
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoWillardChandlerHarness)
+    SET_TARGET_PROPERTIES(OvitoWillardChandlerHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_willard_chandler_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoWillardChandlerHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoWillardChandlerHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoMoleculeComHarness molecule_com_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoMoleculeComHarness PRIVATE
+        Core
+        Gui
+        Particles
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoMoleculeComHarness)
+    SET_TARGET_PROPERTIES(OvitoMoleculeComHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_molecule_com_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoMoleculeComHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoMoleculeComHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoTimeSeriesHarness time_series_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoTimeSeriesHarness PRIVATE
+        Core
+        Gui
+        Particles
+        StdMod
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoTimeSeriesHarness)
+    SET_TARGET_PROPERTIES(OvitoTimeSeriesHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_time_series_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoTimeSeriesHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoTimeSeriesHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoTimeAveragingHarness time_averaging_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoTimeAveragingHarness PRIVATE
+        Core
+        Gui
+        Particles
+        StdMod
+        StdObj
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoTimeAveragingHarness)
+    SET_TARGET_PROPERTIES(OvitoTimeAveragingHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_time_averaging_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoTimeAveragingHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoTimeAveragingHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoImportProgressHarness import_progress_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoImportProgressHarness PRIVATE
+        Core
+        Gui
+        Particles
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoImportProgressHarness)
+    SET_TARGET_PROPERTIES(OvitoImportProgressHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_import_progress_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoImportProgressHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoImportProgressHarness PRIVATE ${plugin})
+        ENDIF()
+    ENDFOREACH()
+
+    ADD_EXECUTABLE(OvitoFullImportHarness full_import_harness.cpp)
+    TARGET_LINK_LIBRARIES(OvitoFullImportHarness PRIVATE
+        Core
+        Gui
+        Particles
+        Qt6::Core
+        Qt6::Gui)
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(OvitoFullImportHarness)
+    SET_TARGET_PROPERTIES(OvitoFullImportHarness PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}"
+        OUTPUT_NAME "ovito_full_import_harness")
+    FOREACH(plugin ${OVITO_PLUGIN_LIST})
+        IF(BUILD_SHARED_LIBS)
+            ADD_DEPENDENCIES(OvitoFullImportHarness ${plugin})
+        ELSE()
+            TARGET_LINK_LIBRARIES(OvitoFullImportHarness PRIVATE ${plugin})
         ENDIF()
     ENDFOREACH()
 ENDIF()
@@ -212,7 +385,7 @@ ELSEIF(APPLE AND NOT OVITO_BUILD_CONDA)
 ENDIF()
 
 # Special steps needed to build OVITO with Python scripting support.
-IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
+IF(OVITO_BUILD_PLUGIN_PYSCRIPT)
 
     # Make sure the Python library gets loaded at program startup. We need to do it
     # this way, because the OVITO scripting plugins do not explicitly link the

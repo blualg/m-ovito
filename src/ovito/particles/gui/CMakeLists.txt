@@ -30,6 +30,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/coloring/AmbientOcclusionModifierEditor.cpp
         modifier/modify/CreateBondsModifierEditor.cpp
         modifier/modify/LoadTrajectoryModifierEditor.cpp
+        modifier/modify/MoleculeCenterOfMassModifierEditor.cpp
         modifier/modify/UnwrapTrajectoriesModifierEditor.cpp
         modifier/modify/WrapPeriodicImagesModifierEditor.cpp
         modifier/analysis/StructureListParameterUI.cpp
@@ -42,6 +43,8 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/hbond/HydrogenBondAnalysisModifierEditor.cpp
         modifier/analysis/hbond/HydrogenBondKineticsModifierEditor.cpp
         modifier/analysis/orientation/MolecularOrientationModifierEditor.cpp
+        modifier/analysis/orientation/MoleculeOrientationalRelaxationModifierEditor.cpp
+        modifier/analysis/orientation/SurvivalProbabilityModifierEditor.cpp
         modifier/analysis/binning/SpatialBinningModifierEditor.cpp
         modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
         modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
@@ -53,6 +56,8 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/ptm/PolyhedralTemplateMatchingModifierEditor.cpp
         modifier/analysis/transport/TransportModifierEditor.cpp
         modifier/analysis/surface/ConstructSurfaceModifierEditor.cpp
+        modifier/analysis/surface/InterfacialIdentificationModifierEditor.cpp
+        modifier/analysis/surface/WillardChandlerInterfaceModifierEditor.cpp
         modifier/selection/ExpandSelectionModifierEditor.cpp
         modifier/selection/SelectOverlappingParticlesModifierEditor.cpp
         modifier/properties/CalculatePropertyModifierEditor.cpp

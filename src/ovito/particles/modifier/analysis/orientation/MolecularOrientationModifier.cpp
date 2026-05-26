@@ -117,9 +117,9 @@ QString directionModeLabel(MolecularOrientationModifier::DirectionMode direction
 }  // namespace
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(MolecularOrientationModifier);
-OVITO_CLASSINFO(MolecularOrientationModifier, "DisplayName", "Molecular orientation around atoms");
+OVITO_CLASSINFO(MolecularOrientationModifier, "DisplayName", "Angular distribution");
 OVITO_CLASSINFO(MolecularOrientationModifier, "Description",
-                "Generate molecule- or pair-based orientation descriptors around reference atoms and measure their angular distribution.");
+                "Measure the angular distribution of molecule- or pair-based orientation descriptors around reference atoms.");
 OVITO_CLASSINFO(MolecularOrientationModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, directionMode);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, fromTypeId);
@@ -198,8 +198,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
 
     const int histogramBinCount = std::max(numberOfBins(), 4);
     DataTable* table = state.createObject<DataTable>(QString(TableIdentifier), request.modificationNode(), DataTable::Histogram,
-                                                     tr("Molecular orientation angle distribution"));
-    table->setAxisLabelX(tr("Orientation angle (degrees)"));
+                                                     tr("Angular distribution"));
+    table->setAxisLabelX(tr("Angle (degrees)"));
     table->setAxisLabelY(tr("Probability density"));
     table->setIntervalStart(FloatType(0));
     table->setIntervalEnd(FloatType(180));

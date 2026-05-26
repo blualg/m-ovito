@@ -22,6 +22,15 @@
 
 # CMake configuration for 3rdparty libraries used by OVITO.
 
+IF(OVITO_BUILD_PLUGIN_PYSCRIPT)
+    ADD_LIBRARY(pybind11_headers INTERFACE)
+    TARGET_INCLUDE_DIRECTORIES(pybind11_headers INTERFACE
+        "${OVITO_SOURCE_BASE_DIR}/src"
+        "${OVITO_SOURCE_BASE_DIR}/src/3rdparty"
+    )
+    ADD_LIBRARY(pybind11::headers ALIAS pybind11_headers)
+ENDIF()
+
 # Build zstd compression library from source for static linking.
 IF(NOT OVITO_BUILD_CONDA)
     # Configure and build zstd using FetchContent.

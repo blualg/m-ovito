@@ -130,6 +130,26 @@ QDebug operator<<(QDebug debug, const PropertyReference& r)
 }
 
 /******************************************************************************
+* Writes a PropertyReference to a Qt data stream.
+******************************************************************************/
+QDataStream& operator<<(QDataStream& stream, const PropertyReference& r)
+{
+    stream << r.nameWithComponent();
+    return stream;
+}
+
+/******************************************************************************
+* Reads a PropertyReference from a Qt data stream.
+******************************************************************************/
+QDataStream& operator>>(QDataStream& stream, PropertyReference& r)
+{
+    QString value;
+    stream >> value;
+    r = PropertyReference(value);
+    return stream;
+}
+
+/******************************************************************************
 * If the referenced property is a standard property from the given container type, returns its numeric ID.
 ******************************************************************************/
 int PropertyReference::standardTypeId(PropertyContainerClassPtr pclass) const

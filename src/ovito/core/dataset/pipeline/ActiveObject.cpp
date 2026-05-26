@@ -29,6 +29,21 @@
 
 namespace Ovito {
 
+namespace {
+
+AnimationTime currentAnimationTimeForStatus()
+{
+    if(Task* task = this_task::get()) {
+        if(const auto& ui = task->userInterface())
+            return ui->datasetContainer().currentAnimationTime();
+    }
+    if(Application::instance())
+        return Application::instance()->datasetContainer().currentAnimationTime();
+    return AnimationTime::fromFrame(0);
+}
+
+} // namespace
+
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ActiveObject);
 DEFINE_PROPERTY_FIELD(ActiveObject, isEnabled);
 DEFINE_PROPERTY_FIELD(ActiveObject, title);
@@ -110,7 +125,7 @@ void ActiveObject::setStatusIfCurrentFrame(const PipelineStatus& status, const P
     if(!Application::guiEnabled())
         return;
 
-    if(request.time() != this_task::ui()->datasetContainer().currentAnimationTime())
+    if(request.time() != currentAnimationTimeForStatus())
         return;
 
     setStatus(status);

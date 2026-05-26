@@ -667,6 +667,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 ******************************************************************************/
 bool MainWindow::openDataInspector(PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
+    QMetaObject::invokeMethod(_dataInspector, "updateInspector", Qt::DirectConnection);
     if(_dataInspector->selectDataObject(createdByNode, objectIdentifierHint, modeHint)) {
         _dataInspector->open();
         return true;
@@ -679,6 +680,7 @@ bool MainWindow::openDataInspector(PipelineNode* createdByNode, const QStringVie
 ******************************************************************************/
 bool MainWindow::openDataInspector(const OvitoClass& appletClass)
 {
+    QMetaObject::invokeMethod(_dataInspector, "updateInspector", Qt::DirectConnection);
     if(_dataInspector->selectTabPage(appletClass)) {
         _dataInspector->open();
         return true;

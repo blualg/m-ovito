@@ -126,6 +126,13 @@ public:
     /// be used for the new visual element.
     virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) {}
 
+    /// Indicates whether removing the modifier from a pipeline should be deferred because
+    /// the modifier still has in-flight work that must wind down first.
+    virtual bool shouldDelayDeletionInPipeline() const { return false; }
+
+    /// Requests cancellation of any currently active work associated with this modifier in a pipeline.
+    virtual void cancelActiveWorkInPipeline() {}
+
 protected:
 
     /// Is called by the pipeline system before a new modifier evaluation begins.

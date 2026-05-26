@@ -29,6 +29,8 @@
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include <ovito/core/app/Application.h>
+#include <QCoreApplication>
+#include <QTimer>
 #include "ModifierEvaluationTask.h"
 
 namespace Ovito {
@@ -47,6 +49,19 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(ModificationNode, input, ReferenceEvent::Pipelin
 SET_PROPERTY_FIELD_CHANGE_EVENT(ModificationNode, modifierGroup, ReferenceEvent::PipelineChanged);
 
 /******************************************************************************
+ * Is called when the value of a non-animatable property field of this RefMaker has changed.
+ ******************************************************************************/
+void ModificationNode::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    if(field == PROPERTY_FIELD(ActiveObject::isEnabled) && !isEnabled()) {
+        if(modifier())
+            modifier()->cancelActiveWorkInPipeline();
+    }
+
+    PipelineNode::propertyChanged(field);
+}
+
+/******************************************************************************
  * Returns the global class registry, which allows looking up the
  * ModificationNode subclass for a Modifier subclass.
  ******************************************************************************/
@@ -61,7 +76,23 @@ ModificationNode::Registry& ModificationNode::registry()
  ******************************************************************************/
 void ModificationNode::requestObjectDeletion()
 {
+    // Don't synchronously detach a modifier that still has active work associated
+    // with this pipeline node. For long-running scripted modifiers that can lead
+    // to tearing down the modifier/node relationship while callbacks are still
+    // in flight. Instead, disable the node and retry deletion once the active
+    // task has wound down.
+    if(isObjectActive() || (modifier() && modifier()->shouldDelayDeletionInPipeline())) {
+        setEnabled(false);
+        OORef<ModificationNode> self(this);
+        QTimer::singleShot(100, QCoreApplication::instance(), [self = std::move(self)]() mutable {
+            if(self && !self->isBeingDeleted())
+                self->requestObjectDeletion();
+        });
+        return;
+    }
+
     // Detach the node from its input, modifier and group.
+    setIsBeingInitialized(true);
     OORef<Modifier> modifier = this->modifier();
     setInput(nullptr);
     setModifier(nullptr);

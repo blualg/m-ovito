@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/app/GuiApplication.h>
 
-#if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
+#if defined(OVITO_BUILD_PLUGIN_PYSCRIPT)
     // Explicitly build 'ovito' executable against Python library.
     // The following include directive will pull in the Python headers.
     #include <ovito/pyscript/PyScript.h>
@@ -37,7 +37,7 @@
  */
 int main(int argc, char** argv)
 {
-#if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
+#if defined(OVITO_BUILD_PLUGIN_PYSCRIPT)
     // This (useless) call to a Python C API function is needed to force-link the Python library into the executable.
     // We have to make sure the Python lib gets loaded into process memory before any of OVITO's plugin Python modules
     // are loaded, because they depend on the Python lib but were not explicitly linking to it.

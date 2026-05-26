@@ -23,8 +23,11 @@
 #pragma once
 
 #include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <QLabel>
+#include <QWidget>
 
 namespace Ovito {
 
@@ -41,13 +44,16 @@ protected:
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 private Q_SLOTS:
-    void updateTypeCombos();
-    void updateManualDirectionControls();
+    void updateVisibleControls();
 
 private:
-    QWidget* _manualDirectionWidget = nullptr;
-    VariantComboBoxParameterUI* _fromTypeUI = nullptr;
-    VariantComboBoxParameterUI* _toTypeUI = nullptr;
+    QWidget* _selectorWidget = nullptr;
+    QLabel* _selectorDescriptionLabel = nullptr;
+    QWidget* _outputWidget = nullptr;
+    QWidget* _expressionWidget = nullptr;
+    QWidget* _vectorExpressionWidget = nullptr;
+    QWidget* _groupingWidget = nullptr;
+    QWidget* _reductionWidget = nullptr;
 };
 
 }  // namespace Ovito

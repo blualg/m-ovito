@@ -193,6 +193,18 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
     BooleanParameterUI* overwriteUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TimeAveragingModifier::overwrite));
     layout->addWidget(overwriteUI->checkBox());
 
+    auto* runBox = new QGroupBox(tr("Start"), rollout);
+    auto* runLayout = new QVBoxLayout(runBox);
+    runLayout->setContentsMargins(4, 4, 4, 4);
+    runLayout->setSpacing(4);
+    _runButton = new QPushButton(tr("Start averaging"), runBox);
+    connect(_runButton, &QPushButton::clicked, this, &TimeAveragingModifierEditor::runAveraging);
+    runLayout->addWidget(_runButton);
+    auto* runNoteLabel = new QLabel(tr("The modifier is inserted disabled and traverses the selected trajectory interval only when you click Start averaging."), runBox);
+    runNoteLabel->setWordWrap(true);
+    runLayout->addWidget(runNoteLabel);
+    layout->addWidget(runBox);
+
     auto* generalNoteLabel = new QLabel(tr("This first open-source implementation averages one trajectory quantity per modifier instance."), rollout);
     generalNoteLabel->setWordWrap(true);
     layout->addWidget(generalNoteLabel);
@@ -248,7 +260,10 @@ void TimeAveragingModifierEditor::populateAttributeList(const QString& currentVa
     const QSignalBlocker signalBlocker(_attributeCombo);
     _attributeCombo->clear();
 
-    QStringList attributeNames = getPipelineInput().buildAttributesMap().keys();
+    QStringList attributeNames;
+    const PipelineFlowState inputState = getPipelineInput();
+    if(inputState.data())
+        attributeNames = inputState.buildAttributesMap().keys();
     attributeNames.sort(Qt::CaseInsensitive);
     for(const QString& attributeName : attributeNames)
         _attributeCombo->addItem(attributeName);
@@ -257,6 +272,52 @@ void TimeAveragingModifierEditor::populateAttributeList(const QString& currentVa
         _attributeCombo->addItem(currentValue);
 
     _attributeCombo->setCurrentText(currentValue);
+}
+
+/******************************************************************************
+* Launches a non-interactive evaluation of the time averaging modifier.
+******************************************************************************/
+void TimeAveragingModifierEditor::runAveraging()
+{
+    handleExceptions([&]() {
+        TimeAveragingModifier* mod = static_object_cast<TimeAveragingModifier>(editObject());
+        ModificationNode* node = modificationNode();
+        if(!mod || !node)
+            return;
+
+        mod->setEnabled(true);
+        mod->setRunRequestId(mod->runRequestId() + 1);
+        const int startedRunRequestId = mod->runRequestId();
+        const auto* averagingNode = dynamic_object_cast<const TimeAveragingModificationNode>(node);
+        const int startedGenerationId = averagingNode ? averagingNode->cacheGenerationId() : 0;
+        if(_runButton)
+            _runButton->setEnabled(false);
+
+        PipelineEvaluationRequest request(currentAnimationTime(), false, false);
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
+        // Keep this trajectory-wide run non-modal and report progress through the global task bar.
+        // Future long-running modifiers should prefer the same pattern when they already register
+        // their own TaskProgress objects instead of stacking an extra popup dialog on top.
+        future.finally(ObjectExecutor(this), [self = QPointer<TimeAveragingModifierEditor>(this),
+                                              editObject = OOWeakRef<RefTarget>(editObject()),
+                                              startedRunRequestId,
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
+            if(self.isNull() || self->editObject() != editObject.lock().get())
+                return;
+            TimeAveragingModifier* mod = static_object_cast<TimeAveragingModifier>(self->editObject());
+            auto* averagingNode = dynamic_object_cast<TimeAveragingModificationNode>(self->modificationNode());
+            if(!mod || !averagingNode || mod->runRequestId() != startedRunRequestId || averagingNode->cacheGenerationId() != startedGenerationId)
+                return;
+            if(task.isCanceled() || task.exceptionStore())
+                averagingNode->setCompletedRunRequestId(startedRunRequestId);
+            self->handleExceptions([&]() {
+                (void)future.result();
+            });
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
+        });
+    });
 }
 
 }   // End of namespace

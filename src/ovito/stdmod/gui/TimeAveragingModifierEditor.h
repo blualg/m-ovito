@@ -25,6 +25,7 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <QPushButton>
 
 namespace Ovito {
 
@@ -51,6 +52,9 @@ private Q_SLOTS:
     /// Refreshes the list of available global attributes.
     void updateAttributeList();
 
+    /// Starts or recomputes the time averaging run.
+    void runAveraging();
+
 private:
 
     /// Repopulates the attribute combo box and preserves the current selection.
@@ -59,6 +63,7 @@ private:
     QPointer<QStackedWidget> _targetStack;
     QPointer<QComboBox> _attributeCombo;
     QPointer<CustomParameterUI> _attributeUI;
+    QPointer<QPushButton> _runButton;
 };
 
 }   // End of namespace

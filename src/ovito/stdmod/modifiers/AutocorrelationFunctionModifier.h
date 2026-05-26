@@ -45,13 +45,6 @@ class OVITO_STDMOD_EXPORT AutocorrelationFunctionModifier : public Modifier
 
 public:
 
-    enum AnalysisMode {
-        SignalAutocorrelation,
-        VectorReorientation,
-        SurvivalProbability
-    };
-    Q_ENUM(AnalysisMode);
-
     enum TargetType {
         Attribute,
         Table,
@@ -59,13 +52,6 @@ public:
         Cell
     };
     Q_ENUM(TargetType);
-
-    enum SelectionMode {
-        AllElements,
-        SelectedAtTimeOrigin,
-        SelectedAtBothTimes
-    };
-    Q_ENUM(SelectionMode);
 
     static QString correlationTableId() { return QStringLiteral("autocorrelation"); }
 
@@ -91,7 +77,6 @@ private:
     Future<PipelineFlowState> computeCorrelationData(const ModifierEvaluationRequest& request, PipelineFlowState&& state);
     PipelineFlowState applyCachedResults(const ModifierEvaluationRequest& request, PipelineFlowState state) const;
 
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AnalysisMode{SignalAutocorrelation}, analysisMode, setAnalysisMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TargetType{Property}, targetType, setTargetType, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, attributeName, setAttributeName);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, table, setTable);
@@ -99,9 +84,6 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, property, setProperty);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, subtractMean, setSubtractMean, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, normalizeByZeroLag, setNormalizeByZeroLag, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{2}, legendreOrder, setLegendreOrder, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SelectionMode{AllElements}, selectionMode, setSelectionMode, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, intermittency, setIntermittency, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);

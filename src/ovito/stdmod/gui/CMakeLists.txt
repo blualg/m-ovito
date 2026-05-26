@@ -44,6 +44,7 @@ OVITO_STANDARD_PLUGIN(StdModGui
         ColorByTypeModifierEditor.cpp
         AutocorrelationFunctionModifierEditor.cpp
         TimeAveragingModifierEditor.cpp
+        TimeSeriesModifierEditor.cpp
         ColorLegendOverlayEditor.cpp
     PLUGIN_DEPENDENCIES StdMod StdObjGui
     PRIVATE_LIB_DEPENDENCIES Qwt

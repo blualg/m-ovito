@@ -32,6 +32,21 @@
 
 namespace Ovito {
 
+namespace {
+
+AnimationTime currentAnimationTimeForCache()
+{
+    if(Task* task = this_task::get()) {
+        if(const auto& ui = task->userInterface())
+            return ui->datasetContainer().currentAnimationTime();
+    }
+    if(Application::instance())
+        return Application::instance()->datasetContainer().currentAnimationTime();
+    return AnimationTime::fromFrame(0);
+}
+
+} // namespace
+
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
@@ -276,7 +291,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
             }
 
             // Post-evaluation work for Pipeline and PipelineNode objects.
-            if(state.stateValidity().contains(this_task::ui()->datasetContainer().currentAnimationTime())) {
+            if(state.stateValidity().contains(currentAnimationTimeForCache())) {
 
                 // Adopt the newly computed state as the current interactive cache state.
                 _interactiveState = state;
@@ -354,6 +369,33 @@ void PipelineCache::invalidateInteractiveState()
         if(evaluation.evaluationTypes == PipelineEvaluationResult::EvaluationType::Interactive)
             evaluation.validityInterval = TimeInterval::empty();
     }
+}
+
+/******************************************************************************
+* Cancels active pipeline evaluations managed by this cache.
+******************************************************************************/
+void PipelineCache::cancelActiveEvaluations(bool clearInteractiveState)
+{
+    OVITO_ASSERT(this_task::isMainThread());
+
+    _precomputeFramesProgress.reset();
+    if(_precomputeFrameFuture) {
+        if(TaskPtr task = _precomputeFrameFuture.task(); task && !task->isFinished())
+            task->cancel();
+        _precomputeFrameFuture.reset();
+    }
+    _allFramesPrecomputed = false;
+
+    for(EvaluationInProgress& evaluation : _evaluationsInProgress) {
+        if(SharedFuture<PipelineFlowState> future = evaluation.future.lock()) {
+            if(TaskPtr task = future.task(); task && !task->isFinished())
+                task->cancel();
+        }
+        evaluation.validityInterval = TimeInterval::empty();
+    }
+
+    if(clearInteractiveState)
+        _interactiveState.setStateValidity(TimeInterval::empty());
 }
 
 /******************************************************************************
@@ -487,7 +529,7 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
             _precomputeFrameFuture.reset();
 
             // Throw away all precomputed data (except frame currently shown in the GUI) to reduce memory footprint.
-            invalidate(TimeInterval(this_task::ui()->datasetContainer().currentAnimationTime()));
+            invalidate(TimeInterval(currentAnimationTimeForCache()));
         }
     }
 }
@@ -502,7 +544,12 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     // Start the animation frame precomputation process if it has been activated.
     if(_precomputeAllFrames && !_precomputeFramesProgress && !_allFramesPrecomputed) {
         // Create a progress reporting object for the frame precomputation.
-        _precomputeFramesProgress = std::make_unique<TaskProgress>(this_task::ui());
+        std::shared_ptr<UserInterface> ui;
+        if(Task* task = this_task::get())
+            ui = task->userInterface();
+        if(!ui)
+            return;
+        _precomputeFramesProgress = std::make_unique<TaskProgress>(std::move(ui));
 
         // Determine the number of frames that need to be precomputed.
         PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());

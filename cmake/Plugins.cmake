@@ -116,7 +116,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 
     # Parse macro arguments.
     SET(options GUI_PLUGIN HAS_NO_EXPORTS)
-    SET(multiValueArgs SOURCES LIB_DEPENDENCIES PRIVATE_LIB_DEPENDENCIES PLUGIN_DEPENDENCIES OPTIONAL_PLUGIN_DEPENDENCIES PRECOMPILED_HEADERS)
+    SET(multiValueArgs SOURCES LIB_DEPENDENCIES PRIVATE_LIB_DEPENDENCIES PLUGIN_DEPENDENCIES OPTIONAL_PLUGIN_DEPENDENCIES PRECOMPILED_HEADERS PYTHON_WRAPPERS)
     CMAKE_PARSE_ARGUMENTS(ARG
         "${options}" # options
         ""  # one-value keywords
@@ -133,6 +133,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     SET(plugin_dependencies ${ARG_PLUGIN_DEPENDENCIES})
     SET(optional_plugin_dependencies ${ARG_OPTIONAL_PLUGIN_DEPENDENCIES})
     SET(precompiled_headers ${ARG_PRECOMPILED_HEADERS})
+    SET(python_wrappers ${ARG_PYTHON_WRAPPERS})
 
     # Determine the type of library target to build.
     SET(plugin_library_type "")
@@ -311,5 +312,16 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     # Maintain the list of all plugins.
     LIST(APPEND OVITO_PLUGIN_LIST ${target_name})
     SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)
+
+    # Install Python wrapper files belonging to the plugin if requested.
+    IF(python_wrappers AND OVITO_BUILD_PLUGIN_PYSCRIPT)
+        ADD_CUSTOM_COMMAND(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${python_wrappers}" "${OVITO_PYTHON_DIRECTORY}/"
+            COMMENT "Copying Python files for plugin ${target_name}")
+
+        INSTALL(DIRECTORY "${python_wrappers}"
+            DESTINATION "${OVITO_RELATIVE_PYTHON_DIRECTORY}/"
+            REGEX "__pycache__" EXCLUDE)
+    ENDIF()
 
 ENDMACRO()

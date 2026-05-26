@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this modified OVITO source tree, please cite this repository and the original OVITO paper."
+title: "m-ovito"
+type: software
+abstract: "Modified OVITO source tree with custom analysis and workflow changes for atomistic simulation post-processing."
+authors:
+  - family-names: "Akash"
+    given-names: "Tanmay Sarkar"
+    email: "tanmaysarkarakash@gmail.com"
+keywords:
+  - OVITO
+  - atomistic simulation
+  - molecular dynamics
+  - transport analysis
+  - boiling analysis
+  - interfacial analysis
+references:
+  - type: article
+    authors:
+      - family-names: "Stukowski"
+        given-names: "Alexander"
+    title: "Visualization and analysis of atomistic simulation data with OVITO - the Open Visualization Tool"
+    journal: "Modelling and Simulation in Materials Science and Engineering"
+    year: 2010
+    volume: 18
+    start: 015012

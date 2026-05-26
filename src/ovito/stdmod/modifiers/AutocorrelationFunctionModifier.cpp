@@ -64,24 +64,6 @@ struct SignalAccumulator {
     bool referenceCellIs2D = false;
 };
 
-struct VectorAccumulator {
-    QString targetLabel;
-    QString elementDescriptionName;
-    size_t itemCount = 0;
-    int componentCount = 0;
-    std::vector<IdentifierIntType> referenceIds;
-    std::vector<std::vector<double>> frames;
-    std::vector<std::vector<uint8_t>> selectionFrames;
-};
-
-struct MembershipAccumulator {
-    QString targetLabel;
-    QString elementDescriptionName;
-    size_t itemCount = 0;
-    std::vector<IdentifierIntType> referenceIds;
-    std::vector<std::vector<uint8_t>> membershipFrames;
-};
-
 struct CorrelationCurves {
     std::vector<double> lagFrames;
     std::vector<double> overall;
@@ -95,38 +77,6 @@ struct CorrelationComputationResult {
     int completedRunRequestId = 0;
     int cacheGenerationId = 0;
 };
-
-QString selectionModeLabel(AutocorrelationFunctionModifier::SelectionMode mode)
-{
-    switch(mode) {
-    case AutocorrelationFunctionModifier::AllElements:
-        return AutocorrelationFunctionModifier::tr("All elements");
-    case AutocorrelationFunctionModifier::SelectedAtTimeOrigin:
-        return AutocorrelationFunctionModifier::tr("Selected at time origin");
-    case AutocorrelationFunctionModifier::SelectedAtBothTimes:
-        return AutocorrelationFunctionModifier::tr("Selected at both times");
-    }
-    OVITO_ASSERT(false);
-    return {};
-}
-
-double legendrePolynomial(int order, double x)
-{
-    x = std::clamp(x, -1.0, 1.0);
-    if(order <= 0)
-        return 1.0;
-    if(order == 1)
-        return x;
-
-    double pnm2 = 1.0;
-    double pnm1 = x;
-    for(int n = 2; n <= order; ++n) {
-        const double pn = ((2.0 * n - 1.0) * x * pnm1 - (n - 1.0) * pnm2) / static_cast<double>(n);
-        pnm2 = pnm1;
-        pnm1 = pn;
-    }
-    return pnm1;
-}
 
 std::vector<std::vector<int>> buildFrameBatches(const std::vector<int>& frames, size_t batchSize)
 {
@@ -280,28 +230,6 @@ std::vector<double> extractPropertyValues(const Property* property, const std::v
             for(size_t i = 0; i < property->size(); ++i)
                 values[i * property->componentCount() + c] = static_cast<double>(componentValues[i]);
         }
-    }
-
-    return values;
-}
-
-std::vector<uint8_t> extractBooleanValues(const Property* property, const std::vector<size_t>* mapping = nullptr)
-{
-    OVITO_ASSERT(property);
-    OVITO_ASSERT(property->componentCount() == 1);
-
-    const size_t outputElementCount = mapping ? mapping->size() : property->size();
-    std::vector<uint8_t> values(outputElementCount, 0);
-    std::vector<FloatType> componentValues(property->size());
-    property->copyComponentTo(componentValues.begin(), 0);
-
-    if(mapping) {
-        for(size_t dst = 0; dst < mapping->size(); ++dst)
-            values[dst] = (componentValues[(*mapping)[dst]] != FloatType(0)) ? 1 : 0;
-    }
-    else {
-        for(size_t i = 0; i < property->size(); ++i)
-            values[i] = (componentValues[i] != FloatType(0)) ? 1 : 0;
     }
 
     return values;
@@ -509,172 +437,6 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
     return curves;
 }
 
-CorrelationCurves computeVectorReorientationCurves(const VectorAccumulator& samples,
-                                                   const std::vector<int>& sampledFrameNumbers,
-                                                   int legendreOrder,
-                                                   AutocorrelationFunctionModifier::SelectionMode selectionMode,
-                                                   int maxLag)
-{
-    OVITO_ASSERT(samples.frames.size() == sampledFrameNumbers.size());
-    OVITO_ASSERT(samples.selectionFrames.empty() || samples.selectionFrames.size() == sampledFrameNumbers.size());
-
-    CorrelationCurves curves;
-    const size_t frameCount = samples.frames.size();
-    if(frameCount < 2)
-        throw Exception(AutocorrelationFunctionModifier::tr("Vector reorientation analysis requires at least two sampled trajectory frames."));
-
-    const size_t componentCount = static_cast<size_t>(samples.componentCount);
-    const size_t maxLagEffective = std::min<size_t>((maxLag > 0 ? static_cast<size_t>(maxLag) : frameCount - 1), frameCount - 1);
-
-    curves.lagFrames.assign(maxLagEffective + 1, 0.0);
-    curves.overall.assign(maxLagEffective + 1, std::numeric_limits<double>::quiet_NaN());
-
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
-            this_task::throwIfCanceled();
-            const size_t originCount = frameCount - lag;
-            double lagFrameAccumulator = 0.0;
-            double overallAccumulator = 0.0;
-            size_t sampleCount = 0;
-
-            for(size_t origin = 0; origin < originCount; ++origin) {
-                const std::vector<double>& frame0 = samples.frames[origin];
-                const std::vector<double>& frame1 = samples.frames[origin + lag];
-                const std::vector<uint8_t>* selection0 = samples.selectionFrames.empty() ? nullptr : &samples.selectionFrames[origin];
-                const std::vector<uint8_t>* selection1 = samples.selectionFrames.empty() ? nullptr : &samples.selectionFrames[origin + lag];
-                lagFrameAccumulator += static_cast<double>(sampledFrameNumbers[origin + lag] - sampledFrameNumbers[origin]);
-
-                for(size_t item = 0; item < samples.itemCount; ++item) {
-                    if(selectionMode != AutocorrelationFunctionModifier::AllElements) {
-                        const bool originSelected = selection0 && (*selection0)[item] != 0;
-                        const bool lagSelected = selection1 && (*selection1)[item] != 0;
-                        if(selectionMode == AutocorrelationFunctionModifier::SelectedAtTimeOrigin && !originSelected)
-                            continue;
-                        if(selectionMode == AutocorrelationFunctionModifier::SelectedAtBothTimes && (!originSelected || !lagSelected))
-                            continue;
-                    }
-
-                    double norm0 = 0.0;
-                    double norm1 = 0.0;
-                    double dot = 0.0;
-                    for(size_t c = 0; c < componentCount; ++c) {
-                        const double a = frame0[item * componentCount + c];
-                        const double b = frame1[item * componentCount + c];
-                        dot += a * b;
-                        norm0 += a * a;
-                        norm1 += b * b;
-                    }
-                    if(norm0 <= std::numeric_limits<double>::epsilon() || norm1 <= std::numeric_limits<double>::epsilon())
-                        continue;
-
-                    overallAccumulator += legendrePolynomial(legendreOrder, dot / std::sqrt(norm0 * norm1));
-                    sampleCount++;
-                }
-            }
-
-            curves.lagFrames[lag] = lagFrameAccumulator / static_cast<double>(originCount);
-            if(sampleCount > 0)
-                curves.overall[lag] = overallAccumulator / static_cast<double>(sampleCount);
-        }
-    });
-
-    return curves;
-}
-
-std::vector<std::vector<uint8_t>> applyIntermittencyFilter(const std::vector<std::vector<uint8_t>>& memberships, int intermittency)
-{
-    if(intermittency <= 0 || memberships.empty())
-        return memberships;
-
-    std::vector<std::vector<uint8_t>> filtered = memberships;
-    const size_t frameCount = memberships.size();
-    const size_t itemCount = memberships.front().size();
-
-    for(size_t item = 0; item < itemCount; ++item) {
-        size_t frame = 0;
-        while(frame < frameCount) {
-            if(filtered[frame][item] != 0) {
-                frame++;
-                continue;
-            }
-
-            const size_t gapStart = frame;
-            while(frame < frameCount && filtered[frame][item] == 0)
-                frame++;
-            const size_t gapEnd = frame;
-            const size_t gapLength = gapEnd - gapStart;
-            const bool boundedByPresence = gapStart > 0 && gapEnd < frameCount
-                && filtered[gapStart - 1][item] != 0
-                && filtered[gapEnd][item] != 0;
-            if(boundedByPresence && gapLength <= static_cast<size_t>(intermittency)) {
-                for(size_t gapFrame = gapStart; gapFrame < gapEnd; ++gapFrame)
-                    filtered[gapFrame][item] = 1;
-            }
-        }
-    }
-
-    return filtered;
-}
-
-CorrelationCurves computeSurvivalProbabilityCurves(const MembershipAccumulator& samples,
-                                                   const std::vector<int>& sampledFrameNumbers,
-                                                   int intermittency,
-                                                   int maxLag)
-{
-    OVITO_ASSERT(samples.membershipFrames.size() == sampledFrameNumbers.size());
-
-    CorrelationCurves curves;
-    const size_t frameCount = samples.membershipFrames.size();
-    if(frameCount < 2)
-        throw Exception(AutocorrelationFunctionModifier::tr("Survival probability analysis requires at least two sampled trajectory frames."));
-
-    const size_t maxLagEffective = std::min<size_t>((maxLag > 0 ? static_cast<size_t>(maxLag) : frameCount - 1), frameCount - 1);
-    curves.lagFrames.assign(maxLagEffective + 1, 0.0);
-    curves.overall.assign(maxLagEffective + 1, std::numeric_limits<double>::quiet_NaN());
-
-    const std::vector<std::vector<uint8_t>> memberships = applyIntermittencyFilter(samples.membershipFrames, intermittency);
-    const size_t itemCount = samples.itemCount;
-
-    std::vector<std::vector<int>> falsePrefix(itemCount, std::vector<int>(frameCount + 1, 0));
-    for(size_t item = 0; item < itemCount; ++item) {
-        for(size_t frame = 0; frame < frameCount; ++frame)
-            falsePrefix[item][frame + 1] = falsePrefix[item][frame] + (memberships[frame][item] == 0 ? 1 : 0);
-    }
-
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
-            this_task::throwIfCanceled();
-            const size_t originCount = frameCount - lag;
-            double lagFrameAccumulator = 0.0;
-            double originFractionSum = 0.0;
-            size_t validOriginCount = 0;
-
-            for(size_t origin = 0; origin < originCount; ++origin) {
-                lagFrameAccumulator += static_cast<double>(sampledFrameNumbers[origin + lag] - sampledFrameNumbers[origin]);
-                size_t presentCount = 0;
-                size_t survivingCount = 0;
-                for(size_t item = 0; item < itemCount; ++item) {
-                    if(memberships[origin][item] == 0)
-                        continue;
-                    presentCount++;
-                    if(falsePrefix[item][origin + lag + 1] - falsePrefix[item][origin] == 0)
-                        survivingCount++;
-                }
-                if(presentCount > 0) {
-                    originFractionSum += static_cast<double>(survivingCount) / static_cast<double>(presentCount);
-                    validOriginCount++;
-                }
-            }
-
-            curves.lagFrames[lag] = lagFrameAccumulator / static_cast<double>(originCount);
-            if(validOriginCount > 0)
-                curves.overall[lag] = originFractionSum / static_cast<double>(validOriginCount);
-        }
-    });
-
-    return curves;
-}
-
 void appendAttributeSample(const AutocorrelationFunctionModifier* modifier,
                            SignalAccumulator& accumulator,
                            const PipelineFlowState& sampleState)
@@ -863,182 +625,6 @@ void appendPropertySample(const AutocorrelationFunctionModifier* modifier,
     }
 }
 
-void appendVectorSample(const AutocorrelationFunctionModifier* modifier,
-                        VectorAccumulator& accumulator,
-                        const PipelineFlowState& sampleState)
-{
-    if(!modifier->propertyContainer())
-        throw Exception(AutocorrelationFunctionModifier::tr("No input property container selected for vector reorientation analysis."));
-    if(!modifier->property())
-        throw Exception(AutocorrelationFunctionModifier::tr("No input vector property selected for vector reorientation analysis."));
-    if(!modifier->property().componentName().isEmpty()) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Vector reorientation analysis expects a full vector property, not an individual component."));
-    }
-
-    const PropertyContainer* sampleContainer = sampleState.getLeafObject(modifier->propertyContainer());
-    if(!sampleContainer) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "The selected property container '%1' is not available in one of the sampled trajectory frames.")
-            .arg(modifier->propertyContainer().dataTitleOrPath()));
-    }
-    sampleContainer->verifyIntegrity();
-
-    const Property* sampleProperty = modifier->property().findInContainer(sampleContainer);
-    if(!sampleProperty) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Property '%1' is not available in one of the sampled trajectory frames.")
-            .arg(modifier->property().nameWithComponent()));
-    }
-    if(!isNumericDataType(sampleProperty->dataType()) || sampleProperty->isTypedProperty()
-       || sampleProperty->typeId() == Property::GenericIdentifierProperty || sampleProperty->componentCount() < 2) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Property '%1' is not a supported vector property for reorientation analysis.")
-            .arg(sampleProperty->name()));
-    }
-
-    const Property* selectionProperty = nullptr;
-    if(modifier->selectionMode() != AutocorrelationFunctionModifier::AllElements) {
-        if(!sampleContainer->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "The selected property container '%1' does not provide a Selection property needed for the chosen subset mode.")
-                .arg(modifier->propertyContainer().dataTitleOrPath()));
-        selectionProperty = sampleContainer->getProperty(Property::GenericSelectionProperty);
-        if(!selectionProperty)
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "The Selection property is missing in one of the sampled trajectory frames."));
-    }
-
-    if(accumulator.frames.empty()) {
-        accumulator.targetLabel = modifier->property().nameWithComponent();
-        accumulator.elementDescriptionName = sampleContainer->getOOMetaClass().elementDescriptionName();
-        accumulator.itemCount = sampleProperty->size();
-        accumulator.componentCount = static_cast<int>(sampleProperty->componentCount());
-        if(BufferReadAccess<IdentifierIntType> referenceIds(identifierProperty(sampleContainer)); referenceIds)
-            accumulator.referenceIds.assign(referenceIds.cbegin(), referenceIds.cend());
-    }
-    else if(sampleProperty->componentCount() != static_cast<size_t>(accumulator.componentCount)) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Property '%1' changes its vector dimensionality over time and cannot be used for reorientation analysis.")
-            .arg(sampleProperty->name()));
-    }
-
-    BufferReadAccess<IdentifierIntType> sampleIds(identifierProperty(sampleContainer));
-    if(!accumulator.referenceIds.empty()) {
-        if(!sampleIds) {
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "The identifier property of %1 is missing in one of the sampled trajectory frames. "
-                "Vector reorientation analysis requires stable element IDs when the element order changes.")
-                .arg(accumulator.elementDescriptionName));
-        }
-
-        if(identifierBuffersMatch(accumulator.referenceIds, sampleIds)) {
-            accumulator.frames.push_back(extractPropertyValues(sampleProperty));
-            if(selectionProperty)
-                accumulator.selectionFrames.push_back(extractBooleanValues(selectionProperty));
-        }
-        else {
-            const std::vector<size_t> mapping = buildIndexMapping(
-                accumulator.referenceIds,
-                sampleIds,
-                accumulator.elementDescriptionName,
-                AutocorrelationFunctionModifier::tr("reference"),
-                AutocorrelationFunctionModifier::tr("sampled"));
-            accumulator.frames.push_back(extractPropertyValues(sampleProperty, &mapping));
-            if(selectionProperty)
-                accumulator.selectionFrames.push_back(extractBooleanValues(selectionProperty, &mapping));
-        }
-    }
-    else {
-        if(sampleProperty->size() != accumulator.itemCount) {
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "Property '%1' changes the number of %2 over time. "
-                "Vector reorientation analysis requires a stable element count or a stable identifier property.")
-                .arg(sampleProperty->name())
-                .arg(accumulator.elementDescriptionName));
-        }
-        accumulator.frames.push_back(extractPropertyValues(sampleProperty));
-        if(selectionProperty)
-            accumulator.selectionFrames.push_back(extractBooleanValues(selectionProperty));
-    }
-}
-
-void appendMembershipSample(const AutocorrelationFunctionModifier* modifier,
-                            MembershipAccumulator& accumulator,
-                            const PipelineFlowState& sampleState)
-{
-    if(!modifier->propertyContainer())
-        throw Exception(AutocorrelationFunctionModifier::tr("No input property container selected for survival probability analysis."));
-    if(!modifier->property())
-        throw Exception(AutocorrelationFunctionModifier::tr("No input membership property selected for survival probability analysis."));
-    if(!modifier->property().componentName().isEmpty()) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Survival probability analysis expects a scalar membership property, not an individual component."));
-    }
-
-    const PropertyContainer* sampleContainer = sampleState.getLeafObject(modifier->propertyContainer());
-    if(!sampleContainer) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "The selected property container '%1' is not available in one of the sampled trajectory frames.")
-            .arg(modifier->propertyContainer().dataTitleOrPath()));
-    }
-    sampleContainer->verifyIntegrity();
-
-    const Property* sampleProperty = modifier->property().findInContainer(sampleContainer);
-    if(!sampleProperty) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Property '%1' is not available in one of the sampled trajectory frames.")
-            .arg(modifier->property().nameWithComponent()));
-    }
-    if(!isNumericDataType(sampleProperty->dataType()) || sampleProperty->isTypedProperty()
-       || sampleProperty->typeId() == Property::GenericIdentifierProperty || sampleProperty->componentCount() != 1) {
-        throw Exception(AutocorrelationFunctionModifier::tr(
-            "Property '%1' is not a supported scalar membership property for survival probability analysis.")
-            .arg(sampleProperty->name()));
-    }
-
-    if(accumulator.membershipFrames.empty()) {
-        accumulator.targetLabel = modifier->property().nameWithComponent();
-        accumulator.elementDescriptionName = sampleContainer->getOOMetaClass().elementDescriptionName();
-        accumulator.itemCount = sampleProperty->size();
-        if(BufferReadAccess<IdentifierIntType> referenceIds(identifierProperty(sampleContainer)); referenceIds)
-            accumulator.referenceIds.assign(referenceIds.cbegin(), referenceIds.cend());
-    }
-
-    BufferReadAccess<IdentifierIntType> sampleIds(identifierProperty(sampleContainer));
-    if(!accumulator.referenceIds.empty()) {
-        if(!sampleIds) {
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "The identifier property of %1 is missing in one of the sampled trajectory frames. "
-                "Survival probability analysis requires stable element IDs when the element order changes.")
-                .arg(accumulator.elementDescriptionName));
-        }
-
-        if(identifierBuffersMatch(accumulator.referenceIds, sampleIds)) {
-            accumulator.membershipFrames.push_back(extractBooleanValues(sampleProperty));
-        }
-        else {
-            const std::vector<size_t> mapping = buildIndexMapping(
-                accumulator.referenceIds,
-                sampleIds,
-                accumulator.elementDescriptionName,
-                AutocorrelationFunctionModifier::tr("reference"),
-                AutocorrelationFunctionModifier::tr("sampled"));
-            accumulator.membershipFrames.push_back(extractBooleanValues(sampleProperty, &mapping));
-        }
-    }
-    else {
-        if(sampleProperty->size() != accumulator.itemCount) {
-            throw Exception(AutocorrelationFunctionModifier::tr(
-                "Property '%1' changes the number of %2 over time. "
-                "Survival probability analysis requires a stable element count or a stable identifier property.")
-                .arg(sampleProperty->name())
-                .arg(accumulator.elementDescriptionName));
-        }
-        accumulator.membershipFrames.push_back(extractBooleanValues(sampleProperty));
-    }
-}
-
 void appendCellSample(SignalAccumulator& accumulator, const PipelineFlowState& sampleState)
 {
     const SimulationCell* sampleCell = sampleState.getObject<SimulationCell>();
@@ -1067,7 +653,6 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(AutocorrelationFunctionModifier);
 OVITO_CLASSINFO(AutocorrelationFunctionModifier, "DisplayName", "Autocorrelation function");
 OVITO_CLASSINFO(AutocorrelationFunctionModifier, "Description", "Compute a time autocorrelation function for a selected trajectory quantity.");
 OVITO_CLASSINFO(AutocorrelationFunctionModifier, "ModifierCategory", "Analysis");
-DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, analysisMode);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, targetType);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, attributeName);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, table);
@@ -1075,9 +660,6 @@ DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, propertyContainer);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, property);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, subtractMean);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, normalizeByZeroLag);
-DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, legendreOrder);
-DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, selectionMode);
-DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, intermittency);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, useCustomFrameInterval);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, intervalStart);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, intervalEnd);
@@ -1085,16 +667,12 @@ DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, samplingFrequency);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, maxLag);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, targetType, "Target type");
-SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, analysisMode, "Analysis mode");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, attributeName, "Attribute");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, table, "Data table");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, propertyContainer, "Property container");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, property, "Property");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, subtractMean, "Subtract mean value");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, normalizeByZeroLag, "Normalize by zero-lag value");
-SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, legendreOrder, "Legendre order");
-SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, selectionMode, "Vector subset");
-SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, intermittency, "Intermittency");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, useCustomFrameInterval, "Restrict analysis interval");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, intervalStart, "Start frame");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, intervalEnd, "End frame");
@@ -1102,8 +680,6 @@ SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, samplingFrequency, "Sa
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, maxLag, "Maximum lag (sampled-frame steps)");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, intervalStart, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, intervalEnd, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, legendreOrder, IntegerParameterUnit, 1, 12);
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, intermittency, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(AutocorrelationFunctionModifier, maxLag, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 
@@ -1144,11 +720,7 @@ void AutocorrelationFunctionModifier::initializeModifier(const ModifierInitializ
 
     const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
 
-    if(analysisMode() != SignalAutocorrelation) {
-        if(propertyContainer() && property())
-            return;
-    }
-    else if((targetType() == AutocorrelationFunctionModifier::Attribute && !attributeName().isEmpty())
+    if((targetType() == AutocorrelationFunctionModifier::Attribute && !attributeName().isEmpty())
         || (targetType() == AutocorrelationFunctionModifier::Table && table())
         || (targetType() == AutocorrelationFunctionModifier::Property && propertyContainer() && property())
         || targetType() == AutocorrelationFunctionModifier::Cell) {
@@ -1166,10 +738,6 @@ void AutocorrelationFunctionModifier::initializeModifier(const ModifierInitializ
                     continue;
                 if(candidate->isTypedProperty() || candidate->typeId() == Ovito::Property::GenericIdentifierProperty)
                     continue;
-                if(analysisMode() == VectorReorientation && candidate->componentCount() < 2)
-                    continue;
-                if(analysisMode() == SurvivalProbability && candidate->componentCount() != 1)
-                    continue;
 
                 setTargetType(AutocorrelationFunctionModifier::Property);
                 setPropertyContainer(path);
@@ -1178,9 +746,6 @@ void AutocorrelationFunctionModifier::initializeModifier(const ModifierInitializ
             }
         }
     }
-
-    if(analysisMode() != SignalAutocorrelation)
-        return;
 
     if(const QVariantMap attributes = input.buildAttributesMap(); !attributes.isEmpty()) {
         setTargetType(AutocorrelationFunctionModifier::Attribute);
@@ -1205,8 +770,7 @@ void AutocorrelationFunctionModifier::initializeModifier(const ModifierInitializ
 void AutocorrelationFunctionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
     if(!shouldIgnoreChanges()) {
-        if(field == PROPERTY_FIELD(AutocorrelationFunctionModifier::analysisMode)
-            || field == PROPERTY_FIELD(AutocorrelationFunctionModifier::targetType)
+        if(field == PROPERTY_FIELD(AutocorrelationFunctionModifier::targetType)
             || field == PROPERTY_FIELD(AutocorrelationFunctionModifier::attributeName)
             || field == PROPERTY_FIELD(AutocorrelationFunctionModifier::table)
             || field == PROPERTY_FIELD(AutocorrelationFunctionModifier::propertyContainer)
@@ -1223,11 +787,6 @@ void AutocorrelationFunctionModifier::propertyChanged(const PropertyFieldDescrip
 ******************************************************************************/
 QVariant AutocorrelationFunctionModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
-    if(analysisMode() == VectorReorientation)
-        return tr("P%1 %2").arg(legendreOrder()).arg(property().nameWithComponent());
-    if(analysisMode() == SurvivalProbability)
-        return tr("SP %1").arg(property().nameWithComponent());
-
     switch(targetType()) {
     case Attribute:
         return attributeName();
@@ -1325,14 +884,14 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::evaluateModifier(cons
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
             state.setStatus(PipelineStatus(tr(
-                "Correlation analysis is idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable.")));
+                "Autocorrelation analysis is idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable.")));
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
         state.setStatus(PipelineStatus(tr(
-            "Correlation analysis is queued. Click 'Run autocorrelation analysis' to launch the full trajectory evaluation.")));
+            "Autocorrelation analysis is queued. Click 'Run autocorrelation analysis' to launch the full trajectory evaluation.")));
         return std::move(state);
     }
 
@@ -1350,188 +909,6 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
     const int cacheGenerationId = dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode())
         ? dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode())->cacheGenerationId()
         : 0;
-
-    if(analysisMode() == VectorReorientation) {
-        VectorAccumulator accumulator;
-        accumulator.frames.reserve(frames.size());
-        if(selectionMode() != AllElements)
-            accumulator.selectionFrames.reserve(frames.size());
-
-        return for_each_sequential(
-                frameBatches,
-                DeferredObjectExecutor(this),
-                [request = ModifierEvaluationRequest(request)](const std::vector<int>& frameBatch, VectorAccumulator&) mutable {
-                    std::vector<SharedFuture<PipelineFlowState>> batchFutures;
-                    batchFutures.reserve(frameBatch.size());
-                    for(int frame : frameBatch) {
-                        ModifierEvaluationRequest frameRequest(request);
-                        frameRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
-                        batchFutures.push_back(request.modificationNode()->evaluateInput(frameRequest).asFuture());
-                    }
-                    return when_all_futures(std::move(batchFutures));
-                },
-                [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, VectorAccumulator& accumulator) {
-                    for(SharedFuture<PipelineFlowState>& future : batchFutures) {
-                        this_task::throwIfCanceled();
-                        appendVectorSample(this, accumulator, future.result());
-                    }
-                },
-                std::move(accumulator))
-            .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId](VectorAccumulator accumulator) mutable -> Future<PipelineFlowState> {
-                OORef<AutocorrelationFunctionModifier> self(this);
-                const int completedRunRequestId = runRequestId();
-
-                return asyncLaunch([self = std::move(self),
-                                    request = ModifierEvaluationRequest(request),
-                                    state = std::move(state),
-                                    frames,
-                                    accumulator = std::move(accumulator),
-                                    completedRunRequestId,
-                                    cacheGenerationId]() mutable {
-                    CorrelationComputationResult computationResult{std::move(state)};
-                    if(!dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode()))
-                        return computationResult;
-
-                    this_task::throwIfCanceled();
-                    const CorrelationCurves curves = computeVectorReorientationCurves(
-                        accumulator, frames, self->legendreOrder(), self->selectionMode(), self->maxLag());
-
-                    computationResult.results = DataOORef<DataCollection>::create();
-                    const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();
-                    createLineTable(computationResult.results,
-                                    AutocorrelationFunctionModifier::correlationTableId(),
-                                    AutocorrelationFunctionModifier::tr("Vector reorientation correlation"),
-                                    curves.lagFrames,
-                                    {curves.overall},
-                                    {AutocorrelationFunctionModifier::tr("P%1").arg(self->legendreOrder())},
-                                    AutocorrelationFunctionModifier::tr("Lag (source frames)"),
-                                    AutocorrelationFunctionModifier::tr("Orientational correlation"),
-                                    createdByNode);
-
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.mode"), QStringLiteral("vector_reorientation"), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.target"), accumulator.targetLabel, createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_item_count"), static_cast<double>(accumulator.itemCount), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.maximum_lag"), static_cast<double>(curves.lagFrames.empty() ? 0.0 : curves.lagFrames.back()), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.legendre_order"), static_cast<double>(self->legendreOrder()), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.selection_mode"), selectionModeLabel(self->selectionMode()), createdByNode);
-                    if(!curves.overall.empty()) {
-                        computationResult.results->setAttribute(QStringLiteral("Autocorrelation.zero_lag"), curves.overall.front(), createdByNode);
-                        computationResult.results->setAttribute(QStringLiteral("Autocorrelation.final_value"), curves.overall.back(), createdByNode);
-                    }
-                    if(std::ranges::none_of(curves.overall, [](double value) { return std::isfinite(value); })) {
-                        computationResult.warningText = AutocorrelationFunctionModifier::tr(
-                            "No valid vector samples satisfied the current selection and normalization criteria.");
-                    }
-
-                    computationResult.completedRunRequestId = completedRunRequestId;
-                    computationResult.cacheGenerationId = cacheGenerationId;
-                    return computationResult;
-                }).then(ObjectExecutor(this), [this, request = ModifierEvaluationRequest(request)](CorrelationComputationResult computationResult) mutable {
-                    AutocorrelationFunctionModificationNode* modNode =
-                        dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode());
-                    if(!modNode || !computationResult.results)
-                        return std::move(computationResult.state);
-
-                    if(modNode->cacheGenerationId() != computationResult.cacheGenerationId || runRequestId() != computationResult.completedRunRequestId)
-                        return std::move(computationResult.state);
-
-                    modNode->setCachedResults(computationResult.results);
-                    modNode->setCachedWarningText(computationResult.warningText);
-                    modNode->setCompletedRunRequestId(computationResult.completedRunRequestId);
-                    return applyCachedResults(request, std::move(computationResult.state));
-                });
-            });
-    }
-
-    if(analysisMode() == SurvivalProbability) {
-        MembershipAccumulator accumulator;
-        accumulator.membershipFrames.reserve(frames.size());
-
-        return for_each_sequential(
-                frameBatches,
-                DeferredObjectExecutor(this),
-                [request = ModifierEvaluationRequest(request)](const std::vector<int>& frameBatch, MembershipAccumulator&) mutable {
-                    std::vector<SharedFuture<PipelineFlowState>> batchFutures;
-                    batchFutures.reserve(frameBatch.size());
-                    for(int frame : frameBatch) {
-                        ModifierEvaluationRequest frameRequest(request);
-                        frameRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
-                        batchFutures.push_back(request.modificationNode()->evaluateInput(frameRequest).asFuture());
-                    }
-                    return when_all_futures(std::move(batchFutures));
-                },
-                [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, MembershipAccumulator& accumulator) {
-                    for(SharedFuture<PipelineFlowState>& future : batchFutures) {
-                        this_task::throwIfCanceled();
-                        appendMembershipSample(this, accumulator, future.result());
-                    }
-                },
-                std::move(accumulator))
-            .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId](MembershipAccumulator accumulator) mutable -> Future<PipelineFlowState> {
-                OORef<AutocorrelationFunctionModifier> self(this);
-                const int completedRunRequestId = runRequestId();
-
-                return asyncLaunch([self = std::move(self),
-                                    request = ModifierEvaluationRequest(request),
-                                    state = std::move(state),
-                                    frames,
-                                    accumulator = std::move(accumulator),
-                                    completedRunRequestId,
-                                    cacheGenerationId]() mutable {
-                    CorrelationComputationResult computationResult{std::move(state)};
-                    if(!dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode()))
-                        return computationResult;
-
-                    this_task::throwIfCanceled();
-                    const CorrelationCurves curves = computeSurvivalProbabilityCurves(accumulator, frames, self->intermittency(), self->maxLag());
-
-                    computationResult.results = DataOORef<DataCollection>::create();
-                    const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();
-                    createLineTable(computationResult.results,
-                                    AutocorrelationFunctionModifier::correlationTableId(),
-                                    AutocorrelationFunctionModifier::tr("Survival probability"),
-                                    curves.lagFrames,
-                                    {curves.overall},
-                                    {AutocorrelationFunctionModifier::tr("SP")},
-                                    AutocorrelationFunctionModifier::tr("Lag (source frames)"),
-                                    AutocorrelationFunctionModifier::tr("Survival probability"),
-                                    createdByNode);
-
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.mode"), QStringLiteral("survival_probability"), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.target"), accumulator.targetLabel, createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_item_count"), static_cast<double>(accumulator.itemCount), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.maximum_lag"), static_cast<double>(curves.lagFrames.empty() ? 0.0 : curves.lagFrames.back()), createdByNode);
-                    computationResult.results->setAttribute(QStringLiteral("Autocorrelation.intermittency"), static_cast<double>(self->intermittency()), createdByNode);
-                    if(!curves.overall.empty()) {
-                        computationResult.results->setAttribute(QStringLiteral("Autocorrelation.zero_lag"), curves.overall.front(), createdByNode);
-                        computationResult.results->setAttribute(QStringLiteral("Autocorrelation.final_value"), curves.overall.back(), createdByNode);
-                    }
-                    if(std::ranges::none_of(curves.overall, [](double value) { return std::isfinite(value); })) {
-                        computationResult.warningText = AutocorrelationFunctionModifier::tr(
-                            "No valid membership samples were available for survival probability analysis.");
-                    }
-
-                    computationResult.completedRunRequestId = completedRunRequestId;
-                    computationResult.cacheGenerationId = cacheGenerationId;
-                    return computationResult;
-                }).then(ObjectExecutor(this), [this, request = ModifierEvaluationRequest(request)](CorrelationComputationResult computationResult) mutable {
-                    AutocorrelationFunctionModificationNode* modNode =
-                        dynamic_object_cast<AutocorrelationFunctionModificationNode>(request.modificationNode());
-                    if(!modNode || !computationResult.results)
-                        return std::move(computationResult.state);
-
-                    if(modNode->cacheGenerationId() != computationResult.cacheGenerationId || runRequestId() != computationResult.completedRunRequestId)
-                        return std::move(computationResult.state);
-
-                    modNode->setCachedResults(computationResult.results);
-                    modNode->setCachedWarningText(computationResult.warningText);
-                    modNode->setCompletedRunRequestId(computationResult.completedRunRequestId);
-                    return applyCachedResults(request, std::move(computationResult.state));
-                });
-            });
-    }
 
     SignalAccumulator accumulator;
     accumulator.signal.frames.reserve(frames.size());
@@ -1624,7 +1001,6 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                                                             : AutocorrelationFunctionModifier::tr("Autocorrelation")),
                                 createdByNode);
 
-                computationResult.results->setAttribute(QStringLiteral("Autocorrelation.mode"), QStringLiteral("signal_autocorrelation"), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.target"), accumulator.signal.targetLabel, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_item_count"), static_cast<double>(accumulator.signal.itemCount), createdByNode);

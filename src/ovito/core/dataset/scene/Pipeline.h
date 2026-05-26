@@ -82,6 +82,9 @@ public:
         return _pipelineCache.getAt(time, interactiveMode);
     }
 
+    /// Cancels active evaluations associated with this pipeline and its nodes.
+    void cancelActiveEvaluations();
+
     /// Sets the data source of this pipeline, i.e., the object that provides the
     /// input data entering the pipeline.
     void setSource(PipelineNode* sourceObject);

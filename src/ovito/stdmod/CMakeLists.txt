@@ -46,6 +46,7 @@ OVITO_STANDARD_PLUGIN(StdMod
         modifiers/ColorByTypeModifier.cpp
         modifiers/AutocorrelationFunctionModifier.cpp
         modifiers/TimeAveragingModifier.cpp
+        modifiers/TimeSeriesModifier.cpp
         viewport/ColorLegendOverlay.cpp
     PLUGIN_DEPENDENCIES
         StdObj

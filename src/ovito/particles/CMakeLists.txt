@@ -40,6 +40,7 @@ SET(SourceFiles
     modifier/modify/CreateBondsModifier.cpp
     modifier/modify/LoadTrajectoryModifier.cpp
     modifier/modify/CoordinationPolyhedraModifier.cpp
+    modifier/modify/MoleculeCenterOfMassModifier.cpp
     modifier/analysis/StructureIdentificationModifier.cpp
     modifier/analysis/ReferenceConfigurationModifier.cpp
     modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
@@ -50,6 +51,9 @@ SET(SourceFiles
     modifier/analysis/hbond/HydrogenBondAnalysisModifier.cpp
     modifier/analysis/hbond/HydrogenBondKineticsModifier.cpp
     modifier/analysis/orientation/MolecularOrientationModifier.cpp
+    modifier/analysis/orientation/MoleculeOrientationalRelaxationModifier.cpp
+    modifier/analysis/orientation/OrientationTrajectoryAnalysisHelper.cpp
+    modifier/analysis/orientation/SurvivalProbabilityModifier.cpp
     modifier/analysis/binning/SpatialBinningModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
     modifier/analysis/displacements/CalculateDisplacementsModifier.cpp
@@ -63,6 +67,8 @@ SET(SourceFiles
     modifier/analysis/transport/TransportModifier.cpp
     modifier/analysis/ptm/PTMAlgorithm.cpp
     modifier/analysis/surface/ConstructSurfaceModifier.cpp
+    modifier/analysis/surface/InterfacialIdentificationModifier.cpp
+    modifier/analysis/surface/WillardChandlerInterfaceModifier.cpp
     modifier/selection/ExpandSelectionModifier.cpp
     modifier/selection/SelectOverlappingParticlesModifier.cpp
     modifier/properties/CalculatePropertyModifier.cpp

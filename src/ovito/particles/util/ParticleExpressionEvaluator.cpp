@@ -33,6 +33,18 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 {
     PropertyExpressionEvaluator::createInputVariables(inputProperties, simCell, attributes, animationFrame);
 
+    if(auto iter = std::ranges::find_if(inputProperties, [](const ConstPropertyPtr& property) {
+        return property->typeId() == Particles::VelocityProperty;
+    }); iter != inputProperties.end()) {
+        BufferReadAccessAndRef<Vector3> velocityProperty = *iter;
+        registerComputedVariable("VelocitySquared", [velocityProperty](size_t particleIndex) -> double {
+            return static_cast<double>(velocityProperty[particleIndex].squaredLength());
+        }, tr("squared speed"));
+        registerComputedVariable("Speed", [velocityProperty](size_t particleIndex) -> double {
+            return static_cast<double>(velocityProperty[particleIndex].length());
+        }, tr("speed"));
+    }
+
     // Create computed variables for reduced particle coordinates.
     if(simCell) {
         // Look for the 'Position' particle property in the inputs.

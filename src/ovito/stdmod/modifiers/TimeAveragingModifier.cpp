@@ -251,6 +251,7 @@ DEFINE_PROPERTY_FIELD(TimeAveragingModifier, intervalStart);
 DEFINE_PROPERTY_FIELD(TimeAveragingModifier, intervalEnd);
 DEFINE_PROPERTY_FIELD(TimeAveragingModifier, samplingFrequency);
 DEFINE_PROPERTY_FIELD(TimeAveragingModifier, overwrite);
+DEFINE_PROPERTY_FIELD(TimeAveragingModifier, runRequestId);
 SET_PROPERTY_FIELD_LABEL(TimeAveragingModifier, targetType, "Target type");
 SET_PROPERTY_FIELD_LABEL(TimeAveragingModifier, attributeName, "Attribute");
 SET_PROPERTY_FIELD_LABEL(TimeAveragingModifier, table, "Data table");
@@ -271,6 +272,8 @@ DEFINE_REFERENCE_FIELD(TimeAveragingModificationNode, referenceIdentifiers);
 DEFINE_REFERENCE_FIELD(TimeAveragingModificationNode, averagedTable);
 DEFINE_REFERENCE_FIELD(TimeAveragingModificationNode, averagedCell);
 DEFINE_PROPERTY_FIELD(TimeAveragingModificationNode, averagedAttributeValue);
+DEFINE_PROPERTY_FIELD(TimeAveragingModificationNode, completedRunRequestId);
+DEFINE_PROPERTY_FIELD(TimeAveragingModificationNode, cacheGenerationId);
 SET_MODIFICATION_NODE_TYPE(TimeAveragingModifier, TimeAveragingModificationNode);
 
 /******************************************************************************
@@ -289,6 +292,7 @@ bool TimeAveragingModifier::OOMetaClass::isApplicableTo(const DataCollection& in
 void TimeAveragingModifier::initializeObject(ObjectInitializationFlags flags)
 {
     Modifier::initializeObject(flags);
+    setEnabled(false);
 }
 
 /******************************************************************************
@@ -450,12 +454,19 @@ void TimeAveragingModifier::restrictInputValidityInterval(TimeInterval& iv) cons
 Future<PipelineFlowState> TimeAveragingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(TimeAveragingModificationNode* modNode = dynamic_object_cast<TimeAveragingModificationNode>(request.modificationNode())) {
-        if(modNode->hasCachedAverage())
+        if(modNode->hasCachedAverage() && runRequestId() <= modNode->completedRunRequestId())
             return applyCachedAverage(request, std::move(state));
+
+        if(runRequestId() <= modNode->completedRunRequestId()) {
+            state.setStatus(PipelineStatus(tr(
+                "Time averaging is idle. Open the Start section and click 'Start averaging' to compute the selected observable.")));
+            return std::move(state);
+        }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Time-averaged data has not been computed yet. A final pipeline evaluation is required to traverse the full trajectory.")));
+        state.setStatus(PipelineStatus(tr(
+            "Time averaging is queued. Click 'Start averaging' to launch the full trajectory evaluation.")));
         return std::move(state);
     }
 
@@ -468,7 +479,16 @@ Future<PipelineFlowState> TimeAveragingModifier::evaluateModifier(const Modifier
 Future<PipelineFlowState> TimeAveragingModifier::computeAverageData(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     const std::vector<int> frames = sampledFrames(request.modificationNode());
-    const std::vector<std::vector<int>> frameBatches = buildFrameBatches(frames, 32);
+    // Traverse sampled frames one at a time to avoid reentrant upstream modifier evaluation.
+    const std::vector<std::vector<int>> frameBatches = buildFrameBatches(frames, 1);
+    const int cacheGenerationId = dynamic_object_cast<TimeAveragingModificationNode>(request.modificationNode())
+        ? dynamic_object_cast<TimeAveragingModificationNode>(request.modificationNode())->cacheGenerationId()
+        : 0;
+    // Long-running trajectory traversal modifiers should register an outer task-progress object
+    // so the status bar reports whole-trajectory progress instead of only nested upstream work.
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Computing time average"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -483,7 +503,7 @@ Future<PipelineFlowState> TimeAveragingModifier::computeAverageData(const Modifi
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, RunningAverageData& accumulator) {
+            [this, progress, totalFrameCount = frames.size()](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, RunningAverageData& accumulator) {
                 for(SharedFuture<PipelineFlowState>& future : futures) {
                     this_task::throwIfCanceled();
                     const PipelineFlowState& sampleState = future.result();
@@ -636,15 +656,18 @@ Future<PipelineFlowState> TimeAveragingModifier::computeAverageData(const Modifi
                     }
 
                     accumulator.sampleCount++;
+                    progress->setText(tr("Computing time average (%1/%2 frames)")
+                                          .arg(accumulator.sampleCount)
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.sampleCount));
                 }
             },
             RunningAverageData{})
-        .then(ObjectExecutor(this), [this, request, state = std::move(state)](RunningAverageData accumulator) mutable {
+        .then(ObjectExecutor(this), [this, request, state = std::move(state), progress = std::move(progress), cacheGenerationId](RunningAverageData accumulator) mutable {
             TimeAveragingModificationNode* modNode = dynamic_object_cast<TimeAveragingModificationNode>(request.modificationNode());
             if(!modNode)
                 return std::move(state);
-
-            modNode->invalidateCachedAverage();
+            const int completedRunRequestId = runRequestId();
 
             if(accumulator.sampleCount == 0)
                 throw Exception(tr("The selected averaging interval does not contain any sampled frames."));
@@ -709,6 +732,12 @@ Future<PipelineFlowState> TimeAveragingModifier::computeAverageData(const Modifi
             }
             }
 
+            if(modNode->cacheGenerationId() != cacheGenerationId || runRequestId() != completedRunRequestId)
+                return std::move(state);
+
+            modNode->setCompletedRunRequestId(completedRunRequestId);
+            progress->setText(tr("Computed time average from %1 sampled frame(s).").arg(accumulator.sampleCount));
+            progress->setValue(static_cast<qlonglong>(accumulator.sampleCount));
             return applyCachedAverage(request, std::move(state));
         });
 }
@@ -1043,6 +1072,7 @@ void TimeAveragingModificationNode::invalidateCachedAverage()
     setAveragedTable(nullptr);
     setAveragedCell(nullptr);
     setAveragedAttributeValue(QVariant{});
+    setCacheGenerationId(cacheGenerationId() + 1);
 }
 
 /******************************************************************************

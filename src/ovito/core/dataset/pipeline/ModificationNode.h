@@ -154,6 +154,9 @@ protected:
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() override;
 
+    /// Is called when the value of a non-animatable property field of this RefMaker has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
     /// Sends an event to all dependents of this RefTarget.
     virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 

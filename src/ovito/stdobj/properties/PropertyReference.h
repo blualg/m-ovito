@@ -25,6 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/Property.h>
+#include <QDataStream>
 
 namespace Ovito {
 
@@ -116,6 +117,14 @@ extern OVITO_STDOBJ_EXPORT LoadStream& operator>>(LoadStream& stream, PropertyRe
 /// Outputs a PropertyReference to a debug stream.
 /// \relates PropertyReference
 extern OVITO_STDOBJ_EXPORT QDebug operator<<(QDebug debug, const PropertyReference& r);
+
+/// Writes a PropertyReference to a Qt data stream.
+/// \relates PropertyReference
+extern OVITO_STDOBJ_EXPORT QDataStream& operator<<(QDataStream& stream, const PropertyReference& r);
+
+/// Reads a PropertyReference from a Qt data stream.
+/// \relates PropertyReference
+extern OVITO_STDOBJ_EXPORT QDataStream& operator>>(QDataStream& stream, PropertyReference& r);
 
 }   // End of namespace
 

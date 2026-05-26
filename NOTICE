@@ -1,0 +1,24 @@
+m-ovito contains modified source code derived from OVITO.
+
+Upstream source project:
+https://gitlab.com/stuko/ovito.git
+
+Local upstream baseline used for this modified tree:
+6088e4c233aede802cff4d06bdd8787df22848b3
+
+OVITO implementation files are distributed under a dual-license model:
+- GNU GPL v3
+- MIT
+
+License texts:
+- LICENSE.txt
+- LICENSE.GPL.txt
+- LICENSE.MIT.txt
+
+This repository also includes bundled third-party components under src/3rdparty/.
+Those components remain under their own respective licenses. Their original
+license files are preserved in place. THIRD_PARTY_NOTICES.md provides a
+convenience summary.
+
+This repository is an unofficial modified source tree and is not an official
+release of OVITO GmbH.

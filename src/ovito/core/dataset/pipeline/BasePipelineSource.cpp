@@ -29,6 +29,21 @@
 
 namespace Ovito {
 
+namespace {
+
+AnimationTime currentAnimationTimeForSourcePostprocess(const PipelineEvaluationRequest& request)
+{
+    if(Task* task = this_task::get()) {
+        if(const auto& ui = task->userInterface())
+            return ui->datasetContainer().currentAnimationTime();
+    }
+    if(Application::instance())
+        return Application::instance()->datasetContainer().currentAnimationTime();
+    return request.time();
+}
+
+} // namespace
+
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BasePipelineSource);
 DEFINE_REFERENCE_FIELD(BasePipelineSource, dataCollection);
 DEFINE_PROPERTY_FIELD(BasePipelineSource, dataCollectionFrame);
@@ -60,7 +75,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
                 if(state.data() && state.status().type() != PipelineStatus::Error) {
 
                     // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-                    AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
+                    AnimationTime currentTime = currentAnimationTimeForSourcePostprocess(request);
                     if(state.stateValidity().contains(currentTime)) {
                         setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, std::max(numberOfSourceFrames() - 1, 0)));
                         setDataCollection(state.data());
@@ -108,7 +123,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
     if(state.data() && state.status().type() != PipelineStatus::Error) {
 
         // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-        AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
+        AnimationTime currentTime = currentAnimationTimeForSourcePostprocess(request);
         if(state.stateValidity().contains(currentTime)) {
             setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, numberOfSourceFrames() - 1));
             setDataCollection(state.data());

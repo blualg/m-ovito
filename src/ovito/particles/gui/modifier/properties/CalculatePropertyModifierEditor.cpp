@@ -22,12 +22,15 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/properties/CalculatePropertyModifier.h>
-#include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/Particles.h>
-#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <QSignalBlocker>
+#include <ovito/gui/desktop/properties/StringParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/particles/gui/util/ParticleSelectorPopupEditor.h>
+#include <QGridLayout>
+#include <QLabel>
+#include <QVBoxLayout>
 #include "CalculatePropertyModifierEditor.h"
 
 namespace Ovito {
@@ -51,133 +54,138 @@ void CalculatePropertyModifierEditor::createUI(const RolloutInsertionParameters&
     gridLayout->setContentsMargins(0, 0, 0, 0);
     gridLayout->setColumnStretch(1, 1);
 
-    auto* propertyTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::propertyType));
-    propertyTypeUI->comboBox()->addItem(tr("Dipole direction"), QVariant::fromValue((int)CalculatePropertyModifier::DipoleDirection));
-    propertyTypeUI->comboBox()->addItem(tr("Manual molecular direction"), QVariant::fromValue((int)CalculatePropertyModifier::ManualMolecularDirection));
-    gridLayout->addWidget(new QLabel(tr("Property")), 0, 0);
-    gridLayout->addWidget(propertyTypeUI->comboBox(), 0, 1);
+    _selectorWidget = new QWidget();
+    auto* selectorLayout = new QGridLayout(_selectorWidget);
+    selectorLayout->setContentsMargins(0, 0, 0, 0);
+    selectorLayout->setColumnStretch(1, 1);
 
-    _manualDirectionWidget = new QWidget();
-    auto* manualLayout = new QGridLayout(_manualDirectionWidget);
-    manualLayout->setContentsMargins(0, 0, 0, 0);
-    manualLayout->setColumnStretch(1, 1);
+    auto* fromTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::fromTypes));
+    fromTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O,H or 1,2"));
+    auto* fromExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::fromExpression));
+    selectorLayout->addWidget(new QLabel(tr("From atom type(s)")), 0, 0);
+    selectorLayout->addWidget(createSelectorPopupRow(_selectorWidget,
+                                                     fromTypesUI->lineEdit(),
+                                                     fromExpressionUI,
+                                                     tr("From selector expression override"),
+                                                     tr("Uses this expression instead of the 'From atom type(s)' field. Leave it empty to use the type list.")),
+                              0, 1);
 
-    _fromTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::fromTypeId));
-    manualLayout->addWidget(new QLabel(tr("From atom type")), 0, 0);
-    manualLayout->addWidget(_fromTypeUI->comboBox(), 0, 1);
+    auto* toTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::toTypes));
+    toTypesUI->lineEdit()->setPlaceholderText(tr("e.g. H or 8"));
+    auto* toExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::toExpression));
+    selectorLayout->addWidget(new QLabel(tr("To atom type(s)")), 1, 0);
+    selectorLayout->addWidget(createSelectorPopupRow(_selectorWidget,
+                                                     toTypesUI->lineEdit(),
+                                                     toExpressionUI,
+                                                     tr("To selector expression override"),
+                                                     tr("Uses this expression instead of the 'To atom type(s)' field. Leave it empty to use the type list.")),
+                              1, 1);
 
-    _toTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::toTypeId));
-    manualLayout->addWidget(new QLabel(tr("To atom type")), 1, 0);
-    manualLayout->addWidget(_toTypeUI->comboBox(), 1, 1);
+    _selectorDescriptionLabel = new QLabel();
+    _selectorDescriptionLabel->setWordWrap(true);
+    selectorLayout->addWidget(_selectorDescriptionLabel, 2, 0, 1, 2);
+    gridLayout->addWidget(_selectorWidget, 0, 0, 1, 2);
 
-    gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
+    _outputWidget = new QWidget();
+    auto* outputLayout = new QGridLayout(_outputWidget);
+    outputLayout->setContentsMargins(0, 0, 0, 0);
+    outputLayout->setColumnStretch(1, 1);
+    auto* outputNameUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::outputPropertyName));
+    outputNameUI->lineEdit()->setPlaceholderText(tr("Leave empty to use the default name"));
+    outputLayout->addWidget(new QLabel(tr("Output property name")), 0, 0);
+    outputLayout->addWidget(outputNameUI->lineEdit(), 0, 1);
+    gridLayout->addWidget(_outputWidget, 1, 0, 1, 2);
+
+    _expressionWidget = new QWidget();
+    auto* expressionLayout = new QGridLayout(_expressionWidget);
+    expressionLayout->setContentsMargins(0, 0, 0, 0);
+    expressionLayout->setColumnStretch(1, 1);
+    auto* scriptUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::script));
+    auto* scriptEdit = new AutocompleteTextEdit();
+    scriptEdit->setCommitOnReturn(false);
+    scriptEdit->setPlaceholderText(tr("mx = Charge*Position.X\nmy = Charge*Position.Y\nmz = Charge*Position.Z\nX = mx\nY = my\nZ = mz\n\nor\n\nr2 = Position.X^2 + Position.Y^2 + Position.Z^2\nresult = sqrt(r2)"));
+    scriptUI->setTextBox(scriptEdit);
+    expressionLayout->addWidget(new QLabel(tr("Script")), 0, 0);
+    expressionLayout->addWidget(scriptEdit, 0, 1);
+    auto* helperLabel = new QLabel(tr("Write one assignment per line. Use <code>result = ...</code> for a scalar output or all three of "
+                                      "<code>X = ...</code>, <code>Y = ...</code>, <code>Z = ...</code> for a vector output. "
+                                      "Later lines can reuse variables defined on earlier lines. Pair scripts can use <code>@i.*</code>, <code>@j.*</code>, "
+                                      "<code>Distance</code>, and <code>Delta.X/Y/Z</code>."));
+    helperLabel->setWordWrap(true);
+    helperLabel->setTextFormat(Qt::RichText);
+    expressionLayout->addWidget(helperLabel, 1, 0, 1, 2);
+    gridLayout->addWidget(_expressionWidget, 2, 0, 1, 2);
+    _vectorExpressionWidget = nullptr;
+
+    _groupingWidget = new QWidget();
+    auto* groupingLayout = new QGridLayout(_groupingWidget);
+    groupingLayout->setContentsMargins(0, 0, 0, 0);
+    groupingLayout->setColumnStretch(1, 1);
+    auto* groupingUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::groupingMode));
+    groupingUI->comboBox()->addItem(tr("None"), QVariant::fromValue((int)CalculatePropertyModifier::NoGrouping));
+    groupingUI->comboBox()->addItem(tr("Molecule"), QVariant::fromValue((int)CalculatePropertyModifier::GroupByMolecule));
+    groupingLayout->addWidget(new QLabel(tr("Group by")), 0, 0);
+    groupingLayout->addWidget(groupingUI->comboBox(), 0, 1);
+    auto* groupingNote = new QLabel(tr("Grouping is applied after the script has computed the per-particle contribution. "
+                                       "For example, a script can define a per-particle dipole contribution and <code>Group by = Molecule</code> will sum it within each molecule."));
+    groupingNote->setWordWrap(true);
+    groupingLayout->addWidget(groupingNote, 1, 0, 1, 2);
+    gridLayout->addWidget(_groupingWidget, 3, 0, 1, 2);
+
+    _reductionWidget = new QWidget();
+    auto* reductionLayout = new QGridLayout(_reductionWidget);
+    reductionLayout->setContentsMargins(0, 0, 0, 0);
+    reductionLayout->setColumnStretch(1, 1);
+    auto* reductionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::reductionOperation));
+    reductionUI->comboBox()->addItem(tr("None"), QVariant::fromValue((int)CalculatePropertyModifier::NoReduction));
+    reductionUI->comboBox()->addItem(tr("Sum"), QVariant::fromValue((int)CalculatePropertyModifier::SumReduction));
+    reductionUI->comboBox()->addItem(tr("Mean"), QVariant::fromValue((int)CalculatePropertyModifier::MeanReduction));
+    reductionUI->comboBox()->addItem(tr("Min"), QVariant::fromValue((int)CalculatePropertyModifier::MinReduction));
+    reductionUI->comboBox()->addItem(tr("Max"), QVariant::fromValue((int)CalculatePropertyModifier::MaxReduction));
+    reductionLayout->addWidget(new QLabel(tr("Reduction")), 0, 0);
+    reductionLayout->addWidget(reductionUI->comboBox(), 0, 1);
+    auto* reductionNote = new QLabel(tr("Reduction is applied after any optional grouping step. Scalar scripts write a one-point data table and global attribute; vector scripts reduce the X/Y/Z components together."));
+    reductionNote->setWordWrap(true);
+    reductionLayout->addWidget(reductionNote, 1, 0, 1, 2);
+    gridLayout->addWidget(_reductionWidget, 4, 0, 1, 2);
 
     auto* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CalculatePropertyModifier::onlySelectedParticles));
-    gridLayout->addWidget(onlySelectedUI->checkBox(), 2, 0, 1, 2);
+    gridLayout->addWidget(onlySelectedUI->checkBox(), 5, 0, 1, 2);
 
     layout->addLayout(gridLayout);
     layout->addSpacing(6);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    connect(this, &PropertiesEditor::pipelineInputChanged, this, &CalculatePropertyModifierEditor::updateTypeCombos);
-    connect(this, &PropertiesEditor::contentsChanged, this, &CalculatePropertyModifierEditor::updateManualDirectionControls);
-    connect(this, &PropertiesEditor::contentsReplaced, this, &CalculatePropertyModifierEditor::updateTypeCombos);
-    connect(this, &PropertiesEditor::contentsReplaced, this, &CalculatePropertyModifierEditor::updateManualDirectionControls);
+    connect(this, &PropertiesEditor::contentsChanged, this, &CalculatePropertyModifierEditor::updateVisibleControls);
+    connect(this, &PropertiesEditor::contentsReplaced, this, &CalculatePropertyModifierEditor::updateVisibleControls);
 
-    updateTypeCombos();
-    updateManualDirectionControls();
+    updateVisibleControls();
 }
 
-void CalculatePropertyModifierEditor::updateTypeCombos()
+void CalculatePropertyModifierEditor::updateVisibleControls()
 {
-    if(!_fromTypeUI || !_toTypeUI)
-        return;
-
-    const Particles* particles = getPipelineInput().getObject<Particles>();
-    const Property* typeProperty = particles ? particles->getProperty(Particles::TypeProperty) : nullptr;
-
-    CalculatePropertyModifier* modifier = static_object_cast<CalculatePropertyModifier>(editObject());
-    const int currentFromTypeId = modifier ? modifier->fromTypeId() : 0;
-    const int currentToTypeId = modifier ? modifier->toTypeId() : 0;
-
-    {
-        QSignalBlocker blocker(_fromTypeUI->comboBox());
-        _fromTypeUI->comboBox()->clear();
-        if(typeProperty) {
-            for(const ElementType* type : typeProperty->elementTypes()) {
-                const QString typeName = type->nameOrNumericId();
-                _fromTypeUI->comboBox()->addItem(typeName, QVariant::fromValue(type->numericId()));
-            }
-        }
-    }
-    {
-        QSignalBlocker blocker(_toTypeUI->comboBox());
-        _toTypeUI->comboBox()->clear();
-        if(typeProperty) {
-            for(const ElementType* type : typeProperty->elementTypes()) {
-                const QString typeName = type->nameOrNumericId();
-                _toTypeUI->comboBox()->addItem(typeName, QVariant::fromValue(type->numericId()));
-            }
-        }
-    }
-
-    auto findTypeIndex = [](QComboBox* comboBox, int typeId) {
-        for(int index = 0; index < comboBox->count(); ++index) {
-            if(comboBox->itemData(index).toInt() == typeId)
-                return index;
-        }
-        return -1;
-    };
-
-    int fromIndex = findTypeIndex(_fromTypeUI->comboBox(), currentFromTypeId);
-    int toIndex = findTypeIndex(_toTypeUI->comboBox(), currentToTypeId);
-    if(fromIndex < 0 && _fromTypeUI->comboBox()->count() > 0)
-        fromIndex = 0;
-    if(toIndex < 0 && _toTypeUI->comboBox()->count() > 1)
-        toIndex = (fromIndex == 0 ? 1 : 0);
-    else if(toIndex < 0 && _toTypeUI->comboBox()->count() > 0)
-        toIndex = 0;
-
-    if(fromIndex >= 0)
-        _fromTypeUI->comboBox()->setCurrentIndex(fromIndex);
-    if(toIndex >= 0)
-        _toTypeUI->comboBox()->setCurrentIndex(toIndex);
-
-    if(modifier) {
-        if(fromIndex >= 0) {
-            const int typeId = _fromTypeUI->comboBox()->itemData(fromIndex).toInt();
-            if(modifier->fromTypeId() != typeId)
-                modifier->setFromTypeId(typeId);
-        }
-        if(toIndex >= 0) {
-            const int typeId = _toTypeUI->comboBox()->itemData(toIndex).toInt();
-            if(modifier->toTypeId() != typeId)
-                modifier->setToTypeId(typeId);
-        }
-    }
-
-    const bool hasTypes = (_fromTypeUI->comboBox()->count() > 0);
-    _fromTypeUI->setEnabled(hasTypes);
-    _toTypeUI->setEnabled(hasTypes);
-}
-
-void CalculatePropertyModifierEditor::updateManualDirectionControls()
-{
-    if(!_manualDirectionWidget)
-        return;
-
     const CalculatePropertyModifier* modifier = static_object_cast<CalculatePropertyModifier>(editObject());
-    const bool visible = modifier && modifier->propertyType() == CalculatePropertyModifier::ManualMolecularDirection;
-    if(_manualDirectionWidget->isVisible() == visible)
-        return;
+    Q_UNUSED(modifier);
 
-    _manualDirectionWidget->setVisible(visible);
-    _manualDirectionWidget->updateGeometry();
+    _selectorWidget->setVisible(true);
+    _outputWidget->setVisible(true);
+    _expressionWidget->setVisible(true);
+    if(_vectorExpressionWidget)
+        _vectorExpressionWidget->setVisible(false);
+    _groupingWidget->setVisible(true);
+    _reductionWidget->setVisible(true);
 
-    for(QWidget* widget = _manualDirectionWidget->parentWidget(); widget; widget = widget->parentWidget()) {
-        if(QLayout* layout = widget->layout()) {
-            layout->invalidate();
-            layout->activate();
+    if(_selectorDescriptionLabel) {
+        _selectorDescriptionLabel->setText(tr("These selectors are optional and are used only for pair scripts. "
+                                              "Use <code>@i.*</code> and <code>@j.*</code> in the script to evaluate over pairs. "
+                                              "If both selectors are the same, only unique unordered pairs <code>i &lt; j</code> are generated."));
+        _selectorDescriptionLabel->setTextFormat(Qt::RichText);
+    }
+
+    for(QWidget* widget = _selectorWidget ? _selectorWidget->parentWidget() : nullptr; widget; widget = widget->parentWidget()) {
+        if(QLayout* widgetLayout = widget->layout()) {
+            widgetLayout->invalidate();
+            widgetLayout->activate();
         }
         widget->updateGeometry();
     }
