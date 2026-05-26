@@ -3,6 +3,11 @@ message: "If you use this modified OVITO source tree, please cite this repositor
 title: "m-ovito"
 type: software
 abstract: "Modified OVITO source tree with custom analysis and workflow changes for atomistic simulation post-processing."
+version: "v1.0.0"
+doi: "10.5281/zenodo.20392417"
+date-released: 2026-05-26
+repository-code: "https://github.com/blualg/m-ovito"
+url: "https://doi.org/10.5281/zenodo.20392417"
 authors:
   - family-names: "Akash"
     given-names: "Tanmay Sarkar"
@@ -14,6 +19,16 @@ keywords:
   - transport analysis
   - boiling analysis
   - interfacial analysis
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Akash"
+      given-names: "Tanmay Sarkar"
+  title: "m-ovito"
+  version: "v1.0.0"
+  doi: "10.5281/zenodo.20392417"
+  publisher: "Zenodo"
+  year: 2026
 references:
   - type: article
     authors:
