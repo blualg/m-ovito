@@ -2,7 +2,7 @@
 
 `m-ovito` is a modified source version of [OVITO](https://www.ovito.org/), the Open Visualization Tool for atomistic, molecular, and particle-based simulation data.
 
-This repository is intended as a reproducible source-code record of the customized OVITO build used for transport, boiling, interfacial, and trajectory-analysis workflows in our research.
+This repository is intended as a reproducible source-code record of the customized OVITO build used for transport, interfacial, and trajectory-analysis workflows in our research.
 
 Public repository:
 
