@@ -23,7 +23,7 @@ Examples of customized areas in this tree include:
 
 - transport analysis tooling and UI changes
 - trajectory-wide modifiers such as time series and time averaging
-- interface / boiling / film-analysis related additions
+- interface / film-analysis related additions
 - helper scripts for post-processing simulation outputs
 
 ## Licensing
