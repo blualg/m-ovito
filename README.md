@@ -51,7 +51,7 @@ This codebase is associated with both the original OVITO software paper and this
 
 2. This modified source repository:
 
-   - repository name: `m-ovito`
+   Akash, T. S. (2026). *m-ovito* (v1.0.0). Zenodo. [https://doi.org/10.5281/zenodo.20392417](https://doi.org/10.5281/zenodo.20392417)
 
 GitHub citation metadata for this repository is provided in [CITATION.cff](./CITATION.cff).
 
