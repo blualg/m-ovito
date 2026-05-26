@@ -30,14 +30,14 @@ The following toolchain was used successfully for this repository:
 Run the following from a Visual Studio developer command prompt:
 
 ```bat
-call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
-"C:\Program Files\CMake\bin\cmake.exe" ^
-  -S C:\Users\tsaka\Documents\CODEX\Ovito-current ^
-  -B C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3 ^
+call <VSDEVCMD_PATH> -arch=x64
+"<CMAKE_EXE>" ^
+  -S <REPO_ROOT> ^
+  -B <BUILD_DIR> ^
   -G Ninja ^
   -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-  -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64 ^
-  -DCMAKE_TOOLCHAIN_FILE=C:\Users\tsaka\Documents\CODEX\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DCMAKE_PREFIX_PATH=<QT_ROOT> ^
+  -DCMAKE_TOOLCHAIN_FILE=<VCPKG_TOOLCHAIN_FILE> ^
   -DOVITO_BUILD_BASIC=ON ^
   -DOVITO_BUILD_SSH_CLIENT=OFF ^
   -DOVITO_BUILD_PLUGIN_NETCDFPLUGIN=OFF ^
@@ -47,20 +47,29 @@ call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
 ### Build
 
 ```bat
-call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
-"C:\Program Files\CMake\bin\cmake.exe" --build C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3 --target Ovito --parallel 8
+call <VSDEVCMD_PATH> -arch=x64
+"<CMAKE_EXE>" --build <BUILD_DIR> --target Ovito --parallel 8
 ```
 
 ### Quick runtime check
 
 ```bat
-set PATH=C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3;C:\Qt\6.10.2\msvc2022_64\bin;%PATH%
-C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3\ovito.exe --version
+set PATH=<BUILD_DIR>;<QT_ROOT>\bin;%PATH%
+<BUILD_DIR>\ovito.exe --version
 ```
 
 Expected result:
 
 - `Ovito 3.15.3`
+
+Typical placeholder meanings:
+
+- `<REPO_ROOT>`: checkout directory of this repository
+- `<BUILD_DIR>`: out-of-source build directory such as `<REPO_ROOT>\build-modern3`
+- `<QT_ROOT>`: Qt installation prefix for the MSVC toolchain
+- `<VCPKG_TOOLCHAIN_FILE>`: `vcpkg\scripts\buildsystems\vcpkg.cmake`
+- `<CMAKE_EXE>`: `cmake.exe`
+- `<VSDEVCMD_PATH>`: Visual Studio developer environment batch file
 
 ## Current optional-feature choices
 

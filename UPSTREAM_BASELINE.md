@@ -2,9 +2,7 @@
 
 ## Chosen source base
 
-Use the newer upstream OVITO source tree in:
-
-- `C:\Users\tsaka\Documents\CODEX\Ovito-current`
+Use the newer upstream OVITO source tree in the current repository checkout.
 
 The repository was cloned from:
 
@@ -18,7 +16,7 @@ This branch tracks:
 
 - `origin/dev3.15.3`
 
-That makes it a much better foundation than the old 2015 codebase in `C:\Users\tsaka\Documents\CODEX\Ovito`, because it already contains the modern architecture, UI workflow, file readers, rendering updates, and modifier system we want to build on.
+That makes it a much better foundation than the old 2015 codebase in a separate local checkout, because it already contains the modern architecture, UI workflow, file readers, rendering updates, and modifier system we want to build on.
 
 ## License status
 
@@ -55,13 +53,13 @@ Installed during setup:
 Useful local paths:
 
 - MSVC environment script:
-  - `C:\BuildTools\Common7\Tools\VsDevCmd.bat`
+  - `<VSDEVCMD_PATH>`
 - CMake:
-  - `C:\Program Files\CMake\bin\cmake.exe`
+  - `<CMAKE_EXE>`
 - Qt:
-  - `C:\Qt\6.10.2\msvc2022_64`
+  - `<QT_ROOT>`
 - vcpkg toolchain file:
-  - `C:\Users\tsaka\Documents\CODEX\vcpkg\scripts\buildsystems\vcpkg.cmake`
+  - `<VCPKG_TOOLCHAIN_FILE>`
 
 ## Proven build status
 
@@ -70,14 +68,14 @@ The newer source has already been configured and built successfully on this mach
 Working configure command:
 
 ```bat
-call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
-"C:\Program Files\CMake\bin\cmake.exe" ^
-  -S C:\Users\tsaka\Documents\CODEX\Ovito-current ^
-  -B C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3 ^
+call <VSDEVCMD_PATH> -arch=x64
+"<CMAKE_EXE>" ^
+  -S <REPO_ROOT> ^
+  -B <BUILD_DIR> ^
   -G Ninja ^
   -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-  -DCMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64 ^
-  -DCMAKE_TOOLCHAIN_FILE=C:\Users\tsaka\Documents\CODEX\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DCMAKE_PREFIX_PATH=<QT_ROOT> ^
+  -DCMAKE_TOOLCHAIN_FILE=<VCPKG_TOOLCHAIN_FILE> ^
   -DOVITO_BUILD_BASIC=ON ^
   -DOVITO_BUILD_SSH_CLIENT=OFF ^
   -DOVITO_BUILD_PLUGIN_NETCDFPLUGIN=OFF ^
@@ -87,15 +85,15 @@ call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
 Working build command:
 
 ```bat
-call C:\BuildTools\Common7\Tools\VsDevCmd.bat -arch=x64
-"C:\Program Files\CMake\bin\cmake.exe" --build C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3 --target Ovito --parallel 8
+call <VSDEVCMD_PATH> -arch=x64
+"<CMAKE_EXE>" --build <BUILD_DIR> --target Ovito --parallel 8
 ```
 
 Smoke test that succeeded:
 
 ```bat
-set PATH=C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3;C:\Qt\6.10.2\msvc2022_64\bin;%PATH%
-C:\Users\tsaka\Documents\CODEX\Ovito-current\build-modern3\ovito.exe --version
+set PATH=<BUILD_DIR>;<QT_ROOT>\bin;%PATH%
+<BUILD_DIR>\ovito.exe --version
 ```
 
 Observed result:
