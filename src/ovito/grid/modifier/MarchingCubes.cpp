@@ -1152,7 +1152,7 @@ int MarchingCubes::getVertexRegion(int i, int j, int k) const
     i = (i >= _size_x) ? i - _size_x : i;
     j = (j < 0) ? j + _size_y : j;
     j = (j >= _size_y) ? j - _size_y : j;
-    k = (k < 0) ? k + _size_y : k;
+    k = (k < 0) ? k + _size_z : k;
     k = (k >= _size_z) ? k - _size_z : k;
     return _vertRegions[i + j * _size_x + k * _size_x * _size_y];
 }
@@ -1172,7 +1172,7 @@ void MarchingCubes::setVertexRegion(int i, int j, int k, int value)
     i = (i >= _size_x) ? i - _size_x : i;
     j = (j < 0) ? j + _size_y : j;
     j = (j >= _size_y) ? j - _size_y : j;
-    k = (k < 0) ? k + _size_y : k;
+    k = (k < 0) ? k + _size_z : k;
     k = (k >= _size_z) ? k - _size_z : k;
     _vertRegions[i + j * _size_x + k * _size_x * _size_y] = value;
 }
