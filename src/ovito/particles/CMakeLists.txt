@@ -38,6 +38,7 @@ SET(SourceFiles
     modifier/modify/WrapPeriodicImagesModifier.cpp
     modifier/modify/UnwrapTrajectoriesModifier.cpp
     modifier/modify/CreateBondsModifier.cpp
+    modifier/modify/LoadTopologyModifier.cpp
     modifier/modify/LoadTrajectoryModifier.cpp
     modifier/modify/CoordinationPolyhedraModifier.cpp
     modifier/modify/MoleculeCenterOfMassModifier.cpp

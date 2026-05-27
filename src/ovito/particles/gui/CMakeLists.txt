@@ -29,6 +29,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         objects/BondsVisEditor.cpp
         modifier/coloring/AmbientOcclusionModifierEditor.cpp
         modifier/modify/CreateBondsModifierEditor.cpp
+        modifier/modify/LoadTopologyModifierEditor.cpp
         modifier/modify/LoadTrajectoryModifierEditor.cpp
         modifier/modify/MoleculeCenterOfMassModifierEditor.cpp
         modifier/modify/UnwrapTrajectoriesModifierEditor.cpp

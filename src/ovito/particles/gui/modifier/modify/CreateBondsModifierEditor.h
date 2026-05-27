@@ -43,9 +43,6 @@ protected:
 
 protected Q_SLOTS:
 
-    /// Lets the user replace guessed bonds with topology imported from a separate file.
-    void onLoadTopologyFromFile();
-
     /// Updates the contents of the pair-wise cutoff table.
     void updatePairCutoffList();
 
