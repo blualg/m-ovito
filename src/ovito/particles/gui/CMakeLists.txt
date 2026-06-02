@@ -61,7 +61,6 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/surface/WillardChandlerInterfaceModifierEditor.cpp
         modifier/selection/ExpandSelectionModifierEditor.cpp
         modifier/selection/SelectOverlappingParticlesModifierEditor.cpp
-        modifier/properties/CalculatePropertyModifierEditor.cpp
         modifier/properties/SmoothTrajectoryModifierEditor.cpp
         modifier/properties/GenerateTrajectoryLinesModifierEditor.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegateEditor.cpp

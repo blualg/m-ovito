@@ -72,7 +72,6 @@ SET(SourceFiles
     modifier/analysis/surface/WillardChandlerInterfaceModifier.cpp
     modifier/selection/ExpandSelectionModifier.cpp
     modifier/selection/SelectOverlappingParticlesModifier.cpp
-    modifier/properties/CalculatePropertyModifier.cpp
     modifier/properties/SmoothTrajectoryModifier.cpp
     modifier/properties/GenerateTrajectoryLinesModifier.cpp
     import/ParticleImporter.cpp
