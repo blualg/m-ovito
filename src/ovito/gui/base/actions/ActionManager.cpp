@@ -32,9 +32,19 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
+#include <QFileInfo>
 #include "ActionManager.h"
 
 namespace Ovito {
+
+namespace {
+
+QUrl mOvitoManualUrl()
+{
+    return QUrl(QStringLiteral("https://github.com/blualg/m-ovito/blob/main/docs/M_OVITO_MANUAL.md"));
+}
+
+}   // End of anonymous namespace
 
 /******************************************************************************
 * Initializes the ActionManager.
@@ -439,8 +449,13 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 
 #ifndef Q_OS_WASM
     if(url.isEmpty()) {
-        // If no help topic has been specified, open the main index page of the user manual.
-        url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
+        // If no help topic has been specified, open the m-ovito manual in the public repository.
+        url = mOvitoManualUrl();
+    }
+    else if(url.isLocalFile() && !QFileInfo::exists(url.toLocalFile())) {
+        // Development builds may not contain a generated local manual. Avoid exposing local filesystem
+        // paths in error dialogs by falling back to the public m-ovito manual.
+        url = mOvitoManualUrl();
     }
 #endif
 
@@ -467,7 +482,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 
     // Use the local web browser to display the help page.
     if(!QDesktopServices::openUrl(url)) {
-        ui().reportError(QStringLiteral("Failed to launch browser to display OVITO user manual. The requested URL was:\n%1").arg(url.toDisplayString()));
+        ui().reportError(QStringLiteral("Failed to launch browser to display the m-ovito manual. The requested URL was:\n%1").arg(url.toDisplayString()));
     }
 }
 

@@ -61,6 +61,12 @@ Repo-local build documentation:
 
 - [BUILDING.md](./BUILDING.md)
 
+## Additional modifications manual
+
+Manual page for m-ovito-specific additions and behavior changes:
+
+- [docs/M_OVITO_MANUAL.md](./docs/M_OVITO_MANUAL.md)
+
 ## Attribution
 
 This repository is an unofficial modified source tree derived from OVITO. It is not an official release of OVITO GmbH.
