@@ -149,6 +149,10 @@ void UpdateNotificationService::applicationStarting()
     if(Application::runMode() != Application::AppMode)
         return;
 
+    // m-ovito uses a local startup page containing both OVITO and m-ovito resources.
+    // Do not replace it with remote OVITO news/update/ad content on startup.
+    return;
+
     // Get a pointer to the current main window.
     const MainWindowUI* ui = dynamic_object_cast<MainWindowUI>(this_task::ui().get());
     OVITO_ASSERT(ui);

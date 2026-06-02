@@ -394,23 +394,10 @@ void ModifyCommandPage::createAboutPanel()
     aboutLabel->viewport()->setAutoFillBackground(false);
     layout->addWidget(aboutLabel);
 
-    QByteArray newsPage;
-#if !defined(OVITO_BUILD_APPSTORE_VERSION)
-    QSettings settings;
-    if(settings.value("updates/check_for_updates", true).toBool()) {
-        // Retrieve cached news page from settings store.
-        newsPage = settings.value("news/cached_webpage").toByteArray();
-    }
-    if(newsPage.isEmpty()) {
-        QResource res("/gui/mainwin/command_panel/about_panel.html");
-        newsPage = QByteArray((const char *)res.data(), (int)res.size());
-    }
-#else
-    QResource res("/gui/mainwin/command_panel/about_panel_no_updates.html");
-    newsPage = QByteArray((const char *)res.data(), (int)res.size());
-#endif
+    QResource res("/gui/mainwin/command_panel/about_panel.html");
+    QByteArray newsPage((const char *)res.data(), (int)res.size());
 
-    // Display cached newsPage
+    // Display the local m-ovito startup page.
     _aboutRollout = _propertiesPanel->addRollout(rollout, Application::applicationName());
     showProgramNotice(QString::fromUtf8(newsPage.constData()));
 }
