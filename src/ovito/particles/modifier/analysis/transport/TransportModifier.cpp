@@ -30,6 +30,7 @@
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "TransportModifier.h"
 
@@ -41,6 +42,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <random>
 #include <set>
@@ -2473,13 +2475,13 @@ Future<PipelineFlowState> TransportModifier::evaluateModifier(const ModifierEval
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr("Transport analysis is idle. Open the Run section and click 'Run transport analysis' to compute the selected observables.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr("Transport analysis is queued. Click 'Run transport analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -2500,6 +2502,9 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
     const int cacheGenerationId = modNode->cacheGenerationId();
     std::vector<PipelineFlowState> sampleStates;
     sampleStates.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting transport samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -2514,12 +2519,18 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, std::vector<PipelineFlowState>& sampleStates) {
-                for(SharedFuture<PipelineFlowState>& future : futures)
+            [progress, totalFrameCount = frames.size()](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> futures, std::vector<PipelineFlowState>& sampleStates) {
+                for(SharedFuture<PipelineFlowState>& future : futures) {
+                    this_task::throwIfCanceled();
                     sampleStates.push_back(future.result());
+                    progress->setText(TransportModifier::tr("Collecting transport samples (%1/%2 frames)")
+                                          .arg(sampleStates.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(sampleStates.size()));
+                }
             },
             std::move(sampleStates))
-        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), modNode = OORef<TransportModificationNode>(modNode), cacheGenerationId](std::vector<PipelineFlowState> sampleStates) mutable -> Future<PipelineFlowState> {
+        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), modNode = OORef<TransportModificationNode>(modNode), cacheGenerationId, progress = std::move(progress)](std::vector<PipelineFlowState> sampleStates) mutable -> Future<PipelineFlowState> {
             const int completedRunRequestId = runRequestId();
             const OOWeakRef<const PipelineNode> createdByNode = modNode;
 
@@ -2529,6 +2540,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                 createdByNode,
                                 state = std::move(state),
                                 sampleStates = std::move(sampleStates),
+                                progress = std::move(progress),
                                 completedRunRequestId,
                                 cacheGenerationId]() mutable {
                 TransportComputationResult computationResult{std::move(state)};
@@ -2563,6 +2575,26 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                 const bool needVelocitySamples = needVACFOutput || needConductivityOutput;
                 const bool allowFiniteDifferenceVelocities = needVACFOutput;
 
+                qlonglong transportStepCount = 1;
+                if(needMSDOutput || needConductivityOutput || needDistinctIonCorrelationOutput || needStrongPairOutput)
+                    transportStepCount++;
+                if(needConductivityOutput)
+                    transportStepCount++;
+                if(needDistinctIonCorrelationOutput)
+                    transportStepCount++;
+                if(needStrongPairOutput)
+                    transportStepCount++;
+                if(needVACFOutput)
+                    transportStepCount++;
+                if(needConductivityOutput)
+                    transportStepCount++;
+                progress->setText(tr("Preparing transport samples"));
+                progress->setMaximum(transportStepCount);
+                qlonglong completedTransportSteps = 0;
+                auto completeTransportStep = [&]() {
+                    progress->setValue(++completedTransportSteps);
+                };
+
                 QString warningText;
                 PreparedData prepared = prepareTransportData(sampleStates,
                                                             useOnlySelectedParticles(),
@@ -2579,31 +2611,49 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                                             timeScaleToSI,
                                                             lengthScaleToSI,
                                                             warningText);
+                completeTransportStep();
 
                 const size_t frameCount = prepared.frames.size();
                 const size_t particleCount = prepared.frames.front().positions.size();
                 const int dimensionality = prepared.dimensionality;
 
-            const PyLATMSDCurves pyLatMSD =
-                (needMSDOutput || needConductivityOutput || needDistinctIonCorrelationOutput || needStrongPairOutput)
-                    ? computePyLATMSDCurves(prepared)
-                    : PyLATMSDCurves{};
-            const PyLATChargeTransportCurves pyLatChargeTransport = needConductivityOutput ? computePyLATChargeTransportCurves(prepared) : PyLATChargeTransportCurves{};
-            const DistinctIonCorrelationCurves distinctIonCorrelation =
-                needDistinctIonCorrelationOutput ? computeDistinctIonCorrelationCurves(prepared) : DistinctIonCorrelationCurves{};
-            const StronglyCorrelatedPairCurves stronglyCorrelatedPairs =
-                needStrongPairOutput ? computeStronglyCorrelatedPairCurves(prepared,
-                                                                           strongPairSamplingMode(),
-                                                                           static_cast<uint32_t>(strongPairRandomSeed()),
-                                                                           static_cast<size_t>(strongPairSampleCount()),
-                                                                           static_cast<size_t>(strongPairFrameStep()),
-                                                                           strongPairThresholdsParsed,
-                                                                           strongPairDiscreteLagPoints(),
-                                                                           strongPairLagSelectionMode(),
-                                                                           strongPairLagPointsParsed,
-                                                                           static_cast<size_t>(strongPairPointCount()),
-                                                                           static_cast<size_t>(strongPairResampleCount()))
-                                     : StronglyCorrelatedPairCurves{};
+            PyLATMSDCurves pyLatMSD;
+            if(needMSDOutput || needConductivityOutput || needDistinctIonCorrelationOutput || needStrongPairOutput) {
+                progress->setText(tr("Computing transport MSD/displacement correlations"));
+                pyLatMSD = computePyLATMSDCurves(prepared);
+                completeTransportStep();
+            }
+
+            PyLATChargeTransportCurves pyLatChargeTransport;
+            if(needConductivityOutput) {
+                progress->setText(tr("Computing transport charge correlations"));
+                pyLatChargeTransport = computePyLATChargeTransportCurves(prepared);
+                completeTransportStep();
+            }
+
+            DistinctIonCorrelationCurves distinctIonCorrelation;
+            if(needDistinctIonCorrelationOutput) {
+                progress->setText(tr("Computing distinct ion-ion correlation"));
+                distinctIonCorrelation = computeDistinctIonCorrelationCurves(prepared);
+                completeTransportStep();
+            }
+
+            StronglyCorrelatedPairCurves stronglyCorrelatedPairs;
+            if(needStrongPairOutput) {
+                progress->setText(tr("Computing strongly correlated ion pairs"));
+                stronglyCorrelatedPairs = computeStronglyCorrelatedPairCurves(prepared,
+                                                                              strongPairSamplingMode(),
+                                                                              static_cast<uint32_t>(strongPairRandomSeed()),
+                                                                              static_cast<size_t>(strongPairSampleCount()),
+                                                                              static_cast<size_t>(strongPairFrameStep()),
+                                                                              strongPairThresholdsParsed,
+                                                                              strongPairDiscreteLagPoints(),
+                                                                              strongPairLagSelectionMode(),
+                                                                              strongPairLagPointsParsed,
+                                                                              static_cast<size_t>(strongPairPointCount()),
+                                                                              static_cast<size_t>(strongPairResampleCount()));
+                completeTransportStep();
+            }
 
             std::vector<double> msdTimesRaw = pyLatMSD.timesRaw;
             std::vector<double> msdTimesSI = pyLatMSD.timesSI;
@@ -2679,6 +2729,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
             std::vector<double> conductivityGKLagTimesRaw;
             std::vector<double> conductivityGKLagTimesSI;
 
+            if(needVACFOutput)
+                progress->setText(tr("Computing transport velocity autocorrelation"));
             if(needVACFOutput && prepared.velocityAnalysisAvailable) {
                 const size_t firstValidVelocityFrame = prepared.usedFiniteDifferenceVelocities ? 1 : 0;
                 const size_t lastValidVelocityFrame = prepared.usedFiniteDifferenceVelocities ? frameCount - 2 : frameCount - 1;
@@ -2855,6 +2907,8 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                     }
                 }
             }
+            if(needVACFOutput)
+                completeTransportStep();
 
             const size_t conductivitySize = chargeDisplacementTrimmed.size();
             std::vector<double> conductivityCorrelatedAverageVolumeSI(conductivitySize, 0.0);
@@ -2928,6 +2982,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
             const bool pyLatCompatibilityEnabled = true;
                 if(pyLatCompatibilityEnabled && needConductivityOutput) {
+                    progress->setText(tr("Computing transport Green-Kubo conductivity"));
                     const PyLATGreenKuboCurves pyLatGK =
                         computePyLATGreenKuboCurves(prepared, timeScaleToSI, lengthScaleToSI, chargeScaleToSI, conductivityScaleToSI, temperature());
                 if(!pyLatGK.totalCurrentCorrelationRaw.empty()) {
@@ -2937,6 +2992,7 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                     conductivityGKLagTimesRaw = pyLatGK.timesRaw;
                     conductivityGKLagTimesSI = pyLatGK.timesSI;
                 }
+                completeTransportStep();
             }
 
             std::vector<double> conductivityTimesRaw = msdTimesRaw;

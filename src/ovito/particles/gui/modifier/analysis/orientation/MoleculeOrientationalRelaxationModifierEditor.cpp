@@ -160,9 +160,6 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
     optionsLayout->addWidget(new QLabel(tr("Descriptor subset:")), 1, 0);
     optionsLayout->addWidget(selectionModeUI->comboBox(), 1, 1);
 
-    auto* noteLabel = new QLabel(tr("Evaluates P_l(u(0) dot u(t)) over the sampled trajectory for the chosen descriptor vectors."), optionsBox);
-    noteLabel->setWordWrap(true);
-    optionsLayout->addWidget(noteLabel, 2, 0, 1, 2);
     layout->addWidget(optionsBox);
 
     BooleanGroupBoxParameterUI* intervalGroupUI = createParamUI<BooleanGroupBoxParameterUI>(
@@ -196,11 +193,6 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
     samplingLayout->addWidget(maxLagUI->label(), 1, 0);
     samplingLayout->addLayout(maxLagUI->createFieldLayout(), 1, 1);
 
-    auto* samplingNote = new QLabel(
-        tr("The orientational relaxation is averaged over all valid time origins for each lag. These controls thin the sampled frames and limit the computed lag range."),
-        samplingBox);
-    samplingNote->setWordWrap(true);
-    samplingLayout->addWidget(samplingNote, 2, 0, 1, 2);
     layout->addWidget(samplingBox);
 
     auto* runBox = new QGroupBox(tr("Run"), rollout);
@@ -210,12 +202,9 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
     _runButton = new QPushButton(tr("Run orientational relaxation analysis"), runBox);
     connect(_runButton, &QPushButton::clicked, this, &MoleculeOrientationalRelaxationModifierEditor::runAnalysis);
     runLayout->addWidget(_runButton);
-    auto* runNoteLabel = new QLabel(tr("The modifier traverses the selected trajectory interval only when you click Run."), runBox);
-    runNoteLabel->setWordWrap(true);
-    runLayout->addWidget(runNoteLabel);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("Orientational relaxation results are idle. Open the Run section and click 'Run orientational relaxation analysis' to compute the selected observable."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
     layout->addWidget(_summaryLabel);
 
@@ -224,7 +213,8 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
     _plot->setMaximumHeight(220);
     layout->addWidget(_plot);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), MoleculeOrientationalRelaxationModifier::correlationTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &MoleculeOrientationalRelaxationModifierEditor::updateTypeCombos);
@@ -383,7 +373,7 @@ void MoleculeOrientationalRelaxationModifierEditor::updateSummary()
         if(!_summaryLabel)
             return;
         if(orientationalRelaxationIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr("Orientational relaxation results are idle. Open the Run section and click 'Run orientational relaxation analysis' to compute the selected observable."));
+            _summaryLabel->clear();
             return;
         }
 

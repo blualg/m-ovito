@@ -48,7 +48,7 @@ private Q_SLOTS:
 private:
     void populateAttributeList(const QString& currentValue);
 
-    QPointer<QStackedWidget> _targetStack;
+    QVector<QPointer<QWidget>> _targetPages;
     QPointer<QComboBox> _attributeCombo;
     QPointer<CustomParameterUI> _attributeUI;
     QPointer<QWidget> _reductionWidget;

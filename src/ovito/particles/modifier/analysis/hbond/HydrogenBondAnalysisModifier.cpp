@@ -33,12 +33,14 @@
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "HydrogenBondAnalysisModifier.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -867,15 +869,13 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::evaluateModifier(const M
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Hydrogen bond analysis is idle. Open the Run section and click 'Run hydrogen bond analysis' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Hydrogen bond analysis is queued. Click 'Run hydrogen bond analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -939,6 +939,9 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
 
     HydrogenBondAccumulator accumulator;
     accumulator.snapshots.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting hydrogen-bond samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -961,9 +964,11 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
              acceptorExpression = acceptorExpression(),
              donorHydrogenCutoff = donorHydrogenCutoff(),
              donorAcceptorSearchCutoff,
-             useBondTopology](const std::vector<int>& frameBatch,
-                              std::vector<SharedFuture<PipelineFlowState>> batchFutures,
-                              HydrogenBondAccumulator& accumulator) {
+             useBondTopology,
+             progress,
+             totalFrameCount = frames.size()](const std::vector<int>& frameBatch,
+                                              std::vector<SharedFuture<PipelineFlowState>> batchFutures,
+                                              HydrogenBondAccumulator& accumulator) {
                 for(size_t i = 0; i < batchFutures.size(); ++i) {
                     this_task::throwIfCanceled();
                     FrameHydrogenBondSnapshot snapshot = analyzeFrame(batchFutures[i].result(),
@@ -984,11 +989,15 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                     accumulator.totalCandidateTriplets += snapshot.candidates.size();
                     accumulator.usedParticleIndices = accumulator.usedParticleIndices || snapshot.usedParticleIndices;
                     accumulator.snapshots.push_back(std::move(snapshot));
+                    progress->setText(HydrogenBondAnalysisModifier::tr("Collecting hydrogen-bond samples (%1/%2 frames)")
+                                          .arg(accumulator.snapshots.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.snapshots.size()));
                 }
             },
             std::move(accumulator))
         .then(DeferredObjectExecutor(this),
-              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology, progress = std::move(progress)](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
         OORef<HydrogenBondAnalysisModifier> self(this);
         const int completedRunRequestId = runRequestId();
 
@@ -998,6 +1007,7 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                             frames,
                             accumulator = std::move(accumulator),
                             useBondTopology,
+                            progress = std::move(progress),
                             completedRunRequestId,
                             cacheGenerationId]() mutable {
             HydrogenBondComputationResult computationResult{std::move(state)};
@@ -1006,6 +1016,7 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 return computationResult;
 
             this_task::throwIfCanceled();
+            progress->setText(HydrogenBondAnalysisModifier::tr("Computing hydrogen-bond results"));
 
             if(accumulator.snapshots.empty())
                 throw Exception(HydrogenBondAnalysisModifier::tr("Hydrogen bond analysis did not sample any trajectory frames."));

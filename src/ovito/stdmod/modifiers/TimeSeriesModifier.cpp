@@ -449,15 +449,13 @@ Future<PipelineFlowState> TimeSeriesModifier::evaluateModifier(const ModifierEva
             return applyCachedSeries(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Time series is idle. Open the Start section and click 'Start series' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Time series is queued. Click 'Start series' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 

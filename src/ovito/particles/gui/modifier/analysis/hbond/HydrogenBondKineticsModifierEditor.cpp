@@ -149,11 +149,6 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     pmfLayout->setColumnStretch(1, 1);
     pmfLayout->setVerticalSpacing(4);
 
-    auto* pmfInfoLabel = new QLabel(tr(
-        "Uses the PMF basin and vicinity boundary from an upstream 'Hydrogen bond analysis' modifier in PMF-derived mode."), _pmfCriteriaWidget);
-    pmfInfoLabel->setWordWrap(true);
-    pmfLayout->addWidget(pmfInfoLabel, 0, 0, 1, 2);
-
     definitionLayout->addWidget(_pmfCriteriaWidget, 2, 0, 1, 2);
 
     layout->addWidget(definitionBox);
@@ -201,7 +196,7 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     runLayout->addWidget(_runButton);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("Hydrogen-bond kinetics results are idle. Open the Run section and click 'Run hydrogen-bond kinetics' to compute the selected observable."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
     layout->addWidget(_summaryLabel);
 
@@ -210,7 +205,8 @@ void HydrogenBondKineticsModifierEditor::createUI(const RolloutInsertionParamete
     _plot->setMaximumHeight(220);
     layout->addWidget(_plot);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), HydrogenBondKineticsModifier::kineticsTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HydrogenBondKineticsModifierEditor::updatePlot);
@@ -233,6 +229,9 @@ void HydrogenBondKineticsModifierEditor::runAnalysis()
         if(!mod || !node)
             return;
 
+        if(_runButton)
+            _runButton->setEnabled(false);
+
         mod->setRunRequestId(mod->runRequestId() + 1);
         const int startedRunRequestId = mod->runRequestId();
         const auto* hbNode = dynamic_object_cast<const HydrogenBondKineticsModificationNode>(node);
@@ -244,13 +243,12 @@ void HydrogenBondKineticsModifierEditor::runAnalysis()
         }
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = node->evaluate(request).asFuture();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
         future.finally(ObjectExecutor(this), [self = QPointer<HydrogenBondKineticsModifierEditor>(this),
                                               editObject = OOWeakRef<RefTarget>(editObject()),
                                               startedRunRequestId,
-                                              startedGenerationId](auto& task) noexcept {
-            if(!task.isCanceled() && !task.exceptionStore())
-                return;
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
             if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
@@ -259,17 +257,20 @@ void HydrogenBondKineticsModifierEditor::runAnalysis()
             if(!mod || !hbNode || mod->runRequestId() != startedRunRequestId || hbNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            hbNode->setCompletedRunRequestId(startedRunRequestId);
-            self->updatePlot();
-            self->updateSummary();
-        });
-        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
-            HydrogenBondKineticsModifier* mod = modifier();
-            const auto* hbNode = dynamic_object_cast<const HydrogenBondKineticsModificationNode>(modificationNode());
-            if(!mod || !hbNode || mod->runRequestId() != startedRunRequestId || hbNode->cacheGenerationId() != startedGenerationId)
-                return;
-            updatePlot();
-            updateSummary();
+            if(task.isCanceled() || task.exceptionStore())
+                hbNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                hbNode->pipelineCache().invalidateInteractiveState();
+                hbNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlot();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }
@@ -296,8 +297,7 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
             return;
 
         if(hydrogenBondKineticsIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr(
-                "Hydrogen-bond kinetics results are idle. Open the Run section and click 'Run hydrogen-bond kinetics' to compute the selected observable."));
+            _summaryLabel->clear();
             refreshSummaryGeometry();
             return;
         }

@@ -29,6 +29,7 @@
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include "TimeSeriesModifierEditor.h"
 
@@ -44,6 +45,7 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(6);
+    layout->setAlignment(Qt::AlignTop);
 
     VariantComboBoxParameterUI* targetTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(TimeSeriesModifier::targetType));
     targetTypeUI->comboBox()->addItem(tr("Global attribute"), QVariant::fromValue((int)TimeSeriesModifier::Attribute));
@@ -53,15 +55,13 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
     layout->addWidget(new QLabel(tr("Plot:")));
     layout->addWidget(targetTypeUI->comboBox());
 
-    _targetStack = new QStackedWidget(rollout);
-    layout->addWidget(_targetStack);
-
     // Attribute target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         _attributeCombo = new QComboBox(page);
         _attributeCombo->setEditable(true);
@@ -89,15 +89,17 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
 
         pageLayout->addWidget(new QLabel(tr("Attribute:"), page));
         pageLayout->addWidget(_attributeCombo);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Table target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         DataObjectReferenceParameterUI* tableUI = createParamUI<DataObjectReferenceParameterUI>(
             PROPERTY_FIELD(TimeSeriesModifier::table), DataTable::OOClass());
@@ -107,15 +109,17 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
         auto* noteLabel = new QLabel(tr("The selected table is reduced to one value per frame using the chosen reduction mode."), page);
         noteLabel->setWordWrap(true);
         pageLayout->addWidget(noteLabel);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Property target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         DataObjectReferenceParameterUI* containerUI = createParamUI<DataObjectReferenceParameterUI>(
             PROPERTY_FIELD(TimeSeriesModifier::propertyContainer), PropertyContainer::OOClass());
@@ -144,21 +148,23 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
         auto* noteLabel = new QLabel(tr("Element properties are reduced to one value per frame using the selected reduction mode. Vector properties can be sampled per component."), page);
         noteLabel->setWordWrap(true);
         pageLayout->addWidget(noteLabel);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Cell target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         auto* label = new QLabel(tr("Samples the full simulation cell tensor over time and plots each cell component as a separate curve."), page);
         label->setWordWrap(true);
         pageLayout->addWidget(label);
-        pageLayout->addStretch(1);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     _reductionWidget = new QWidget(rollout);
@@ -222,17 +228,13 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
     _runButton = new QPushButton(tr("Start series"), runBox);
     connect(_runButton, &QPushButton::clicked, this, &TimeSeriesModifierEditor::runSeries);
     runLayout->addWidget(_runButton);
-    auto* runNoteLabel = new QLabel(tr("The modifier stays idle after insertion and traverses the selected trajectory interval only when you click Start series."), runBox);
-    runNoteLabel->setWordWrap(true);
-    runLayout->addWidget(runNoteLabel);
     layout->addWidget(runBox);
 
-    auto* generalNoteLabel = new QLabel(tr("This modifier samples one trajectory quantity per modifier instance and writes the result as a line-plot data table."), rollout);
-    generalNoteLabel->setWordWrap(true);
-    layout->addWidget(generalNoteLabel);
+    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector"), QStringLiteral("time-series"), 1));
 
     layout->addSpacing(6);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
+    layout->addStretch(1);
 
     connect(this, &PropertiesEditor::contentsChanged, this, &TimeSeriesModifierEditor::updateTargetWidgets);
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &TimeSeriesModifierEditor::updateAttributeList);
@@ -243,20 +245,26 @@ void TimeSeriesModifierEditor::createUI(const RolloutInsertionParameters& rollou
 
 void TimeSeriesModifierEditor::updateTargetWidgets()
 {
-    if(!_targetStack)
+    if(_targetPages.empty())
         return;
 
+    int pageIndex = 0;
     if(TimeSeriesModifier* modifier = static_object_cast<TimeSeriesModifier>(editObject())) {
-        const int pageIndex = std::clamp((int)modifier->targetType(), 0, _targetStack->count() - 1);
-        _targetStack->setCurrentIndex(pageIndex);
+        pageIndex = std::clamp((int)modifier->targetType(), 0, static_cast<int>(_targetPages.size()) - 1);
         if(_reductionWidget)
             _reductionWidget->setVisible(modifier->targetType() == TimeSeriesModifier::Table || modifier->targetType() == TimeSeriesModifier::Property);
     }
     else {
-        _targetStack->setCurrentIndex(0);
         if(_reductionWidget)
             _reductionWidget->setVisible(true);
     }
+
+    for(int i = 0; i < static_cast<int>(_targetPages.size()); ++i) {
+        if(_targetPages[i])
+            _targetPages[i]->setVisible(i == pageIndex);
+    }
+    if(container())
+        container()->updateRolloutsLater();
 }
 
 void TimeSeriesModifierEditor::updateAttributeList()
@@ -331,6 +339,9 @@ void TimeSeriesModifierEditor::runSeries()
                 seriesNode->setCompletedRunRequestId(startedRunRequestId);
             self->handleExceptions([&]() {
                 (void)future.result();
+                seriesNode->pipelineCache().invalidateInteractiveState();
+                seriesNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
             });
             if(self->_runButton)
                 self->_runButton->setEnabled(true);

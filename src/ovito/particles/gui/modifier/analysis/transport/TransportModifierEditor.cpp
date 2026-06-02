@@ -623,7 +623,7 @@ void TransportModifierEditor::createUI(const RolloutInsertionParameters& rollout
     _gkConductivityEndMarker->attach(_gkConductivityPreviewPlot);
     _gkConductivityPlateauMarker->attach(_gkConductivityPreviewPlot);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector"), QStringView{}, 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &TransportModifierEditor::updatePlots);
@@ -667,6 +667,9 @@ void TransportModifierEditor::runAnalysis()
         if(!mod || !node)
             return;
 
+        if(_runButton)
+            _runButton->setEnabled(false);
+
         mod->setRunRequestId(mod->runRequestId() + 1);
         const int startedRunRequestId = mod->runRequestId();
         const auto* transportNode = dynamic_object_cast<const TransportModificationNode>(node);
@@ -674,13 +677,12 @@ void TransportModifierEditor::runAnalysis()
         _summaryLabel->setText(tr("Running transport analysis over the sampled trajectory..."));
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = node->evaluate(request).asFuture();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
         future.finally(ObjectExecutor(this), [self = QPointer<TransportModifierEditor>(this),
                                               editObject = OOWeakRef<RefTarget>(editObject()),
                                               startedRunRequestId,
-                                              startedGenerationId](auto& task) noexcept {
-            if(!task.isCanceled() && !task.exceptionStore())
-                return;
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
             if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
@@ -689,17 +691,20 @@ void TransportModifierEditor::runAnalysis()
             if(!mod || !transportNode || mod->runRequestId() != startedRunRequestId || transportNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            transportNode->setCompletedRunRequestId(startedRunRequestId);
-            self->updatePlots();
-            self->updateSummary();
-        });
-        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
-            TransportModifier* mod = modifier();
-            const auto* transportNode = dynamic_object_cast<const TransportModificationNode>(modificationNode());
-            if(!mod || !transportNode || mod->runRequestId() != startedRunRequestId || transportNode->cacheGenerationId() != startedGenerationId)
-                return;
-            updatePlots();
-            updateSummary();
+            if(task.isCanceled() || task.exceptionStore())
+                transportNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                transportNode->pipelineCache().invalidateInteractiveState();
+                transportNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlots();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }

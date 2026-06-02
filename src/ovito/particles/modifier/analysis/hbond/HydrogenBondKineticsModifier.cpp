@@ -34,6 +34,7 @@
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "HydrogenBondAnalysisModifier.h"
 #include "HydrogenBondKineticsModifier.h"
@@ -41,6 +42,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -822,7 +824,8 @@ FrameState buildFrameState(const FrameHydrogenBondSnapshot& snapshot,
 
 HydrogenBondKineticsCurves computeKineticsCurves(const std::vector<FrameState>& states,
                                                  const std::vector<int>& frames,
-                                                 int requestedMaxLag)
+                                                 int requestedMaxLag,
+                                                 TaskProgress& progress)
 {
     HydrogenBondKineticsCurves curves;
     if(states.empty())
@@ -837,7 +840,8 @@ HydrogenBondKineticsCurves computeKineticsCurves(const std::vector<FrameState>& 
     curves.cPlusN.assign(maxLagEffective + 1, std::numeric_limits<double>::quiet_NaN());
     curves.sampleCounts.assign(maxLagEffective + 1, 0.0);
 
-    parallelFor(maxLagEffective + 1, 128, TaskProgress::Ignore, [&states, &frames, &curves](size_t lag) {
+    progress.setText(HydrogenBondKineticsModifier::tr("Computing hydrogen-bond kinetics curves"));
+    parallelFor(maxLagEffective + 1, 128, progress, [&states, &frames, &curves](size_t lag) {
         this_task::throwIfCanceled();
 
         double cCount = 0.0;
@@ -1024,15 +1028,13 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::evaluateModifier(const M
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Hydrogen-bond kinetics is idle. Open the Run section and click 'Run hydrogen-bond kinetics' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Hydrogen-bond kinetics is queued. Click 'Run hydrogen-bond kinetics' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -1091,6 +1093,9 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
 
     HydrogenBondAccumulator accumulator;
     accumulator.snapshots.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting hydrogen-bond kinetics samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -1113,9 +1118,11 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
              acceptorExpression = acceptorExpression(),
              donorHydrogenCutoff = donorHydrogenCutoff(),
              donorAcceptorSearchCutoff,
-             useBondTopology](const std::vector<int>& frameBatch,
-                              std::vector<SharedFuture<PipelineFlowState>> batchFutures,
-                              HydrogenBondAccumulator& accumulator) {
+             useBondTopology,
+             progress,
+             totalFrameCount = frames.size()](const std::vector<int>& frameBatch,
+                                              std::vector<SharedFuture<PipelineFlowState>> batchFutures,
+                                              HydrogenBondAccumulator& accumulator) {
                 for(size_t i = 0; i < batchFutures.size(); ++i) {
                     this_task::throwIfCanceled();
                     FrameHydrogenBondSnapshot snapshot = analyzeFrame(batchFutures[i].result(),
@@ -1136,11 +1143,15 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                     accumulator.totalCandidateTriplets += snapshot.candidates.size();
                     accumulator.usedParticleIndices = accumulator.usedParticleIndices || snapshot.usedParticleIndices;
                     accumulator.snapshots.push_back(std::move(snapshot));
+                    progress->setText(HydrogenBondKineticsModifier::tr("Collecting hydrogen-bond kinetics samples (%1/%2 frames)")
+                                          .arg(accumulator.snapshots.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.snapshots.size()));
                 }
             },
             std::move(accumulator))
         .then(DeferredObjectExecutor(this),
-              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology, upstreamPmf](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+              [this, request, state = std::move(state), frames, cacheGenerationId, useBondTopology, upstreamPmf, progress = std::move(progress)](HydrogenBondAccumulator accumulator) mutable -> Future<PipelineFlowState> {
         OORef<HydrogenBondKineticsModifier> self(this);
         const int completedRunRequestId = runRequestId();
 
@@ -1151,6 +1162,7 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                             accumulator = std::move(accumulator),
                             useBondTopology,
                             upstreamPmf,
+                            progress = std::move(progress),
                             completedRunRequestId,
                             cacheGenerationId]() mutable {
             HydrogenBondKineticsComputationResult computationResult{std::move(state)};
@@ -1187,17 +1199,20 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
 
             std::vector<FrameState> states;
             states.reserve(accumulator.snapshots.size());
-            for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
+            progress->setText(HydrogenBondKineticsModifier::tr("Building hydrogen-bond kinetics frame states"));
+            progress->setMaximum(static_cast<qlonglong>(accumulator.snapshots.size()));
+            for(size_t snapshotIndex = 0; snapshotIndex < accumulator.snapshots.size(); ++snapshotIndex) {
                 this_task::throwIfCanceled();
-                states.push_back(buildFrameState(snapshot,
+                states.push_back(buildFrameState(accumulator.snapshots[snapshotIndex],
                                                  self->definitionMode(),
                                                  static_cast<double>(self->donorAcceptorCutoff()),
                                                  fixedMaximumTheta,
                                                  static_cast<double>(self->vicinityCutoff()),
                                                  pmfPtr));
+                progress->setValue(static_cast<qlonglong>(snapshotIndex + 1));
             }
 
-            const HydrogenBondKineticsCurves curves = computeKineticsCurves(states, frames, self->maxLag());
+            const HydrogenBondKineticsCurves curves = computeKineticsCurves(states, frames, self->maxLag(), *progress);
             if(curves.c.empty())
                 throw Exception(HydrogenBondKineticsModifier::tr("Hydrogen-bond kinetics could not compute any lag points."));
             if(curves.sampleCounts[0] <= 0.0)

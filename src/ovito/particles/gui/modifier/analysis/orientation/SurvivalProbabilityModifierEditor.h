@@ -27,7 +27,6 @@
 
 namespace Ovito {
 
-class DataTablePlotWidget;
 class SurvivalProbabilityModifier;
 
 class SurvivalProbabilityModifierEditor : public PropertiesEditor
@@ -42,15 +41,14 @@ protected:
 private Q_SLOTS:
 
     void runAnalysis();
-    void updatePlot();
     void updateSummary();
 
 private:
 
     SurvivalProbabilityModifier* modifier() const;
+    void setSummaryText(const QString& text);
 
     QPointer<QPushButton> _runButton;
-    QPointer<DataTablePlotWidget> _plot;
     QPointer<QLabel> _summaryLabel;
 };
 

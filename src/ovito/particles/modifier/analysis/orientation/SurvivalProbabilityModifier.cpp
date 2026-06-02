@@ -26,6 +26,7 @@
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include "OrientationTrajectoryAnalysisHelper.h"
@@ -33,6 +34,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 
 namespace Ovito {
 
@@ -181,15 +183,13 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::evaluateModifier(const Mo
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Survival probability is idle. Open the Run section and click 'Run survival probability analysis' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Survival probability is queued. Click 'Run survival probability analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -207,6 +207,9 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
 
     MembershipAccumulator accumulator;
     accumulator.membershipFrames.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting survival probability samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -221,7 +224,7 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, MembershipAccumulator& accumulator) {
+            [this, progress, totalFrameCount = frames.size()](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, MembershipAccumulator& accumulator) {
                 const ReferenceShellMembershipRequest membershipRequest{
                     referenceTypes(),
                     referenceExpression(),
@@ -236,10 +239,14 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
                                                          accumulator,
                                                          future.result(),
                                                          tr("Survival probability"));
+                    progress->setText(SurvivalProbabilityModifier::tr("Collecting survival probability samples (%1/%2 frames)")
+                                          .arg(accumulator.membershipFrames.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.membershipFrames.size()));
                 }
             },
             std::move(accumulator))
-        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId](MembershipAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId, progress = std::move(progress)](MembershipAccumulator accumulator) mutable -> Future<PipelineFlowState> {
             OORef<SurvivalProbabilityModifier> self(this);
             const int completedRunRequestId = runRequestId();
 
@@ -248,6 +255,7 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
                                 state = std::move(state),
                                 frames,
                                 accumulator = std::move(accumulator),
+                                progress = std::move(progress),
                                 completedRunRequestId,
                                 cacheGenerationId]() mutable {
                 CorrelationComputationResult computationResult{std::move(state)};
@@ -256,7 +264,7 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
 
                 this_task::throwIfCanceled();
                 const CorrelationCurves curves = computeSurvivalProbabilityCurves(
-                    accumulator, frames, self->intermittency(), self->maxLag(), SurvivalProbabilityModifier::tr("Survival probability"));
+                    accumulator, frames, self->intermittency(), self->maxLag(), SurvivalProbabilityModifier::tr("Survival probability"), progress.get());
 
                 computationResult.results = DataOORef<DataCollection>::create();
                 const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();

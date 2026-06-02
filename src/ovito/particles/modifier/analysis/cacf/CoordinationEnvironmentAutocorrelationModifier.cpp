@@ -32,11 +32,13 @@
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "CoordinationEnvironmentAutocorrelationModifier.h"
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -444,7 +446,8 @@ void appendSnapshot(CoordinationAccumulator& accumulator,
 CacfCurves computeCacfCurves(const CoordinationAccumulator& accumulator,
                              const std::vector<int>& sampledFrames,
                              int requestedMaxLag,
-                             const IndicatorContext& indicatorContext)
+                             const IndicatorContext& indicatorContext,
+                             TaskProgress& progress)
 {
     OVITO_ASSERT(accumulator.snapshots.size() == sampledFrames.size());
 
@@ -455,8 +458,8 @@ CacfCurves computeCacfCurves(const CoordinationAccumulator& accumulator,
     curves.lagFrames.assign(maxLagEffective + 1, 0.0);
     curves.values.assign(maxLagEffective + 1, 0.0);
 
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
+    progress.setText(CoordinationEnvironmentAutocorrelationModifier::tr("Computing CACF correlations"));
+    parallelFor(maxLagEffective + 1, 8, progress, [&](size_t lag) {
             this_task::throwIfCanceled();
 
             const double lagFrames = static_cast<double>(sampledFrames[lag] - sampledFrames[0]);
@@ -489,7 +492,6 @@ CacfCurves computeCacfCurves(const CoordinationAccumulator& accumulator,
             curves.values[lag] = contributionCount > 0
                 ? (correlationSum / static_cast<double>(contributionCount))
                 : std::numeric_limits<double>::quiet_NaN();
-        }
     });
 
     return curves;
@@ -652,15 +654,13 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::evalua
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "CACF analysis is idle. Open the Run section and click 'Run CACF analysis' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "CACF analysis is queued. Click 'Run CACF analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -697,6 +697,9 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
 
     CoordinationAccumulator accumulator;
     accumulator.snapshots.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting CACF coordination shells"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -715,17 +718,23 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
              centralExpression = centralExpression(),
              shellTypes = shellTypes(),
              shellExpression = shellExpression(),
-             cutoffRadius = cutoff()](const std::vector<int>&,
-                                      std::vector<SharedFuture<PipelineFlowState>> batchFutures,
-                                      CoordinationAccumulator& accumulator) {
+             cutoffRadius = cutoff(),
+             progress,
+             totalFrameCount = frames.size()](const std::vector<int>&,
+                                              std::vector<SharedFuture<PipelineFlowState>> batchFutures,
+                                              CoordinationAccumulator& accumulator) {
                 for(SharedFuture<PipelineFlowState>& future : batchFutures) {
                     this_task::throwIfCanceled();
                     appendSnapshot(accumulator, future.result(), centralTypes, centralExpression, shellTypes, shellExpression, cutoffRadius);
+                    progress->setText(CoordinationEnvironmentAutocorrelationModifier::tr("Collecting CACF coordination shells (%1/%2 frames)")
+                                          .arg(accumulator.snapshots.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.snapshots.size()));
                 }
             },
             std::move(accumulator))
         .then(DeferredObjectExecutor(this),
-              [this, request, state = std::move(state), frames, cacheGenerationId, indicatorContext = std::move(indicatorContext)](CoordinationAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+              [this, request, state = std::move(state), frames, cacheGenerationId, indicatorContext = std::move(indicatorContext), progress = std::move(progress)](CoordinationAccumulator accumulator) mutable -> Future<PipelineFlowState> {
         OORef<CoordinationEnvironmentAutocorrelationModifier> self(this);
         const int completedRunRequestId = runRequestId();
 
@@ -735,6 +744,7 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                             frames,
                             accumulator = std::move(accumulator),
                             indicatorContext = std::move(indicatorContext),
+                            progress = std::move(progress),
                             completedRunRequestId,
                             cacheGenerationId]() mutable {
             CacfComputationResult computationResult{std::move(state)};
@@ -753,7 +763,7 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                 throw Exception(CoordinationEnvironmentAutocorrelationModifier::tr(
                     "No central atoms had any shell atoms matching the shell selector within the cutoff. Increase the cutoff or adjust the selector."));
 
-            const CacfCurves curves = computeCacfCurves(accumulator, frames, self->maxLag(), indicatorContext);
+            const CacfCurves curves = computeCacfCurves(accumulator, frames, self->maxLag(), indicatorContext, *progress);
 
             computationResult.results = DataOORef<DataCollection>::create();
             const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();

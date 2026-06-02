@@ -517,7 +517,7 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     runLayout->addWidget(_runButton);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("Hydrogen bond results are idle. Open the Run section and click 'Run hydrogen bond analysis' to compute the selected observable."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
     layout->addWidget(_summaryLabel);
 
@@ -531,7 +531,8 @@ void HydrogenBondAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     _pmfPlot->setMaximumHeight(320);
     layout->addWidget(_pmfPlot);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), HydrogenBondAnalysisModifier::countTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HydrogenBondAnalysisModifierEditor::updatePlot);
@@ -557,6 +558,9 @@ void HydrogenBondAnalysisModifierEditor::runAnalysis()
         if(!mod || !node)
             return;
 
+        if(_runButton)
+            _runButton->setEnabled(false);
+
         mod->setRunRequestId(mod->runRequestId() + 1);
         const int startedRunRequestId = mod->runRequestId();
         const auto* hbNode = dynamic_object_cast<const HydrogenBondAnalysisModificationNode>(node);
@@ -568,13 +572,12 @@ void HydrogenBondAnalysisModifierEditor::runAnalysis()
         }
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = node->evaluate(request).asFuture();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
         future.finally(ObjectExecutor(this), [self = QPointer<HydrogenBondAnalysisModifierEditor>(this),
                                               editObject = OOWeakRef<RefTarget>(editObject()),
                                               startedRunRequestId,
-                                              startedGenerationId](auto& task) noexcept {
-            if(!task.isCanceled() && !task.exceptionStore())
-                return;
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
             if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
@@ -583,17 +586,20 @@ void HydrogenBondAnalysisModifierEditor::runAnalysis()
             if(!mod || !hbNode || mod->runRequestId() != startedRunRequestId || hbNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            hbNode->setCompletedRunRequestId(startedRunRequestId);
-            self->updatePlot();
-            self->updateSummary();
-        });
-        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
-            HydrogenBondAnalysisModifier* mod = modifier();
-            const auto* hbNode = dynamic_object_cast<const HydrogenBondAnalysisModificationNode>(modificationNode());
-            if(!mod || !hbNode || mod->runRequestId() != startedRunRequestId || hbNode->cacheGenerationId() != startedGenerationId)
-                return;
-            updatePlot();
-            updateSummary();
+            if(task.isCanceled() || task.exceptionStore())
+                hbNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                hbNode->pipelineCache().invalidateInteractiveState();
+                hbNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlot();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }
@@ -661,8 +667,7 @@ void HydrogenBondAnalysisModifierEditor::updateSummary()
             return;
 
         if(hydrogenBondAnalysisIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr(
-                "Hydrogen bond results are idle. Open the Run section and click 'Run hydrogen bond analysis' to compute the selected observable."));
+            _summaryLabel->clear();
             refreshSummaryGeometry();
             return;
         }

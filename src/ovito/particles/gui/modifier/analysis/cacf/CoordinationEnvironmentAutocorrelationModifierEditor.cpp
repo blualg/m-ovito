@@ -168,7 +168,7 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
     runLayout->addWidget(_runButton);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("CACF results are idle. Open the Run section and click 'Run CACF analysis' to compute the selected observable."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
     layout->addWidget(_summaryLabel);
 
@@ -177,7 +177,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::createUI(const Rollou
     _plot->setMaximumHeight(220);
     layout->addWidget(_plot);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), CoordinationEnvironmentAutocorrelationModifier::correlationTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationEnvironmentAutocorrelationModifierEditor::updatePlot);
@@ -203,6 +204,9 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::runAnalysis()
         if(!mod || !node)
             return;
 
+        if(_runButton)
+            _runButton->setEnabled(false);
+
         mod->setRunRequestId(mod->runRequestId() + 1);
         const int startedRunRequestId = mod->runRequestId();
         const auto* cacfNode = dynamic_object_cast<const CoordinationEnvironmentAutocorrelationModificationNode>(node);
@@ -214,13 +218,12 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::runAnalysis()
         }
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = node->evaluate(request).asFuture();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
         future.finally(ObjectExecutor(this), [self = QPointer<CoordinationEnvironmentAutocorrelationModifierEditor>(this),
                                               editObject = OOWeakRef<RefTarget>(editObject()),
                                               startedRunRequestId,
-                                              startedGenerationId](auto& task) noexcept {
-            if(!task.isCanceled() && !task.exceptionStore())
-                return;
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
             if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
@@ -229,17 +232,20 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::runAnalysis()
             if(!mod || !cacfNode || mod->runRequestId() != startedRunRequestId || cacfNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            cacfNode->setCompletedRunRequestId(startedRunRequestId);
-            self->updatePlot();
-            self->updateSummary();
-        });
-        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
-            CoordinationEnvironmentAutocorrelationModifier* mod = modifier();
-            const auto* cacfNode = dynamic_object_cast<const CoordinationEnvironmentAutocorrelationModificationNode>(modificationNode());
-            if(!mod || !cacfNode || mod->runRequestId() != startedRunRequestId || cacfNode->cacheGenerationId() != startedGenerationId)
-                return;
-            updatePlot();
-            updateSummary();
+            if(task.isCanceled() || task.exceptionStore())
+                cacfNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                cacfNode->pipelineCache().invalidateInteractiveState();
+                cacfNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlot();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }
@@ -272,8 +278,7 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
             return;
 
         if(cacfAnalysisIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr(
-                "CACF results are idle. Open the Run section and click 'Run CACF analysis' to compute the selected observable."));
+            _summaryLabel->clear();
             refreshSummaryGeometry();
             return;
         }

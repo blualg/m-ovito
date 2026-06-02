@@ -26,6 +26,7 @@
 #include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 
 #include <QtMath>
 #include <algorithm>
@@ -1264,7 +1265,8 @@ CorrelationCurves computeSurvivalProbabilityCurves(const MembershipAccumulator& 
                                                    const std::vector<int>& sampledFrameNumbers,
                                                    int intermittency,
                                                    int maxLag,
-                                                   const QString& analysisLabel)
+                                                   const QString& analysisLabel,
+                                                   TaskProgress* progress)
 {
     OVITO_ASSERT(samples.membershipFrames.size() == sampledFrameNumbers.size());
 
@@ -1286,8 +1288,7 @@ CorrelationCurves computeSurvivalProbabilityCurves(const MembershipAccumulator& 
             falsePrefix[item][frame + 1] = falsePrefix[item][frame] + (memberships[frame][item] == 0 ? 1 : 0);
     }
 
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
+    auto computeLag = [&](size_t lag) {
             this_task::throwIfCanceled();
             const size_t originCount = frameCount - lag;
             double lagFrameAccumulator = 0.0;
@@ -1314,8 +1315,18 @@ CorrelationCurves computeSurvivalProbabilityCurves(const MembershipAccumulator& 
             curves.lagFrames[lag] = lagFrameAccumulator / static_cast<double>(originCount);
             if(validOriginCount > 0)
                 curves.overall[lag] = originFractionSum / static_cast<double>(validOriginCount);
-        }
-    });
+    };
+
+    if(progress) {
+        progress->setText(QStringLiteral("Computing %1 curve").arg(analysisLabel));
+        parallelFor(maxLagEffective + 1, 8, *progress, computeLag);
+    }
+    else {
+        parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
+            for(size_t lag = fromLag; lag < toLag; ++lag)
+                computeLag(lag);
+        });
+    }
 
     return curves;
 }

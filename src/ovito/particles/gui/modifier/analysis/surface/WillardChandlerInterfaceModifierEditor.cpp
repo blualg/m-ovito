@@ -194,7 +194,7 @@ void WillardChandlerInterfaceModifierEditor::createUI(const RolloutInsertionPara
     updateDetachedWidgets();
 
     OpenDataInspectorButton* phaseCountsButton =
-        new OpenDataInspectorButton(this, tr("Phase counts"), WillardChandlerInterfaceModifier::PhaseCountsTableId.toString());
+        new OpenDataInspectorButton(this, tr("Show in data inspector"), WillardChandlerInterfaceModifier::PhaseCountsTableId.toString(), 1);
     classificationLayout->addWidget(phaseCountsButton, row++, 0, 1, 2);
 
     StatusWidget* statusWidget = createParamUI<ObjectStatusDisplay>()->statusWidget();

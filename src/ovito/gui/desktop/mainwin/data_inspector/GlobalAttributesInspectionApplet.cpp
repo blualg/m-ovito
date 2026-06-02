@@ -94,6 +94,9 @@ void GlobalAttributesInspectionApplet::updateDisplay()
 ******************************************************************************/
 bool GlobalAttributesInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QStringView objectIdentifierHint, const QVariant& modeHint)
 {
+    if(modeHint.isValid())
+        return false;
+
     for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
         const auto& attr = _tableModel->attributes()[i];
         if(attr->createdByNode().lock().get() == createdByNode) {

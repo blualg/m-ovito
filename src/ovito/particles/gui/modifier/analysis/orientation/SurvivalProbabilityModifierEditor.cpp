@@ -23,8 +23,6 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/orientation/SurvivalProbabilityModifier.h>
 #include <ovito/particles/gui/util/ParticleSelectorPopupEditor.h>
-#include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -34,15 +32,69 @@
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "SurvivalProbabilityModifierEditor.h"
+#include <QLayout>
+#include <algorithm>
 
 namespace Ovito {
 
 namespace {
 
+class SummaryLabel : public QLabel
+{
+public:
+    using QLabel::QLabel;
+
+    bool hasHeightForWidth() const override
+    {
+        return wordWrap();
+    }
+
+    int heightForWidth(int width) const override
+    {
+        if(!wordWrap())
+            return QLabel::heightForWidth(width);
+
+        const QMargins margins = contentsMargins();
+        const int horizontalPadding = margins.left() + margins.right() + frameWidth() * 2;
+        const int verticalPadding = margins.top() + margins.bottom() + frameWidth() * 2;
+        const int textWidth = std::max(1, width - horizontalPadding);
+        const QRect bounds = fontMetrics().boundingRect(QRect(0, 0, textWidth, 0),
+                                                        alignment() | Qt::TextWordWrap,
+                                                        text());
+        return bounds.height() + verticalPadding;
+    }
+
+    QSize sizeHint() const override
+    {
+        if(!wordWrap())
+            return QLabel::sizeHint();
+        const int widthHint = (width() > 0) ? width() : 360;
+        return QSize(widthHint, heightForWidth(widthHint));
+    }
+};
+
 bool survivalProbabilityIsIdle(const SurvivalProbabilityModifier* modifier, const ModificationNode* node)
 {
     const auto* spNode = dynamic_object_cast<const SurvivalProbabilityModificationNode>(node);
     return modifier && spNode && !spNode->hasCachedResults() && modifier->runRequestId() <= spNode->completedRunRequestId();
+}
+
+void refreshSummaryLabelLayout(QLabel* label)
+{
+    if(!label)
+        return;
+
+    label->updateGeometry();
+    label->adjustSize();
+
+    QWidget* widget = label;
+    while((widget = widget->parentWidget()) != nullptr) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 }  // namespace
@@ -107,9 +159,6 @@ void SurvivalProbabilityModifierEditor::createUI(const RolloutInsertionParameter
     optionsLayout->addWidget(intermittencyUI->label(), 0, 0);
     optionsLayout->addLayout(intermittencyUI->createFieldLayout(), 0, 1);
 
-    auto* noteLabel = new QLabel(tr("Treat short absences of up to N sampled frames as continuous residence when the molecule returns to the reference shell."), optionsBox);
-    noteLabel->setWordWrap(true);
-    optionsLayout->addWidget(noteLabel, 1, 0, 1, 2);
     layout->addWidget(optionsBox);
 
     BooleanGroupBoxParameterUI* intervalGroupUI = createParamUI<BooleanGroupBoxParameterUI>(
@@ -143,11 +192,6 @@ void SurvivalProbabilityModifierEditor::createUI(const RolloutInsertionParameter
     samplingLayout->addWidget(maxLagUI->label(), 1, 0);
     samplingLayout->addLayout(maxLagUI->createFieldLayout(), 1, 1);
 
-    auto* samplingNote = new QLabel(
-        tr("The survival probability is averaged over all valid time origins for each lag. These controls thin the sampled frames and limit the computed lag range."),
-        samplingBox);
-    samplingNote->setWordWrap(true);
-    samplingLayout->addWidget(samplingNote, 2, 0, 1, 2);
     layout->addWidget(samplingBox);
 
     auto* runBox = new QGroupBox(tr("Run"), rollout);
@@ -157,29 +201,22 @@ void SurvivalProbabilityModifierEditor::createUI(const RolloutInsertionParameter
     _runButton = new QPushButton(tr("Run survival probability analysis"), runBox);
     connect(_runButton, &QPushButton::clicked, this, &SurvivalProbabilityModifierEditor::runAnalysis);
     runLayout->addWidget(_runButton);
-    auto* runNoteLabel = new QLabel(tr("The modifier traverses the selected trajectory interval only when you click Run."), runBox);
-    runNoteLabel->setWordWrap(true);
-    runLayout->addWidget(runNoteLabel);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("Survival probability results are idle. Open the Run section and click 'Run survival probability analysis' to compute the selected observable."), rollout);
+    _summaryLabel = new SummaryLabel(rollout);
     _summaryLabel->setWordWrap(true);
+    _summaryLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    _summaryLabel->setVisible(false);
     layout->addWidget(_summaryLabel);
 
-    _plot = new DataTablePlotWidget();
-    _plot->setMinimumHeight(220);
-    _plot->setMaximumHeight(220);
-    layout->addWidget(_plot);
-
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), SurvivalProbabilityModifier::correlationTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    connect(this, &PropertiesEditor::pipelineOutputChanged, this, &SurvivalProbabilityModifierEditor::updatePlot);
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &SurvivalProbabilityModifierEditor::updateSummary);
     connect(this, &PropertiesEditor::contentsChanged, this, &SurvivalProbabilityModifierEditor::updateSummary);
     connect(this, &PropertiesEditor::contentsReplaced, this, &SurvivalProbabilityModifierEditor::updateSummary);
 
-    updatePlot();
     updateSummary();
 }
 
@@ -203,8 +240,7 @@ void SurvivalProbabilityModifierEditor::runAnalysis()
 
         const auto* spNode = dynamic_object_cast<const SurvivalProbabilityModificationNode>(modificationNode());
         const int startedGenerationId = spNode ? spNode->cacheGenerationId() : 0;
-        if(_summaryLabel)
-            _summaryLabel->setText(tr("Running survival probability analysis over the sampled trajectory..."));
+        setSummaryText(tr("Running survival probability analysis over the sampled trajectory..."));
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
         auto future = modificationNode()->evaluate(request).asFuture();
@@ -218,18 +254,8 @@ void SurvivalProbabilityModifierEditor::runAnalysis()
             if(!spNode || spNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            updatePlot();
             updateSummary();
         });
-    });
-}
-
-void SurvivalProbabilityModifierEditor::updatePlot()
-{
-    handleExceptions([&]() {
-        DataOORef<const DataTable> table =
-            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), SurvivalProbabilityModifier::correlationTableId());
-        _plot->setTable(std::move(table));
     });
 }
 
@@ -239,7 +265,7 @@ void SurvivalProbabilityModifierEditor::updateSummary()
         if(!_summaryLabel)
             return;
         if(survivalProbabilityIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr("Survival probability results are idle. Open the Run section and click 'Run survival probability analysis' to compute the selected observable."));
+            setSummaryText({});
             return;
         }
 
@@ -257,7 +283,7 @@ void SurvivalProbabilityModifierEditor::updateSummary()
         const QVariant finalValue = state.getAttributeValue(modificationNode(), QStringLiteral("SurvivalProbability.final_value"));
 
         if(!target.isValid() || !frameCount.isValid()) {
-            _summaryLabel->setText(warningText.isEmpty()
+            setSummaryText(warningText.isEmpty()
                 ? tr("Survival probability results are being prepared...")
                 : warningText);
             return;
@@ -275,8 +301,18 @@ void SurvivalProbabilityModifierEditor::updateSummary()
             summary += tr("\nFinal value: %1").arg(finalValue.toDouble(), 0, 'g', 6);
         if(!warningText.isEmpty())
             summary = warningText + QStringLiteral("\n\n") + summary;
-        _summaryLabel->setText(summary);
+        setSummaryText(summary);
     });
+}
+
+void SurvivalProbabilityModifierEditor::setSummaryText(const QString& text)
+{
+    if(!_summaryLabel)
+        return;
+
+    _summaryLabel->setVisible(!text.isEmpty());
+    _summaryLabel->setText(text);
+    refreshSummaryLabelLayout(_summaryLabel);
 }
 
 }  // namespace Ovito

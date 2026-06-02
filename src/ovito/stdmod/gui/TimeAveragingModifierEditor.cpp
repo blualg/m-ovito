@@ -30,6 +30,7 @@
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include "TimeAveragingModifierEditor.h"
 
@@ -48,6 +49,7 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
     auto* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(6);
+    layout->setAlignment(Qt::AlignTop);
 
     VariantComboBoxParameterUI* targetTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(TimeAveragingModifier::targetType));
     targetTypeUI->comboBox()->addItem(tr("Global attribute"), QVariant::fromValue((int)TimeAveragingModifier::Attribute));
@@ -57,15 +59,13 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
     layout->addWidget(new QLabel(tr("Average:")));
     layout->addWidget(targetTypeUI->comboBox());
 
-    _targetStack = new QStackedWidget(rollout);
-    layout->addWidget(_targetStack);
-
     // Attribute target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         _attributeCombo = new QComboBox(page);
         _attributeCombo->setEditable(true);
@@ -93,29 +93,33 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
 
         pageLayout->addWidget(new QLabel(tr("Attribute:"), page));
         pageLayout->addWidget(_attributeCombo);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Table target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         DataObjectReferenceParameterUI* tableUI = createParamUI<DataObjectReferenceParameterUI>(
             PROPERTY_FIELD(TimeAveragingModifier::table), DataTable::OOClass());
         pageLayout->addWidget(new QLabel(tr("Data table:"), page));
         pageLayout->addWidget(tableUI->comboBox());
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Property target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         DataObjectReferenceParameterUI* containerUI = createParamUI<DataObjectReferenceParameterUI>(
             PROPERTY_FIELD(TimeAveragingModifier::propertyContainer), PropertyContainer::OOClass());
@@ -142,25 +146,23 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
         pageLayout->addWidget(new QLabel(tr("Property:"), page));
         pageLayout->addWidget(propertyUI->comboBox());
 
-        auto* noteLabel = new QLabel(tr("Element-wise averaging currently supports trajectories with a stable element count or stable element IDs."), page);
-        noteLabel->setWordWrap(true);
-        pageLayout->addWidget(noteLabel);
-
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     // Cell target page.
     {
-        auto* page = new QWidget(_targetStack);
+        auto* page = new QWidget(rollout);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(0,0,0,0);
         pageLayout->setSpacing(4);
+        pageLayout->setAlignment(Qt::AlignTop);
 
         auto* label = new QLabel(tr("Averages the full simulation cell tensor over the selected frame interval."), page);
         label->setWordWrap(true);
         pageLayout->addWidget(label);
-        pageLayout->addStretch(1);
-        _targetStack->addWidget(page);
+        layout->addWidget(page);
+        _targetPages.push_back(page);
     }
 
     BooleanGroupBoxParameterUI* intervalGroupUI = createParamUI<BooleanGroupBoxParameterUI>(
@@ -200,17 +202,13 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
     _runButton = new QPushButton(tr("Start averaging"), runBox);
     connect(_runButton, &QPushButton::clicked, this, &TimeAveragingModifierEditor::runAveraging);
     runLayout->addWidget(_runButton);
-    auto* runNoteLabel = new QLabel(tr("The modifier is inserted disabled and traverses the selected trajectory interval only when you click Start averaging."), runBox);
-    runNoteLabel->setWordWrap(true);
-    runLayout->addWidget(runNoteLabel);
     layout->addWidget(runBox);
 
-    auto* generalNoteLabel = new QLabel(tr("This first open-source implementation averages one trajectory quantity per modifier instance."), rollout);
-    generalNoteLabel->setWordWrap(true);
-    layout->addWidget(generalNoteLabel);
+    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
 
     layout->addSpacing(6);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
+    layout->addStretch(1);
 
     connect(this, &PropertiesEditor::contentsChanged, this, &TimeAveragingModifierEditor::updateTargetWidgets);
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &TimeAveragingModifierEditor::updateAttributeList);
@@ -224,16 +222,20 @@ void TimeAveragingModifierEditor::createUI(const RolloutInsertionParameters& rol
 ******************************************************************************/
 void TimeAveragingModifierEditor::updateTargetWidgets()
 {
-    if(!_targetStack)
+    if(_targetPages.empty())
         return;
 
+    int pageIndex = 0;
     if(TimeAveragingModifier* modifier = static_object_cast<TimeAveragingModifier>(editObject())) {
-        const int pageIndex = std::clamp((int)modifier->targetType(), 0, _targetStack->count() - 1);
-        _targetStack->setCurrentIndex(pageIndex);
+        pageIndex = std::clamp((int)modifier->targetType(), 0, static_cast<int>(_targetPages.size()) - 1);
     }
-    else {
-        _targetStack->setCurrentIndex(0);
+
+    for(int i = 0; i < static_cast<int>(_targetPages.size()); ++i) {
+        if(_targetPages[i])
+            _targetPages[i]->setVisible(i == pageIndex);
     }
+    if(container())
+        container()->updateRolloutsLater();
 }
 
 /******************************************************************************
@@ -313,6 +315,9 @@ void TimeAveragingModifierEditor::runAveraging()
                 averagingNode->setCompletedRunRequestId(startedRunRequestId);
             self->handleExceptions([&]() {
                 (void)future.result();
+                averagingNode->pipelineCache().invalidateInteractiveState();
+                averagingNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
             });
             if(self->_runButton)
                 self->_runButton->setEnabled(true);

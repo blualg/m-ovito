@@ -60,7 +60,7 @@ private:
     /// Repopulates the attribute combo box and preserves the current selection.
     void populateAttributeList(const QString& currentValue);
 
-    QPointer<QStackedWidget> _targetStack;
+    QVector<QPointer<QWidget>> _targetPages;
     QPointer<QComboBox> _attributeCombo;
     QPointer<CustomParameterUI> _attributeUI;
     QPointer<QPushButton> _runButton;

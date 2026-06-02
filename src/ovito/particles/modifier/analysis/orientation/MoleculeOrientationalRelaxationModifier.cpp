@@ -222,15 +222,13 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::evaluateModif
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Molecule orientational relaxation is idle. Open the Run section and click 'Run orientational relaxation analysis' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Molecule orientational relaxation is queued. Click 'Run orientational relaxation analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 

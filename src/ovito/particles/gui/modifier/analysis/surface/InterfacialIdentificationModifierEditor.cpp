@@ -133,7 +133,7 @@ void InterfacialIdentificationModifierEditor::createUI(const RolloutInsertionPar
     outputLayout->addWidget(selectInterfacialUI->checkBox(), row++, 0, 1, 2);
 
     OpenDataInspectorButton* openTableButton =
-        new OpenDataInspectorButton(this, tr("Layer counts"), InterfacialIdentificationModifier::LayerCountsTableId.toString());
+        new OpenDataInspectorButton(this, tr("Show in data inspector"), InterfacialIdentificationModifier::LayerCountsTableId.toString(), 1);
     outputLayout->addWidget(openTableButton, row++, 0, 1, 2);
 
     StatusWidget* statusWidget = createParamUI<ObjectStatusDisplay>()->statusWidget();

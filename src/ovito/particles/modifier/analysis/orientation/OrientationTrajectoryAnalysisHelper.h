@@ -30,6 +30,10 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/table/DataTable.h>
 
+namespace Ovito {
+class TaskProgress;
+}
+
 namespace Ovito::OrientationTrajectoryAnalysis {
 
 enum class DescriptorMode {
@@ -129,7 +133,8 @@ void appendReferenceShellMembershipSample(const ReferenceShellMembershipRequest&
                                                                  const std::vector<int>& sampledFrameNumbers,
                                                                  int intermittency,
                                                                  int maxLag,
-                                                                 const QString& analysisLabel);
+                                                                 const QString& analysisLabel,
+                                                                 TaskProgress* progress = nullptr);
 
 DataTable* createLineTable(DataCollection* collection,
                            const QStringView identifier,

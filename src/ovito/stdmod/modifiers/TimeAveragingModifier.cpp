@@ -292,7 +292,6 @@ bool TimeAveragingModifier::OOMetaClass::isApplicableTo(const DataCollection& in
 void TimeAveragingModifier::initializeObject(ObjectInitializationFlags flags)
 {
     Modifier::initializeObject(flags);
-    setEnabled(false);
 }
 
 /******************************************************************************
@@ -458,15 +457,13 @@ Future<PipelineFlowState> TimeAveragingModifier::evaluateModifier(const Modifier
             return applyCachedAverage(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Time averaging is idle. Open the Start section and click 'Start averaging' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Time averaging is queued. Click 'Start averaging' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
