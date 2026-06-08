@@ -97,7 +97,8 @@ void RadialDistributionFunctionModifierEditor::createUI(const RolloutInsertionPa
     layout->addWidget(new QLabel(tr("Radial distribution function:")));
     layout->addWidget(_rdfPlot);
 
-    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), RadialDistributionFunctionModifier::TableIdentifier, 1);
     layout->addWidget(openDataInspectorBtn);
 
     // Status label.

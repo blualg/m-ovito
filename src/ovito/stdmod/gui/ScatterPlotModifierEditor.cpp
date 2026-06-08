@@ -96,7 +96,8 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(new QLabel(tr("Scatter plot:")));
     layout->addWidget(_plotWidget);
 
-    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    OpenDataInspectorButton* openDataInspectorBtn =
+        new OpenDataInspectorButton(this, tr("Show in data inspector"), QStringLiteral("scatter"), 1);
     layout->addWidget(openDataInspectorBtn);
 
     // Selection.

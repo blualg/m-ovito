@@ -82,7 +82,8 @@ void ProbabilityDistributionFunctionModifierEditor::createUI(const RolloutInsert
     _plotWidget->setMaximumHeight(200);
     layout->addWidget(_plotWidget);
 
-    auto* openDataInspectorButton = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    auto* openDataInspectorButton = new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), ProbabilityDistributionFunctionModifier::TableIdentifier, 1);
     layout->addWidget(openDataInspectorButton);
 
     layout->addSpacing(6);

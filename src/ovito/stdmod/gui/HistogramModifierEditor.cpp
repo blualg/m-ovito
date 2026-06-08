@@ -94,7 +94,8 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
     layout->addWidget(_plotWidget);
 
-    OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));
+    OpenDataInspectorButton* openDataInspectorBtn =
+        new OpenDataInspectorButton(this, tr("Show in data inspector"), QStringView{}, 1);
     layout->addWidget(openDataInspectorBtn);
 
     // Input.

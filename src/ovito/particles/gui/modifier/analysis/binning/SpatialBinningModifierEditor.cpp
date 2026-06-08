@@ -129,7 +129,8 @@ void SpatialBinningModifierEditor::createUI(const RolloutInsertionParameters& ro
     plotGrid->attach(_plotWidget);
     layout->addWidget(_plotWidget);
 
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), SpatialBinningModifier::OutputIdentifier, 1));
     layout->addSpacing(6);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
