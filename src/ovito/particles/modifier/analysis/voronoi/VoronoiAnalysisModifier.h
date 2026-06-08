@@ -95,6 +95,8 @@ private:
             _computeBonds(computeBonds),
             _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::CoordinationProperty)),
             _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
+            _surfaceAreas(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Voronoi Surface Area"))),
+            _localDensities(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Voronoi Local Density"))),
             _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
             _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
             _polyhedraMesh(polyhedraMesh),
@@ -111,6 +113,12 @@ private:
 
         /// Returns the property storage that contains the computed atomic volumes.
         const PropertyPtr& atomicVolumes() const { return _atomicVolumes; }
+
+        /// Returns the property storage that contains the computed Voronoi cell surface areas.
+        const PropertyPtr& surfaceAreas() const { return _surfaceAreas; }
+
+        /// Returns the property storage that contains the computed local densities.
+        const PropertyPtr& localDensities() const { return _localDensities; }
 
         /// Returns the property storage that contains the computed cavity radii.
         const PropertyPtr& cavityRadii() const { return _cavityRadii; }
@@ -151,6 +159,8 @@ private:
 
         const PropertyPtr _coordinationNumbers;
         const PropertyPtr _atomicVolumes;
+        const PropertyPtr _surfaceAreas;
+        const PropertyPtr _localDensities;
         const PropertyPtr _cavityRadii;
         PropertyPtr _voronoiIndices;
         const PropertyPtr _maxFaceOrders;

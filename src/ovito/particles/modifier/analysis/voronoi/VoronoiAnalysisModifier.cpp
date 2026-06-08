@@ -154,25 +154,34 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
     Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
 
-    // In interactive mode, fetch and return outdated results from the pipeline cache if available.
+    // In interactive mode, fetch and return an exact cached result if available.
     if(request.interactiveMode()) {
-        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), false)) {
+            bool cachedOwnOutput = false;
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
                 particles->tryToAdoptProperties(cachedParticles, {
                     cachedParticles->getProperty(Particles::CoordinationProperty),
                     cachedParticles->getProperty(QStringLiteral("Atomic Volume")),
+                    cachedParticles->getProperty(QStringLiteral("Voronoi Surface Area")),
+                    cachedParticles->getProperty(QStringLiteral("Voronoi Local Density")),
                     cachedParticles->getProperty(QStringLiteral("Cavity Radius")),
                     computeIndices() ? cachedParticles->getProperty(QStringLiteral("Max Face Order")) : nullptr,
                     computeIndices() ? cachedParticles->getProperty(QStringLiteral("Voronoi Index")) : nullptr,
                 }, {particles});
+                cachedOwnOutput = cachedParticles->getProperty(QStringLiteral("Atomic Volume")) != nullptr
+                               || cachedParticles->getProperty(QStringLiteral("Voronoi Surface Area")) != nullptr
+                               || cachedParticles->getProperty(QStringLiteral("Voronoi Local Density")) != nullptr
+                               || cachedParticles->getProperty(QStringLiteral("Cavity Radius")) != nullptr;
             }
             if(computePolyhedra()) {
                 if(const SurfaceMesh* cachedSurface = cachedState.getObjectBy<SurfaceMesh>(request.modificationNode(), QStringLiteral("voronoi-polyhedra"))) {
                     state.addObject(cachedSurface);
+                    cachedOwnOutput = true;
                 }
             }
             // Adopt all global attributes computed by the modifier from the cached state.
-            state.adoptAttributesFrom(cachedState, request.modificationNode());
+            if(cachedOwnOutput)
+                state.adoptAttributesFrom(cachedState, request.modificationNode());
         }
         return std::move(state);
     }
@@ -337,9 +346,14 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
     // Prepare output data arrays.
     BufferWriteAccess<FloatType, access_mode::write> atomicVolumesArray(atomicVolumes());
+    BufferWriteAccess<FloatType, access_mode::write> surfaceAreasArray(surfaceAreas());
+    BufferWriteAccess<FloatType, access_mode::write> localDensitiesArray(localDensities());
     BufferWriteAccess<FloatType, access_mode::write> cavityRadiiArray(cavityRadii());
     BufferWriteAccess<int32_t, access_mode::write> coordinationNumbersArray(coordinationNumbers());
     BufferWriteAccess<int32_t, access_mode::read_write> maxFaceOrdersArray(maxFaceOrders());
+    const FloatType invalidFloatValue = std::numeric_limits<FloatType>::quiet_NaN();
+    std::fill(surfaceAreasArray.begin(), surfaceAreasArray.end(), invalidFloatValue);
+    std::fill(localDensitiesArray.begin(), localDensitiesArray.end(), invalidFloatValue);
 
     // Prepare input data array.
     BufferReadAccess<SelectionIntType> selectionArray(_selection);
@@ -363,9 +377,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
         // Compute total surface area of Voronoi cell when relative area threshold is used to
         // filter out small faces.
+        const double totalSurfaceArea = v.surface_area();
         double faceAreaThreshold = _faceThreshold;
         if(_relativeFaceThreshold > 0)
-            faceAreaThreshold = std::max(v.surface_area() * _relativeFaceThreshold, faceAreaThreshold);
+            faceAreaThreshold = std::max(totalSurfaceArea * _relativeFaceThreshold, faceAreaThreshold);
 
         int localMaxFaceOrder = 0;
         int localVoronoiIndex[FaceOrderStorageLimit] = {0};
@@ -432,13 +447,11 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                                 faceOrder++;
                         }
                         else faceOrder++;
-                        if(faceAreaThreshold != 0 || _polyhedraMesh || _computeBonds) {
-                            Vector3 w(v.pts[3*m] - v.pts[3*i], v.pts[3*m+1] - v.pts[3*i+1], v.pts[3*m+2] - v.pts[3*i+2]);
-                            Vector3 n = d.cross(w);
-                            normal += n;
-                            area += n.length() / 8;
-                            d = w;
-                        }
+                        Vector3 w(v.pts[3*m] - v.pts[3*i], v.pts[3*m+1] - v.pts[3*i+1], v.pts[3*m+2] - v.pts[3*i+2]);
+                        Vector3 n = d.cross(w);
+                        normal += n;
+                        area += n.length() / 8;
+                        d = w;
                         v.ed[k][l] = -1 - m;
                         l = v.cycle_up(v.ed[k][v.nu[k]+l], m);
                         k = m;
@@ -494,13 +507,16 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
         // Store computed result.
         coordinationNumbersArray[index] = coordNumber;
+        const double surfaceArea = totalSurfaceArea > 0 ? totalSurfaceArea : static_cast<double>(cellFaceArea);
+        surfaceAreasArray[index] = surfaceArea > 0 ? static_cast<FloatType>(surfaceArea) : invalidFloatValue;
+        localDensitiesArray[index] = vol > 0 ? (FloatType)(1.0 / vol) : invalidFloatValue;
         if(maxFaceOrdersArray) {
             maxFaceOrdersArray[index] = localMaxFaceOrder;
             voronoiBufferIndex.push_back(index);
             voronoiBuffer.insert(voronoiBuffer.end(), localVoronoiIndex, localVoronoiIndex + std::min(localMaxFaceOrder, FaceOrderStorageLimit));
         }
         if(_polyhedraMesh) {
-            cellFaceAreaProperty[meshRegionIndex] = cellFaceArea;
+            cellFaceAreaProperty[meshRegionIndex] = surfaceAreasArray[index];
             cellCoordinationProperty[meshRegionIndex] = coordNumber;
         }
 
@@ -910,6 +926,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(PipelineFlowSt
 
     particles->createProperty(coordinationNumbers());
     particles->createProperty(atomicVolumes());
+    particles->createProperty(surfaceAreas());
+    particles->createProperty(localDensities());
     particles->createProperty(cavityRadii());
 
     if(voronoiIndices())
