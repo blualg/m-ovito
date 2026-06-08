@@ -48,6 +48,7 @@ SET(SourceFiles
     modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
     modifier/analysis/rdf/RadialDistributionFunctionModifier.cpp
     modifier/analysis/pdf/ProbabilityDistributionFunctionModifier.cpp
+    modifier/analysis/cage/WaterCageAnalysisModifier.cpp
     modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifier.cpp
     modifier/analysis/hbond/HydrogenBondAnalysisModifier.cpp
     modifier/analysis/hbond/HydrogenBondKineticsModifier.cpp

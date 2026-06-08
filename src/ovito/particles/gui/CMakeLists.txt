@@ -40,6 +40,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/cna/CommonNeighborAnalysisModifierEditor.cpp
         modifier/analysis/rdf/RadialDistributionFunctionModifierEditor.cpp
         modifier/analysis/pdf/ProbabilityDistributionFunctionModifierEditor.cpp
+        modifier/analysis/cage/WaterCageAnalysisModifierEditor.cpp
         modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifierEditor.cpp
         modifier/analysis/hbond/HydrogenBondAnalysisModifierEditor.cpp
         modifier/analysis/hbond/HydrogenBondKineticsModifierEditor.cpp
