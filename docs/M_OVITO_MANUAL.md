@@ -132,6 +132,35 @@ Main inputs:
 
 `Molecular orientation` computes orientation descriptors for selected molecular sites. The output can be inspected through the data inspector when a result table is produced.
 
+## Water cage analysis
+
+`Water cage analysis` identifies clathrate-style cages from the water oxygen network. It builds an O-O first-neighbor graph, finds chordless water rings, and searches for closed edge-saturated cage face sets.
+
+Main inputs:
+
+- Water oxygen atom type selector or expression.
+- O-O neighbor cutoff.
+- Standard cage families to detect: `5^12`, `5^12 6^2`, and `5^12 6^4`.
+- Optional general complete cage search. General cages are closed ring-face cages satisfying the closed polyhedral topology condition, with configurable ring-size and face-count limits.
+- Optional restriction to selected oxygen particles.
+- Optional cage visualization bonds.
+- Maximum ring/search states, which limits unusually expensive ring enumeration and topology searches.
+
+Outputs:
+
+- Global attributes including `WaterCage.total_cages`, `WaterCage.count_5_12`, `WaterCage.count_5_12_6_2`, and `WaterCage.count_5_12_6_4`.
+- A cage-count data table named `water-cage-counts`. Standard cage type IDs are `1`, `2`, and `3`; general/nonstandard signatures use IDs starting at `100`.
+- A visible cage visualization particle container named `water-cages`. It contains one cage-center particle and duplicated cage-oxygen particles for each detected cage.
+- Cage visualization bonds connecting the cage oxygen vertices when the visualization option is enabled.
+- `Cage ID` properties on the `water-cages` particles and cage bonds, allowing individual cages to be selected by ID.
+- A particle property named `Water Cage Membership`, counting how many detected cages each oxygen belongs to.
+
+Notes:
+
+- Original molecular bonds are not modified. The cage bonds are generated in the separate `water-cages` container.
+- Original oxygen particles receive a membership count instead of a single cage ID because one oxygen can belong to multiple cages.
+- The general complete cage option is intentionally topology-based. It detects closed cages composed of the allowed ring sizes; it does not classify open/incomplete cage-like motifs as complete cages.
+
 ## Transport analysis
 
 `Transport` collects trajectory-wide transport observables for selected ions or molecule groups.
@@ -146,6 +175,28 @@ Available observables depend on the selected mode and input data, and may includ
 
 The modifier samples the selected trajectory interval only after the run button is clicked.
 
+## Data table plot viewport layer
+
+`Data table plot` is a native m-ovito viewport layer inspired by the MIT-licensed [ovito-org/DataTablePlotOverlay](https://github.com/ovito-org/DataTablePlotOverlay) Python overlay. The upstream package uses the newer `ViewportOverlayInterface` and `ovito.traits` API, which is not available in this source tree, so m-ovito implements the feature as a C++ viewport layer that reuses OVITO's built-in data-table plot renderer.
+
+Main inputs:
+
+- Pipeline: source pipeline that produces the data table.
+- Data table: table to draw in the viewport.
+- Plot type: auto-detect from the table or force line, histogram, bar chart, scatter, or heatmap/2D table.
+- 2D heatmap columns: optional X, Y, value, and boundary-mask column names. Leave them empty to auto-detect common table columns such as `Distance`, `Theta`, `Free energy`, and `In HB basin`.
+- Alignment, XY offset, width, height, and opacity.
+- Optional title, axis-label, and color-scale-label overrides.
+- Optional fixed y-axis range.
+- Optional fixed color-scale range for heatmaps.
+- Optional minor x/y ticks.
+- Optional current-frame marker.
+
+License note:
+
+- The upstream `ovito-org/DataTablePlotOverlay` repository is MIT-licensed.
+- This m-ovito implementation does not vendor the upstream Python package or add matplotlib as a dependency.
+
 ## Film analysis scripts
 
 The `tools` folder contains standalone Python modifier scripts for film-related post-processing:
@@ -158,4 +209,3 @@ The `tools` folder contains standalone Python modifier scripts for film-related 
 - `python_modifier_wc_filled_region_volume_area_vs_time.py`
 
 These scripts are source-distributed helpers and are not required for the core OVITO application to start.
-
