@@ -51,7 +51,7 @@ std::vector<int> parseParticleTypeIds(const QString& typeListText,
     }
 
     std::vector<int> typeIds;
-    const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
+    const QStringList tokens = trimmedText.split(QRegularExpression(QStringLiteral("[,;\\s]+")), Qt::SkipEmptyParts);
     for(QString token : tokens) {
         token = token.trimmed();
         if(token.isEmpty())
@@ -81,7 +81,7 @@ std::vector<int> parseParticleTypeIds(const QString& typeListText,
 
 QString canonicalizeTypeList(QString typeListText)
 {
-    QStringList tokens = typeListText.split(QRegularExpression(QStringLiteral("[,;]")), Qt::SkipEmptyParts);
+    QStringList tokens = typeListText.split(QRegularExpression(QStringLiteral("[,;\\s]+")), Qt::SkipEmptyParts);
     for(QString& token : tokens)
         token = token.trimmed();
     tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const QString& token) { return token.isEmpty(); }), tokens.end());

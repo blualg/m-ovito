@@ -53,9 +53,12 @@ SET(SourceFiles
     modifier/analysis/hbond/HydrogenBondAnalysisModifier.cpp
     modifier/analysis/hbond/HydrogenBondKineticsModifier.cpp
     modifier/analysis/orientation/MolecularOrientationModifier.cpp
+    modifier/analysis/orientation/GeometryDescriptorModifier.cpp
+    modifier/analysis/orientation/PairMolecularAngleModifier.cpp
     modifier/analysis/orientation/MoleculeOrientationalRelaxationModifier.cpp
     modifier/analysis/orientation/OrientationTrajectoryAnalysisHelper.cpp
     modifier/analysis/orientation/SurvivalProbabilityModifier.cpp
+    modifier/analysis/order/StructuralOrderModifier.cpp
     modifier/analysis/binning/SpatialBinningModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
     modifier/analysis/displacements/CalculateDisplacementsModifier.cpp

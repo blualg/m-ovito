@@ -97,10 +97,13 @@ inline QWidget* createSelectorPopupRow(QWidget* parent,
         QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
         dialogLayout->addWidget(buttonBox);
 
-        if(dialog.exec() == QDialog::Accepted)
+        if(dialog.exec() == QDialog::Accepted) {
             expressionUI->lineEdit()->setText(expressionEdit->toPlainText().trimmed());
-        else
+            expressionUI->updatePropertyValue();
+        }
+        else {
             updateButtonState();
+        }
     });
 
     return rowWidget;

@@ -45,8 +45,11 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/hbond/HydrogenBondAnalysisModifierEditor.cpp
         modifier/analysis/hbond/HydrogenBondKineticsModifierEditor.cpp
         modifier/analysis/orientation/MolecularOrientationModifierEditor.cpp
+        modifier/analysis/orientation/GeometryDescriptorModifierEditor.cpp
+        modifier/analysis/orientation/PairMolecularAngleModifierEditor.cpp
         modifier/analysis/orientation/MoleculeOrientationalRelaxationModifierEditor.cpp
         modifier/analysis/orientation/SurvivalProbabilityModifierEditor.cpp
+        modifier/analysis/order/StructuralOrderModifierEditor.cpp
         modifier/analysis/binning/SpatialBinningModifierEditor.cpp
         modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
         modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
