@@ -25,6 +25,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/CustomParameterUI.h>
@@ -36,6 +37,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "AutocorrelationFunctionModifierEditor.h"
+#include <QCheckBox>
 #include <QPointer>
 
 namespace Ovito {
@@ -165,10 +167,9 @@ void AutocorrelationFunctionModifierEditor::createUI(const RolloutInsertionParam
         pageLayout->addWidget(containerUI->comboBox());
         pageLayout->addWidget(new QLabel(tr("Property:"), page));
         pageLayout->addWidget(propertyUI->comboBox());
-
-        auto* noteLabel = new QLabel(tr("Element-wise autocorrelation currently supports trajectories with a stable element count or stable element IDs."), page);
-        noteLabel->setWordWrap(true);
-        pageLayout->addWidget(noteLabel);
+        _onlySelectedCheckBox = createParamUI<BooleanParameterUI>(
+            PROPERTY_FIELD(AutocorrelationFunctionModifier::useOnlySelectedParticles))->checkBox();
+        pageLayout->addWidget(_onlySelectedCheckBox);
         _targetStack->addWidget(page);
     }
 
@@ -191,6 +192,7 @@ void AutocorrelationFunctionModifierEditor::createUI(const RolloutInsertionParam
     optionsLayout->setSpacing(4);
     optionsLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AutocorrelationFunctionModifier::subtractMean))->checkBox());
     optionsLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AutocorrelationFunctionModifier::normalizeByZeroLag))->checkBox());
+    optionsLayout->addWidget(createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AutocorrelationFunctionModifier::useFullVectorDotProduct))->checkBox());
     layout->addWidget(optionsBox);
 
     BooleanGroupBoxParameterUI* intervalGroupUI = createParamUI<BooleanGroupBoxParameterUI>(
@@ -228,11 +230,6 @@ void AutocorrelationFunctionModifierEditor::createUI(const RolloutInsertionParam
     samplingFrequencyUI->label()->setToolTip(samplingToolTip);
     maxLagUI->label()->setToolTip(tr("Largest lag to evaluate, measured in sampled-frame steps. A value of 0 uses the full sampled range."));
 
-    auto* samplingNote = new QLabel(
-        tr("The autocorrelation is averaged over all valid time origins for each lag. These controls only thin the sampled frames and limit the computed lag range."),
-        samplingBox);
-    samplingNote->setWordWrap(true);
-    samplingLayout->addWidget(samplingNote, 2, 0, 1, 2);
     layout->addWidget(samplingBox);
 
     auto* runBox = new QGroupBox(tr("Run"), rollout);
@@ -242,13 +239,11 @@ void AutocorrelationFunctionModifierEditor::createUI(const RolloutInsertionParam
     _runButton = new QPushButton(tr("Run autocorrelation analysis"), runBox);
     connect(_runButton, &QPushButton::clicked, this, &AutocorrelationFunctionModifierEditor::runAnalysis);
     runLayout->addWidget(_runButton);
-    auto* runNoteLabel = new QLabel(tr("The modifier traverses the selected trajectory interval only when you click Run."), runBox);
-    runNoteLabel->setWordWrap(true);
-    runLayout->addWidget(runNoteLabel);
     layout->addWidget(runBox);
 
-    _summaryLabel = new QLabel(tr("Autocorrelation results are idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable."), rollout);
+    _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
+    _summaryLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     layout->addWidget(_summaryLabel);
 
     _plot = new DataTablePlotWidget();
@@ -256,11 +251,8 @@ void AutocorrelationFunctionModifierEditor::createUI(const RolloutInsertionParam
     _plot->setMaximumHeight(220);
     layout->addWidget(_plot);
 
-    auto* noteLabel = new QLabel(tr("This first open-source implementation computes one trajectory autocorrelation per modifier instance and averages over all elements or table rows for the overall curve."), rollout);
-    noteLabel->setWordWrap(true);
-    layout->addWidget(noteLabel);
-
-    layout->addWidget(new OpenDataInspectorButton(this, tr("Show in data inspector")));
+    layout->addWidget(new OpenDataInspectorButton(
+        this, tr("Show in data inspector"), AutocorrelationFunctionModifier::correlationTableId(), 1));
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     connect(this, &PropertiesEditor::contentsChanged, this, &AutocorrelationFunctionModifierEditor::updateTargetWidgets);
@@ -285,9 +277,13 @@ void AutocorrelationFunctionModifierEditor::updateTargetWidgets()
     if(AutocorrelationFunctionModifier* mod = modifier()) {
         const int pageIndex = std::clamp((int)mod->targetType(), 0, _targetStack->count() - 1);
         _targetStack->setCurrentIndex(pageIndex);
+        if(_onlySelectedCheckBox)
+            _onlySelectedCheckBox->setEnabled(mod->targetType() == AutocorrelationFunctionModifier::Property);
     }
     else {
         _targetStack->setCurrentIndex(0);
+        if(_onlySelectedCheckBox)
+            _onlySelectedCheckBox->setEnabled(false);
     }
 }
 
@@ -340,21 +336,25 @@ void AutocorrelationFunctionModifierEditor::runAnalysis()
         if(!mod || !node)
             return;
 
+        if(_runButton)
+            _runButton->setEnabled(false);
+
         mod->setRunRequestId(mod->runRequestId() + 1);
         const int startedRunRequestId = mod->runRequestId();
         const auto* acfNode = dynamic_object_cast<const AutocorrelationFunctionModificationNode>(node);
         const int startedGenerationId = acfNode ? acfNode->cacheGenerationId() : 0;
-        if(_summaryLabel)
+        if(_summaryLabel) {
             _summaryLabel->setText(tr("Running autocorrelation analysis over the sampled trajectory..."));
+            refreshSummaryGeometry();
+        }
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = node->evaluate(request).asFuture();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
         future.finally(ObjectExecutor(this), [self = QPointer<AutocorrelationFunctionModifierEditor>(this),
                                               editObject = OOWeakRef<RefTarget>(editObject()),
                                               startedRunRequestId,
-                                              startedGenerationId](auto& task) noexcept {
-            if(!task.isCanceled() && !task.exceptionStore())
-                return;
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
             if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
@@ -363,17 +363,20 @@ void AutocorrelationFunctionModifierEditor::runAnalysis()
             if(!mod || !acfNode || mod->runRequestId() != startedRunRequestId || acfNode->cacheGenerationId() != startedGenerationId)
                 return;
 
-            acfNode->setCompletedRunRequestId(startedRunRequestId);
-            self->updatePlot();
-            self->updateSummary();
-        });
-        scheduleOperationAfter(std::move(future), [this, startedRunRequestId, startedGenerationId](const PipelineFlowState&) {
-            AutocorrelationFunctionModifier* mod = modifier();
-            const auto* acfNode = dynamic_object_cast<const AutocorrelationFunctionModificationNode>(modificationNode());
-            if(!mod || !acfNode || mod->runRequestId() != startedRunRequestId || acfNode->cacheGenerationId() != startedGenerationId)
-                return;
-            updatePlot();
-            updateSummary();
+            if(task.isCanceled() || task.exceptionStore())
+                acfNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                acfNode->pipelineCache().invalidateInteractiveState();
+                acfNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlot();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }
@@ -404,7 +407,8 @@ void AutocorrelationFunctionModifierEditor::updateSummary()
         if(!_summaryLabel)
             return;
         if(autocorrelationAnalysisIsIdle(modifier(), modificationNode())) {
-            _summaryLabel->setText(tr("Autocorrelation results are idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable."));
+            _summaryLabel->clear();
+            refreshSummaryGeometry();
             return;
         }
 
@@ -420,30 +424,64 @@ void AutocorrelationFunctionModifierEditor::updateSummary()
         const QVariant maxLag = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.maximum_lag"));
         const QVariant subtractMean = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.subtract_mean"));
         const QVariant normalized = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.normalized"));
+        const QVariant fullVectorDotProduct = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.full_vector_dot_product"));
+        const QVariant onlySelectedParticles = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.only_selected_particles"));
         const QVariant zeroLag = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.zero_lag"));
         const QVariant finalValue = state.getAttributeValue(modificationNode(), QStringLiteral("Autocorrelation.final_value"));
+        const QString fitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("Autocorrelation"), tr("frames"));
 
         if(!target.isValid()) {
-            _summaryLabel->setText(tr("Autocorrelation results are idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable."));
+            _summaryLabel->clear();
+            refreshSummaryGeometry();
             return;
         }
 
-        const QString text = tr("Target: %1\nSampled frames: %2\nAveraged items per frame: %3\nSignal components: %4\nComputed maximum lag: %5 source frames\nSubtract mean: %6\nNormalize by zero lag: %7\nZero-lag value: %8\nFinal lag value: %9")
-                                 .arg(target.toString(),
-                                      QString::number(frameCount.toInt()),
-                                      QString::number(itemCount.toInt()),
-                                      QString::number(componentCount.toInt()),
-                                      QString::number(maxLag.toInt()),
-                                      subtractMean.toDouble() != 0.0 ? tr("Yes") : tr("No"),
-                                      normalized.toDouble() != 0.0 ? tr("Yes") : tr("No"),
-                                      zeroLag.toString(),
-                                      finalValue.toString());
+        QStringList lines;
+        lines << tr("Target: %1; frames: %2; items/frame: %3; components: %4; max lag: %5")
+                                 .arg(target.toString())
+                                 .arg(frameCount.toInt())
+                                 .arg(itemCount.toInt())
+                                 .arg(componentCount.toInt())
+                                 .arg(maxLag.toInt());
+        lines << tr("Subtract mean: %1; normalize: %2; dot product: %3; selected: %4")
+                                 .arg(subtractMean.toDouble() != 0.0 ? tr("Yes") : tr("No"))
+                                 .arg(normalized.toDouble() != 0.0 ? tr("Yes") : tr("No"))
+                                 .arg(fullVectorDotProduct.toDouble() != 0.0 ? tr("Yes") : tr("No"))
+                                 .arg(onlySelectedParticles.toDouble() != 0.0 ? tr("Yes") : tr("No"));
+        lines << tr("C(0): %1; final: %2")
+                                 .arg(zeroLag.toString())
+                                 .arg(finalValue.toString());
+        if(!fitSummary.isEmpty())
+            lines << fitSummary;
+
+        const QString text = lines.join(QStringLiteral("\n"));
 
         if(!warningPrefix.isEmpty())
-            _summaryLabel->setText(warningPrefix + QStringLiteral("\n\n") + text);
+            _summaryLabel->setText(warningPrefix + QStringLiteral("\n") + text);
         else
             _summaryLabel->setText(text);
+        refreshSummaryGeometry();
     });
+}
+
+/******************************************************************************
+* Reflows the wrapped summary label after changing its contents.
+******************************************************************************/
+void AutocorrelationFunctionModifierEditor::refreshSummaryGeometry()
+{
+    if(!_summaryLabel)
+        return;
+
+    _summaryLabel->updateGeometry();
+    _summaryLabel->adjustSize();
+    for(QWidget* widget = _summaryLabel->parentWidget(); widget; widget = widget->parentWidget()) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 }   // End of namespace

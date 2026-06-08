@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/hbond/HydrogenBondKineticsModifier.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -336,6 +337,8 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
         const QVariant pmfBoundary = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_boundary_free_energy"));
         const QVariant pmfVicinity = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_vicinity_cutoff"));
         const QVariant pmfBasinBinCount = state.getAttributeValue(modificationNode(), QStringLiteral("HBKinetics.pmf_basin_bin_count"));
+        const QString fitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("HBKinetics"), tr("source frames"));
 
         QStringList lines;
         if(!donors.isEmpty() || !hydrogens.isEmpty() || !acceptors.isEmpty())
@@ -379,6 +382,8 @@ void HydrogenBondKineticsModifierEditor::updateSummary()
             lines << tr("Final n(t): %1").arg(finalN.toDouble(), 0, 'f', 6);
         if(finalCPlusN.isValid())
             lines << tr("Final C(t)+n(t): %1").arg(finalCPlusN.toDouble(), 0, 'f', 6);
+        if(!fitSummary.isEmpty())
+            lines << fitSummary;
 
         _summaryLabel->setText(lines.join(QStringLiteral("\n\n")));
         refreshSummaryGeometry();

@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifier.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -304,6 +305,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
         const QVariant averageShellSize = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.average_shell_size"));
         const QVariant maximumLag = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.maximum_lag"));
         const QVariant finalValue = state.getAttributeValue(modificationNode(), QStringLiteral("CACF.final_value"));
+        const QString fitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("CACF"), tr("source frames"));
 
         QStringList lines;
         if(!centralTypes.isEmpty() || !shellTypes.isEmpty())
@@ -324,6 +327,8 @@ void CoordinationEnvironmentAutocorrelationModifierEditor::updateSummary()
             lines << tr("Maximum lag: %1").arg(maximumLag.toInt());
         if(finalValue.isValid())
             lines << tr("Final CACF: %1").arg(finalValue.toDouble(), 0, 'f', 6);
+        if(!fitSummary.isEmpty())
+            lines << fitSummary;
 
         _summaryLabel->setText(lines.join(QStringLiteral("\n\n")));
         refreshSummaryGeometry();

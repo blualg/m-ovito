@@ -26,6 +26,7 @@
 #include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
@@ -775,6 +776,12 @@ Future<PipelineFlowState> CoordinationEnvironmentAutocorrelationModifier::comput
                             CoordinationEnvironmentAutocorrelationModifier::tr("Lag (source frames)"),
                             QStringLiteral("CACF"),
                             createdByNode);
+
+            setStretchedExponentialFitAttributes(
+                computationResult.results,
+                QStringLiteral("CACF"),
+                fitStretchedExponentialDecay(curves.lagFrames, curves.values, QStringLiteral("CACF")),
+                createdByNode);
 
             const double averageCentralAtoms = static_cast<double>(accumulator.totalCentralAtoms) / static_cast<double>(accumulator.snapshots.size());
             const double averageShellSize = accumulator.totalCentralAtoms > 0

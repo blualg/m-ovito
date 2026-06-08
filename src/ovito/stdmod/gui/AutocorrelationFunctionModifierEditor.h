@@ -24,6 +24,7 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <QCheckBox>
 
 namespace Ovito {
 
@@ -47,6 +48,7 @@ private Q_SLOTS:
     void runAnalysis();
     void updatePlot();
     void updateSummary();
+    void refreshSummaryGeometry();
 
 private:
 
@@ -59,6 +61,7 @@ private:
     QPointer<QPushButton> _runButton;
     QPointer<DataTablePlotWidget> _plot;
     QPointer<QLabel> _summaryLabel;
+    QPointer<QCheckBox> _onlySelectedCheckBox;
 };
 
 }   // End of namespace

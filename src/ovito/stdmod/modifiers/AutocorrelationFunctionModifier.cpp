@@ -29,13 +29,16 @@
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include "AutocorrelationFunctionModifier.h"
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <unordered_map>
 
@@ -54,6 +57,7 @@ struct SignalSamples {
 struct SignalAccumulator {
     SignalSamples signal;
     std::vector<IdentifierIntType> referenceIds;
+    std::vector<size_t> referenceElementIndices;
     std::vector<double> referenceTableXValues;
     std::array<bool, 3> referenceCellPbcFlags{false, false, false};
     size_t referenceTableElementCount = 0;
@@ -62,6 +66,7 @@ struct SignalAccumulator {
     QString elementDescriptionName;
     bool referenceTableHasX = false;
     bool referenceCellIs2D = false;
+    size_t referencePropertyElementCount = 0;
 };
 
 struct CorrelationCurves {
@@ -338,8 +343,10 @@ DataTable* createLineTable(DataCollection* collection,
     return table;
 }
 
-QString overallCurveLabel(const SignalSamples& signal)
+QString overallCurveLabel(const SignalSamples& signal, bool useFullVectorDotProduct)
 {
+    if(useFullVectorDotProduct && signal.componentCount > 1)
+        return AutocorrelationFunctionModifier::tr("Full dot product");
     return signal.componentCount <= 1 ? signal.targetLabel : AutocorrelationFunctionModifier::tr("Overall");
 }
 
@@ -347,8 +354,10 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
                                            const std::vector<int>& sampledFrameNumbers,
                                            bool subtractMean,
                                            bool normalizeByZeroLag,
+                                           bool useFullVectorDotProduct,
                                            int maxLag,
-                                           bool& hadZeroLagNormalizationIssue)
+                                           bool& hadZeroLagNormalizationIssue,
+                                           TaskProgress* progress = nullptr)
 {
     OVITO_ASSERT(signal.frames.size() == sampledFrameNumbers.size());
     CorrelationCurves curves;
@@ -378,12 +387,32 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
             value /= normalization;
     }
 
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
+    auto computeLag = [&](size_t lag) {
             this_task::throwIfCanceled();
             const size_t originCount = frameCount - lag;
             double overallAccumulator = 0.0;
+            double vectorDotProductAccumulator = 0.0;
             double lagFrameAccumulator = 0.0;
+
+            if(useFullVectorDotProduct && componentCount > 1) {
+                for(size_t origin = 0; origin < originCount; ++origin) {
+                    const std::vector<double>& frame0 = signal.frames[origin];
+                    const std::vector<double>& frame1 = signal.frames[origin + lag];
+                    double itemDotProductSum = 0.0;
+                    for(size_t item = 0; item < signal.itemCount; ++item) {
+                        for(size_t c = 0; c < componentCount; ++c) {
+                            double a = frame0[item * componentCount + c];
+                            double b = frame1[item * componentCount + c];
+                            if(subtractMean) {
+                                a -= means[c];
+                                b -= means[c];
+                            }
+                            itemDotProductSum += a * b;
+                        }
+                    }
+                    vectorDotProductAccumulator += itemDotProductSum / static_cast<double>(signal.itemCount);
+                }
+            }
 
             for(size_t c = 0; c < componentCount; ++c) {
                 double componentAccumulator = 0.0;
@@ -409,10 +438,22 @@ CorrelationCurves computeCorrelationCurves(const SignalSamples& signal,
                 overallAccumulator += curves.perComponent[c][lag];
             }
 
-            curves.overall[lag] = overallAccumulator / static_cast<double>(componentCount);
+            curves.overall[lag] = (useFullVectorDotProduct && componentCount > 1)
+                ? vectorDotProductAccumulator / static_cast<double>(originCount)
+                : overallAccumulator / static_cast<double>(componentCount);
             curves.lagFrames[lag] = lagFrameAccumulator / static_cast<double>(originCount);
-        }
-    });
+    };
+
+    if(progress) {
+        progress->setText(AutocorrelationFunctionModifier::tr("Computing autocorrelation curve"));
+        parallelFor(maxLagEffective + 1, 8, *progress, computeLag);
+    }
+    else {
+        parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
+            for(size_t lag = fromLag; lag < toLag; ++lag)
+                computeLag(lag);
+        });
+    }
 
     hadZeroLagNormalizationIssue = false;
     if(normalizeByZeroLag) {
@@ -571,11 +612,45 @@ void appendPropertySample(const AutocorrelationFunctionModifier* modifier,
     if(accumulator.signal.frames.empty()) {
         accumulator.signal.targetLabel = modifier->property().nameWithComponent();
         accumulator.signal.componentNames = propertyComponentNames(sampleProperty);
-        accumulator.signal.itemCount = sampleProperty->size();
         accumulator.signal.componentCount = static_cast<int>(sampleProperty->componentCount());
         accumulator.elementDescriptionName = sampleContainer->getOOMetaClass().elementDescriptionName();
+        accumulator.referencePropertyElementCount = sampleProperty->size();
+
+        if(modifier->useOnlySelectedParticles()) {
+            const Property* selectionProperty = sampleContainer->getProperty(Property::GenericSelectionProperty);
+            if(!selectionProperty) {
+                throw Exception(AutocorrelationFunctionModifier::tr(
+                    "The option 'Use only selected particles' requires a selection property in the first sampled frame."));
+            }
+            if(selectionProperty->size() != sampleProperty->size()) {
+                throw Exception(AutocorrelationFunctionModifier::tr(
+                    "The selection property size does not match property '%1' in the first sampled frame.")
+                    .arg(sampleProperty->name()));
+            }
+            BufferReadAccess<SelectionIntType> selection(selectionProperty);
+            for(size_t index = 0; index < selection.size(); ++index) {
+                if(selection[index])
+                    accumulator.referenceElementIndices.push_back(index);
+            }
+            if(accumulator.referenceElementIndices.empty()) {
+                throw Exception(AutocorrelationFunctionModifier::tr(
+                    "The option 'Use only selected particles' is enabled, but no particles are selected in the first sampled frame."));
+            }
+        }
+
+        accumulator.signal.itemCount = accumulator.referenceElementIndices.empty()
+            ? sampleProperty->size()
+            : accumulator.referenceElementIndices.size();
+
         if(BufferReadAccess<IdentifierIntType> referenceIds(identifierProperty(sampleContainer)); referenceIds) {
-            accumulator.referenceIds.assign(referenceIds.cbegin(), referenceIds.cend());
+            if(accumulator.referenceElementIndices.empty()) {
+                accumulator.referenceIds.assign(referenceIds.cbegin(), referenceIds.cend());
+            }
+            else {
+                accumulator.referenceIds.reserve(accumulator.referenceElementIndices.size());
+                for(size_t index : accumulator.referenceElementIndices)
+                    accumulator.referenceIds.push_back(referenceIds[index]);
+            }
         }
     }
     else {
@@ -614,14 +689,16 @@ void appendPropertySample(const AutocorrelationFunctionModifier* modifier,
         }
     }
     else {
-        if(sampleProperty->size() != accumulator.signal.itemCount) {
+        if(sampleProperty->size() != accumulator.referencePropertyElementCount) {
             throw Exception(AutocorrelationFunctionModifier::tr(
                 "Property '%1' changes the number of %2 over time. "
                 "The current autocorrelation implementation requires a stable element count or a stable identifier property.")
                 .arg(sampleProperty->name())
                 .arg(sampleContainer->getOOMetaClass().elementDescriptionName()));
         }
-        accumulator.signal.frames.push_back(extractPropertyValues(sampleProperty));
+        accumulator.signal.frames.push_back(extractPropertyValues(
+            sampleProperty,
+            accumulator.referenceElementIndices.empty() ? nullptr : &accumulator.referenceElementIndices));
     }
 }
 
@@ -660,6 +737,8 @@ DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, propertyContainer);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, property);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, subtractMean);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, normalizeByZeroLag);
+DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, useFullVectorDotProduct);
+DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, useOnlySelectedParticles);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, useCustomFrameInterval);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, intervalStart);
 DEFINE_PROPERTY_FIELD(AutocorrelationFunctionModifier, intervalEnd);
@@ -673,6 +752,8 @@ SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, propertyContainer, "Pr
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, property, "Property");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, subtractMean, "Subtract mean value");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, normalizeByZeroLag, "Normalize by zero-lag value");
+SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, useFullVectorDotProduct, "Use full vector dot product");
+SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, useOnlySelectedParticles, "Use only selected particles");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, useCustomFrameInterval, "Restrict analysis interval");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, intervalStart, "Start frame");
 SET_PROPERTY_FIELD_LABEL(AutocorrelationFunctionModifier, intervalEnd, "End frame");
@@ -883,15 +964,13 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::evaluateModifier(cons
             return applyCachedResults(request, std::move(state));
 
         if(runRequestId() <= modNode->completedRunRequestId()) {
-            state.setStatus(PipelineStatus(tr(
-                "Autocorrelation analysis is idle. Open the Run section and click 'Run autocorrelation analysis' to compute the selected observable.")));
+            state.setStatus(PipelineStatus());
             return std::move(state);
         }
     }
 
     if(request.interactiveMode()) {
-        state.setStatus(PipelineStatus(tr(
-            "Autocorrelation analysis is queued. Click 'Run autocorrelation analysis' to launch the full trajectory evaluation.")));
+        state.setStatus(PipelineStatus());
         return std::move(state);
     }
 
@@ -912,6 +991,9 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
 
     SignalAccumulator accumulator;
     accumulator.signal.frames.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting autocorrelation samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -926,7 +1008,7 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, SignalAccumulator& accumulator) {
+            [this, progress, totalFrameCount = frames.size()](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, SignalAccumulator& accumulator) {
                 for(SharedFuture<PipelineFlowState>& future : batchFutures) {
                     this_task::throwIfCanceled();
                     const PipelineFlowState& sampleState = future.result();
@@ -944,10 +1026,14 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                         appendCellSample(accumulator, sampleState);
                         break;
                     }
+                    progress->setText(AutocorrelationFunctionModifier::tr("Collecting autocorrelation samples (%1/%2 frames)")
+                                          .arg(accumulator.signal.frames.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.signal.frames.size()));
                 }
             },
             std::move(accumulator))
-        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId](SignalAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId, progress = std::move(progress)](SignalAccumulator accumulator) mutable -> Future<PipelineFlowState> {
             OORef<AutocorrelationFunctionModifier> self(this);
             const int completedRunRequestId = runRequestId();
 
@@ -956,6 +1042,7 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                                 state = std::move(state),
                                 frames,
                                 accumulator = std::move(accumulator),
+                                progress = std::move(progress),
                                 completedRunRequestId,
                                 cacheGenerationId]() mutable {
                 CorrelationComputationResult computationResult{std::move(state)};
@@ -970,17 +1057,19 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                     frames,
                     self->subtractMean(),
                     self->normalizeByZeroLag(),
+                    self->useFullVectorDotProduct(),
                     self->maxLag(),
-                    hadZeroLagNormalizationIssue);
+                    hadZeroLagNormalizationIssue,
+                    progress.get());
 
                 computationResult.results = DataOORef<DataCollection>::create();
                 const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();
 
                 QStringList columnNames;
                 std::vector<std::vector<double>> columns;
-                columnNames.push_back(overallCurveLabel(accumulator.signal));
+                columnNames.push_back(overallCurveLabel(accumulator.signal, self->useFullVectorDotProduct()));
                 columns.push_back(curves.overall);
-                if(accumulator.signal.componentCount > 1) {
+                if(accumulator.signal.componentCount > 1 && !self->useFullVectorDotProduct()) {
                     for(int c = 0; c < accumulator.signal.componentCount; ++c) {
                         this_task::throwIfCanceled();
                         columnNames.push_back(accumulator.signal.componentNames.value(c, AutocorrelationFunctionModifier::tr("Component %1").arg(c + 1)));
@@ -1001,6 +1090,12 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                                                             : AutocorrelationFunctionModifier::tr("Autocorrelation")),
                                 createdByNode);
 
+                setStretchedExponentialFitAttributes(
+                    computationResult.results,
+                    QStringLiteral("Autocorrelation"),
+                    fitStretchedExponentialDecay(curves.lagFrames, curves.overall, columnNames.front()),
+                    createdByNode);
+
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.target"), accumulator.signal.targetLabel, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.sampled_item_count"), static_cast<double>(accumulator.signal.itemCount), createdByNode);
@@ -1008,6 +1103,11 @@ Future<PipelineFlowState> AutocorrelationFunctionModifier::computeCorrelationDat
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.maximum_lag"), static_cast<double>(curves.lagFrames.empty() ? 0.0 : curves.lagFrames.back()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.subtract_mean"), self->subtractMean() ? 1.0 : 0.0, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("Autocorrelation.normalized"), self->normalizeByZeroLag() ? 1.0 : 0.0, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("Autocorrelation.full_vector_dot_product"), self->useFullVectorDotProduct() ? 1.0 : 0.0, createdByNode);
+                computationResult.results->setAttribute(
+                    QStringLiteral("Autocorrelation.only_selected_particles"),
+                    (self->targetType() == AutocorrelationFunctionModifier::Property && self->useOnlySelectedParticles()) ? 1.0 : 0.0,
+                    createdByNode);
                 if(!curves.overall.empty()) {
                     computationResult.results->setAttribute(QStringLiteral("Autocorrelation.zero_lag"), curves.overall.front(), createdByNode);
                     computationResult.results->setAttribute(QStringLiteral("Autocorrelation.final_value"), curves.overall.back(), createdByNode);

@@ -84,6 +84,8 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, property, setProperty);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, subtractMean, setSubtractMean, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, normalizeByZeroLag, setNormalizeByZeroLag, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, useFullVectorDotProduct, setUseFullVectorDotProduct, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, useOnlySelectedParticles, setUseOnlySelectedParticles, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);

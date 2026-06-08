@@ -27,6 +27,7 @@
 #include <ovito/particles/util/ParticleSelectionHelper.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>
@@ -1230,6 +1231,12 @@ Future<PipelineFlowState> HydrogenBondKineticsModifier::computeHydrogenBondKinet
                                       HydrogenBondKineticsModifier::tr("Lag (source frames)"),
                                       HydrogenBondKineticsModifier::tr("Conditional probability"),
                                       createdByNode);
+
+            setStretchedExponentialFitAttributes(
+                computationResult.results,
+                QStringLiteral("HBKinetics"),
+                fitStretchedExponentialDecay(curves.lagFrames, curves.c, QStringLiteral("C(t)")),
+                createdByNode);
 
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.donor_types"), self->donorTypes(), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HBKinetics.donor_expression"), self->donorExpression(), createdByNode);

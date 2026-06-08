@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
@@ -3075,6 +3076,11 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
 
                 createLineTable(results, VACFTableId, tr("Velocity autocorrelation function"), vacfTimesRaw, vacfColumns, vacfComponentNames,
                                 tr("Time (%1)").arg(timeLabel), tr("VACF (%1)").arg(vacfUnitLabel(lengthLabel, timeLabel)), createdByNode);
+                setStretchedExponentialFitAttributes(
+                    results,
+                    QStringLiteral("Transport.VACF"),
+                    fitStretchedExponentialDecay(vacfTimesRaw, vacfSelf, QStringLiteral("VACF self")),
+                    createdByNode);
 
                 QStringList diffusionComponentNames{aggregateCurveLabel};
                 std::vector<std::vector<double>> diffusionColumns{diffusionFromVACFRaw};
@@ -3112,6 +3118,11 @@ Future<PipelineFlowState> TransportModifier::computeTransportData(const Modifier
                                     tr("Time (%1)").arg(timeLabel),
                                     tr("Current correlation (%1)").arg(currentCorrelationUnitLabel(chargeLabel, lengthLabel, timeLabel)),
                                     createdByNode);
+                    setStretchedExponentialFitAttributes(
+                        results,
+                        QStringLiteral("Transport.CurrentCorrelation"),
+                        fitStretchedExponentialDecay(conductivityGKLagTimesRaw, currentCorrelationRaw, QStringLiteral("Current autocorrelation")),
+                        createdByNode);
                 }
 
                 QStringList conductivityNames{

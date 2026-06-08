@@ -35,6 +35,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include "TransportModifierEditor.h"
 #include <qwt/qwt_plot_marker.h>
 #include <qwt/qwt_scale_engine.h>
@@ -930,6 +931,10 @@ void TransportModifierEditor::updateSummary()
         const int pyLatMsdFitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_msd_fit_start_lag")).toInt();
         const int pyLatGkFitStartLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_start_lag")).toInt();
         const int pyLatGkFitEndLag = state.getAttributeValue(modificationNode(), QStringLiteral("Transport.pylat_gk_fit_end_lag")).toInt();
+        const QString vacfFitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("Transport.VACF"), timeLabel);
+        const QString currentFitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("Transport.CurrentCorrelation"), timeLabel);
 
         if(!dMsdRaw.isValid() && !sigmaCorrRaw.isValid()) {
             _summaryLabel->clear();
@@ -969,6 +974,14 @@ void TransportModifierEditor::updateSummary()
         summaryLines.push_back(tr("Sigma Green-Kubo (plateau, V): %1")
                                    .arg(formatDualValue(sigmaGkRaw, conductivityRawUnit, sigmaGkSI, conductivitySIUnit)));
         summaryLines.push_back(tr("Haven ratio: %1").arg(formatValue(haven)));
+        if(!vacfFitSummary.isEmpty() || !currentFitSummary.isEmpty()) {
+            summaryLines.push_back(QString{});
+            summaryLines.push_back(tr("Correlation curve fits:"));
+            if(!vacfFitSummary.isEmpty())
+                summaryLines.push_back(vacfFitSummary);
+            if(!currentFitSummary.isEmpty())
+                summaryLines.push_back(currentFitSummary);
+        }
 
         QStringList contributionLines;
         for(int contributionIndex = 0; contributionIndex < einsteinContributionCount; ++contributionIndex) {
