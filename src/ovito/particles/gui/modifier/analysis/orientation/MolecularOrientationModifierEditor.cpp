@@ -57,10 +57,10 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     gridLayout->setColumnStretch(1, 1);
 
     auto* directionModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::directionMode));
-    directionModeUI->comboBox()->addItem(tr("Dipole vector"), QVariant::fromValue((int)MolecularOrientationModifier::DipoleDirection));
-    directionModeUI->comboBox()->addItem(tr("Atom-type centroid vector"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
-    directionModeUI->comboBox()->addItem(tr("Matching pair vector"), QVariant::fromValue((int)MolecularOrientationModifier::MatchingPairVector));
-    gridLayout->addWidget(new QLabel(tr("Descriptor")), 0, 0);
+    directionModeUI->comboBox()->addItem(tr("Molecular dipole vector"), QVariant::fromValue((int)MolecularOrientationModifier::DipoleDirection));
+    directionModeUI->comboBox()->addItem(tr("Centroid-to-centroid vector"), QVariant::fromValue((int)MolecularOrientationModifier::ManualMolecularDirection));
+    directionModeUI->comboBox()->addItem(tr("Atom-pair vectors"), QVariant::fromValue((int)MolecularOrientationModifier::MatchingPairVector));
+    gridLayout->addWidget(new QLabel(tr("Orientation vector")), 0, 0);
     gridLayout->addWidget(directionModeUI->comboBox(), 0, 1);
 
     _manualDirectionWidget = new QWidget();
@@ -70,23 +70,23 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
 
     _fromTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::fromTypeId));
     auto* fromExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::fromExpression));
-    manualLayout->addWidget(new QLabel(tr("Direction start atom type")), 0, 0);
+    manualLayout->addWidget(new QLabel(tr("Vector start atom type")), 0, 0);
     manualLayout->addWidget(createSelectorPopupRow(
         _manualDirectionWidget,
         _fromTypeUI->comboBox(),
         fromExpressionUI,
-        tr("Direction start expression override"),
-        tr("Use this expression instead of the direction start atom type. Leave it empty to use the type field again.")), 0, 1);
+        tr("Vector start expression override"),
+        tr("Use this expression instead of the vector start atom type. Leave it empty to use the type field again.")), 0, 1);
 
     _toTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::toTypeId));
     auto* toExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::toExpression));
-    manualLayout->addWidget(new QLabel(tr("Direction end atom type")), 1, 0);
+    manualLayout->addWidget(new QLabel(tr("Vector end atom type")), 1, 0);
     manualLayout->addWidget(createSelectorPopupRow(
         _manualDirectionWidget,
         _toTypeUI->comboBox(),
         toExpressionUI,
-        tr("Direction end expression override"),
-        tr("Use this expression instead of the direction end atom type. Leave it empty to use the type field again.")), 1, 1);
+        tr("Vector end expression override"),
+        tr("Use this expression instead of the vector end atom type. Leave it empty to use the type field again.")), 1, 1);
 
     gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
 
@@ -95,7 +95,7 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     referenceTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the reference site. "
                                     "A single type uses each matching atom as a reference. Multiple types use one COM per molecule unless an expression override is provided."));
     auto* referenceExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::referenceExpression));
-    gridLayout->addWidget(new QLabel(tr("Orient around atom type(s)")), 2, 0);
+    gridLayout->addWidget(new QLabel(tr("Reference atom type(s)")), 2, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         referenceTypesUI->textBox(),
@@ -108,13 +108,13 @@ void MolecularOrientationModifierEditor::createUI(const RolloutInsertionParamete
     anchorTypesUI->setToolTip(tr("Comma-separated particle type names or numeric IDs used to define the molecule anchor point. "
                                  "If multiple atoms match, their center of mass is used."));
     auto* anchorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::anchorExpression));
-    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 3, 0);
+    gridLayout->addWidget(new QLabel(tr("Molecule anchor atom type(s)")), 3, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         anchorTypesUI->textBox(),
         anchorExpressionUI,
-        tr("Molecule site expression override"),
-        tr("Use this expression instead of the molecule site atom types. Leave it empty to use the type field again.")), 3, 1);
+        tr("Molecule anchor expression override"),
+        tr("Use this expression instead of the molecule anchor atom types. Leave it empty to use the type field again.")), 3, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(MolecularOrientationModifier::cutoff));
     gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 4, 0);

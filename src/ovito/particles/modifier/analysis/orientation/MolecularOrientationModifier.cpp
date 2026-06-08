@@ -104,11 +104,11 @@ QString directionModeLabel(MolecularOrientationModifier::DirectionMode direction
 {
     switch(directionMode) {
     case MolecularOrientationModifier::DipoleDirection:
-        return MolecularOrientationModifier::tr("dipole vector");
+        return MolecularOrientationModifier::tr("molecular dipole vector");
     case MolecularOrientationModifier::ManualMolecularDirection:
-        return MolecularOrientationModifier::tr("atom-type centroid vector");
+        return MolecularOrientationModifier::tr("centroid-to-centroid vector");
     case MolecularOrientationModifier::MatchingPairVector:
-        return MolecularOrientationModifier::tr("matching pair vector");
+        return MolecularOrientationModifier::tr("atom-pair vectors");
     }
     OVITO_ASSERT(false);
     return {};
@@ -133,15 +133,15 @@ DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, anchorExpression);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, cutoff);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(MolecularOrientationModifier, onlySelectedParticles);
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Descriptor");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromTypeId, "Direction start atom type");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, directionMode, "Orientation vector");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromTypeId, "Vector start atom type");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, fromExpression, "Direction start expression");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toTypeId, "Direction end atom type");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toTypeId, "Vector end atom type");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, toExpression, "Direction end expression");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypes, "Orient around atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceTypes, "Reference atom type(s)");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, referenceExpression, "Reference expression");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorTypes, "Molecule site atom type(s)");
-SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorExpression, "Molecule site expression");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorTypes, "Molecule anchor atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, anchorExpression, "Molecule anchor expression");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, numberOfBins, "Angle histogram bins");
 SET_PROPERTY_FIELD_LABEL(MolecularOrientationModifier, onlySelectedParticles, "Use only selected particles");
@@ -307,7 +307,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         std::vector<uint8_t> anchorMask = evaluateParticleSelector(
             state, particles, particleTypeProperty, particleTypes,
             anchorTypes, anchorExpression,
-            tr("molecule site selector"),
+            tr("molecule anchor selector"),
             tr("Molecular orientation analysis"),
             &anchorMatchCount);
         size_t fromMatchCount = 0;
@@ -331,7 +331,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
         if(referenceMatchCount == 0)
             throw Exception(tr("No particles matched the reference selector."));
         if(anchorMatchCount == 0)
-            throw Exception(tr("No particles matched the molecule site selector."));
+            throw Exception(tr("No particles matched the molecule anchor selector."));
         if(selectedDirectionMode != DipoleDirection && fromMatchCount == 0)
             throw Exception(tr("No particles matched the direction start selector."));
         if(selectedDirectionMode != DipoleDirection && toMatchCount == 0)
@@ -406,6 +406,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
 
         size_t candidateMoleculeCount = 0;
         size_t generatedDescriptorCount = 0;
+        size_t shellDescriptorCount = 0;
         size_t histogramSampleCount = 0;
         size_t missingDirectionCount = 0;
         size_t missingAnchorCount = 0;
@@ -473,9 +474,8 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
 
             const bool inReferenceShell = !referenceHits.empty();
             FloatType nearestDistance = std::numeric_limits<FloatType>::quiet_NaN();
-            Vector3 radialVector = Vector3::Zero();
-            FloatType radialMagnitude = FloatType(0);
             int32_t overlapCount = 0;
+            std::vector<ReferenceHit> referenceAngleHits;
             if(inReferenceShell) {
                 auto nearestIter = std::min_element(referenceHits.begin(), referenceHits.end(),
                                                     [](const auto& left, const auto& right) {
@@ -483,11 +483,17 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                                                     });
                 OVITO_ASSERT(nearestIter != referenceHits.end());
                 nearestDistance = std::sqrt(nearestIter->second.distanceSquared);
-                radialVector = nearestIter->second.referenceToAnchor;
-                radialMagnitude = radialVector.length();
                 overlapCount = static_cast<int32_t>(referenceHits.size());
-                if(radialMagnitude <= FloatType(0))
-                    zeroRadialCount++;
+
+                referenceAngleHits.reserve(referenceHits.size());
+                for(const auto& [referenceIndex, referenceHit] : referenceHits) {
+                    Q_UNUSED(referenceIndex);
+                    if(referenceHit.referenceToAnchor.length() <= FloatType(0)) {
+                        zeroRadialCount++;
+                        continue;
+                    }
+                    referenceAngleHits.push_back(referenceHit);
+                }
             }
             else {
                 noReferenceCount++;
@@ -627,16 +633,34 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                 record.distanceToReference = nearestDistance;
                 record.overlapCount = overlapCount;
                 record.inReferenceShell = inReferenceShell;
+                if(record.inReferenceShell)
+                    shellDescriptorCount++;
 
-                if(inReferenceShell && radialMagnitude > FloatType(0)) {
-                    record.cosineToReference = descriptorVector.dot(radialVector / radialMagnitude);
-                    record.angleDegrees = qRadiansToDegrees(clampedAcos(record.cosineToReference));
-                    size_t binIndex = static_cast<size_t>((record.angleDegrees - angleRangeStart) / binSize);
-                    if(binIndex >= static_cast<size_t>(histogramBinCount))
-                        binIndex = static_cast<size_t>(histogramBinCount - 1);
-                    histogram[binIndex]++;
-                    histogramSampleCount++;
-                    legacyAngle = record.angleDegrees;
+                if(!referenceAngleHits.empty()) {
+                    FloatType angleSum = FloatType(0);
+                    FloatType cosineSum = FloatType(0);
+                    size_t angleCount = 0;
+                    for(const ReferenceHit& referenceHit : referenceAngleHits) {
+                        const FloatType radialMagnitude = referenceHit.referenceToAnchor.length();
+                        if(radialMagnitude <= FloatType(0))
+                            continue;
+
+                        const FloatType cosineToReference = descriptorVector.dot(referenceHit.referenceToAnchor / radialMagnitude);
+                        const FloatType angleDegrees = qRadiansToDegrees(clampedAcos(cosineToReference));
+                        size_t binIndex = static_cast<size_t>((angleDegrees - angleRangeStart) / binSize);
+                        if(binIndex >= static_cast<size_t>(histogramBinCount))
+                            binIndex = static_cast<size_t>(histogramBinCount - 1);
+                        histogram[binIndex]++;
+                        histogramSampleCount++;
+                        angleSum += angleDegrees;
+                        cosineSum += cosineToReference;
+                        angleCount++;
+                    }
+                    if(angleCount != 0) {
+                        record.angleDegrees = angleSum / static_cast<FloatType>(angleCount);
+                        record.cosineToReference = cosineSum / static_cast<FloatType>(angleCount);
+                        legacyAngle = record.angleDegrees;
+                    }
                 }
 
                 if(record.inReferenceShell && record.overlapCount > 1)
@@ -663,7 +687,7 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
             if(selectedDirectionMode == MatchingPairVector && missingDirectionCount == candidateMoleculeCount)
                 throw Exception(tr("No molecules contained any matching atom pairs for the chosen particle types."));
             if(missingAnchorCount == candidateMoleculeCount)
-                throw Exception(tr("No molecules contained the requested molecule site atom type(s)."));
+                throw Exception(tr("No molecules contained the requested molecule anchor atom type(s)."));
             throw Exception(tr("No molecules satisfied the descriptor-generation criteria."));
         }
 
@@ -727,13 +751,14 @@ Future<PipelineFlowState> MolecularOrientationModifier::evaluateModifier(const M
                                  .arg(generatedDescriptorCount)
                                  .arg(candidateMoleculeCount)
                                  .arg(directionModeLabel(selectedDirectionMode));
-        statusText += tr(" %1 entries are inside the reference shell.").arg(histogramSampleCount);
+        statusText += tr(" %1 descriptor entries are inside the reference shell.").arg(shellDescriptorCount);
+        statusText += tr(" %1 descriptor-reference angle samples contributed to the angular PDF.").arg(histogramSampleCount);
         if(overlapDescriptorCount > 0)
             statusText += tr(" %1 descriptor entries had overlapping reference environments.").arg(overlapDescriptorCount);
         if(noReferenceCount > 0)
             statusText += tr(" %1 molecules had no reference site within the cutoff.").arg(noReferenceCount);
         if(missingAnchorCount > 0)
-            statusText += tr(" %1 molecules were skipped because they lacked the requested molecule site atoms.").arg(missingAnchorCount);
+            statusText += tr(" %1 molecules were skipped because they lacked the requested molecule anchor atoms.").arg(missingAnchorCount);
         if(missingDirectionCount > 0)
             statusText += tr(" %1 molecules were skipped because they lacked the requested descriptor atoms.").arg(missingDirectionCount);
         if(zeroDirectionCount > 0)
