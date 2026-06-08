@@ -300,7 +300,6 @@ void PDBImporter::FrameLoader::loadFile()
         Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
         Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
-
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty->setTitle(tr("Atom names"));
         residueTypeProperty->setTitle(tr("Residue types"));
