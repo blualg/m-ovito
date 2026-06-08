@@ -482,11 +482,11 @@ std::vector<DescriptorRecord> buildDescriptorRecords(const ReferenceShellDescrip
     const std::vector<uint8_t> anchorMask = evaluateParticleSelector(
         state, particles, particleTypeProperty, particleTypes,
         request.anchorTypes, request.anchorExpression,
-        QObject::tr("molecule site selector"),
+        QObject::tr("tracked site selector"),
         analysisLabel,
         &anchorMatchCount);
     if(anchorMatchCount == 0)
-        throw Exception(QObject::tr("No particles matched the molecule site selector."));
+        throw Exception(QObject::tr("No particles matched the tracked site selector."));
 
     size_t fromMatchCount = 0;
     const std::vector<uint8_t> fromMask = request.descriptorMode != DescriptorMode::DipoleVector
@@ -766,11 +766,11 @@ std::vector<MembershipRecord> buildMembershipRecords(const ReferenceShellMembers
     const std::vector<uint8_t> anchorMask = evaluateParticleSelector(
         state, particles, particleTypeProperty, particleTypes,
         request.anchorTypes, request.anchorExpression,
-        QObject::tr("molecule site selector"),
+        QObject::tr("tracked site selector"),
         analysisLabel,
         &anchorMatchCount);
     if(anchorMatchCount == 0)
-        throw Exception(QObject::tr("No particles matched the molecule site selector."));
+        throw Exception(QObject::tr("No particles matched the tracked site selector."));
 
     PropertyPtr referenceSitePositionsProperty =
         Particles::OOClass().createStandardProperty(DataBuffer::Initialized, referenceSites.size(), Particles::PositionProperty);
@@ -1193,7 +1193,8 @@ CorrelationCurves computeVectorReorientationCurves(const VectorAccumulator& samp
                                                    int legendreOrder,
                                                    VectorSubsetMode selectionMode,
                                                    int maxLag,
-                                                   const QString& analysisLabel)
+                                                   const QString& analysisLabel,
+                                                   TaskProgress* progress)
 {
     OVITO_ASSERT(samples.frames.size() == sampledFrameNumbers.size());
     OVITO_ASSERT(samples.selectionFrames.empty() || samples.selectionFrames.size() == sampledFrameNumbers.size());
@@ -1209,8 +1210,7 @@ CorrelationCurves computeVectorReorientationCurves(const VectorAccumulator& samp
     curves.lagFrames.assign(maxLagEffective + 1, 0.0);
     curves.overall.assign(maxLagEffective + 1, std::numeric_limits<double>::quiet_NaN());
 
-    parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
-        for(size_t lag = fromLag; lag < toLag; ++lag) {
+    auto computeLag = [&](size_t lag) {
             this_task::throwIfCanceled();
             const size_t originCount = frameCount - lag;
             double lagFrameAccumulator = 0.0;
@@ -1255,8 +1255,18 @@ CorrelationCurves computeVectorReorientationCurves(const VectorAccumulator& samp
             curves.lagFrames[lag] = lagFrameAccumulator / static_cast<double>(originCount);
             if(sampleCount > 0)
                 curves.overall[lag] = overallAccumulator / static_cast<double>(sampleCount);
-        }
-    });
+    };
+
+    if(progress) {
+        progress->setText(QStringLiteral("Computing %1 curve").arg(analysisLabel));
+        parallelFor(maxLagEffective + 1, 8, *progress, computeLag);
+    }
+    else {
+        parallelForChunks(maxLagEffective + 1, 8, [&](size_t, size_t fromLag, size_t toLag) {
+            for(size_t lag = fromLag; lag < toLag; ++lag)
+                computeLag(lag);
+        });
+    }
 
     return curves;
 }

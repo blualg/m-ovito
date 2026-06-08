@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/orientation/SurvivalProbabilityModifier.h>
 #include <ovito/particles/gui/util/ParticleSelectorPopupEditor.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -122,7 +123,7 @@ void SurvivalProbabilityModifierEditor::createUI(const RolloutInsertionParameter
     auto* referenceTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(SurvivalProbabilityModifier::referenceTypes));
     referenceTypesUI->lineEdit()->setPlaceholderText(tr("e.g. Na or Na,K"));
     auto* referenceExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(SurvivalProbabilityModifier::referenceExpression));
-    gridLayout->addWidget(new QLabel(tr("Orient around atom type(s)")), 0, 0);
+    gridLayout->addWidget(new QLabel(tr("Reference atom type(s)")), 0, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         referenceTypesUI->textBox(),
@@ -133,13 +134,13 @@ void SurvivalProbabilityModifierEditor::createUI(const RolloutInsertionParameter
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(SurvivalProbabilityModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     auto* anchorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(SurvivalProbabilityModifier::anchorExpression));
-    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 1, 0);
+    gridLayout->addWidget(new QLabel(tr("Tracked site atom type(s)")), 1, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         anchorTypesUI->textBox(),
         anchorExpressionUI,
-        tr("Molecule site expression override"),
-        tr("Use this expression instead of the molecule site atom types. Leave it empty to use the type field again.")), 1, 1);
+        tr("Tracked site expression override"),
+        tr("Use this expression instead of the tracked site atom types. Leave it empty to use the type field again.")), 1, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SurvivalProbabilityModifier::cutoff));
     gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 2, 0);
@@ -281,6 +282,8 @@ void SurvivalProbabilityModifierEditor::updateSummary()
         const QVariant intermittency = state.getAttributeValue(modificationNode(), QStringLiteral("SurvivalProbability.intermittency"));
         const QVariant zeroLag = state.getAttributeValue(modificationNode(), QStringLiteral("SurvivalProbability.zero_lag"));
         const QVariant finalValue = state.getAttributeValue(modificationNode(), QStringLiteral("SurvivalProbability.final_value"));
+        const QString fitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("SurvivalProbability"), tr("source frames"));
 
         if(!target.isValid() || !frameCount.isValid()) {
             setSummaryText(warningText.isEmpty()
@@ -299,6 +302,8 @@ void SurvivalProbabilityModifierEditor::updateSummary()
             summary += tr("\nSP(0): %1").arg(zeroLag.toDouble(), 0, 'g', 6);
         if(finalValue.isValid())
             summary += tr("\nFinal value: %1").arg(finalValue.toDouble(), 0, 'g', 6);
+        if(!fitSummary.isEmpty())
+            summary += QStringLiteral("\n") + fitSummary;
         if(!warningText.isEmpty())
             summary = warningText + QStringLiteral("\n\n") + summary;
         setSummaryText(summary);

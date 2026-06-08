@@ -47,6 +47,7 @@ private Q_SLOTS:
     void updateSummary();
     void updateTypeCombos();
     void updateDescriptorControls();
+    void refreshSummaryGeometry();
 
 private:
 

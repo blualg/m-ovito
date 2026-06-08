@@ -29,6 +29,7 @@
 #include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include "OrientationTrajectoryAnalysisHelper.h"
 #include "SurvivalProbabilityModifier.h"
 
@@ -70,10 +71,10 @@ DEFINE_PROPERTY_FIELD(SurvivalProbabilityModifier, intervalEnd);
 DEFINE_PROPERTY_FIELD(SurvivalProbabilityModifier, samplingFrequency);
 DEFINE_PROPERTY_FIELD(SurvivalProbabilityModifier, maxLag);
 DEFINE_PROPERTY_FIELD(SurvivalProbabilityModifier, runRequestId);
-SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, referenceTypes, "Orient around atom type(s)");
+SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, referenceTypes, "Reference atom type(s)");
 SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, referenceExpression, "Reference expression");
-SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, anchorTypes, "Molecule site atom type(s)");
-SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, anchorExpression, "Molecule site expression");
+SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, anchorTypes, "Tracked site atom type(s)");
+SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, anchorExpression, "Tracked site expression");
 SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, onlySelectedParticles, "Use only selected particles");
 SET_PROPERTY_FIELD_LABEL(SurvivalProbabilityModifier, intermittency, "Intermittency");
@@ -277,6 +278,12 @@ Future<PipelineFlowState> SurvivalProbabilityModifier::computeCorrelationData(co
                                 SurvivalProbabilityModifier::tr("Lag (source frames)"),
                                 SurvivalProbabilityModifier::tr("Survival probability"),
                                 createdByNode);
+
+                setStretchedExponentialFitAttributes(
+                    computationResult.results,
+                    QStringLiteral("SurvivalProbability"),
+                    fitStretchedExponentialDecay(curves.lagFrames, curves.overall, SurvivalProbabilityModifier::tr("SP")),
+                    createdByNode);
 
                 computationResult.results->setAttribute(QStringLiteral("SurvivalProbability.target"), accumulator.targetLabel, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("SurvivalProbability.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);

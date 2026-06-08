@@ -26,6 +26,7 @@
 #include <ovito/particles/gui/util/ParticleSelectorPopupEditor.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
@@ -72,13 +73,13 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
 
     auto* descriptorModeUI = createParamUI<VariantComboBoxParameterUI>(
         PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::descriptorMode));
-    descriptorModeUI->comboBox()->addItem(tr("Dipole vector"),
+    descriptorModeUI->comboBox()->addItem(tr("Molecular dipole vector"),
                                           QVariant::fromValue((int)MoleculeOrientationalRelaxationModifier::DipoleVector));
-    descriptorModeUI->comboBox()->addItem(tr("Atom-type centroid vector"),
+    descriptorModeUI->comboBox()->addItem(tr("Centroid-to-centroid vector"),
                                           QVariant::fromValue((int)MoleculeOrientationalRelaxationModifier::AtomTypeCentroidVector));
-    descriptorModeUI->comboBox()->addItem(tr("Matching pair vector"),
+    descriptorModeUI->comboBox()->addItem(tr("Atom-pair vectors"),
                                           QVariant::fromValue((int)MoleculeOrientationalRelaxationModifier::MatchingPairVector));
-    gridLayout->addWidget(new QLabel(tr("Descriptor")), 0, 0);
+    gridLayout->addWidget(new QLabel(tr("Orientation vector")), 0, 0);
     gridLayout->addWidget(descriptorModeUI->comboBox(), 0, 1);
 
     _manualDirectionWidget = new QWidget();
@@ -88,30 +89,30 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
 
     _fromTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::fromTypeId));
     auto* fromExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::fromExpression));
-    manualLayout->addWidget(new QLabel(tr("Direction start atom type")), 0, 0);
+    manualLayout->addWidget(new QLabel(tr("Vector start atom type")), 0, 0);
     manualLayout->addWidget(createSelectorPopupRow(
         _manualDirectionWidget,
         _fromTypeUI->comboBox(),
         fromExpressionUI,
-        tr("Direction start expression override"),
-        tr("Use this expression instead of the direction start atom type. Leave it empty to use the type field again.")), 0, 1);
+        tr("Vector start expression override"),
+        tr("Use this expression instead of the vector start atom type. Leave it empty to use the type field again.")), 0, 1);
 
     _toTypeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::toTypeId));
     auto* toExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::toExpression));
-    manualLayout->addWidget(new QLabel(tr("Direction end atom type")), 1, 0);
+    manualLayout->addWidget(new QLabel(tr("Vector end atom type")), 1, 0);
     manualLayout->addWidget(createSelectorPopupRow(
         _manualDirectionWidget,
         _toTypeUI->comboBox(),
         toExpressionUI,
-        tr("Direction end expression override"),
-        tr("Use this expression instead of the direction end atom type. Leave it empty to use the type field again.")), 1, 1);
+        tr("Vector end expression override"),
+        tr("Use this expression instead of the vector end atom type. Leave it empty to use the type field again.")), 1, 1);
 
     gridLayout->addWidget(_manualDirectionWidget, 1, 0, 1, 2);
 
     auto* referenceTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::referenceTypes));
     referenceTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     auto* referenceExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::referenceExpression));
-    gridLayout->addWidget(new QLabel(tr("Orient around atom type(s)")), 2, 0);
+    gridLayout->addWidget(new QLabel(tr("Reference atom type(s)")), 2, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         referenceTypesUI->textBox(),
@@ -122,13 +123,13 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
     auto* anchorTypesUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::anchorTypes));
     anchorTypesUI->lineEdit()->setPlaceholderText(tr("e.g. O or O,H"));
     auto* anchorExpressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::anchorExpression));
-    gridLayout->addWidget(new QLabel(tr("Molecule site atom type(s)")), 3, 0);
+    gridLayout->addWidget(new QLabel(tr("Tracked site atom type(s)")), 3, 0);
     gridLayout->addWidget(createSelectorPopupRow(
         rollout,
         anchorTypesUI->textBox(),
         anchorExpressionUI,
-        tr("Molecule site expression override"),
-        tr("Use this expression instead of the molecule site atom types. Leave it empty to use the type field again.")), 3, 1);
+        tr("Tracked site expression override"),
+        tr("Use this expression instead of the tracked site atom types. Leave it empty to use the type field again.")), 3, 1);
 
     auto* cutoffUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier::cutoff));
     gridLayout->addWidget(new QLabel(tr("Distance cutoff")), 4, 0);
@@ -157,7 +158,7 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
                                          QVariant::fromValue((int)MoleculeOrientationalRelaxationModifier::SelectedAtTimeOrigin));
     selectionModeUI->comboBox()->addItem(tr("Inside shell at both times"),
                                          QVariant::fromValue((int)MoleculeOrientationalRelaxationModifier::SelectedAtBothTimes));
-    optionsLayout->addWidget(new QLabel(tr("Descriptor subset:")), 1, 0);
+    optionsLayout->addWidget(new QLabel(tr("Vector subset:")), 1, 0);
     optionsLayout->addWidget(selectionModeUI->comboBox(), 1, 1);
 
     layout->addWidget(optionsBox);
@@ -206,6 +207,7 @@ void MoleculeOrientationalRelaxationModifierEditor::createUI(const RolloutInsert
 
     _summaryLabel = new QLabel(rollout);
     _summaryLabel->setWordWrap(true);
+    _summaryLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     layout->addWidget(_summaryLabel);
 
     _plot = new DataTablePlotWidget();
@@ -319,41 +321,55 @@ void MoleculeOrientationalRelaxationModifierEditor::updateDescriptorControls()
 
 void MoleculeOrientationalRelaxationModifierEditor::runAnalysis()
 {
-    if(!_runButton || !modificationNode())
-        return;
-
-    handleExceptions([this]() {
-        _runButton->setEnabled(false);
-        auto restoreButton = qScopeGuard([this]() {
-            if(_runButton)
-                _runButton->setEnabled(true);
-        });
-
+    handleExceptions([&]() {
         MoleculeOrientationalRelaxationModifier* mod = modifier();
-        if(!mod)
+        ModificationNode* node = modificationNode();
+        if(!mod || !node)
             return;
 
-        mod->setRunRequestId(mod->runRequestId() + 1);
+        if(_runButton)
+            _runButton->setEnabled(false);
 
-        const auto* morNode = dynamic_object_cast<const MoleculeOrientationalRelaxationModificationNode>(modificationNode());
+        mod->setRunRequestId(mod->runRequestId() + 1);
+        const int startedRunRequestId = mod->runRequestId();
+
+        const auto* morNode = dynamic_object_cast<const MoleculeOrientationalRelaxationModificationNode>(node);
         const int startedGenerationId = morNode ? morNode->cacheGenerationId() : 0;
-        if(_summaryLabel)
+        if(_summaryLabel) {
             _summaryLabel->setText(tr("Running orientational relaxation analysis over the sampled trajectory..."));
+            refreshSummaryGeometry();
+        }
 
         PipelineEvaluationRequest request(currentAnimationTime(), false, false);
-        auto future = modificationNode()->evaluate(request).asFuture();
-        restoreButton.dismiss();
+        SharedFuture<PipelineFlowState> future = node->evaluate(request).asFuture();
 
-        future.finally(ObjectExecutor(this), [this, startedGenerationId]() noexcept {
-            if(_runButton)
-                _runButton->setEnabled(true);
-
-            const auto* morNode = dynamic_object_cast<const MoleculeOrientationalRelaxationModificationNode>(modificationNode());
-            if(!morNode || morNode->cacheGenerationId() != startedGenerationId)
+        future.finally(ObjectExecutor(this), [self = QPointer<MoleculeOrientationalRelaxationModifierEditor>(this),
+                                              editObject = OOWeakRef<RefTarget>(editObject()),
+                                              startedRunRequestId,
+                                              startedGenerationId,
+                                              future](auto& task) noexcept {
+            if(self.isNull() || self->editObject() != editObject.lock().get())
                 return;
 
-            updatePlot();
-            updateSummary();
+            MoleculeOrientationalRelaxationModifier* mod = self->modifier();
+            auto* morNode = dynamic_object_cast<MoleculeOrientationalRelaxationModificationNode>(self->modificationNode());
+            if(!mod || !morNode || mod->runRequestId() != startedRunRequestId || morNode->cacheGenerationId() != startedGenerationId)
+                return;
+
+            if(task.isCanceled() || task.exceptionStore())
+                morNode->setCompletedRunRequestId(startedRunRequestId);
+
+            self->handleExceptions([&]() {
+                (void)future.result();
+                morNode->pipelineCache().invalidateInteractiveState();
+                morNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                Q_EMIT self->pipelineOutputChanged();
+                self->updatePlot();
+                self->updateSummary();
+            });
+
+            if(self->_runButton)
+                self->_runButton->setEnabled(true);
         });
     });
 }
@@ -361,6 +377,12 @@ void MoleculeOrientationalRelaxationModifierEditor::runAnalysis()
 void MoleculeOrientationalRelaxationModifierEditor::updatePlot()
 {
     handleExceptions([&]() {
+        if(!_plot)
+            return;
+        if(orientationalRelaxationIsIdle(modifier(), modificationNode())) {
+            _plot->setTable(nullptr);
+            return;
+        }
         DataOORef<const DataTable> table =
             getPipelineOutput().getObjectBy<DataTable>(modificationNode(), MoleculeOrientationalRelaxationModifier::correlationTableId());
         _plot->setTable(std::move(table));
@@ -374,6 +396,7 @@ void MoleculeOrientationalRelaxationModifierEditor::updateSummary()
             return;
         if(orientationalRelaxationIsIdle(modifier(), modificationNode())) {
             _summaryLabel->clear();
+            refreshSummaryGeometry();
             return;
         }
 
@@ -390,29 +413,57 @@ void MoleculeOrientationalRelaxationModifierEditor::updateSummary()
         const QVariant selectionMode = state.getAttributeValue(modificationNode(), QStringLiteral("MoleculeOrientationalRelaxation.selection_mode"));
         const QVariant zeroLag = state.getAttributeValue(modificationNode(), QStringLiteral("MoleculeOrientationalRelaxation.zero_lag"));
         const QVariant finalValue = state.getAttributeValue(modificationNode(), QStringLiteral("MoleculeOrientationalRelaxation.final_value"));
+        const QString fitSummary = stretchedExponentialFitSummary(
+            state, modificationNode(), QStringLiteral("MoleculeOrientationalRelaxation"), tr("source frames"));
 
         if(!target.isValid() || !frameCount.isValid()) {
             _summaryLabel->setText(warningText.isEmpty()
                 ? tr("Orientational relaxation results are being prepared...")
                 : warningText);
+            refreshSummaryGeometry();
             return;
         }
 
-        QString summary = tr("Target: %1\nSampled frames: %2\nTracked descriptors: %3\nMaximum lag: %4 sampled-frame steps\nLegendre order: %5\nSubset: %6")
+        QString summary = tr("Target: %1; frames: %2; descriptors: %3; max lag: %4 sampled-frame steps\nP%5; subset: %6")
                               .arg(target.toString())
                               .arg(frameCount.toInt())
                               .arg(itemCount.toInt())
                               .arg(maxLag.toDouble())
                               .arg(legendreOrder.toInt())
                               .arg(selectionMode.toString());
+        QStringList valueParts;
         if(zeroLag.isValid())
-            summary += tr("\nC(0): %1").arg(zeroLag.toDouble(), 0, 'g', 6);
+            valueParts << tr("C(0): %1").arg(zeroLag.toDouble(), 0, 'g', 6);
         if(finalValue.isValid())
-            summary += tr("\nFinal value: %1").arg(finalValue.toDouble(), 0, 'g', 6);
+            valueParts << tr("final: %1").arg(finalValue.toDouble(), 0, 'g', 6);
+        if(!valueParts.empty())
+            summary += QStringLiteral("\n") + valueParts.join(QStringLiteral("; "));
+        if(!fitSummary.isEmpty())
+            summary += QStringLiteral("\n") + fitSummary;
         if(!warningText.isEmpty())
             summary = warningText + QStringLiteral("\n\n") + summary;
         _summaryLabel->setText(summary);
+        refreshSummaryGeometry();
     });
+}
+
+/******************************************************************************
+* Reflows the wrapped summary label after changing its contents.
+******************************************************************************/
+void MoleculeOrientationalRelaxationModifierEditor::refreshSummaryGeometry()
+{
+    if(!_summaryLabel)
+        return;
+
+    _summaryLabel->updateGeometry();
+    _summaryLabel->adjustSize();
+    for(QWidget* widget = _summaryLabel->parentWidget(); widget; widget = widget->parentWidget()) {
+        if(QLayout* layout = widget->layout()) {
+            layout->invalidate();
+            layout->activate();
+        }
+        widget->updateGeometry();
+    }
 }
 
 }  // namespace Ovito

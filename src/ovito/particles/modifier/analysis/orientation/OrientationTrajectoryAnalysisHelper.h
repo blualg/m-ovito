@@ -127,7 +127,8 @@ void appendReferenceShellMembershipSample(const ReferenceShellMembershipRequest&
                                                                  int legendreOrder,
                                                                  VectorSubsetMode selectionMode,
                                                                  int maxLag,
-                                                                 const QString& analysisLabel);
+                                                                 const QString& analysisLabel,
+                                                                 TaskProgress* progress = nullptr);
 
 [[nodiscard]] CorrelationCurves computeSurvivalProbabilityCurves(const MembershipAccumulator& samples,
                                                                  const std::vector<int>& sampledFrameNumbers,

@@ -26,8 +26,10 @@
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/ObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdobj/table/StretchedExponentialFit.h>
 #include "MoleculeOrientationalRelaxationModifier.h"
 #include "OrientationTrajectoryAnalysisHelper.h"
 
@@ -102,15 +104,15 @@ DEFINE_PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier, intervalEnd);
 DEFINE_PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier, samplingFrequency);
 DEFINE_PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier, maxLag);
 DEFINE_PROPERTY_FIELD(MoleculeOrientationalRelaxationModifier, runRequestId);
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, descriptorMode, "Descriptor");
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, fromTypeId, "Direction start atom type");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, descriptorMode, "Orientation vector");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, fromTypeId, "Vector start atom type");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, fromExpression, "Direction start expression");
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, toTypeId, "Direction end atom type");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, toTypeId, "Vector end atom type");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, toExpression, "Direction end expression");
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, referenceTypes, "Orient around atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, referenceTypes, "Reference atom type(s)");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, referenceExpression, "Reference expression");
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, anchorTypes, "Molecule site atom type(s)");
-SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, anchorExpression, "Molecule site expression");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, anchorTypes, "Tracked site atom type(s)");
+SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, anchorExpression, "Tracked site expression");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, cutoff, "Distance cutoff");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, onlySelectedParticles, "Use only selected particles");
 SET_PROPERTY_FIELD_LABEL(MoleculeOrientationalRelaxationModifier, legendreOrder, "Legendre order");
@@ -248,6 +250,9 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
     accumulator.frames.reserve(frames.size());
     if(selectionMode() != AllElements)
         accumulator.selectionFrames.reserve(frames.size());
+    auto progress = std::make_shared<TaskProgress>(this_task::ui());
+    progress->setText(tr("Collecting orientational relaxation samples"));
+    progress->setMaximum(static_cast<qlonglong>(frames.size()));
 
     return for_each_sequential(
             frameBatches,
@@ -262,7 +267,7 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
                 }
                 return when_all_futures(std::move(batchFutures));
             },
-            [this](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, VectorAccumulator& accumulator) {
+            [this, progress, totalFrameCount = frames.size()](const std::vector<int>&, std::vector<SharedFuture<PipelineFlowState>> batchFutures, VectorAccumulator& accumulator) {
                 const ReferenceShellDescriptorRequest descriptorRequest{
                     toDescriptorMode(descriptorMode()),
                     fromTypeId(),
@@ -282,10 +287,14 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
                                                  accumulator,
                                                  future.result(),
                                                  tr("Molecule orientational relaxation"));
+                    progress->setText(MoleculeOrientationalRelaxationModifier::tr("Collecting orientational relaxation samples (%1/%2 frames)")
+                                          .arg(accumulator.frames.size())
+                                          .arg(totalFrameCount));
+                    progress->setValue(static_cast<qlonglong>(accumulator.frames.size()));
                 }
             },
             std::move(accumulator))
-        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId](VectorAccumulator accumulator) mutable -> Future<PipelineFlowState> {
+        .then(DeferredObjectExecutor(this), [this, request, state = std::move(state), frames, cacheGenerationId, progress = std::move(progress)](VectorAccumulator accumulator) mutable -> Future<PipelineFlowState> {
             OORef<MoleculeOrientationalRelaxationModifier> self(this);
             const int completedRunRequestId = runRequestId();
 
@@ -294,6 +303,7 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
                                 state = std::move(state),
                                 frames,
                                 accumulator = std::move(accumulator),
+                                progress = std::move(progress),
                                 completedRunRequestId,
                                 cacheGenerationId]() mutable {
                 CorrelationComputationResult computationResult{std::move(state)};
@@ -303,7 +313,7 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
                 this_task::throwIfCanceled();
                 const CorrelationCurves curves = computeVectorReorientationCurves(
                     accumulator, frames, self->legendreOrder(), toVectorSubsetMode(self->selectionMode()), self->maxLag(),
-                    MoleculeOrientationalRelaxationModifier::tr("Molecule orientational relaxation"));
+                    MoleculeOrientationalRelaxationModifier::tr("Molecule orientational relaxation"), progress.get());
 
                 computationResult.results = DataOORef<DataCollection>::create();
                 const OOWeakRef<const PipelineNode> createdByNode = request.modificationNodeWeak();
@@ -316,6 +326,15 @@ Future<PipelineFlowState> MoleculeOrientationalRelaxationModifier::computeCorrel
                                 MoleculeOrientationalRelaxationModifier::tr("Lag (source frames)"),
                                 MoleculeOrientationalRelaxationModifier::tr("Orientational correlation"),
                                 createdByNode);
+
+                setStretchedExponentialFitAttributes(
+                    computationResult.results,
+                    QStringLiteral("MoleculeOrientationalRelaxation"),
+                    fitStretchedExponentialDecay(
+                        curves.lagFrames,
+                        curves.overall,
+                        MoleculeOrientationalRelaxationModifier::tr("P%1").arg(self->legendreOrder())),
+                    createdByNode);
 
                 computationResult.results->setAttribute(QStringLiteral("MoleculeOrientationalRelaxation.target"), accumulator.targetLabel, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("MoleculeOrientationalRelaxation.sampled_frame_count"), static_cast<double>(frames.size()), createdByNode);
