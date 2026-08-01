@@ -20,5 +20,17 @@ Those components remain under their own respective licenses. Their original
 license files are preserved in place. THIRD_PARTY_NOTICES.md provides a
 convenience summary.
 
+The bundled Tachyon ray tracing library is BSD-3-Clause licensed,
+Copyright (c) 1994-2013 John E. Stone.
+
+Score-based denoising bridge code is adapted from the MIT-licensed
+ovito-org/ScoreBasedDenoising extension, Copyright (c) 2026 Daniel Utt.
+The external graphite denoiser models and InitialEmbedding code referenced by
+that extension are MIT-licensed, Copyright (c) 2022 Tim Hsu. These Python
+packages and models are not bundled in this source tree.
+
+Ring Finder code is adapted from the GPL-3.0-only ovito-org/RingFinder
+extension, Copyright (c) 2025 Daniel Utt and Alexander Stukowski.
+
 This repository is an unofficial modified source tree and is not an official
 release of OVITO GmbH.

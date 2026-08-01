@@ -20,6 +20,7 @@ The original license files shipped with each component remain the authoritative 
 | `pybind11` | BSD-3-Clause | [src/3rdparty/pybind11/LICENSE](./src/3rdparty/pybind11/LICENSE) |
 | `qwt` | LGPL-2.1-based Qwt license with stated exceptions | [src/3rdparty/qwt/COPYING](./src/3rdparty/qwt/COPYING) |
 | `rapidyaml` | MIT | [src/3rdparty/rapidyaml/LICENSE.txt](./src/3rdparty/rapidyaml/LICENSE.txt) |
+| `tachyon` | BSD-3-Clause, Copyright (c) 1994-2013 John E. Stone | [src/3rdparty/tachyon/LICENSE](./src/3rdparty/tachyon/LICENSE) |
 | `voro++` | BSD-style permissive license | [src/3rdparty/voro++/LICENSE](./src/3rdparty/voro++/LICENSE) |
 | `xdrfile` | BSD-2-Clause-style permissive license | [src/3rdparty/xdrfile/xdrfile.h](./src/3rdparty/xdrfile/xdrfile.h) |
 | `zstd` | dual BSD or GPLv2 | [src/3rdparty/zstd/LICENSE](./src/3rdparty/zstd/LICENSE) |
@@ -28,3 +29,11 @@ The original license files shipped with each component remain the authoritative 
 
 - This repository snapshot is source-only; binary distribution has not been reviewed in this summary.
 - This summary is for convenience only and does not replace the full text of the component licenses.
+
+## External extension references
+
+| Component | License summary | Notes |
+| --- | --- | --- |
+| `ovito-org/ScoreBasedDenoising` | MIT, Copyright (c) 2026 Daniel Utt | The native m-ovito score-based denoising modifier adapts the upstream extension's Python inference flow. The PyTorch, torch-geometric, and graphite runtime stack is not bundled and must be supplied by the user's Python environment. |
+| `LLNL/graphite` denoiser model code | MIT, Copyright (c) 2022 Tim Hsu | Referenced through the external `graphite` Python package and pretrained denoiser models used by `ScoreBasedDenoising`; models are not bundled in this source tree. |
+| `ovito-org/RingFinder` | GPL-3.0-only, Copyright (c) 2025 Daniel Utt and Alexander Stukowski | The native m-ovito Ring Finder modifier adapts the upstream extension's shortest-ring search and output model. The upstream triangulation helper is not bundled. |

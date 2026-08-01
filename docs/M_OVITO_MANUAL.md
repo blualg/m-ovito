@@ -11,6 +11,95 @@ Repository: [blualg/m-ovito](https://github.com/blualg/m-ovito)
 - Long trajectory-wide calculations report progress through OVITO's normal progress/status system instead of opening a separate blocking progress dialog.
 - Result tables can be opened from modifier panels with `Show in data inspector` when the modifier produces a data table.
 
+## Tachyon renderer
+
+`Tachyon` is an output renderer for generating images and movies from the render settings panel. It is not a live viewport backend.
+
+Main controls:
+
+- Antialiasing samples. The default is moderate for speed; increase it for final figures.
+- Max ray recursion.
+- Max transparent surfaces.
+- Direct light and shadows.
+- Ambient occlusion and ambient-occlusion samples. Ambient occlusion is off by default because it is expensive for large transparent scenes.
+- Default material ambient, diffuse, and highlight weights. Mirror reflections are disabled; the highlight control uses non-recursive Phong highlights.
+- Maximum Tachyon worker threads, where `0` lets Tachyon choose.
+
+Supported first-pass scene elements:
+
+- Spherical particles.
+- Cylinders and bond-like geometry.
+- Triangle meshes, including optional wireframe edges.
+- Basic line primitives.
+
+Known limitations:
+
+- Special particle glyphs, arrowheads, and volume primitives are not implemented in this first native Tachyon renderer.
+- Unsupported scene elements are skipped with renderer issue messages instead of crashing the render.
+
+License note:
+
+- The bundled Tachyon ray tracing library is BSD-3-Clause licensed, Copyright (c) 1994-2013 John E. Stone.
+
+## OSPRay renderer
+
+`OSPRay` is an output renderer for generating images and movies with Intel OSPRay when the OSPRay runtime is available on the system. It is not a live viewport backend.
+
+Main controls:
+
+- Renderer type. `scivis` is the default first-pass renderer subtype.
+- Samples per pixel.
+- OSPRay library path. Leave it empty to load `ospray.dll` from `PATH` or the application directory.
+- Direct light, ambient light, shadows, and ambient-occlusion samples.
+
+Supported first-pass scene elements:
+
+- Spherical particles.
+- Cylinders and bond-like geometry.
+- Triangle meshes, including optional wireframe edges.
+- Basic line primitives.
+
+Known limitations:
+
+- Volume primitives, special particle glyphs, mesh pseudo-color mappings, and instanced meshes are not fully implemented in this first native OSPRay renderer.
+- Unsupported scene elements are skipped with renderer issue messages instead of crashing the render.
+
+License note:
+
+- The OSPRay runtime is not bundled in this source tree. Install or provide a compatible OSPRay runtime separately if you want to render with this backend.
+
+## VisRTX renderer
+
+`VisRTX` is an output renderer for generating images and movies through the Khronos ANARI runtime using NVIDIA VisRTX. It is not a live viewport backend.
+
+Main controls:
+
+- ANARI runtime path. Leave it empty to load `anari.dll` from `PATH` or the application directory.
+- ANARI library name. Use `visrtx` for NVIDIA VisRTX.
+- Device subtype and renderer subtype. `default` is usually appropriate.
+- Samples per pixel.
+- Direct light irradiance.
+- Ambient radiance and ambient samples.
+- Denoise.
+- Max ray depth.
+
+Supported first-pass scene elements:
+
+- Spherical particles.
+- Cylinders and bond-like geometry.
+- Triangle meshes, including optional wireframe edges.
+- Basic line primitives.
+
+Known limitations:
+
+- VisRTX requires a compatible NVIDIA GPU and driver plus the ANARI/VisRTX runtime libraries.
+- Volume primitives, special particle glyphs, mesh pseudo-color mappings, and instanced meshes are not fully implemented in this first native VisRTX renderer.
+- Unsupported scene elements are skipped with renderer issue messages instead of crashing the render.
+
+License note:
+
+- The ANARI SDK and NVIDIA VisRTX runtime are not bundled in this source tree. Install or provide compatible runtime libraries separately if you want to render with this backend.
+
 ## Load topology
 
 `Load topology` is a standalone modifier for loading bond/topology information from an external topology-style file. It was separated from `Create bonds` so topology import can be added as its own pipeline operation.
@@ -161,6 +250,28 @@ Notes:
 - Original oxygen particles receive a membership count instead of a single cage ID because one oxygen can belong to multiple cages.
 - The general complete cage option is intentionally topology-based. It detects closed cages composed of the allowed ring sizes; it does not classify open/incomplete cage-like motifs as complete cages.
 
+## Ring Finder
+
+`Ring Finder` finds shortest closed rings in the current bond graph. A bond topology must exist upstream, for example from `Create bonds` or `Load topology`.
+
+Main inputs:
+
+- Minimum ring size.
+- Maximum ring size.
+- Optional polygon facets for visualizing the detected rings.
+
+Outputs:
+
+- Global attributes `RingCount` and `N-RingCount`, where `N` is each ring size in the selected range.
+- A `ring-size-histogram` data table with absolute counts by ring size.
+- `N-rings` data tables listing the particle indices in each detected ring.
+- An optional surface mesh named `rings`, with one polygon facet per detected ring and a face property named `Ring Size`.
+
+License note:
+
+- This native modifier adapts the GPL-3.0-only [ovito-org/RingFinder](https://github.com/ovito-org/RingFinder) extension.
+- The upstream triangulation helper is not bundled; polygon facets are emitted as native OVITO mesh faces.
+
 ## Transport analysis
 
 `Transport` collects trajectory-wide transport observables for selected ions or molecule groups.
@@ -174,6 +285,60 @@ Available observables depend on the selected mode and input data, and may includ
 - Velocity-autocorrelation and Green-Kubo style conductivity estimates when velocity data is available.
 
 The modifier samples the selected trajectory interval only after the run button is clicked.
+
+## Score-based denoising
+
+`Score-based denoising` runs neural-network denoising models inspired by the MIT-licensed [ovito-org/ScoreBasedDenoising](https://github.com/ovito-org/ScoreBasedDenoising) extension. The native modifier keeps the OVITO-side user interface in C++ and delegates model inference to the Python executable selected in the modifier.
+
+Main inputs:
+
+- Structure/material: choose `FCC`, `BCC`, `HCP`, `SiO2`, or `Custom`; `None` leaves the data unchanged.
+- Denoising steps: number of iterative denoising updates.
+- Nearest-neighbor distance: set to `0` for automatic estimation in the built-in presets; in `Custom` mode this field is used directly as the model scale and must be positive.
+- Model path: optional for presets, which use graphite's default denoiser model files when available; required for `Custom`.
+- Python executable: Python environment containing `torch`, `torch-geometric`, `graphite`, `e3nn`, `scikit-learn`, and `numpy`.
+- Install runtime: choose the PyTorch runtime installed by the setup button. `CPU` installs CPU-only PyTorch; CUDA choices install CUDA-enabled PyTorch wheels from the corresponding PyTorch wheel index.
+- Install/repair denoising Python environment: creates or updates a dedicated Python virtual environment, installs the selected PyTorch runtime plus the ScoreBasedDenoising/graphite runtime stack, verifies the imports, and then sets `Python executable` to that environment. CUDA runtimes still require a compatible NVIDIA driver at run time.
+- Device: `CPU`, `CUDA`, or `MPS`.
+- Write back only selected particles: uses the full configuration as model context but only replaces coordinates of selected particles.
+
+Outputs:
+
+- Updated particle positions.
+- `Score-based denoising convergence` and `Score-based denoising log convergence` data tables.
+- Global attributes reporting the chosen structure, model scale, model path, updated particle count, and final convergence.
+
+License note:
+
+- The upstream `ovito-org/ScoreBasedDenoising` repository is MIT-licensed.
+- Runtime Python packages and pretrained denoiser models are not bundled in this source tree.
+
+## Atomic noising
+
+`Atomic noising` adds controlled Gaussian positional noise to particles. It is a forward perturbation tool, not a learned inverse of the score-based denoiser.
+
+Main inputs:
+
+- Noise scale: choose whether `Amplitude` is an absolute coordinate sigma, a fraction of the nearest-neighbor distance, or a Lindemann-style 3D RMS fraction.
+- Noise tensor: choose isotropic noise, diagonal anisotropic noise in Cartesian `X/Y/Z`, or diagonal anisotropic noise along the simulation-cell axes.
+- Amplitude X / isotropic, Amplitude Y, Amplitude Z: noise size. Isotropic mode uses only `Amplitude X / isotropic`. Diagonal modes use all three amplitudes. In `Absolute coordinate sigma` mode these are Gaussian sigma values. In `Fraction of nearest-neighbor distance` mode, each sigma is `amplitude * nearest-neighbor distance`. In `Lindemann RMS fraction` mode, each component is divided by `sqrt(3)` so the isotropic case preserves the requested 3D RMS Lindemann fraction.
+- Nearest-neighbor distance: set to `0` for automatic estimation from the current particle configuration, or enter a fixed distance.
+- Sigma sampling: use a fixed sigma vector, or draw one scalar multiplier uniformly from `0` to the maximum for the current frame while preserving the tensor shape.
+- Particle coupling: choose independent particle displacements or rigid molecule displacements. Rigid molecule mode requires `Molecule Identifier` and applies one shared translational displacement to every atom in each molecule, preserving intramolecular geometry.
+- Spatially correlate noise: Gaussian-smooths the random displacement field over nearby particles or molecule centers, depending on `Particle coupling`.
+- Correlation length: controls the smoothing length `xi`. The implementation uses neighbors within `3*xi`; after smoothing it renormalizes the final RMS displacement to keep the requested noise amplitude meaningful.
+- Random seed: deterministic seed for reproducible perturbations.
+- Frame-dependent seed: mixes the animation time into the seed so different frames receive different reproducible noise.
+- Use only selected particles: in independent mode this displaces selected particles only; in rigid molecule mode any selected atom promotes the whole molecule.
+- Wrap into periodic cell: folds displaced particles back into enabled periodic directions.
+- Preserve center of mass: subtracts the mean displacement of the noised particles.
+- Write noise properties: writes `Noise Displacement`, `Noise Magnitude`, and `Position Before Noising`.
+
+Outputs:
+
+- Updated particle positions.
+- Optional particle properties describing the applied displacement.
+- Global attributes reporting sigma components, RMS displacement, scale distance, noised particle count, noised molecule count, scale mode, tensor mode, coupling mode, spatial correlation setting, correlation length, and seed.
 
 ## Data table plot viewport layer
 

@@ -36,12 +36,13 @@
 #include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
 #include "HydrogenBondAnalysisModifier.h"
+#include "HydrogenBondPmf.h"
+#include "HydrogenBondSiteEnergy.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <memory>
-#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -66,7 +67,11 @@ struct DonorHydrogenPair {
 struct CandidateTripletSample {
     TripletKey triplet;
     double distance = 0.0;
+    double hydrogenAcceptorDistance = 0.0;
     double theta = 0.0;
+    double coulombEnergy = std::numeric_limits<double>::quiet_NaN();
+    double lennardJonesEnergy = std::numeric_limits<double>::quiet_NaN();
+    double siteEnergy = std::numeric_limits<double>::quiet_NaN();
 };
 
 struct FrameHydrogenBondSnapshot {
@@ -85,8 +90,12 @@ struct HydrogenBondObservation {
     IdentifierIntType hydrogenId = 0;
     IdentifierIntType acceptorId = 0;
     double distance = 0.0;
+    double hydrogenAcceptorDistance = 0.0;
     double theta = 0.0;
     double angle = 0.0;
+    double coulombEnergy = std::numeric_limits<double>::quiet_NaN();
+    double lennardJonesEnergy = std::numeric_limits<double>::quiet_NaN();
+    double siteEnergy = std::numeric_limits<double>::quiet_NaN();
 };
 
 struct HydrogenBondAccumulator {
@@ -111,8 +120,18 @@ struct PmfDefinition {
     size_t basinBinCount = 0;
     size_t populatedBinCount = 0;
     std::vector<int64_t> counts;
+    std::vector<double> smoothedReducedDensity;
     std::vector<double> freeEnergy;
     std::vector<char> inBasin;
+    double distanceBandwidth = 0.0;
+    double angleBandwidth = 0.0;
+    double referenceShellFraction = 0.0;
+    double referenceDistanceMinimum = 0.0;
+    double referenceDensity = 0.0;
+    double minimumFreeEnergy = 0.0;
+    double minimumDistance = 0.0;
+    double minimumTheta = 0.0;
+    double minimumRequiredWellDepth = 0.0;
 };
 
 struct HydrogenBondComputationResult {
@@ -121,6 +140,11 @@ struct HydrogenBondComputationResult {
     QString warningText;
     int completedRunRequestId = 0;
     int cacheGenerationId = 0;
+};
+
+struct SiteEnergyParameters {
+    bool enabled = false;
+    HydrogenBondSiteEnergy::Parameters potential;
 };
 
 std::vector<std::vector<int>> buildFrameBatches(const std::vector<int>& frames, size_t batchSize)
@@ -168,9 +192,70 @@ QString definitionModeLabel(HydrogenBondAnalysisModifier::DefinitionMode mode)
         return HydrogenBondAnalysisModifier::tr("Fixed geometry");
     case HydrogenBondAnalysisModifier::PMFDerived:
         return HydrogenBondAnalysisModifier::tr("PMF-derived");
+    case HydrogenBondAnalysisModifier::SiteInteractionEnergy:
+        return HydrogenBondAnalysisModifier::tr("D/H/A site interaction energy");
     }
     OVITO_ASSERT(false);
     return {};
+}
+
+QString siteEnergyUnitLabel(HydrogenBondAnalysisModifier::SiteEnergyUnit unit)
+{
+    switch(unit) {
+    case HydrogenBondAnalysisModifier::KcalPerMol:
+        return HydrogenBondAnalysisModifier::tr("kcal/mol");
+    case HydrogenBondAnalysisModifier::ElectronVolt:
+        return HydrogenBondAnalysisModifier::tr("eV");
+    }
+    OVITO_ASSERT(false);
+    return {};
+}
+
+QString siteEnergyCutoffModeLabel(HydrogenBondAnalysisModifier::SiteEnergyCutoffMode mode)
+{
+    switch(mode) {
+    case HydrogenBondAnalysisModifier::AutomaticEnergyMinimum:
+        return HydrogenBondAnalysisModifier::tr("Automatic distribution minimum");
+    case HydrogenBondAnalysisModifier::ManualEnergyCutoff:
+        return HydrogenBondAnalysisModifier::tr("Manual");
+    }
+    OVITO_ASSERT(false);
+    return {};
+}
+
+QString automaticCutoffFailureMessage(HydrogenBondSiteEnergy::AutomaticCutoffStatus status)
+{
+    switch(status) {
+    case HydrogenBondSiteEnergy::AutomaticCutoffStatus::Success:
+        return {};
+    case HydrogenBondSiteEnergy::AutomaticCutoffStatus::TooFewSamples:
+        return HydrogenBondAnalysisModifier::tr(
+            "Automatic energy-cutoff calibration requires at least 500 finite D/H/A candidate energies. "
+            "Sample more frames, enlarge the candidate range, or use a manual cutoff.");
+    case HydrogenBondSiteEnergy::AutomaticCutoffStatus::DegenerateDistribution:
+        return HydrogenBondAnalysisModifier::tr(
+            "The D/H/A candidate-energy distribution has no usable finite range. "
+            "Check the charges, Lennard-Jones parameters, and candidate selectors.");
+    case HydrogenBondSiteEnergy::AutomaticCutoffStatus::NoResolvedMinimum:
+        return HydrogenBondAnalysisModifier::tr(
+            "Automatic cutoff not found: the energy PDF has no stable minimum between two resolved populations; "
+            "no hydrogen bonds were classified.");
+    }
+    OVITO_ASSERT(false);
+    return {};
+}
+
+double siteEnergyCoulombConstant(HydrogenBondAnalysisModifier::SiteEnergyUnit unit)
+{
+    // Charges are in elementary-charge units and distances are in angstroms.
+    switch(unit) {
+    case HydrogenBondAnalysisModifier::KcalPerMol:
+        return 332.063713299;
+    case HydrogenBondAnalysisModifier::ElectronVolt:
+        return 14.3996454784255;
+    }
+    OVITO_ASSERT(false);
+    return 0.0;
 }
 
 QString donorHydrogenPairingModeLabel(bool useBondTopology)
@@ -227,6 +312,7 @@ DataTable* createLineTable(DataCollection* collection,
 DataTable* createObservationTable(DataCollection* collection,
                                   const QStringView identifier,
                                   const std::vector<HydrogenBondObservation>& observations,
+                                  bool includeSiteEnergies,
                                   const OOWeakRef<const PipelineNode>& createdByNode)
 {
     DataTable* table = collection->createObject<DataTable>(identifier.toString(),
@@ -240,6 +326,7 @@ DataTable* createObservationTable(DataCollection* collection,
     Property* hydrogenProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Hydrogen"), Property::Int64, 1);
     Property* acceptorProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Acceptor"), Property::Int64, 1);
     Property* distanceProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Distance"), Property::FloatDefault, 1);
+    Property* hydrogenAcceptorDistanceProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Hydrogen-acceptor distance"), Property::FloatDefault, 1);
     Property* thetaProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Theta"), Property::FloatDefault, 1);
     Property* angleProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Angle"), Property::FloatDefault, 1);
 
@@ -248,6 +335,7 @@ DataTable* createObservationTable(DataCollection* collection,
     BufferWriteAccess<int64_t, access_mode::discard_write> hydrogens(hydrogenProperty);
     BufferWriteAccess<int64_t, access_mode::discard_write> acceptors(acceptorProperty);
     BufferWriteAccess<FloatType, access_mode::discard_write> distances(distanceProperty);
+    BufferWriteAccess<FloatType, access_mode::discard_write> hydrogenAcceptorDistances(hydrogenAcceptorDistanceProperty);
     BufferWriteAccess<FloatType, access_mode::discard_write> thetas(thetaProperty);
     BufferWriteAccess<FloatType, access_mode::discard_write> angles(angleProperty);
 
@@ -257,10 +345,68 @@ DataTable* createObservationTable(DataCollection* collection,
         hydrogens[i] = observations[i].hydrogenId;
         acceptors[i] = observations[i].acceptorId;
         distances[i] = static_cast<FloatType>(observations[i].distance);
+        hydrogenAcceptorDistances[i] = static_cast<FloatType>(observations[i].hydrogenAcceptorDistance);
         thetas[i] = static_cast<FloatType>(observations[i].theta);
         angles[i] = static_cast<FloatType>(observations[i].angle);
     }
 
+    if(includeSiteEnergies) {
+        Property* coulombProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Coulomb energy"), Property::FloatDefault, 1);
+        Property* lennardJonesProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("LJ energy"), Property::FloatDefault, 1);
+        Property* siteEnergyProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("D/H/A site energy"), Property::FloatDefault, 1);
+        BufferWriteAccess<FloatType, access_mode::discard_write> coulombEnergies(coulombProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> lennardJonesEnergies(lennardJonesProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> siteEnergies(siteEnergyProperty);
+        for(size_t i = 0; i < observations.size(); ++i) {
+            coulombEnergies[i] = static_cast<FloatType>(observations[i].coulombEnergy);
+            lennardJonesEnergies[i] = static_cast<FloatType>(observations[i].lennardJonesEnergy);
+            siteEnergies[i] = static_cast<FloatType>(observations[i].siteEnergy);
+        }
+    }
+
+    return table;
+}
+
+DataTable* createSiteEnergyDistributionTable(
+    DataCollection* collection,
+    const QStringView identifier,
+    const HydrogenBondSiteEnergy::AutomaticCutoffResult& distribution,
+    const QString& energyUnit,
+    const OOWeakRef<const PipelineNode>& createdByNode)
+{
+    if(distribution.binCenters.empty()
+       || distribution.binCenters.size() != distribution.probabilityDensity.size())
+        return nullptr;
+
+    PropertyPtr density = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized,
+        distribution.probabilityDensity.size(),
+        Property::FloatDefault,
+        1,
+        HydrogenBondAnalysisModifier::tr("Probability density"));
+    BufferWriteAccess<FloatType, access_mode::discard_write> densityAcc(density);
+    for(size_t i = 0; i < distribution.probabilityDensity.size(); ++i)
+        densityAcc[i] = static_cast<FloatType>(distribution.probabilityDensity[i]);
+
+    PropertyPtr energy = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized,
+        distribution.binCenters.size(),
+        Property::FloatDefault,
+        1,
+        HydrogenBondAnalysisModifier::tr("D/H/A site energy"));
+    BufferWriteAccess<FloatType, access_mode::discard_write> energyAcc(energy);
+    for(size_t i = 0; i < distribution.binCenters.size(); ++i)
+        energyAcc[i] = static_cast<FloatType>(distribution.binCenters[i]);
+
+    DataTable* table = collection->createObject<DataTable>(
+        identifier.toString(),
+        createdByNode,
+        DataTable::Line,
+        HydrogenBondAnalysisModifier::tr("D/H/A candidate site-energy distribution"),
+        std::move(density),
+        std::move(energy));
+    table->setAxisLabelX(HydrogenBondAnalysisModifier::tr("D/H/A site energy (%1)").arg(energyUnit));
+    table->setAxisLabelY(HydrogenBondAnalysisModifier::tr("Probability density"));
     return table;
 }
 
@@ -272,19 +418,21 @@ DataTable* createPmfTable(DataCollection* collection,
     DataTable* table = collection->createObject<DataTable>(identifier.toString(),
                                                            createdByNode,
                                                            DataTable::None,
-                                                           HydrogenBondAnalysisModifier::tr("Hydrogen-bond PMF(r, theta)"));
+                                                           HydrogenBondAnalysisModifier::tr("Hydrogen-bond PMF W(r, theta) / kBT"));
     const size_t rowCount = static_cast<size_t>(pmf.distanceBins) * static_cast<size_t>(pmf.angleBins);
     table->setElementCount(rowCount);
 
     Property* distanceProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Distance"), Property::FloatDefault, 1);
     Property* thetaProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Theta"), Property::FloatDefault, 1);
     Property* countProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Count"), Property::Int64, 1);
+    Property* densityProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Smoothed reduced density"), Property::FloatDefault, 1);
     Property* pmfProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("Free energy"), Property::FloatDefault, 1);
     Property* basinProperty = table->createProperty(DataBuffer::Initialized, QStringLiteral("In HB basin"), Property::Int64, 1);
 
     BufferWriteAccess<FloatType, access_mode::discard_write> distanceAcc(distanceProperty);
     BufferWriteAccess<FloatType, access_mode::discard_write> thetaAcc(thetaProperty);
     BufferWriteAccess<int64_t, access_mode::discard_write> countAcc(countProperty);
+    BufferWriteAccess<FloatType, access_mode::discard_write> densityAcc(densityProperty);
     BufferWriteAccess<FloatType, access_mode::discard_write> pmfAcc(pmfProperty);
     BufferWriteAccess<int64_t, access_mode::discard_write> basinAcc(basinProperty);
 
@@ -299,6 +447,7 @@ DataTable* createPmfTable(DataCollection* collection,
             distanceAcc[row] = static_cast<FloatType>(distanceCenter);
             thetaAcc[row] = static_cast<FloatType>(pmf.thetaMinimum + (static_cast<double>(angleBin) + 0.5) * angleBinWidth);
             countAcc[row] = pmf.counts[linearIndex];
+            densityAcc[row] = static_cast<FloatType>(pmf.smoothedReducedDensity[linearIndex]);
             pmfAcc[row] = std::isfinite(pmf.freeEnergy[linearIndex])
                 ? static_cast<FloatType>(pmf.freeEnergy[linearIndex])
                 : std::numeric_limits<FloatType>::quiet_NaN();
@@ -307,6 +456,21 @@ DataTable* createPmfTable(DataCollection* collection,
     }
 
     return table;
+}
+
+std::vector<double> collectSiteEnergySamples(const HydrogenBondAccumulator& accumulator,
+                                             double maximumTheta)
+{
+    std::vector<double> energies;
+    energies.reserve(accumulator.totalCandidateTriplets);
+    for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
+        for(const CandidateTripletSample& sample : snapshot.candidates) {
+            if(sample.theta > maximumTheta || !std::isfinite(sample.siteEnergy))
+                continue;
+            energies.push_back(sample.siteEnergy);
+        }
+    }
+    return energies;
 }
 
 std::vector<DonorHydrogenPair> collectBondedDonorHydrogenPairs(const Particles* particles,
@@ -387,7 +551,8 @@ FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
                                        const QString& acceptorExpression,
                                        FloatType donorHydrogenCutoff,
                                        FloatType donorAcceptorSearchCutoff,
-                                       bool useBondTopology)
+                                       bool useBondTopology,
+                                       const SiteEnergyParameters& siteEnergyParameters)
 {
     const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -396,6 +561,11 @@ FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
     BufferReadAccess<int32_t> particleTypes = particles->getProperty(Particles::TypeProperty);
     const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
     BufferReadAccess<IdentifierIntType> identifiers = particles->getProperty(Particles::IdentifierProperty);
+    BufferReadAccess<FloatType> charges = particles->getProperty(Particles::ChargeProperty);
+    if(siteEnergyParameters.enabled && !charges) {
+        throw Exception(HydrogenBondAnalysisModifier::tr(
+            "The D/H/A site-energy definition requires the particle property 'Charge' in every sampled frame."));
+    }
     const SimulationCell* simCellObject = state.getObject<SimulationCell>();
     const SimulationCellData cellData = simCellObject
         ? SimulationCellData(*simCellObject)
@@ -465,12 +635,37 @@ FrameHydrogenBondSnapshot analyzeFrame(const PipelineFlowState& state,
             if(daLength <= FloatType(0))
                 continue;
 
+            const Vector3 hydrogenToAcceptorDelta = donorToAcceptorDelta - donorHydrogen.donorToHydrogenDelta;
+            const FloatType haLength = hydrogenToAcceptorDelta.length();
+            if(haLength <= FloatType(0))
+                continue;
+
             const FloatType theta = qRadiansToDegrees(
                 clampedAcos(donorHydrogen.donorToHydrogenDelta.dot(donorToAcceptorDelta) / (dhLength * daLength)));
+            double coulombEnergy = std::numeric_limits<double>::quiet_NaN();
+            double lennardJonesEnergy = std::numeric_limits<double>::quiet_NaN();
+            double siteEnergy = std::numeric_limits<double>::quiet_NaN();
+            if(siteEnergyParameters.enabled) {
+                const HydrogenBondSiteEnergy::Components components =
+                    HydrogenBondSiteEnergy::evaluate(
+                        static_cast<double>(daLength),
+                        static_cast<double>(haLength),
+                        static_cast<double>(charges[donorHydrogen.donorIndex]),
+                        static_cast<double>(charges[donorHydrogen.hydrogenIndex]),
+                        static_cast<double>(charges[acceptorIndex]),
+                        siteEnergyParameters.potential);
+                coulombEnergy = components.coulomb;
+                lennardJonesEnergy = components.lennardJones;
+                siteEnergy = components.total;
+            }
             result.candidates.push_back({
                 {particleId(donorHydrogen.donorIndex), particleId(donorHydrogen.hydrogenIndex), particleId(acceptorIndex)},
                 static_cast<double>(daLength),
-                static_cast<double>(theta)
+                static_cast<double>(haLength),
+                static_cast<double>(theta),
+                coulombEnergy,
+                lennardJonesEnergy,
+                siteEnergy
             });
         }
     }
@@ -493,71 +688,17 @@ int clampedBinIndex(double value, double minimum, double maximum, int binCount)
     return std::clamp(static_cast<int>(std::floor(normalized * static_cast<double>(binCount))), 0, binCount - 1);
 }
 
-std::vector<int> connectedComponentAtThreshold(const std::vector<double>& freeEnergy,
-                                               int distanceBins,
-                                               int angleBins,
-                                               int seedIndex,
-                                               double threshold)
-{
-    std::vector<int> component;
-    if(seedIndex < 0 || seedIndex >= static_cast<int>(freeEnergy.size()) || !std::isfinite(freeEnergy[seedIndex]) || freeEnergy[seedIndex] > threshold)
-        return component;
-
-    std::vector<char> visited(freeEnergy.size(), 0);
-    std::queue<int> queue;
-    queue.push(seedIndex);
-    visited[seedIndex] = 1;
-
-    while(!queue.empty()) {
-        const int linearIndex = queue.front();
-        queue.pop();
-        component.push_back(linearIndex);
-
-        const int distanceBin = linearIndex / angleBins;
-        const int angleBin = linearIndex % angleBins;
-        for(int dd = -1; dd <= 1; ++dd) {
-            for(int da = -1; da <= 1; ++da) {
-                if(dd == 0 && da == 0)
-                    continue;
-                const int neighborDistanceBin = distanceBin + dd;
-                const int neighborAngleBin = angleBin + da;
-                if(neighborDistanceBin < 0 || neighborDistanceBin >= distanceBins
-                   || neighborAngleBin < 0 || neighborAngleBin >= angleBins)
-                    continue;
-
-                const int neighborIndex = neighborDistanceBin * angleBins + neighborAngleBin;
-                if(visited[neighborIndex] || !std::isfinite(freeEnergy[neighborIndex]) || freeEnergy[neighborIndex] > threshold)
-                    continue;
-                visited[neighborIndex] = 1;
-                queue.push(neighborIndex);
-            }
-        }
-    }
-
-    return component;
-}
-
 PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
                                  double distanceMinimum,
                                  double distanceMaximum,
                                  double thetaMinimum,
                                  double thetaMaximum,
                                  int distanceBins,
-                                 int angleBins)
+                                 int angleBins,
+                                 double distanceBandwidth,
+                                 double angleBandwidth,
+                                 double referenceShellFraction)
 {
-    if(distanceMinimum < 0.0)
-        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF distance minimum must be non-negative."));
-    if(distanceMaximum <= distanceMinimum)
-        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF distance maximum must be greater than the PMF distance minimum."));
-    if(thetaMinimum < 0.0 || thetaMinimum > 180.0)
-        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta minimum must be in the range [0, 180]."));
-    if(thetaMaximum < 0.0 || thetaMaximum > 180.0)
-        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta maximum must be in the range [0, 180]."));
-    if(thetaMaximum <= thetaMinimum)
-        throw Exception(HydrogenBondAnalysisModifier::tr("The PMF theta maximum must be greater than the PMF theta minimum."));
-    if(distanceBins < 4 || angleBins < 4)
-        throw Exception(HydrogenBondAnalysisModifier::tr("PMF bin counts must be at least 4 in each dimension."));
-
     PmfDefinition pmf;
     pmf.distanceMinimum = distanceMinimum;
     pmf.distanceMaximum = distanceMaximum;
@@ -566,11 +707,6 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
     pmf.distanceBins = distanceBins;
     pmf.angleBins = angleBins;
     pmf.counts.assign(static_cast<size_t>(distanceBins) * static_cast<size_t>(angleBins), 0);
-    pmf.freeEnergy.assign(pmf.counts.size(), std::numeric_limits<double>::infinity());
-    pmf.inBasin.assign(pmf.counts.size(), 0);
-
-    const double distanceBinWidth = (distanceMaximum - distanceMinimum) / static_cast<double>(distanceBins);
-    const double angleBinWidth = (thetaMaximum - thetaMinimum) / static_cast<double>(angleBins);
 
     for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
         for(const CandidateTripletSample& sample : snapshot.candidates) {
@@ -585,87 +721,42 @@ PmfDefinition buildPmfDefinition(const HydrogenBondAccumulator& accumulator,
         }
     }
 
-    double minimumFreeEnergy = std::numeric_limits<double>::infinity();
-    int minimumIndex = -1;
-    for(int distanceBin = 0; distanceBin < distanceBins; ++distanceBin) {
-        const double distanceCenter = distanceMinimum + (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
-        for(int angleBin = 0; angleBin < angleBins; ++angleBin) {
-            const size_t linearIndex = pmfLinearIndex(distanceBin, angleBin, angleBins);
-            const int64_t count = pmf.counts[linearIndex];
-            if(count <= 0)
-                continue;
+    HydrogenBondPmf::Parameters parameters;
+    parameters.distanceMinimum = distanceMinimum;
+    parameters.distanceMaximum = distanceMaximum;
+    parameters.thetaMinimum = thetaMinimum;
+    parameters.thetaMaximum = thetaMaximum;
+    parameters.distanceBins = distanceBins;
+    parameters.angleBins = angleBins;
+    parameters.distanceBandwidth = distanceBandwidth;
+    parameters.angleBandwidth = angleBandwidth;
+    parameters.referenceShellFraction = referenceShellFraction;
 
-            const double thetaRadians = qDegreesToRadians(thetaMinimum + (static_cast<double>(angleBin) + 0.5) * angleBinWidth);
-            const double jacobian = std::max(distanceCenter * distanceCenter * std::max(std::sin(thetaRadians), 1e-6), 1e-12);
-            const double reducedProbability = static_cast<double>(count) / jacobian;
-            const double freeEnergy = -std::log(reducedProbability);
-            pmf.freeEnergy[linearIndex] = freeEnergy;
-            pmf.populatedBinCount++;
-            if(freeEnergy < minimumFreeEnergy) {
-                minimumFreeEnergy = freeEnergy;
-                minimumIndex = static_cast<int>(linearIndex);
-            }
-        }
+    try {
+        HydrogenBondPmf::Definition definition =
+            HydrogenBondPmf::buildDefinition(std::move(pmf.counts), parameters);
+        pmf.counts = std::move(definition.counts);
+        pmf.smoothedReducedDensity = std::move(definition.smoothedReducedDensity);
+        pmf.freeEnergy = std::move(definition.freeEnergy);
+        pmf.inBasin = std::move(definition.inBasin);
+        pmf.boundaryFreeEnergy = definition.boundaryFreeEnergy;
+        pmf.vicinityCutoff = definition.vicinityCutoff;
+        pmf.basinBinCount = definition.basinBinCount;
+        pmf.populatedBinCount = definition.populatedBinCount;
+        pmf.distanceBandwidth = parameters.distanceBandwidth;
+        pmf.angleBandwidth = parameters.angleBandwidth;
+        pmf.referenceShellFraction = parameters.referenceShellFraction;
+        pmf.referenceDistanceMinimum = definition.referenceDistanceMinimum;
+        pmf.referenceDensity = definition.referenceDensity;
+        pmf.minimumFreeEnergy = definition.minimumFreeEnergy;
+        pmf.minimumDistance = definition.minimumDistance;
+        pmf.minimumTheta = definition.minimumTheta;
+        pmf.minimumRequiredWellDepth = definition.minimumRequiredWellDepth;
     }
-
-    if(minimumIndex < 0)
+    catch(const std::exception& error) {
         throw Exception(HydrogenBondAnalysisModifier::tr(
-            "The PMF-derived hydrogen-bond definition found no donor-hydrogen-acceptor triplets within the PMF distance interval."));
-
-    for(double& value : pmf.freeEnergy) {
-        if(std::isfinite(value))
-            value -= minimumFreeEnergy;
+            "The PMF-derived hydrogen-bond definition failed: %1").arg(QString::fromLocal8Bit(error.what())));
     }
-
-    std::vector<double> thresholds;
-    thresholds.reserve(pmf.populatedBinCount);
-    for(double value : pmf.freeEnergy) {
-        if(std::isfinite(value))
-            thresholds.push_back(value);
-    }
-    std::sort(thresholds.begin(), thresholds.end());
-    thresholds.erase(std::unique(thresholds.begin(), thresholds.end(), [](double a, double b) {
-        return std::abs(a - b) < 1e-12;
-    }), thresholds.end());
-
-    double boundaryThreshold = thresholds.back();
-    size_t previousArea = 0;
-    long long bestJump = std::numeric_limits<long long>::min();
-    if(thresholds.size() > 1) {
-        for(size_t thresholdIndex = 0; thresholdIndex < thresholds.size(); ++thresholdIndex) {
-            const std::vector<int> component = connectedComponentAtThreshold(pmf.freeEnergy,
-                                                                             distanceBins,
-                                                                             angleBins,
-                                                                             minimumIndex,
-                                                                             thresholds[thresholdIndex]);
-            const size_t area = component.size();
-            if(thresholdIndex > 0) {
-                const long long jump = static_cast<long long>(area) - static_cast<long long>(previousArea);
-                if(jump > bestJump) {
-                    bestJump = jump;
-                    boundaryThreshold = thresholds[thresholdIndex - 1];
-                }
-            }
-            previousArea = area;
-        }
-    }
-
-    const std::vector<int> basinComponent = connectedComponentAtThreshold(pmf.freeEnergy,
-                                                                          distanceBins,
-                                                                          angleBins,
-                                                                          minimumIndex,
-                                                                          boundaryThreshold);
-    pmf.boundaryFreeEnergy = boundaryThreshold;
-    pmf.basinBinCount = basinComponent.size();
-
-    double vicinityCutoff = 0.0;
-    for(int linearIndex : basinComponent) {
-        pmf.inBasin[static_cast<size_t>(linearIndex)] = 1;
-        const int distanceBin = linearIndex / angleBins;
-        const double distanceCenter = (static_cast<double>(distanceBin) + 0.5) * distanceBinWidth;
-        vicinityCutoff = std::max(vicinityCutoff, distanceCenter);
-    }
-    pmf.vicinityCutoff = vicinityCutoff;
     return pmf;
 }
 
@@ -681,24 +772,42 @@ bool pmfTripletIsHydrogenBonded(const CandidateTripletSample& sample, const PmfD
     return pmf.inBasin[pmfLinearIndex(distanceBin, angleBin, pmf.angleBins)] != 0;
 }
 
+bool candidateIsHydrogenBonded(const CandidateTripletSample& sample,
+                               HydrogenBondAnalysisModifier::DefinitionMode definitionMode,
+                               double fixedHydrogenBondDistanceCutoff,
+                               double fixedMaximumTheta,
+                               double siteEnergyCutoff,
+                               double siteEnergyMaximumTheta,
+                               const PmfDefinition* pmf)
+{
+    if(definitionMode == HydrogenBondAnalysisModifier::PMFDerived)
+        return pmf && pmfTripletIsHydrogenBonded(sample, *pmf);
+    if(definitionMode == HydrogenBondAnalysisModifier::SiteInteractionEnergy) {
+        return std::isfinite(sample.siteEnergy)
+            && sample.siteEnergy <= siteEnergyCutoff
+            && sample.theta <= siteEnergyMaximumTheta;
+    }
+    return sample.distance <= fixedHydrogenBondDistanceCutoff && sample.theta <= fixedMaximumTheta;
+}
+
 std::vector<HydrogenBondObservation> buildObservations(const FrameHydrogenBondSnapshot& snapshot,
                                                        HydrogenBondAnalysisModifier::DefinitionMode definitionMode,
                                                        double fixedHydrogenBondDistanceCutoff,
                                                        double fixedMaximumTheta,
+                                                       double siteEnergyCutoff,
+                                                       double siteEnergyMaximumTheta,
                                                        const PmfDefinition* pmf)
 {
     std::vector<HydrogenBondObservation> observations;
     observations.reserve(snapshot.candidates.size());
     for(const CandidateTripletSample& sample : snapshot.candidates) {
-        bool active = false;
-        if(definitionMode == HydrogenBondAnalysisModifier::PMFDerived) {
-            active = pmf && pmfTripletIsHydrogenBonded(sample, *pmf);
-        }
-        else {
-            active = (sample.distance <= fixedHydrogenBondDistanceCutoff && sample.theta <= fixedMaximumTheta);
-        }
-
-        if(!active)
+        if(!candidateIsHydrogenBonded(sample,
+                                      definitionMode,
+                                      fixedHydrogenBondDistanceCutoff,
+                                      fixedMaximumTheta,
+                                      siteEnergyCutoff,
+                                      siteEnergyMaximumTheta,
+                                      pmf))
             continue;
 
         observations.push_back({
@@ -707,11 +816,94 @@ std::vector<HydrogenBondObservation> buildObservations(const FrameHydrogenBondSn
             sample.triplet.hydrogenId,
             sample.triplet.acceptorId,
             sample.distance,
+            sample.hydrogenAcceptorDistance,
             sample.theta,
-            180.0 - sample.theta
+            180.0 - sample.theta,
+            sample.coulombEnergy,
+            sample.lennardJonesEnergy,
+            sample.siteEnergy
         });
     }
     return observations;
+}
+
+DataTable* createGeometryClassificationTable(
+    DataCollection* collection,
+    const QStringView identifier,
+    const HydrogenBondAccumulator& accumulator,
+    HydrogenBondAnalysisModifier::DefinitionMode definitionMode,
+    double fixedHydrogenBondDistanceCutoff,
+    double fixedMaximumTheta,
+    double siteEnergyCutoff,
+    double siteEnergyMaximumTheta,
+    const PmfDefinition* pmf,
+    const OOWeakRef<const PipelineNode>& createdByNode)
+{
+    const size_t rowCount = accumulator.totalCandidateTriplets;
+    PropertyPtr angles = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized,
+        rowCount,
+        Property::FloatDefault,
+        1,
+        HydrogenBondAnalysisModifier::tr("D-H-A angle"));
+    PropertyPtr distances = DataTable::OOClass().createUserProperty(
+        DataBuffer::Initialized,
+        rowCount,
+        Property::FloatDefault,
+        1,
+        HydrogenBondAnalysisModifier::tr("D-A distance"));
+    BufferWriteAccess<FloatType, access_mode::discard_write> angleValues(angles);
+    BufferWriteAccess<FloatType, access_mode::discard_write> distanceValues(distances);
+
+    DataTable* table = collection->createObject<DataTable>(
+        identifier.toString(),
+        createdByNode,
+        DataTable::Scatter,
+        HydrogenBondAnalysisModifier::tr("D-A distance vs. D-H-A angle"),
+        std::move(angles),
+        std::move(distances));
+    table->setAxisLabelX(HydrogenBondAnalysisModifier::tr("D-A distance"));
+    table->setAxisLabelY(HydrogenBondAnalysisModifier::tr("D-H-A angle (degrees)"));
+
+    Property* frameProperty =
+        table->createProperty(DataBuffer::Initialized, QStringLiteral("Frame"), Property::Int64, 1);
+    Property* donorProperty =
+        table->createProperty(DataBuffer::Initialized, QStringLiteral("Donor"), Property::Int64, 1);
+    Property* hydrogenProperty =
+        table->createProperty(DataBuffer::Initialized, QStringLiteral("Hydrogen"), Property::Int64, 1);
+    Property* acceptorProperty =
+        table->createProperty(DataBuffer::Initialized, QStringLiteral("Acceptor"), Property::Int64, 1);
+    Property* hydrogenBondProperty =
+        table->createProperty(DataBuffer::Initialized, QStringLiteral("Is hydrogen bond"), Property::Int64, 1);
+
+    BufferWriteAccess<int64_t, access_mode::discard_write> frames(frameProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> donors(donorProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> hydrogens(hydrogenProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> acceptors(acceptorProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> isHydrogenBond(hydrogenBondProperty);
+
+    size_t row = 0;
+    for(const FrameHydrogenBondSnapshot& snapshot : accumulator.snapshots) {
+        for(const CandidateTripletSample& sample : snapshot.candidates) {
+            distanceValues[row] = static_cast<FloatType>(sample.distance);
+            angleValues[row] = static_cast<FloatType>(180.0 - sample.theta);
+            frames[row] = snapshot.frame;
+            donors[row] = sample.triplet.donorId;
+            hydrogens[row] = sample.triplet.hydrogenId;
+            acceptors[row] = sample.triplet.acceptorId;
+            isHydrogenBond[row] = candidateIsHydrogenBonded(
+                sample,
+                definitionMode,
+                fixedHydrogenBondDistanceCutoff,
+                fixedMaximumTheta,
+                siteEnergyCutoff,
+                siteEnergyMaximumTheta,
+                pmf);
+            ++row;
+        }
+    }
+    OVITO_ASSERT(row == rowCount);
+    return table;
 }
 
 }  // namespace
@@ -719,7 +911,7 @@ std::vector<HydrogenBondObservation> buildObservations(const FrameHydrogenBondSn
 IMPLEMENT_CREATABLE_OVITO_CLASS(HydrogenBondAnalysisModifier);
 OVITO_CLASSINFO(HydrogenBondAnalysisModifier, "DisplayName", "Hydrogen bond analysis");
 OVITO_CLASSINFO(HydrogenBondAnalysisModifier, "Description",
-                "Analyze hydrogen bonds over a trajectory using either fixed geometry or a PMF-derived basin definition.");
+                "Analyze hydrogen bonds over a trajectory using geometry, PMF, or D/H/A site interaction energy.");
 OVITO_CLASSINFO(HydrogenBondAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorTypes);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorExpression);
@@ -731,12 +923,27 @@ DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorHydrogenCutoff);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, definitionMode);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorAcceptorCutoff);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, angleCutoff);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, siteEnergyDistanceMaximum);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, siteEnergyThetaMaximum);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, siteEnergyCutoffMode);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, siteEnergyCutoff);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, siteEnergyUnit);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, relativePermittivity);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorLJEpsilon);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, donorLJSigma);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, hydrogenLJEpsilon);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, hydrogenLJSigma);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, acceptorLJEpsilon);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, acceptorLJSigma);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceMinimum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceMaximum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfThetaMinimum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfThetaMaximum);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceBins);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfAngleBins);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfDistanceBandwidth);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfAngleBandwidth);
+DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, pmfReferenceShellFraction);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, useCustomFrameInterval);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, intervalStart);
 DEFINE_PROPERTY_FIELD(HydrogenBondAnalysisModifier, intervalEnd);
@@ -752,12 +959,27 @@ SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorHydrogenCutoff, "Don
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, definitionMode, "Hydrogen-bond definition");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorAcceptorCutoff, "HB donor-acceptor cutoff");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, angleCutoff, "HB theta maximum");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, siteEnergyDistanceMaximum, "Candidate D-A cutoff");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, siteEnergyThetaMaximum, "Candidate theta maximum");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, siteEnergyCutoffMode, "Energy cutoff");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, siteEnergyCutoff, "Maximum D/H/A site energy");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, siteEnergyUnit, "Energy unit");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, relativePermittivity, "Relative permittivity");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorLJEpsilon, "Donor LJ epsilon");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, donorLJSigma, "Donor LJ sigma");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, hydrogenLJEpsilon, "Hydrogen LJ epsilon");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, hydrogenLJSigma, "Hydrogen LJ sigma");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, acceptorLJEpsilon, "Acceptor LJ epsilon");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, acceptorLJSigma, "Acceptor LJ sigma");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceMinimum, "PMF distance minimum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceMaximum, "PMF distance maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfThetaMinimum, "PMF theta minimum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfThetaMaximum, "PMF theta maximum");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceBins, "PMF distance bins");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfAngleBins, "PMF angle bins");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfDistanceBandwidth, "Distance smoothing bandwidth");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfAngleBandwidth, "Angle smoothing bandwidth");
+SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, pmfReferenceShellFraction, "Outer reference fraction");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, useCustomFrameInterval, "Restrict analysis interval");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, intervalStart, "Start frame");
 SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, intervalEnd, "End frame");
@@ -765,12 +987,24 @@ SET_PROPERTY_FIELD_LABEL(HydrogenBondAnalysisModifier, samplingFrequency, "Sampl
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, donorHydrogenCutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, donorAcceptorCutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, angleCutoff, FloatParameterUnit, 0, 180);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, siteEnergyDistanceMaximum, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, siteEnergyThetaMaximum, FloatParameterUnit, 0, 180);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, relativePermittivity, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, donorLJEpsilon, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, donorLJSigma, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, hydrogenLJEpsilon, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, hydrogenLJSigma, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, acceptorLJEpsilon, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, acceptorLJSigma, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfDistanceMinimum, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfDistanceMaximum, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfThetaMinimum, FloatParameterUnit, 0, 180);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfThetaMaximum, FloatParameterUnit, 0, 180);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfDistanceBins, IntegerParameterUnit, 4, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfAngleBins, IntegerParameterUnit, 4, std::numeric_limits<int>::max());
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfDistanceBandwidth, WorldParameterUnit, 1e-6);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(HydrogenBondAnalysisModifier, pmfAngleBandwidth, FloatParameterUnit, 1e-6);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, pmfReferenceShellFraction, FloatParameterUnit, 0.05, 0.5);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, intervalStart, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, intervalEnd, IntegerParameterUnit, 0, std::numeric_limits<int>::max());
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HydrogenBondAnalysisModifier, samplingFrequency, IntegerParameterUnit, 1, std::numeric_limits<int>::max());
@@ -906,13 +1140,14 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                              &initialMatchCount);
     if(donorHydrogenCutoff() <= 0)
         throw Exception(tr("The donor-hydrogen cutoff must be positive."));
+    SiteEnergyParameters siteEnergyParameters;
     if(definitionMode() == FixedGeometry) {
         if(donorAcceptorCutoff() <= 0)
             throw Exception(tr("The HB donor-acceptor cutoff must be positive."));
         if(angleCutoff() < 0 || angleCutoff() > 180)
             throw Exception(tr("The HB theta maximum must be in the range [0, 180]."));
     }
-    else {
+    else if(definitionMode() == PMFDerived) {
         if(pmfDistanceMinimum() < 0)
             throw Exception(tr("The PMF distance minimum must be non-negative."));
         if(pmfDistanceMaximum() <= 0)
@@ -925,11 +1160,48 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             throw Exception(tr("The PMF theta maximum must be in the range [0, 180]."));
         if(pmfThetaMaximum() <= pmfThetaMinimum())
             throw Exception(tr("The PMF theta maximum must be greater than the PMF theta minimum."));
+        if(pmfDistanceBandwidth() <= 0 || pmfAngleBandwidth() <= 0)
+            throw Exception(tr("The PMF smoothing bandwidths must be positive."));
+        if(pmfReferenceShellFraction() < 0.05 || pmfReferenceShellFraction() > 0.5)
+            throw Exception(tr("The PMF outer reference fraction must be in the range [0.05, 0.5]."));
+    }
+    else {
+        if(siteEnergyDistanceMaximum() <= 0)
+            throw Exception(tr("The candidate donor-acceptor cutoff must be positive."));
+        if(siteEnergyThetaMaximum() < 0 || siteEnergyThetaMaximum() > 180)
+            throw Exception(tr("The candidate theta maximum must be in the range [0, 180]."));
+        if(siteEnergyCutoffMode() == ManualEnergyCutoff
+           && !std::isfinite(static_cast<double>(siteEnergyCutoff())))
+            throw Exception(tr("The maximum D/H/A site energy must be finite."));
+        if(relativePermittivity() <= 0)
+            throw Exception(tr("The relative permittivity must be positive."));
+        if(donorLJEpsilon() < 0 || donorLJSigma() < 0
+           || hydrogenLJEpsilon() < 0 || hydrogenLJSigma() < 0
+           || acceptorLJEpsilon() < 0 || acceptorLJSigma() < 0) {
+            throw Exception(tr("Lennard-Jones epsilon and sigma parameters must be non-negative."));
+        }
+        if(!particles->getProperty(Particles::ChargeProperty)) {
+            throw Exception(tr(
+                "The D/H/A site-energy definition requires the particle property 'Charge'."));
+        }
+
+        siteEnergyParameters.enabled = true;
+        siteEnergyParameters.potential.coulombConstant = siteEnergyCoulombConstant(siteEnergyUnit());
+        siteEnergyParameters.potential.relativePermittivity = static_cast<double>(relativePermittivity());
+        siteEnergyParameters.potential.donorEpsilon = static_cast<double>(donorLJEpsilon());
+        siteEnergyParameters.potential.donorSigma = static_cast<double>(donorLJSigma());
+        siteEnergyParameters.potential.hydrogenEpsilon = static_cast<double>(hydrogenLJEpsilon());
+        siteEnergyParameters.potential.hydrogenSigma = static_cast<double>(hydrogenLJSigma());
+        siteEnergyParameters.potential.acceptorEpsilon = static_cast<double>(acceptorLJEpsilon());
+        siteEnergyParameters.potential.acceptorSigma = static_cast<double>(acceptorLJSigma());
     }
     const bool useBondTopology = particles->bonds() && particles->bonds()->getProperty(Bonds::TopologyProperty);
-    const double donorAcceptorSearchCutoff = definitionMode() == PMFDerived
-        ? static_cast<double>(pmfDistanceMaximum())
-        : static_cast<double>(donorAcceptorCutoff());
+    const double donorAcceptorSearchCutoff =
+        definitionMode() == PMFDerived
+            ? static_cast<double>(pmfDistanceMaximum())
+            : (definitionMode() == SiteInteractionEnergy
+                   ? static_cast<double>(siteEnergyDistanceMaximum())
+                   : static_cast<double>(donorAcceptorCutoff()));
 
     const std::vector<int> frames = sampledFrames(request.modificationNode());
     const std::vector<std::vector<int>> frameBatches = buildFrameBatches(frames, 32);
@@ -962,10 +1234,11 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
              hydrogenExpression = hydrogenExpression(),
              acceptorTypes = acceptorTypes(),
              acceptorExpression = acceptorExpression(),
-             donorHydrogenCutoff = donorHydrogenCutoff(),
-             donorAcceptorSearchCutoff,
-             useBondTopology,
-             progress,
+              donorHydrogenCutoff = donorHydrogenCutoff(),
+              donorAcceptorSearchCutoff,
+              useBondTopology,
+              siteEnergyParameters,
+              progress,
              totalFrameCount = frames.size()](const std::vector<int>& frameBatch,
                                               std::vector<SharedFuture<PipelineFlowState>> batchFutures,
                                               HydrogenBondAccumulator& accumulator) {
@@ -981,7 +1254,8 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                                                                      acceptorExpression,
                                                                      donorHydrogenCutoff,
                                                                      static_cast<FloatType>(donorAcceptorSearchCutoff),
-                                                                     useBondTopology);
+                                                                     useBondTopology,
+                                                                     siteEnergyParameters);
                     accumulator.totalDonorAtoms += snapshot.donorCount;
                     accumulator.totalHydrogenAtoms += snapshot.hydrogenCount;
                     accumulator.totalAcceptorAtoms += snapshot.acceptorCount;
@@ -1050,8 +1324,27 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                                          static_cast<double>(self->pmfThetaMinimum()),
                                          static_cast<double>(self->pmfThetaMaximum()),
                                          std::max(4, self->pmfDistanceBins()),
-                                         std::max(4, self->pmfAngleBins()));
+                                         std::max(4, self->pmfAngleBins()),
+                                         static_cast<double>(self->pmfDistanceBandwidth()),
+                                         static_cast<double>(self->pmfAngleBandwidth()),
+                                         static_cast<double>(self->pmfReferenceShellFraction()));
                 pmfPtr = &pmf;
+            }
+
+            HydrogenBondSiteEnergy::AutomaticCutoffResult siteEnergyDistribution;
+            std::vector<double> siteEnergySamples;
+            double effectiveSiteEnergyCutoff = static_cast<double>(self->siteEnergyCutoff());
+            if(self->definitionMode() == SiteInteractionEnergy) {
+                siteEnergySamples =
+                    collectSiteEnergySamples(accumulator, static_cast<double>(self->siteEnergyThetaMaximum()));
+                siteEnergyDistribution =
+                    HydrogenBondSiteEnergy::findAutomaticCutoff(siteEnergySamples);
+                if(self->siteEnergyCutoffMode() == AutomaticEnergyMinimum) {
+                    effectiveSiteEnergyCutoff =
+                        siteEnergyDistribution.status == HydrogenBondSiteEnergy::AutomaticCutoffStatus::Success
+                            ? siteEnergyDistribution.cutoff
+                            : std::numeric_limits<double>::quiet_NaN();
+                }
             }
 
             std::vector<double> frameNumbers;
@@ -1068,6 +1361,8 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                                       self->definitionMode(),
                                       static_cast<double>(self->donorAcceptorCutoff()),
                                       fixedMaximumTheta,
+                                      effectiveSiteEnergyCutoff,
+                                      static_cast<double>(self->siteEnergyThetaMaximum()),
                                       pmfPtr);
                 frameNumbers.push_back(static_cast<double>(snapshot.frame));
                 counts.push_back(static_cast<double>(frameObservations.size()));
@@ -1089,14 +1384,48 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
             createObservationTable(computationResult.results,
                                    HydrogenBondAnalysisModifier::observationTableId(),
                                    observations,
+                                   self->definitionMode() == SiteInteractionEnergy,
                                    createdByNode);
+            createGeometryClassificationTable(
+                computationResult.results,
+                HydrogenBondAnalysisModifier::geometryClassificationTableId(),
+                accumulator,
+                self->definitionMode(),
+                static_cast<double>(self->donorAcceptorCutoff()),
+                fixedMaximumTheta,
+                effectiveSiteEnergyCutoff,
+                static_cast<double>(self->siteEnergyThetaMaximum()),
+                pmfPtr,
+                createdByNode);
             if(self->definitionMode() == PMFDerived)
                 createPmfTable(computationResult.results, HydrogenBondAnalysisModifier::pmfTableId(), pmf, createdByNode);
+            else if(self->definitionMode() == SiteInteractionEnergy) {
+                createSiteEnergyDistributionTable(
+                    computationResult.results,
+                    HydrogenBondAnalysisModifier::siteEnergyDistributionTableId(),
+                    siteEnergyDistribution,
+                    siteEnergyUnitLabel(self->siteEnergyUnit()),
+                    createdByNode);
+            }
 
             const double sampledFrameCount = static_cast<double>(frames.size());
             const double totalHydrogenBonds = static_cast<double>(observations.size());
             const double averageCount = sampledFrameCount > 0 ? (totalHydrogenBonds / sampledFrameCount) : 0.0;
             const double maxCount = counts.empty() ? 0.0 : *std::max_element(counts.begin(), counts.end());
+            double averageSiteEnergy = std::numeric_limits<double>::quiet_NaN();
+            double minimumSiteEnergy = std::numeric_limits<double>::quiet_NaN();
+            double maximumSiteEnergy = std::numeric_limits<double>::quiet_NaN();
+            if(self->definitionMode() == SiteInteractionEnergy && !observations.empty()) {
+                double siteEnergySum = 0.0;
+                minimumSiteEnergy = std::numeric_limits<double>::infinity();
+                maximumSiteEnergy = -std::numeric_limits<double>::infinity();
+                for(const HydrogenBondObservation& observation : observations) {
+                    siteEnergySum += observation.siteEnergy;
+                    minimumSiteEnergy = std::min(minimumSiteEnergy, observation.siteEnergy);
+                    maximumSiteEnergy = std::max(maximumSiteEnergy, observation.siteEnergy);
+                }
+                averageSiteEnergy = siteEnergySum / static_cast<double>(observations.size());
+            }
 
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_types"), self->donorTypes(), createdByNode);
             computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.donor_expression"), self->donorExpression(), createdByNode);
@@ -1119,17 +1448,60 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hb_donor_acceptor_cutoff"), static_cast<double>(self->donorAcceptorCutoff()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.hb_theta_maximum"), static_cast<double>(self->angleCutoff()), createdByNode);
             }
-            else {
+            else if(self->definitionMode() == PMFDerived) {
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_minimum"), static_cast<double>(self->pmfDistanceMinimum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_maximum"), static_cast<double>(self->pmfDistanceMaximum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_theta_minimum"), static_cast<double>(self->pmfThetaMinimum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_theta_maximum"), static_cast<double>(self->pmfThetaMaximum()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_bins"), static_cast<double>(self->pmfDistanceBins()), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_angle_bins"), static_cast<double>(self->pmfAngleBins()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_distance_bandwidth"), pmf.distanceBandwidth, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_angle_bandwidth"), pmf.angleBandwidth, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_reference_shell_fraction"), pmf.referenceShellFraction, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_reference_distance_minimum"), pmf.referenceDistanceMinimum, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_reference_density"), pmf.referenceDensity, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_boundary_free_energy"), pmf.boundaryFreeEnergy, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_vicinity_cutoff"), pmf.vicinityCutoff, createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_basin_bin_count"), static_cast<double>(pmf.basinBinCount), createdByNode);
                 computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_populated_bin_count"), static_cast<double>(pmf.populatedBinCount), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_minimum_free_energy"), pmf.minimumFreeEnergy, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_minimum_distance"), pmf.minimumDistance, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_minimum_theta"), pmf.minimumTheta, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_minimum_required_well_depth"), pmf.minimumRequiredWellDepth, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.pmf_energy_unit"), QStringLiteral("kBT"), createdByNode);
+            }
+            else {
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_distance_maximum"), static_cast<double>(self->siteEnergyDistanceMaximum()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_theta_maximum"), static_cast<double>(self->siteEnergyThetaMaximum()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_cutoff_mode"), siteEnergyCutoffModeLabel(self->siteEnergyCutoffMode()), createdByNode);
+                if(std::isfinite(effectiveSiteEnergyCutoff))
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_cutoff"), effectiveSiteEnergyCutoff, createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_unit"), siteEnergyUnitLabel(self->siteEnergyUnit()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_calibration_sample_count"), static_cast<double>(siteEnergyDistribution.sampleCount), createdByNode);
+                if(std::isfinite(siteEnergyDistribution.bandwidth))
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_calibration_bandwidth"), siteEnergyDistribution.bandwidth, createdByNode);
+                if(siteEnergyDistribution.status == HydrogenBondSiteEnergy::AutomaticCutoffStatus::Success) {
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_lower_peak"), siteEnergyDistribution.lowerEnergyPeak, createdByNode);
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_upper_peak"), siteEnergyDistribution.upperEnergyPeak, createdByNode);
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_valley_ratio"), siteEnergyDistribution.valleyToPeakRatio, createdByNode);
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_lower_fraction"), siteEnergyDistribution.lowerEnergyFraction, createdByNode);
+                }
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_relative_permittivity"), static_cast<double>(self->relativePermittivity()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_donor_lj_epsilon"), static_cast<double>(self->donorLJEpsilon()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_donor_lj_sigma"), static_cast<double>(self->donorLJSigma()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_hydrogen_lj_epsilon"), static_cast<double>(self->hydrogenLJEpsilon()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_hydrogen_lj_sigma"), static_cast<double>(self->hydrogenLJSigma()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_acceptor_lj_epsilon"), static_cast<double>(self->acceptorLJEpsilon()), createdByNode);
+                computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_acceptor_lj_sigma"), static_cast<double>(self->acceptorLJSigma()), createdByNode);
+                if(!observations.empty()) {
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_average"), averageSiteEnergy, createdByNode);
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_minimum"), minimumSiteEnergy, createdByNode);
+                    computationResult.results->setAttribute(QStringLiteral("HydrogenBonds.site_energy_maximum"), maximumSiteEnergy, createdByNode);
+                }
+                computationResult.results->setAttribute(
+                    QStringLiteral("HydrogenBonds.site_energy_model"),
+                    QStringLiteral("Unshifted direct Coulomb + 12-6 LJ; Lorentz-Berthelot mixing; U_DA + U_HA"),
+                    createdByNode);
             }
 
             QStringList warnings;
@@ -1142,9 +1514,11 @@ Future<PipelineFlowState> HydrogenBondAnalysisModifier::computeHydrogenBondData(
                 warnings << HydrogenBondAnalysisModifier::tr(
                     "No bond topology was available, so donor-hydrogen pairs were identified geometrically using the donor-hydrogen cutoff.");
             }
-            if(self->definitionMode() == PMFDerived) {
-                warnings << HydrogenBondAnalysisModifier::tr(
-                    "The PMF-derived mode estimates a free-energy-like surface from the observed triplet geometry distribution and uses the largest connected-basin area jump to define the HB basin boundary automatically.");
+            if(self->definitionMode() == SiteInteractionEnergy) {
+                if(self->siteEnergyCutoffMode() == AutomaticEnergyMinimum) {
+                    if(siteEnergyDistribution.status != HydrogenBondSiteEnergy::AutomaticCutoffStatus::Success)
+                        warnings << automaticCutoffFailureMessage(siteEnergyDistribution.status);
+                }
             }
             computationResult.warningText = warnings.join(QLatin1Char('\n'));
             computationResult.completedRunRequestId = completedRunRequestId;

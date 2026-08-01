@@ -122,6 +122,9 @@ OPTION(OVITO_BUILD_PLUGIN_VOROTOP "Build the VoroTop modifier plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_PYSCRIPT "Build the legacy Python scripting plugin." "OFF")
+OPTION(OVITO_BUILD_PLUGIN_TACHYON "Build the Tachyon software ray-tracing renderer plugin." "ON")
+OPTION(OVITO_BUILD_PLUGIN_OSPRAY "Build the OSPRay software ray-tracing renderer plugin." "ON")
+OPTION(OVITO_BUILD_PLUGIN_VISRTX "Build the VisRTX ANARI ray-tracing renderer plugin." "ON")
 
 # This is a global list of plugin targets that will be built.
 # It will get populated by the OVITO_PLUGIN function.

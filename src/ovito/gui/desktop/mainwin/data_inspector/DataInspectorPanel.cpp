@@ -402,6 +402,30 @@ bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, con
 }
 
 /******************************************************************************
+* Selects a specific data object from an explicitly supplied pipeline output.
+******************************************************************************/
+bool DataInspectorPanel::selectDataObjectFromPipelineOutput(PipelineFlowState pipelineOutput,
+                                                            const PipelineNode* createdByNode,
+                                                            const QStringView objectIdentifierHint,
+                                                            const QVariant& modeHint)
+{
+    if(!pipelineOutput || !createdByNode)
+        return false;
+
+    PipelineFlowState previousOutput = std::move(_pipelineOutput);
+    _pipelineOutput = std::move(pipelineOutput);
+    updateTabsList();
+    if(selectDataObject(createdByNode, objectIdentifierHint, modeHint))
+        return true;
+
+    _pipelineOutput = std::move(previousOutput);
+    updateTabsList();
+    if(_inspectorActive && _activeAppletIndex >= 0 && _activeAppletIndex < _applets.size())
+        _applets[_activeAppletIndex]->updateDisplay();
+    return false;
+}
+
+/******************************************************************************
 * Selects a specific tab page in the data inspector.
 ******************************************************************************/
 bool DataInspectorPanel::selectTabPage(const OvitoClass& appletClass)

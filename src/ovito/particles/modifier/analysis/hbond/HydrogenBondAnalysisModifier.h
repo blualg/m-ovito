@@ -44,13 +44,30 @@ public:
     enum DefinitionMode
     {
         FixedGeometry = 0,
-        PMFDerived = 1
+        PMFDerived = 1,
+        SiteInteractionEnergy = 2
     };
     Q_ENUM(DefinitionMode);
 
+    enum SiteEnergyUnit
+    {
+        KcalPerMol = 0,
+        ElectronVolt = 1
+    };
+    Q_ENUM(SiteEnergyUnit);
+
+    enum SiteEnergyCutoffMode
+    {
+        AutomaticEnergyMinimum = 0,
+        ManualEnergyCutoff = 1
+    };
+    Q_ENUM(SiteEnergyCutoffMode);
+
     static QString countTableId() { return QStringLiteral("hydrogen-bond-counts"); }
     static QString observationTableId() { return QStringLiteral("hydrogen-bond-observations"); }
+    static QString geometryClassificationTableId() { return QStringLiteral("hydrogen-bond-geometry-classification"); }
     static QString pmfTableId() { return QStringLiteral("hydrogen-bond-pmf"); }
+    static QString siteEnergyDistributionTableId() { return QStringLiteral("hydrogen-bond-site-energy-distribution"); }
 
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -79,12 +96,27 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(DefinitionMode{FixedGeometry}, definitionMode, setDefinitionMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.0}, donorAcceptorCutoff, setDonorAcceptorCutoff, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{30}, angleCutoff, setAngleCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.5}, siteEnergyDistanceMaximum, setSiteEnergyDistanceMaximum, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{180.0}, siteEnergyThetaMaximum, setSiteEnergyThetaMaximum, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SiteEnergyCutoffMode{AutomaticEnergyMinimum}, siteEnergyCutoffMode, setSiteEnergyCutoffMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{25.0}, siteEnergyCutoff, setSiteEnergyCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SiteEnergyUnit{KcalPerMol}, siteEnergyUnit, setSiteEnergyUnit, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, relativePermittivity, setRelativePermittivity, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.155354}, donorLJEpsilon, setDonorLJEpsilon, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.166}, donorLJSigma, setDonorLJSigma, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, hydrogenLJEpsilon, setHydrogenLJEpsilon, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, hydrogenLJSigma, setHydrogenLJSigma, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.155354}, acceptorLJEpsilon, setAcceptorLJEpsilon, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.166}, acceptorLJSigma, setAcceptorLJSigma, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, pmfDistanceMinimum, setPmfDistanceMinimum, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{5.0}, pmfDistanceMaximum, setPmfDistanceMaximum, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.0}, pmfThetaMinimum, setPmfThetaMinimum, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{180.0}, pmfThetaMaximum, setPmfThetaMaximum, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{80}, pmfDistanceBins, setPmfDistanceBins, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{72}, pmfAngleBins, setPmfAngleBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.1}, pmfDistanceBandwidth, setPmfDistanceBandwidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{4.0}, pmfAngleBandwidth, setPmfAngleBandwidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.2}, pmfReferenceShellFraction, setPmfReferenceShellFraction, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomFrameInterval, setUseCustomFrameInterval);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalStart, setIntervalStart);
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);

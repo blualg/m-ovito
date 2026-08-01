@@ -44,11 +44,30 @@ public:
     enum DefinitionMode
     {
         FixedGeometry = 0,
-        PMFDerived = 1
+        PMFDerived = 1,
+        SiteInteractionEnergy = 2
     };
     Q_ENUM(DefinitionMode);
 
+    enum TimeUnit
+    {
+        Femtoseconds = 0,
+        Picoseconds = 1,
+        Nanoseconds = 2
+    };
+    Q_ENUM(TimeUnit);
+
+    enum TimeCoordinateMode
+    {
+        AutomaticTimeCoordinate = 0,
+        TimestepAttributeTimeCoordinate = 1,
+        SourceFrameTimeCoordinate = 2
+    };
+    Q_ENUM(TimeCoordinateMode);
+
     static QString kineticsTableId() { return QStringLiteral("hydrogen-bond-kinetics"); }
+    static QString reactiveFluxTableId() { return QStringLiteral("hydrogen-bond-reactive-flux"); }
+    static QString lifetimeDistributionTableId() { return QStringLiteral("hydrogen-bond-lifetime-distribution"); }
     static QString pmfTableId() { return QStringLiteral("hydrogen-bond-pmf"); }
 
     void initializeObject(ObjectInitializationFlags flags);
@@ -87,7 +106,25 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, intervalEnd, setIntervalEnd);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, samplingFrequency, setSamplingFrequency, PROPERTY_FIELD_MEMORIZE);
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, maxLag, setMaxLag, PROPERTY_FIELD_MEMORIZE);
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, runRequestId, setRunRequestId, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(
+        TimeCoordinateMode{AutomaticTimeCoordinate},
+        timeCoordinateMode,
+        setTimeCoordinateMode,
+        PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, timeStep, setTimeStep, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TimeUnit{Femtoseconds}, timeUnit, setTimeUnit, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, kineticFitStartLag, setKineticFitStartLag, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, kineticFitEndLag, setKineticFitEndLag, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{5}, reactiveFluxSmoothingWindow, setReactiveFluxSmoothingWindow, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, bootstrapReplicates, setBootstrapReplicates, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, bootstrapBlockLength, setBootstrapBlockLength, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{12345}, bootstrapSeed, setBootstrapSeed, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{50}, lifetimeHistogramBins, setLifetimeHistogramBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(
+        int{0},
+        runRequestId,
+        setRunRequestId,
+        PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_SERIALIZE | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
 class OVITO_PARTICLES_EXPORT HydrogenBondKineticsModificationNode : public ModificationNode

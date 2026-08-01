@@ -48,6 +48,9 @@ SET(SourceFiles
     modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
     modifier/analysis/rdf/RadialDistributionFunctionModifier.cpp
     modifier/analysis/pdf/ProbabilityDistributionFunctionModifier.cpp
+    modifier/analysis/denoise/ScoreBasedDenoisingModifier.cpp
+    modifier/analysis/noise/AtomicNoisingModifier.cpp
+    modifier/analysis/ring/RingFinderModifier.cpp
     modifier/analysis/cage/WaterCageAnalysisModifier.cpp
     modifier/analysis/cacf/CoordinationEnvironmentAutocorrelationModifier.cpp
     modifier/analysis/hbond/HydrogenBondAnalysisModifier.cpp

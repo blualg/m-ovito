@@ -45,6 +45,7 @@ private Q_SLOTS:
     void updatePlot();
     void updateSummary();
     void updateDefinitionControls();
+    void openDataInspector();
 
 private:
 
@@ -52,9 +53,11 @@ private:
     void refreshSummaryGeometry();
 
     QPointer<QPushButton> _runButton;
+    QPointer<QPushButton> _dataInspectorButton;
     QPointer<DataTablePlotWidget> _plot;
     QPointer<QLabel> _summaryLabel;
     QPointer<QWidget> _fixedCriteriaWidget;
+    QPointer<QWidget> _vicinityCriteriaWidget;
     QPointer<QWidget> _pmfCriteriaWidget;
 };
 

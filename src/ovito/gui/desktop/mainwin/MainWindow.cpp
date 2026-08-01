@@ -676,6 +676,23 @@ bool MainWindow::openDataInspector(PipelineNode* createdByNode, const QStringVie
 }
 
 /******************************************************************************
+* Opens the data inspector using an explicitly supplied pipeline output.
+******************************************************************************/
+bool MainWindow::openDataInspectorForPipelineOutput(PipelineFlowState pipelineOutput,
+                                                    PipelineNode* createdByNode,
+                                                    const QStringView objectIdentifierHint,
+                                                    const QVariant& modeHint)
+{
+    QMetaObject::invokeMethod(_dataInspector, "updateInspector", Qt::DirectConnection);
+    if(_dataInspector->selectDataObjectFromPipelineOutput(
+           std::move(pipelineOutput), createdByNode, objectIdentifierHint, modeHint)) {
+        _dataInspector->open();
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
 * Opens the data inspector panel and activates the given tab page.
 ******************************************************************************/
 bool MainWindow::openDataInspector(const OvitoClass& appletClass)

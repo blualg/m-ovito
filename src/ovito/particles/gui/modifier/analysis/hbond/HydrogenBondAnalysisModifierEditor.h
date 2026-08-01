@@ -30,6 +30,7 @@ namespace Ovito {
 
 class HydrogenBondAnalysisModifier;
 class HydrogenBondPmfPlotWidget;
+class HydrogenBondGeometryPlotWidget;
 
 class HydrogenBondAnalysisModifierEditor : public PropertiesEditor
 {
@@ -51,13 +52,18 @@ private:
 
     HydrogenBondAnalysisModifier* modifier() const;
     void refreshSummaryGeometry();
+    void openDataInspector();
 
     QPointer<QPushButton> _runButton;
     QPointer<DataTablePlotWidget> _plot;
+    QPointer<HydrogenBondGeometryPlotWidget> _geometryPlot;
     QPointer<HydrogenBondPmfPlotWidget> _pmfPlot;
     QPointer<QLabel> _summaryLabel;
     QPointer<QWidget> _fixedCriteriaWidget;
+    QPointer<QWidget> _siteEnergyCriteriaWidget;
+    QPointer<QWidget> _manualSiteEnergyCutoffWidget;
     QPointer<QWidget> _pmfCriteriaWidget;
+    QPointer<QPushButton> _dataInspectorButton;
 };
 
 }  // namespace Ovito
